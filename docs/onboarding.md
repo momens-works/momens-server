@@ -215,7 +215,7 @@ docs(<Momens-작업-라벨>): 문서 수정
 
 | 체크 | 내용 | 머지 차단? |
 | --- | --- | --- |
-| `build` | `spotlessCheck` → `test` → `bootJar` | ✅ 필수 |
+| `build` | `check`(`spotlessCheck`, `verifyDockerModuleBuildScripts`, `verifyDependencyVersionsInCatalog`, `test`) → `bootJar` | 필수 |
 | `pr-format` | PR 제목/본문 형식, 브랜치명 정합성 검증 | ✅ 필수 |
 | CodeQL | 보안 정적 분석 | ℹ️ 비차단(Security 탭 알림) |
 

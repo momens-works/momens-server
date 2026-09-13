@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.memory.ConfirmedMemoryCreator;
 import works.momens.server.memory.CreateConfirmedMemoryCommand;
-import works.momens.server.workspace.LabelAllocator;
+import works.momens.server.workspace.label.LabelAllocator;
 
 /**
  * 확정 메모리 한 건을 저장하는 구현입니다.

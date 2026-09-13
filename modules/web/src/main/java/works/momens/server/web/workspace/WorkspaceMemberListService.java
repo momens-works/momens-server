@@ -2,18 +2,19 @@ package works.momens.server.web.workspace;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import works.momens.server.common.api.BusinessException;
-import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
-import works.momens.server.workspace.WorkspaceMembershipDetail;
-import works.momens.server.workspace.WorkspaceMembershipReader;
+import works.momens.server.web.WorkspaceAccessChecker;
+import works.momens.server.workspace.membership.WorkspaceMembershipDetail;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
  * 워크스페이스 멤버 목록을 구성하는 조회 서비스입니다.
@@ -34,6 +35,7 @@ class WorkspaceMemberListService {
 
   private final WorkspaceMembershipReader workspaceMembershipReader;
   private final UserService userService;
+  private final WorkspaceAccessChecker workspaceAccessChecker;
 
   /**
    * 요청자가 워크스페이스 멤버가 아니면 {@code AUTH_FORBIDDEN}을 던집니다.
@@ -46,11 +48,9 @@ class WorkspaceMemberListService {
   @Transactional(readOnly = true)
   public List<WorkspaceMemberView> list(UUID workspaceId, UUID requesterId) {
     List<WorkspaceMembershipDetail> memberships =
-        workspaceMembershipReader.listDetailsByWorkspaceId(workspaceId);
-    if (memberships.stream().noneMatch(membership -> membership.userId().equals(requesterId))) {
-      throw new BusinessException(
-          CommonErrorCode.AUTH_FORBIDDEN, Map.of("workspace_id", workspaceId.toString()));
-    }
+        workspaceMembershipReader.listMembershipDetails(workspaceId);
+    workspaceAccessChecker.requireRoleAtLeast(
+        workspaceId, requesterRoleOf(memberships, requesterId), WorkspaceRole.MEMBER);
     Map<UUID, UserProfile> profiles =
         userService
             .getProfiles(memberships.stream().map(WorkspaceMembershipDetail::userId).toList())
@@ -70,5 +70,14 @@ class WorkspaceMemberListService {
                   membership.updatedAt());
             })
         .toList();
+  }
+
+  private static Optional<WorkspaceRole> requesterRoleOf(
+      List<WorkspaceMembershipDetail> memberships, UUID requesterId) {
+    return memberships.stream()
+        .filter(membership -> membership.userId().equals(requesterId))
+        .findFirst()
+        .map(WorkspaceMembershipDetail::role)
+        .flatMap(WorkspaceRole::from);
   }
 }

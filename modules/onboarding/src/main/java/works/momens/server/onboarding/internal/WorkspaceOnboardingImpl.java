@@ -12,9 +12,9 @@ import works.momens.server.onboarding.WorkspaceOnboarding;
 import works.momens.server.project.core.CreateProjectCommand;
 import works.momens.server.project.core.ProjectCreator;
 import works.momens.server.project.core.ProjectDetail;
-import works.momens.server.workspace.CreateWorkspaceCommand;
-import works.momens.server.workspace.WorkspaceCreator;
-import works.momens.server.workspace.WorkspaceDetail;
+import works.momens.server.workspace.core.CreateWorkspaceCommand;
+import works.momens.server.workspace.core.WorkspaceCreator;
+import works.momens.server.workspace.core.WorkspaceDetail;
 
 /**
  * 레거시 {@code workspace.Create}와 {@code seedWelcome}이 하나의 트랜잭션에서 수행하던 동작을 이관한 구현입니다.

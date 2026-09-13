@@ -88,8 +88,63 @@ tasks.register('verifyDockerModuleBuildScripts') {
     }
 }
 
+// 버전을 명시하는 의존성은 버전 카탈로그(gradle/libs.versions.toml)에서 관리합니다
+// (docs/rules/architecture.md). Dependabot은 settings.gradle을 정규식으로 분석하므로 modules/
+// 아래 프로젝트를 인식하지 못합니다. 따라서 해당 프로젝트의 build.gradle에 버전을 직접 선언해도
+// 빌드는 통과하지만 Dependabot의 의존성 업데이트 대상에서는 제외됩니다. 이 태스크는 Dependabot이
+// build.gradle에서 버전을 찾을 때 사용하는 정규식과 동일한 기준으로 검사합니다
+// (dependabot-core gradle/lib/dependabot/gradle/file_parser.rb).
+tasks.register('verifyDependencyVersionsInCatalog') {
+    group = 'verification'
+    description = '빌드 스크립트에 버전 카탈로그 외부의 버전 선언이 있는지 검사합니다.'
+
+    // configuration cache 요구사항에 따라 실행 시점에 Project를 참조하지 않도록 파일 목록을 구성 단계에서
+    // 확정합니다. includeBuild로 포함된 third_party/momens-proto는 allprojects에 포함되지 않습니다.
+    List<File> buildScripts = allprojects.collect { it.buildFile }
+    java.nio.file.Path rootPath = rootProject.projectDir.toPath()
+
+    doLast {
+        String part = /[^\s,@'":\/\\]+/
+        String versionPart = /[^\s,'":\/\\]+/
+        // 한 규칙에 정의된 모든 패턴이 같은 줄에서 일치하면 위반으로 판정합니다. 규칙을 추가할 때는 목록에
+        // 항목 하나를 추가합니다.
+        List<Map> rules = [
+            [name: '좌표 문자열', patterns: [~/(?:\(|[\s,])\s*['"]${part}:${part}:${versionPart}['"]/]],
+            [name: '키워드 인자', patterns: ['group', 'name', 'version'].collect { key ->
+                ~/(?:^|[\s,(\[])${key}\s*[:=]\s*['"]/
+            }],
+            [name: '플러그인 버전', patterns: [
+                ~/(?:^|\s)(?:id|kotlin)(?:\s+['"]${part}['"]|\(['"]${part}['"]\)).*\bversion\s+['"]?${versionPart}/
+            ]],
+        ]
+
+        List<String> violations = []
+        buildScripts.each { File script ->
+            String location = rootPath.relativize(script.toPath()).toString().replace(File.separator, '/')
+            script.readLines('UTF-8').eachWithIndex { String line, int index ->
+                if (line.trim().startsWith('//')) {
+                    return
+                }
+                rules.each { Map rule ->
+                    if (rule.patterns.every { line =~ it }) {
+                        violations.add("${location}:${index + 1}: ${rule.name}: ${line.trim()}")
+                    }
+                }
+            }
+        }
+
+        if (!violations.isEmpty()) {
+            throw new GradleException(
+                "버전 카탈로그 외부에 버전을 선언한 빌드 스크립트가 있습니다.\n- "
+                    + violations.join('\n- ')
+                    + "\ngradle/libs.versions.toml에 버전 항목을 추가한 뒤 libs.<alias>로 참조하세요.")
+        }
+    }
+}
+
 tasks.named('check') {
     dependsOn tasks.named('verifyDockerModuleBuildScripts')
+    dependsOn tasks.named('verifyDependencyVersionsInCatalog')
 }
 
 subprojects {

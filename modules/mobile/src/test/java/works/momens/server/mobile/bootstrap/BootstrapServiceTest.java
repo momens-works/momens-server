@@ -17,8 +17,8 @@ import works.momens.server.project.core.ProjectReader;
 import works.momens.server.project.core.ProjectSnapshot;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
-import works.momens.server.workspace.UserWorkspaceMembership;
-import works.momens.server.workspace.WorkspaceAccess;
+import works.momens.server.workspace.membership.UserWorkspaceMembership;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 /**
  * bootstrap 조합 규칙 검증. 도메인 모듈 public API는 각자 통합 테스트에서 검증하므로 여기서는 모두 mock으로 두고 조합 규칙(기본 project 선정,
@@ -29,7 +29,7 @@ class BootstrapServiceTest {
 
   @Mock private UserService userService;
   @Mock private ProjectReader projectReader;
-  @Mock private WorkspaceAccess workspaceAccess;
+  @Mock private WorkspaceMembershipReader workspaceMembershipReader;
   @InjectMocks private BootstrapService bootstrapService;
 
   private static final UUID USER_ID = UUID.randomUUID();
@@ -41,7 +41,7 @@ class BootstrapServiceTest {
     UUID newer = UUID.randomUUID();
     UUID older = UUID.randomUUID();
     when(userService.getProfile(USER_ID)).thenReturn(profile());
-    when(workspaceAccess.listUserMemberships(USER_ID))
+    when(workspaceMembershipReader.listUserMemberships(USER_ID))
         .thenReturn(
             List.of(
                 new UserWorkspaceMembership(ownedWorkspace, "owner"),
@@ -67,7 +67,7 @@ class BootstrapServiceTest {
   @Test
   void loadReturnsNullDefaultAndEmptyProjectsForUserWithoutProjects() {
     when(userService.getProfile(USER_ID)).thenReturn(profile());
-    when(workspaceAccess.listUserMemberships(USER_ID)).thenReturn(List.of());
+    when(workspaceMembershipReader.listUserMemberships(USER_ID)).thenReturn(List.of());
     when(projectReader.listByWorkspaceIds(Set.of())).thenReturn(List.of());
 
     BootstrapContext context = bootstrapService.load(USER_ID);

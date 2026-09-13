@@ -3185,271 +3185,6 @@
   },
   "openapi" : "3.1.0",
   "paths" : {
-    "/api/auth/dev/token" : {
-      "post" : {
-        "description" : "허용된 테스트 사용자의 access token을 발급합니다. dev 계열 프로필에서만 동작하며, 호출자는 공유 시크릿 헤더로 제한합니다.",
-        "operationId" : "devIssueToken",
-        "parameters" : [
-          {
-            "description" : "호출자 제한용 공유 시크릿",
-            "in" : "header",
-            "name" : "X-Dev-Token-Secret",
-            "required" : true,
-            "schema" : {
-              "type" : "string"
-            }
-          },
-          {
-            "in" : "header",
-            "name" : "API-Version",
-            "schema" : {
-              "default" : "1.0.0",
-              "enum" : [
-                "1"
-              ],
-              "type" : "string"
-            }
-          }
-        ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/DevTokenRequest"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DevTokenResponse"
-                }
-              }
-            },
-            "description" : "토큰 발급 성공"
-          },
-          "400" : {
-            "content" : {
-              "application/json" : {
-                "examples" : {
-                  "COMMON_BAD_REQUEST" : {
-                    "description" : "요청 형식이 올바르지 않습니다.",
-                    "summary" : "COMMON_BAD_REQUEST",
-                    "value" : {
-                      "error" : {
-                        "code" : "COMMON_BAD_REQUEST",
-                        "message" : "요청 형식이 올바르지 않습니다."
-                      }
-                    }
-                  },
-                  "COMMON_VALIDATION_FAILED" : {
-                    "description" : "요청 값이 유효하지 않습니다.",
-                    "summary" : "COMMON_VALIDATION_FAILED",
-                    "value" : {
-                      "error" : {
-                        "code" : "COMMON_VALIDATION_FAILED",
-                        "message" : "요청 값이 유효하지 않습니다."
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "description" : "Bad Request"
-          },
-          "401" : {
-            "content" : {
-              "application/json" : {
-                "examples" : {
-                  "AUTH_DEV_TOKEN_SECRET_INVALID" : {
-                    "description" : "dev 토큰 시크릿이 유효하지 않습니다.",
-                    "summary" : "AUTH_DEV_TOKEN_SECRET_INVALID",
-                    "value" : {
-                      "error" : {
-                        "code" : "AUTH_DEV_TOKEN_SECRET_INVALID",
-                        "message" : "dev 토큰 시크릿이 유효하지 않습니다."
-                      }
-                    }
-                  },
-                  "AUTH_INVALID_TOKEN" : {
-                    "description" : "토큰이 유효하지 않습니다.",
-                    "summary" : "AUTH_INVALID_TOKEN",
-                    "value" : {
-                      "error" : {
-                        "code" : "AUTH_INVALID_TOKEN",
-                        "message" : "토큰이 유효하지 않습니다."
-                      }
-                    }
-                  },
-                  "AUTH_UNAUTHORIZED" : {
-                    "description" : "인증이 필요합니다.",
-                    "summary" : "AUTH_UNAUTHORIZED",
-                    "value" : {
-                      "error" : {
-                        "code" : "AUTH_UNAUTHORIZED",
-                        "message" : "인증이 필요합니다."
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "description" : "Unauthorized"
-          },
-          "403" : {
-            "content" : {
-              "application/json" : {
-                "examples" : {
-                  "AUTH_DEV_TOKEN_EMAIL_NOT_ALLOWED" : {
-                    "description" : "허용되지 않은 테스트 사용자입니다.",
-                    "summary" : "AUTH_DEV_TOKEN_EMAIL_NOT_ALLOWED",
-                    "value" : {
-                      "error" : {
-                        "code" : "AUTH_DEV_TOKEN_EMAIL_NOT_ALLOWED",
-                        "message" : "허용되지 않은 테스트 사용자입니다."
-                      }
-                    }
-                  },
-                  "AUTH_FORBIDDEN" : {
-                    "description" : "권한이 없습니다.",
-                    "summary" : "AUTH_FORBIDDEN",
-                    "value" : {
-                      "error" : {
-                        "code" : "AUTH_FORBIDDEN",
-                        "message" : "권한이 없습니다."
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "description" : "Forbidden"
-          },
-          "404" : {
-            "content" : {
-              "application/json" : {
-                "examples" : {
-                  "COMMON_NOT_FOUND" : {
-                    "description" : "요청한 리소스를 찾을 수 없습니다.",
-                    "summary" : "COMMON_NOT_FOUND",
-                    "value" : {
-                      "error" : {
-                        "code" : "COMMON_NOT_FOUND",
-                        "message" : "요청한 리소스를 찾을 수 없습니다."
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "description" : "Not Found"
-          },
-          "405" : {
-            "content" : {
-              "application/json" : {
-                "examples" : {
-                  "COMMON_METHOD_NOT_ALLOWED" : {
-                    "description" : "허용되지 않은 HTTP 메서드입니다.",
-                    "summary" : "COMMON_METHOD_NOT_ALLOWED",
-                    "value" : {
-                      "error" : {
-                        "code" : "COMMON_METHOD_NOT_ALLOWED",
-                        "message" : "허용되지 않은 HTTP 메서드입니다."
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "description" : "Method Not Allowed"
-          },
-          "409" : {
-            "content" : {
-              "application/json" : {
-                "examples" : {
-                  "COMMON_CONFLICT" : {
-                    "description" : "요청이 현재 상태와 충돌합니다.",
-                    "summary" : "COMMON_CONFLICT",
-                    "value" : {
-                      "error" : {
-                        "code" : "COMMON_CONFLICT",
-                        "message" : "요청이 현재 상태와 충돌합니다."
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "description" : "Conflict"
-          },
-          "415" : {
-            "content" : {
-              "application/json" : {
-                "examples" : {
-                  "COMMON_UNSUPPORTED_MEDIA_TYPE" : {
-                    "description" : "지원하지 않는 미디어 타입입니다.",
-                    "summary" : "COMMON_UNSUPPORTED_MEDIA_TYPE",
-                    "value" : {
-                      "error" : {
-                        "code" : "COMMON_UNSUPPORTED_MEDIA_TYPE",
-                        "message" : "지원하지 않는 미디어 타입입니다."
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "description" : "Unsupported Media Type"
-          },
-          "500" : {
-            "content" : {
-              "application/json" : {
-                "examples" : {
-                  "COMMON_INTERNAL_SERVER_ERROR" : {
-                    "description" : "서버 내부 오류가 발생했습니다.",
-                    "summary" : "COMMON_INTERNAL_SERVER_ERROR",
-                    "value" : {
-                      "error" : {
-                        "code" : "COMMON_INTERNAL_SERVER_ERROR",
-                        "message" : "서버 내부 오류가 발생했습니다."
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "description" : "Internal Server Error"
-          },
-          "502" : {
-            "content" : {
-              "application/json" : {
-                "examples" : {
-                  "COMMON_BAD_GATEWAY" : {
-                    "description" : "외부 서비스 호출에 실패했습니다.",
-                    "summary" : "COMMON_BAD_GATEWAY",
-                    "value" : {
-                      "error" : {
-                        "code" : "COMMON_BAD_GATEWAY",
-                        "message" : "외부 서비스 호출에 실패했습니다."
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "description" : "Bad Gateway"
-          }
-        },
-        "security" : [ ],
-        "summary" : "dev 테스트 사용자 토큰 발급",
-        "tags" : [
-          "Auth (dev)"
-        ]
-      }
-    },
     "/api/auth/google/callback" : {
       "get" : {
         "description" : "code를 교환해 WEB 세션 토큰을 발급합니다. 성공: access/refresh HttpOnly 쿠키 설정 후 success-uri로 리다이렉트. 실패: failure-uri로 리다이렉트하며 `?error=`에는 `invalid_state`, `email_not_verified`, `email_conflict`, `google_error`, `server_error` 중 하나를 전달합니다.",
@@ -4287,7 +4022,7 @@
     },
     "/api/auth/web/logout" : {
       "post" : {
-        "description" : "refresh 쿠키를 폐기하고 access/refresh 쿠키를 정리합니다. 쿠키 유무·상태와 무관하게 204를 반환합니다(멱등).",
+        "description" : "refresh 쿠키를 폐기하고 access/refresh/legacy session 쿠키를 정리합니다. 쿠키 유무·상태와 무관하게 204를 반환합니다(멱등).",
         "operationId" : "webLogout",
         "parameters" : [
           {
@@ -4304,7 +4039,7 @@
         ],
         "responses" : {
           "204" : {
-            "description" : "로그아웃 성공(access/refresh 쿠키 정리)"
+            "description" : "로그아웃 성공(access/refresh/legacy session 쿠키 정리)"
           }
         },
         "security" : [ ],
@@ -4541,6 +4276,271 @@
         "summary" : "웹 세션 갱신",
         "tags" : [
           "Auth"
+        ]
+      }
+    },
+    "/api/dev/auth/token" : {
+      "post" : {
+        "description" : "허용된 테스트 사용자의 access token을 발급합니다. dev 계열 프로필에서만 동작하며, 호출자는 공유 시크릿 헤더로 제한합니다.",
+        "operationId" : "devIssueToken",
+        "parameters" : [
+          {
+            "description" : "호출자 제한용 공유 시크릿",
+            "in" : "header",
+            "name" : "X-Dev-Token-Secret",
+            "required" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "header",
+            "name" : "API-Version",
+            "schema" : {
+              "default" : "1.0.0",
+              "enum" : [
+                "1"
+              ],
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DevTokenRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DevTokenResponse"
+                }
+              }
+            },
+            "description" : "토큰 발급 성공"
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "COMMON_BAD_REQUEST" : {
+                    "description" : "요청 형식이 올바르지 않습니다.",
+                    "summary" : "COMMON_BAD_REQUEST",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_BAD_REQUEST",
+                        "message" : "요청 형식이 올바르지 않습니다."
+                      }
+                    }
+                  },
+                  "COMMON_VALIDATION_FAILED" : {
+                    "description" : "요청 값이 유효하지 않습니다.",
+                    "summary" : "COMMON_VALIDATION_FAILED",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_VALIDATION_FAILED",
+                        "message" : "요청 값이 유효하지 않습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "AUTH_DEV_TOKEN_SECRET_INVALID" : {
+                    "description" : "dev 토큰 시크릿이 유효하지 않습니다.",
+                    "summary" : "AUTH_DEV_TOKEN_SECRET_INVALID",
+                    "value" : {
+                      "error" : {
+                        "code" : "AUTH_DEV_TOKEN_SECRET_INVALID",
+                        "message" : "dev 토큰 시크릿이 유효하지 않습니다."
+                      }
+                    }
+                  },
+                  "AUTH_INVALID_TOKEN" : {
+                    "description" : "토큰이 유효하지 않습니다.",
+                    "summary" : "AUTH_INVALID_TOKEN",
+                    "value" : {
+                      "error" : {
+                        "code" : "AUTH_INVALID_TOKEN",
+                        "message" : "토큰이 유효하지 않습니다."
+                      }
+                    }
+                  },
+                  "AUTH_UNAUTHORIZED" : {
+                    "description" : "인증이 필요합니다.",
+                    "summary" : "AUTH_UNAUTHORIZED",
+                    "value" : {
+                      "error" : {
+                        "code" : "AUTH_UNAUTHORIZED",
+                        "message" : "인증이 필요합니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "AUTH_DEV_TOKEN_EMAIL_NOT_ALLOWED" : {
+                    "description" : "허용되지 않은 테스트 사용자입니다.",
+                    "summary" : "AUTH_DEV_TOKEN_EMAIL_NOT_ALLOWED",
+                    "value" : {
+                      "error" : {
+                        "code" : "AUTH_DEV_TOKEN_EMAIL_NOT_ALLOWED",
+                        "message" : "허용되지 않은 테스트 사용자입니다."
+                      }
+                    }
+                  },
+                  "AUTH_FORBIDDEN" : {
+                    "description" : "권한이 없습니다.",
+                    "summary" : "AUTH_FORBIDDEN",
+                    "value" : {
+                      "error" : {
+                        "code" : "AUTH_FORBIDDEN",
+                        "message" : "권한이 없습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "COMMON_NOT_FOUND" : {
+                    "description" : "요청한 리소스를 찾을 수 없습니다.",
+                    "summary" : "COMMON_NOT_FOUND",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_NOT_FOUND",
+                        "message" : "요청한 리소스를 찾을 수 없습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "405" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "COMMON_METHOD_NOT_ALLOWED" : {
+                    "description" : "허용되지 않은 HTTP 메서드입니다.",
+                    "summary" : "COMMON_METHOD_NOT_ALLOWED",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_METHOD_NOT_ALLOWED",
+                        "message" : "허용되지 않은 HTTP 메서드입니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Method Not Allowed"
+          },
+          "409" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "COMMON_CONFLICT" : {
+                    "description" : "요청이 현재 상태와 충돌합니다.",
+                    "summary" : "COMMON_CONFLICT",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONFLICT",
+                        "message" : "요청이 현재 상태와 충돌합니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "415" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "COMMON_UNSUPPORTED_MEDIA_TYPE" : {
+                    "description" : "지원하지 않는 미디어 타입입니다.",
+                    "summary" : "COMMON_UNSUPPORTED_MEDIA_TYPE",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_UNSUPPORTED_MEDIA_TYPE",
+                        "message" : "지원하지 않는 미디어 타입입니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Unsupported Media Type"
+          },
+          "500" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "COMMON_INTERNAL_SERVER_ERROR" : {
+                    "description" : "서버 내부 오류가 발생했습니다.",
+                    "summary" : "COMMON_INTERNAL_SERVER_ERROR",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_INTERNAL_SERVER_ERROR",
+                        "message" : "서버 내부 오류가 발생했습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Internal Server Error"
+          },
+          "502" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "COMMON_BAD_GATEWAY" : {
+                    "description" : "외부 서비스 호출에 실패했습니다.",
+                    "summary" : "COMMON_BAD_GATEWAY",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_BAD_GATEWAY",
+                        "message" : "외부 서비스 호출에 실패했습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Bad Gateway"
+          }
+        },
+        "security" : [ ],
+        "summary" : "dev 테스트 사용자 토큰 발급",
+        "tags" : [
+          "Auth (dev)"
         ]
       }
     },

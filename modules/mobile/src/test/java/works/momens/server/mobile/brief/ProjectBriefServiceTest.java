@@ -35,7 +35,8 @@ import works.momens.server.signal.SignalDigestReader;
 import works.momens.server.signal.SignalListService;
 import works.momens.server.signal.SignalSummary;
 import works.momens.server.signal.SignalSummaryPage;
-import works.momens.server.workspace.WorkspaceAccess;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
  * 브리프 조합 규칙 검증. 도메인 모듈 public API는 각자 통합 테스트에서 검증하므로 여기서는 모두 mock으로 두고 조합 규칙만 확인합니다. project 확인과
@@ -46,7 +47,7 @@ import works.momens.server.workspace.WorkspaceAccess;
 class ProjectBriefServiceTest {
 
   @Mock private ProjectReader projectReader;
-  @Mock private WorkspaceAccess workspaceAccess;
+  @Mock private WorkspaceMembershipReader workspaceMembershipReader;
   @Mock private SignalListService signalListService;
   @Mock private SignalDigestReader signalDigestReader;
   @Mock private TaskReader taskReader;
@@ -70,7 +71,7 @@ class ProjectBriefServiceTest {
     projectBriefService =
         new ProjectBriefService(
             projectReader,
-            workspaceAccess,
+            workspaceMembershipReader,
             signalListService,
             signalDigestReader,
             taskReader,
@@ -91,7 +92,7 @@ class ProjectBriefServiceTest {
   @Test
   void getBriefThrowsForbiddenWhenCallerIsNotWorkspaceMember() {
     when(projectReader.findSnapshot(PROJECT_ID)).thenReturn(Optional.of(snapshot()));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(false);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> projectBriefService.getBrief(PROJECT_ID, CALLER_ID))
         .isInstanceOf(BusinessException.class)
@@ -106,7 +107,8 @@ class ProjectBriefServiceTest {
     UUID taskId = UUID.randomUUID();
     when(projectReader.findSnapshot(PROJECT_ID)).thenReturn(Optional.of(snapshot));
     when(taskProgressReader.progressOf(PROJECT_ID)).thenReturn(OptionalInt.of(64));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     // change도 all 개수에 포함되고, 칩과 items에도 나온다.
     when(signalListService.countByCreatedRange(PROJECT_ID, CALLER_ID, TODAY_FROM, TODAY_TO))
         .thenReturn(Map.of("decision", 2L, "risk", 1L, "question", 2L, "change", 7L));
@@ -338,7 +340,8 @@ class ProjectBriefServiceTest {
   private void stubBriefBase() {
     when(projectReader.findSnapshot(PROJECT_ID)).thenReturn(Optional.of(snapshot()));
     lenient().when(taskProgressReader.progressOf(PROJECT_ID)).thenReturn(OptionalInt.of(64));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     lenient()
         .when(signalListService.countByCreatedRange(PROJECT_ID, CALLER_ID, TODAY_FROM, TODAY_TO))
         .thenReturn(Map.of());

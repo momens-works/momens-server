@@ -27,15 +27,16 @@ import works.momens.server.project.task.PatchTaskCommand;
 import works.momens.server.project.task.TaskOrigin;
 import works.momens.server.project.task.TaskSnapshot;
 import works.momens.server.project.task.UpdateTaskCommand;
-import works.momens.server.workspace.LabelAllocator;
-import works.momens.server.workspace.WorkspaceAccess;
+import works.momens.server.workspace.label.LabelAllocator;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 @ExtendWith(MockitoExtension.class)
 class TaskWriterImplTest {
 
   @Mock private TaskRepository taskRepository;
   @Mock private MilestoneDirectory milestoneDirectory;
-  @Mock private WorkspaceAccess workspaceAccess;
+  @Mock private WorkspaceMembershipReader workspaceMembershipReader;
   @Mock private LabelAllocator labelAllocator;
   @Mock private OutboxAppender outboxAppender;
   @InjectMocks private TaskWriterImpl taskWriter;
@@ -100,7 +101,8 @@ class TaskWriterImplTest {
     LocalDate dueDate = LocalDate.of(2026, 8, 31);
     when(labelAllocator.allocateMomLabel(workspaceId)).thenReturn("MOM-0002");
     when(milestoneDirectory.existsInProject(milestoneId, projectId)).thenReturn(true);
-    when(workspaceAccess.isMember(workspaceId, assigneeId)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(workspaceId, assigneeId))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
 
     TaskSnapshot created =
         taskWriter.create(
@@ -168,7 +170,7 @@ class TaskWriterImplTest {
         Task.create(
             CreateTaskCommand.manual(projectId, workspaceId, "기존", "pm", "high"), "MOM-0004");
     when(taskRepository.findByIdAndDeletedAtIsNull(task.getId())).thenReturn(Optional.of(task));
-    when(workspaceAccess.isMember(workspaceId, assigneeId)).thenReturn(false);
+    when(workspaceMembershipReader.roleOf(workspaceId, assigneeId)).thenReturn(Optional.empty());
 
     assertThatThrownBy(
             () ->

@@ -14,7 +14,7 @@ import works.momens.server.project.milestone.MilestoneDetail;
 import works.momens.server.project.task.TaskSnapshot;
 import works.momens.server.source.LegacySourceRefDetail;
 import works.momens.server.web.workspace.WorkspaceMemberView;
-import works.momens.server.workspace.WorkspaceDetail;
+import works.momens.server.workspace.core.WorkspaceDetail;
 
 /** 레거시 H023과 호환되는 웹 보드의 단일 read 응답입니다. */
 public record WorkspaceSnapshotResponse(

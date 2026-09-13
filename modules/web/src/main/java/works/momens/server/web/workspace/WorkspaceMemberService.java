@@ -8,11 +8,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.web.WorkspaceAccessChecker;
-import works.momens.server.workspace.ChangeMembershipRoleCommand;
-import works.momens.server.workspace.RemoveMembershipCommand;
 import works.momens.server.workspace.WorkspaceErrorCode;
-import works.momens.server.workspace.WorkspaceMembershipWriter;
-import works.momens.server.workspace.WorkspaceRole;
+import works.momens.server.workspace.membership.ChangeMembershipRoleCommand;
+import works.momens.server.workspace.membership.RemoveMembershipCommand;
+import works.momens.server.workspace.membership.WorkspaceMembershipWriter;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
  * 워크스페이스 멤버 조회와 변경을 조합하는 서비스입니다. 조회는 {@link WorkspaceMemberListService}에 위임하고, 변경은 {@code

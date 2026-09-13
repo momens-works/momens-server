@@ -10,7 +10,7 @@ import works.momens.server.source.SourceConnectionDetail;
 import works.momens.server.source.SourceConnectionReader;
 import works.momens.server.source.SourceInstaller;
 import works.momens.server.web.WorkspaceAccessChecker;
-import works.momens.server.workspace.WorkspaceRole;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
  * source 연결 조회와 연결 시작 흐름을 조합하는 서비스입니다.

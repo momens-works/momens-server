@@ -116,10 +116,15 @@ class WebAuthControllerTest {
   }
 
   @Test
-  @DisplayName("로그아웃은 받은 쿠키 헤더를 붙이고 204로 응답한다")
+  @DisplayName("로그아웃은 세 쿠키 만료 헤더를 붙이고 204로 응답한다")
   void webLogoutAppliesCookiesAndReturns204() throws Exception {
     when(webAuthSession.logout(any()))
-        .thenReturn(new WebAuthCookieUpdate(List.of("access_token=cleared; Path=/; HttpOnly")));
+        .thenReturn(
+            new WebAuthCookieUpdate(
+                List.of(
+                    "access_token=; Path=/; Max-Age=0; HttpOnly",
+                    "refresh_token=; Path=/api/auth; Max-Age=0; HttpOnly",
+                    "session_token=; Path=/; Max-Age=0; HttpOnly")));
 
     MvcResult result =
         mockMvc
@@ -129,7 +134,16 @@ class WebAuthControllerTest {
 
     verify(webAuthSession).logout(any());
     assertThat(result.getResponse().getHeaders("Set-Cookie"))
-        .containsExactly("access_token=cleared; Path=/; HttpOnly");
+        .anyMatch(
+            c -> c.startsWith("access_token=") && c.contains("Path=/;") && c.contains("Max-Age=0"))
+        .anyMatch(
+            c ->
+                c.startsWith("refresh_token=")
+                    && c.contains("Path=/api/auth;")
+                    && c.contains("Max-Age=0"))
+        .anyMatch(
+            c -> c.startsWith("session_token=") && c.contains("Path=/;") && c.contains("Max-Age=0"))
+        .hasSize(3);
   }
 
   @TestConfiguration

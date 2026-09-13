@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,8 +36,9 @@ import works.momens.server.memory.MemoryErrorCode;
 import works.momens.server.memory.MemorySeedSql;
 import works.momens.server.memory.MemoryWriter;
 import works.momens.server.outbox.OutboxAppender;
-import works.momens.server.workspace.LabelAllocator;
-import works.momens.server.workspace.WorkspaceAccess;
+import works.momens.server.workspace.label.LabelAllocator;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
  * 후보 리뷰·메모리 해결 write 계약을 레거시 {@code memory/service.go} 기준으로 검증합니다.
@@ -53,7 +55,7 @@ class MemoryWriterIntegrationTest extends AbstractPostgresIntegrationTest {
   @Autowired private MemoryWriter memoryWriter;
   @Autowired private TestEntityManager entityManager;
 
-  @MockitoBean private WorkspaceAccess workspaceAccess;
+  @MockitoBean private WorkspaceMembershipReader workspaceMembershipReader;
   @MockitoBean private LabelAllocator labelAllocator;
   @MockitoBean private EntityRelationWriter relationWriter;
   @MockitoBean private OutboxAppender outboxAppender;
@@ -65,7 +67,8 @@ class MemoryWriterIntegrationTest extends AbstractPostgresIntegrationTest {
   void setUpWorkspace() {
     workspaceId = MemorySeedSql.insertWorkspace(entityManager);
     userId = MemorySeedSql.insertUser(entityManager);
-    when(workspaceAccess.isMember(workspaceId, userId)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(workspaceId, userId))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
   }
 
   @Test
@@ -239,7 +242,7 @@ class MemoryWriterIntegrationTest extends AbstractPostgresIntegrationTest {
     UUID candidateId = MemorySeedSql.insertProposedCandidate(entityManager, workspaceId);
     memoryWriter.expire(candidateId, userId);
     UUID stranger = MemorySeedSql.insertUser(entityManager);
-    when(workspaceAccess.isMember(workspaceId, stranger)).thenReturn(false);
+    when(workspaceMembershipReader.roleOf(workspaceId, stranger)).thenReturn(Optional.empty());
 
     // 레거시는 멤버십(403)을 잠금·상태 검사(409)보다 먼저 봅니다. 순서가 바뀌면 비멤버가 후보 상태를 알게 됩니다.
     assertThatThrownBy(() -> memoryWriter.reject(candidateId, stranger, null))

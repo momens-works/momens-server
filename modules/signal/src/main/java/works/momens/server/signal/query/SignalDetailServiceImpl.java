@@ -15,7 +15,7 @@ import works.momens.server.signal.SignalDetailService;
 import works.momens.server.signal.SignalErrorCode;
 import works.momens.server.source.SourceRefReader;
 import works.momens.server.source.SourceRefView;
-import works.momens.server.workspace.WorkspaceAccess;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 /**
  * Signal 상세 조회 서비스.
@@ -32,7 +32,7 @@ class SignalDetailServiceImpl implements SignalDetailService {
 
   private final SignalRepository signalRepository;
   private final SignalEvidenceRepository signalEvidenceRepository;
-  private final WorkspaceAccess workspaceAccess;
+  private final WorkspaceMembershipReader workspaceMembershipReader;
   private final SourceRefReader sourceRefReader;
 
   @Override
@@ -46,7 +46,7 @@ class SignalDetailServiceImpl implements SignalDetailService {
                     new BusinessException(
                         SignalErrorCode.SIGNAL_NOT_FOUND,
                         Map.of("signal_id", signalId.toString())));
-    if (!workspaceAccess.isMember(signal.getWorkspaceId(), userId)) {
+    if (workspaceMembershipReader.roleOf(signal.getWorkspaceId(), userId).isEmpty()) {
       throw new BusinessException(
           CommonErrorCode.AUTH_FORBIDDEN, Map.of("signal_id", signalId.toString()));
     }

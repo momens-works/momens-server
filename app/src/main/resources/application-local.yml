@@ -31,7 +31,7 @@ momens:
 # local 프로필에만 둡니다. dev ingress는 `/` 전 경로를 공개 호스트로 라우팅하므로 그쪽에서 같은 설정을
 # 켜면 인증 없이 외부에 노출됩니다. dev·prod 노출 범위는 환경을 다시 세울 때 함께 정합니다.
 # SecurityConfig의 PUBLIC_PATHS에는 `/actuator/health/**`만 있어 `/actuator/metrics`는 보호 체인에
-# 걸립니다. 조회하려면 dev 토큰 엔드포인트(`POST /api/auth/dev/token`)로 받은 access token이 필요합니다.
+# 걸립니다. 조회하려면 dev 토큰 엔드포인트(`POST /api/dev/auth/token`)로 받은 access token이 필요합니다.
 # 이 동작은 MetricsEndpointIntegrationTest가 고정합니다.
 management:
   endpoints:

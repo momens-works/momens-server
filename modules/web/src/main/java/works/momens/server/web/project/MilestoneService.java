@@ -12,7 +12,7 @@ import works.momens.server.project.milestone.MilestoneCreator;
 import works.momens.server.project.milestone.MilestoneDetail;
 import works.momens.server.web.WorkspaceAccessChecker;
 import works.momens.server.web.project.dto.request.CreateMilestoneRequest;
-import works.momens.server.workspace.WorkspaceRole;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
  * 마일스톤 생성을 처리하는 조합 서비스입니다. project와 workspace의 public API를 조합하며, 도메인 정책은 직접 소유하지 않습니다.

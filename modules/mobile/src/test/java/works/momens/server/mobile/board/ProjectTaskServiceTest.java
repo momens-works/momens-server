@@ -39,7 +39,8 @@ import works.momens.server.project.task.TaskWriter;
 import works.momens.server.project.task.UpdateTaskCommand;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
-import works.momens.server.workspace.WorkspaceAccess;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
  * 태스크 보드 조회와 생성, 상세 조회 조합 규칙 검증. 도메인 모듈 public API는 mock으로 두고, 조합 규칙(권한 검사 순서, 그룹 구성, priority 매핑,
@@ -49,7 +50,7 @@ import works.momens.server.workspace.WorkspaceAccess;
 class ProjectTaskServiceTest {
 
   @Mock private ProjectReader projectReader;
-  @Mock private WorkspaceAccess workspaceAccess;
+  @Mock private WorkspaceMembershipReader workspaceMembershipReader;
   @Mock private TaskReader taskReader;
   @Mock private TaskWriter taskWriter;
   @Mock private UserService userService;
@@ -76,7 +77,7 @@ class ProjectTaskServiceTest {
   @Test
   void getBoardThrowsForbiddenWhenCallerIsNotMember() {
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.of(WORKSPACE_ID));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(false);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> projectTaskService.getBoard(PROJECT_ID, CALLER_ID))
         .isInstanceOf(BusinessException.class)
@@ -173,7 +174,7 @@ class ProjectTaskServiceTest {
   @Test
   void createTaskThrowsForbiddenWhenCallerIsNotMember() {
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.of(WORKSPACE_ID));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(false);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> projectTaskService.createTask(PROJECT_ID, CALLER_ID, "제목", null, null))
         .isInstanceOf(BusinessException.class)
@@ -195,7 +196,7 @@ class ProjectTaskServiceTest {
   void getTaskDetailThrowsForbiddenForNonMemberOfTaskWorkspace() {
     when(taskReader.findScope(TASK_ID))
         .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(false);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> projectTaskService.getTaskDetail(TASK_ID, CALLER_ID))
         .isInstanceOf(BusinessException.class)
@@ -212,7 +213,8 @@ class ProjectTaskServiceTest {
     when(taskReader.findScope(TASK_ID))
         .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
     when(taskReader.findDetail(TASK_ID)).thenReturn(Optional.of(detail(null, null, List.of())));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
 
     MobileTaskDetailView view = projectTaskService.getTaskDetail(TASK_ID, CALLER_ID);
 
@@ -231,7 +233,8 @@ class ProjectTaskServiceTest {
     when(taskReader.findScope(TASK_ID))
         .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
     when(taskReader.findDetail(TASK_ID)).thenReturn(Optional.of(detail(null, null, List.of())));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
 
     assertThat(projectTaskService.getTaskDetail(TASK_ID, CALLER_ID).draftStatus())
         .isEqualTo(DraftStatus.READY);
@@ -249,7 +252,8 @@ class ProjectTaskServiceTest {
                     assigneeId,
                     "화면 흐름 정리",
                     List.of(new TaskDetail.ChecklistItem(UUID.randomUUID(), "완료기준", true)))));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     when(userService.getProfile(assigneeId)).thenReturn(profile(assigneeId, "김규일"));
 
     MobileTaskDetail result = projectTaskService.getTaskDetail(TASK_ID, CALLER_ID).detail();
@@ -270,7 +274,8 @@ class ProjectTaskServiceTest {
     when(taskReader.findScope(TASK_ID))
         .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
     when(taskReader.findDetail(TASK_ID)).thenReturn(Optional.of(detail(null, null, List.of())));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
 
     MobileTaskDetail result = projectTaskService.getTaskDetail(TASK_ID, CALLER_ID).detail();
 
@@ -296,7 +301,8 @@ class ProjectTaskServiceTest {
                     List.of(),
                     List.of(new TaskDetail.OpenQuestion(questionId, "권한 거부 시 대체 흐름을 둘지 검토 필요")),
                     "권한 거부 흐름을 PM과 확정하세요.")));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
 
     MobileTaskDetail result = projectTaskService.getTaskDetail(TASK_ID, CALLER_ID).detail();
 
@@ -319,7 +325,8 @@ class ProjectTaskServiceTest {
     when(taskReader.findScope(TASK_ID))
         .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
     when(taskReader.findDetail(TASK_ID)).thenReturn(Optional.of(detail(null, null, List.of())));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     when(taskMaterialAssembler.getMaterials(WORKSPACE_ID, TASK_ID)).thenReturn(List.of(material));
 
     List<MobileTaskDetail.Material> materials =
@@ -346,7 +353,7 @@ class ProjectTaskServiceTest {
   void updateTaskThrowsForbiddenWhenCallerIsNotMember() {
     when(taskReader.findScope(TASK_ID))
         .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(false);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID)).thenReturn(Optional.empty());
 
     assertThatThrownBy(
             () ->
@@ -361,7 +368,8 @@ class ProjectTaskServiceTest {
   void updateTaskSendsFullEditableStateToEditor() {
     when(taskReader.findScope(TASK_ID))
         .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     List<ChecklistEdit> items = List.of(new ChecklistEdit(null, "A", true));
 
     projectTaskService.updateTask(
@@ -398,7 +406,8 @@ class ProjectTaskServiceTest {
     UUID itemId = UUID.randomUUID();
     when(taskReader.findScope(TASK_ID))
         .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     when(taskWriter.toggleChecklistItem(TASK_ID, itemId, true))
         .thenReturn(
             detail(null, null, List.of(new TaskDetail.ChecklistItem(itemId, "완료기준", true))));
@@ -469,6 +478,7 @@ class ProjectTaskServiceTest {
 
   private void stubMember() {
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.of(WORKSPACE_ID));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
   }
 }

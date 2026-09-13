@@ -15,6 +15,7 @@ import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.context.EntityRelationReader;
+import works.momens.server.workspace.WorkspaceSeedSql;
 
 /**
  * 엔티티 연결 조회 public API를 검증합니다.
@@ -36,7 +37,7 @@ class EntityRelationReaderIntegrationTest extends AbstractPostgresIntegrationTes
   @Test
   @DisplayName("태스크에 연결된 source_ref id를 링크 생성 최신순으로 반환한다")
   void findLinkedSourceRefIdsReturnsNewestLinkFirst() {
-    UUID workspaceId = UUID.randomUUID();
+    UUID workspaceId = insertWorkspace();
     UUID taskId = UUID.randomUUID();
     UUID earlier = UUID.randomUUID();
     UUID later = UUID.randomUUID();
@@ -51,7 +52,7 @@ class EntityRelationReaderIntegrationTest extends AbstractPostgresIntegrationTes
   @Test
   @DisplayName("소프트 삭제된 링크와 다른 워크스페이스의 링크는 제외한다")
   void findLinkedSourceRefIdsExcludesDeletedAndOtherWorkspace() {
-    UUID workspaceId = UUID.randomUUID();
+    UUID workspaceId = insertWorkspace();
     UUID taskId = UUID.randomUUID();
     UUID live = UUID.randomUUID();
     insertLink(workspaceId, taskId, live, Instant.parse("2026-07-01T00:00:00Z"), null);
@@ -62,7 +63,7 @@ class EntityRelationReaderIntegrationTest extends AbstractPostgresIntegrationTes
         Instant.parse("2026-07-02T00:00:00Z"),
         Instant.now());
     insertLink(
-        UUID.randomUUID(), taskId, UUID.randomUUID(), Instant.parse("2026-07-03T00:00:00Z"), null);
+        insertWorkspace(), taskId, UUID.randomUUID(), Instant.parse("2026-07-03T00:00:00Z"), null);
 
     List<UUID> ids = linkedIds(workspaceId, taskId);
 
@@ -72,7 +73,7 @@ class EntityRelationReaderIntegrationTest extends AbstractPostgresIntegrationTes
   @Test
   @DisplayName("태스크와 source_ref 연결이 아닌 행은 제외한다")
   void findLinkedSourceRefIdsExcludesOtherRelationKinds() {
-    UUID workspaceId = UUID.randomUUID();
+    UUID workspaceId = insertWorkspace();
     UUID taskId = UUID.randomUUID();
     UUID linked = UUID.randomUUID();
     insertLink(workspaceId, taskId, linked, Instant.parse("2026-07-01T00:00:00Z"), null);
@@ -114,7 +115,7 @@ class EntityRelationReaderIntegrationTest extends AbstractPostgresIntegrationTes
   @Test
   @DisplayName("여러 태스크의 연결을 한 번에 태스크별로 묶어 반환하고 연결이 없는 태스크는 담지 않는다")
   void findLinkedSourceRefIdsGroupsByTaskInOneQuery() {
-    UUID workspaceId = UUID.randomUUID();
+    UUID workspaceId = insertWorkspace();
     UUID twoLinks = UUID.randomUUID();
     UUID oneLink = UUID.randomUUID();
     UUID noLink = UUID.randomUUID();
@@ -158,6 +159,10 @@ class EntityRelationReaderIntegrationTest extends AbstractPostgresIntegrationTes
         sourceRefId,
         createdAt,
         deletedAt);
+  }
+
+  private UUID insertWorkspace() {
+    return WorkspaceSeedSql.insertWorkspace(entityManager, "ws-" + UUID.randomUUID());
   }
 
   private void insertRelation(

@@ -57,8 +57,7 @@ class OpenApiOperationIdTest {
       Map.of(
           "/api/mobile/", "mobile",
           "/api/auth/web/", "web",
-          "/api/dev/", "dev",
-          "/api/auth/dev/", "dev");
+          "/api/dev/", "dev");
 
   private static final Pattern CLIENT_PREFIX_PATTERN = Pattern.compile("^(mobile|web|dev)[A-Z]");
 

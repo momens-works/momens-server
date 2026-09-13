@@ -166,7 +166,7 @@ milestone에는 `owner_id` 컬럼 자체가 없어 폴백할 대상이 없다. �
 보호 체인이 access token을 읽고 컨트롤러가 `CurrentUser.id(principal)`로 `users.id`를 받는다.
 전환기에는 레거시 `session_token` 쿠키를 함께 수용한다([ADR-0017](../../adr/0017-transitional-legacy-session-token-acceptance.md)).
 
-권한 판정은 `WorkspaceAccess.isMember` 한 번이다. 레거시는 9개 서비스가 각각 `RequireMember`를
+권한 판정은 `WorkspaceMembershipReader.roleOf` 한 번이다. 레거시는 9개 서비스가 각각 `RequireMember`를
 호출하지만 결과가 같고 쿼리만 늘어난다.
 
 ### 4.3 응답 body
@@ -314,7 +314,7 @@ UUID라 열거 위험이 없다는 판단도 선례를 따른다.
 | 구간 | 쿼리 수 |
 | --- | --- |
 | 워크스페이스 존재 확인 | 1 |
-| 멤버십 판정 (`WorkspaceAccess.isMember`) | 1 |
+| 멤버십 판정 (`WorkspaceMembershipReader.roleOf`) | 1 |
 | 목록 7종 (members·projects·milestones·tasks·blockers·candidates·memories) | 7 |
 | `task_contexts` edge 스캔 | 1 |
 | 번들 하이드레이션 (memory·source_ref) | 2 |

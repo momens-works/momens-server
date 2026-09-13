@@ -2,6 +2,7 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
     id 'java-library'
+    id 'java-test-fixtures'
 }
 
 dependencies {
@@ -25,4 +26,10 @@ dependencies {
 
     // common testFixtures의 Testcontainers 통합테스트 베이스를 재사용합니다.
     testImplementation testFixtures(project(':common'))
+
+    // workspaces와 users를 참조하는 다른 모듈의 통합 테스트에서 외래 키 제약을 만족하는 행을 저장할 수 있도록
+    // testFixtures를 제공합니다. WorkspaceSeedSql이 TestEntityManager를 매개변수로 받으므로 소비 모듈에서도
+    // 해당 타입을 사용할 수 있도록 api로 선언합니다.
+    testFixturesApi platform(SpringBootPlugin.BOM_COORDINATES)
+    testFixturesApi 'org.springframework.boot:spring-boot-starter-data-jpa-test'
 }

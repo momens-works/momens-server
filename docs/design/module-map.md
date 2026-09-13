@@ -58,7 +58,7 @@
   - `/api/auth`와 `/api/me`는 이 원칙보다 먼저 만들어져 capability 모듈에 있었고 `MOM-0852`에서
     표면별로 갈랐다. 웹 로그인·세션 갱신·로그아웃은 `web`, 모바일 토큰 교환·재발급·로그아웃은
     `mobile`, `/api/me` 조회·수정은 `web`이 소유하며 `auth`·`user`는 도메인과 public API만 소유한다.
-  - 예외는 dev 도구 표면 하나다. `POST /api/auth/dev/token`은 클라이언트가 호출하는 표면이 아니라
+  - 예외는 dev 도구 표면 하나다. `POST /api/dev/auth/token`은 클라이언트가 호출하는 표면이 아니라
     테스트 도구이고 운영과 같은 발급 경로를 재사용해야 해서 `auth`(`auth.dev`)가 계속 소유한다.
     `signal`의 dev Signal 생성(`signal.dev`)과 같은 취급이다.
 - `web`·`mobile` → `auth` public API. 표면은 인증 결과만 응답으로 옮기고, 토큰 정책과 웹 전송 정책
@@ -81,7 +81,7 @@
   dev 쓰기 public API(`DevSourceRefWriter`)에도 위임한다.
 - `notification`은 `outbox`의 조회 public API(`OutboxEventReader`)로 `signal.created`를 소비하고,
   `signal`의 `SignalReader`로 Signal을 hydrate하며, `project`의 프로젝트명 조회와 `workspace`의
-  `WorkspaceAccess.listMemberships`로 수신자를 결정한다. `outbox`는 다른 도메인 모듈을 참조하지 않는다.
+  `WorkspaceMembershipReader.listMemberUserIds`로 수신자를 결정한다. `outbox`는 다른 도메인 모듈을 참조하지 않는다.
 - `retrieval`은 `project`·`memory`의 도메인 write 이후 발행(event 또는 public API)을 받는다.
 - `onboarding`은 `workspace`, `project`, `memory`의 public API를 조합해 워크스페이스 생성 작업을 하나의
   트랜잭션으로 묶는다. 해당 조합을 `workspace`에 두면 `project`와 `memory`가 이미 `workspace`를 참조하고 있어
@@ -146,7 +146,7 @@
 - JWT 발급/검증
 - SecurityFilterChain, 인증 필터, 공개/보호 엔드포인트 분리
 - logout
-- dev 전용 토큰 발급 엔드포인트(`POST /api/auth/dev/token`, MOM-90). dev 계열 프로필(`@DevOnly`)에서만 등록되고 공유 시크릿 헤더와 테스트 사용자 allowlist로 제한한다. prod에는 존재하지 않는다. 클라이언트 표면이 아니라 테스트 도구라 표면 모듈로 옮기지 않고 `auth.dev`에 둔다(MOM-0852).
+- dev 전용 토큰 발급 엔드포인트(`POST /api/dev/auth/token`, MOM-90). dev 계열 프로필(`@DevOnly`)에서만 등록되고 공유 시크릿 헤더와 테스트 사용자 allowlist로 제한한다. prod에는 존재하지 않는다. 클라이언트 표면이 아니라 테스트 도구라 표면 모듈로 옮기지 않고 `auth.dev`에 둔다(MOM-0852).
 - 웹·모바일 인증 public API(`WebAuthSession`, `MobileAuthService`). 클라이언트가 호출하는 HTTP 표면은 `web`·`mobile`이 소유하고(MOM-0852), 이 모듈은 인증 로직과 토큰·쿠키·리다이렉트 정책을 소유한다.
 
 프로필 정책은 `user`가 소유하고, `auth`는 세션·보안만 책임진다. 인증 세션·전송
@@ -178,12 +178,19 @@ project나 task가 속한 workspace를 찾는 책임은 해당 리소스를 소�
 권한 확인·라벨 발급이 필요할 때 `workspace`의 public API를 사용하고, `workspace` 내부
 repository를 직접 참조하지 않는다.
 
-내부는 도메인 하위 경계로 논리 분리했다(MOM-70).
+내부는 하위 도메인별 named interface로 논리적으로 분리했습니다(MOM-70, MOM-0894).
 
-- 멤버십(`access`)과 라벨 발급(`label`)은 Spring Modulith nested 논리 모듈이고, 워크스페이스
-  코어는 `internal`에 둔다. 공개 계약은 모듈 root의 public API 그대로다.
-- 하위 도메인마다 aggregate가 하나씩이고(`WorkspaceMember`, `WorkspaceLabelSequence`,
-  `Workspace`) 트랜잭션은 자기 aggregate 안에 닫힌다. 예외는 라벨 발급 한 곳으로, 발급이
+- 공개 계약은 `core`(워크스페이스와 slug), `membership`(멤버십과 권한), `invitation`(초대),
+  `label`(라벨 발급) 4개 패키지에 두고, 구현은 각 하위 도메인의 `internal` 패키지에 둡니다. 모듈
+  루트에는 세 하위 도메인이 공통으로 사용하는 상수인 `WorkspaceErrorCode`만 남깁니다. 초대 이메일
+  발송을 담당하는 `email`은 외부에 공개할 계약이 없으므로 nested 모듈로 유지합니다.
+- Modulith는 named interface로 분리한 하위 도메인 간 의존 방향을 검증하지 못하므로
+  `WorkspaceSubDomainBoundaryTests`에서 이를 고정합니다. 허용되는 의존 방향은 `core`에서
+  `membership`으로, `invitation`에서 `core`, `membership`, `email`로 향하는 경우가 유일합니다.
+- 사용자가 속한 워크스페이스를 조회할 때는 `membership`의 공개 계약으로 워크스페이스 ID를 확정한 뒤,
+  `core`가 자신의 테이블을 조회합니다. `workspace_members`를 직접 조인하지 않습니다(MOM-0894).
+- 각 하위 도메인은 하나의 aggregate(`Workspace`, `WorkspaceMember`, `WorkspaceInvitation`,
+  `WorkspaceLabelSequence`)를 가지며, 트랜잭션 경계는 해당 aggregate 내부로 한정합니다. 예외는 라벨 발급 한 곳으로, 발급이
   단일 문장(UPSERT)으로 호출자 트랜잭션에 참여한다(MANDATORY). 라벨이 INSERT되는 행에 동기
   반환값으로 들어가고 실패 시 번호가 함께 되돌아가야 해서이고, 레거시 `BEFORE INSERT` 트리거와
   같은 시맨틱을 유지하는 의도된 예외다.
@@ -214,8 +221,9 @@ projection도 함께 발생한다. 모델 언어와 변경 이유가 분리될 �
 - 상태는 `TaskStatus` enum에서 정의하며, `tasks.status`의 DB CHECK 제약과 동일한 5가지 값을 사용한다.
 - 진행률 분모는 상태를 개별적으로 나열하지 않고 `TaskStatus` 전체에서 `cancelled`만 제외해 계산한다.
   이렇게 하면 상태가 추가되더라도 별도 수정 없이 계산 대상에 포함된다.
-- 보드의 그룹, 노출 순서, 라벨은 화면 정책이므로 계속 mobile의 `BoardStatus`에서 관리한다. `BoardStatus`와
-  수정 요청 검증(`@Pattern`)을 `TaskStatus`를 기준으로 생성하도록 개선하는 작업은 후속으로 진행한다.
+- 보드의 그룹, 표시 순서와 라벨은 화면 정책이므로 mobile 모듈의 `BoardStatus`에서 관리한다. `BoardStatus`와
+  수정 요청 검증용 `@Pattern`이 `TaskStatus`를 참조하도록 변경하는 작업은 후속 티켓에서 진행한다
+  ([ADR-0022](../adr/0022-column-value-set-ownership.md)).
 - 진행률은 task 저장소의 상태별 집계 한 번으로 전체 태스크 수와 `done` 태스크 수를 함께 계산한다. 목록
   조회와 동일한 조건(projectId, status, 소프트 삭제 제외)을 한 쿼리에 고정해 목록과 진행률이 항상 같은 기준을
   쓰게 하고, 개수만 필요하므로 본문과 정렬은 읽지 않는다. 두 값을 각각 조회하면 기준이 갈릴 수 있다
@@ -235,7 +243,7 @@ projection도 함께 발생한다. 모델 언어와 변경 이유가 분리될 �
   있게 createdAt을 포함한다(MOM-67). 쓰기 public API는 `TaskWriter` 하나이며, 표면별 생성 정책은
   `CreateTaskCommand`로 전달한다. 생성 시 workspace의 `LabelAllocator`로 MOM 라벨을 발급한다.
   태스크 소속 확인은 `TaskReader.findScope`가 workspaceId와 projectId만 projection한다(MOM-0923).
-- project 목록 조회는 호출하는 쪽이 멤버십 조회(`WorkspaceAccess.listUserMemberships`)로
+- project 목록 조회는 호출하는 쪽이 멤버십 조회(`WorkspaceMembershipReader.listUserMemberships`)로
   확정한 workspace id 목록을 받아 자기 테이블에서 조회한다. 멤버십을 이 모듈이 다시 읽지
   않아서 호출 쪽 멤버십 스냅샷과 목록 기준이 항상 같다. 접근 범위(멤버십)는 여전히 호출 쪽이
   넘기지만, task 생성이 `LabelAllocator`를 쓰면서 project는 workspace public API에 런타임으로
@@ -260,8 +268,8 @@ capability의 물리 경계로 유지하고, 배포 단위도 나누지 않는�
   task는 프로젝트 생존·workspace 조회에 `ProjectReader`, 마일스톤 소속 검증에 `MilestoneDirectory`를
   사용한다. milestone은 기본 소유자 조회에 `ProjectOwnerReader`를 사용한다. task repository가
   `Project`·`Milestone` 엔티티를 JPQL 문자열로 직접 조회하던 숨은 결합은 두 공개 계약으로 제거했다.
-- taskupdate는 task의 `TaskReader.findScope`로 workspace·project 소속을 얻고, task 내부 저장소를 직접
-  참조하지 않는다. 허용 방향은 `taskupdate → task`이며 task는 taskupdate를 참조하지 않는다.
+- taskupdate는 호출자가 확정한 workspace와 project 소속을 전달받아 사용하며, task 내부 저장소를 직접
+  참조하지 않는다. 허용하는 의존 방향은 `taskupdate → task`이고, task는 taskupdate를 참조하지 않는다.
 - blocker는 workspace id를 직접 가진 읽기 모델이라 다른 project 하위 경계에 의존하지 않는다.
 - `HealthStatus`와 소유자 멤버십 검증은 project와 milestone의 구현 계약이다. 현재 저장값과 검증 동작은
   같아도 변경 이유가 다르므로 각 하위 경계가 독립적으로 소유한다.
@@ -328,7 +336,7 @@ dispatch`(`PushDispatcher`: 수신 설치별 발송 기록 enqueue와 발송 패
 기록)는 dispatch가 소유하고, Firebase SDK 타입은 `fcm` 밖으로 새지 않는다.
 - 의존 방향: `mobile`이 기기 등록·해제 HTTP 표면을 이 모듈의 public API에 위임하고, 이 모듈은
   `outbox`(`OutboxEventReader`), `signal`(`SignalReader` hydrate), `project`(프로젝트명 조회),
-  `workspace`(`WorkspaceAccess.listMemberships` 수신자 결정)의 public API를 사용한다.
+  `workspace`(`WorkspaceMembershipReader.listMemberUserIds` 수신자 결정)의 public API를 사용한다.
 
 ### mobile
 
@@ -379,8 +387,8 @@ dispatch`(`PushDispatcher`: 수신 설치별 발송 기록 enqueue와 발송 패
   모듈에 두고 해당 도메인의 public API에 위임한다.
 
 내부는 화면(entry point) 단위로 논리 분리한다(MOM-0799). `bootstrap`·`roster`·`board`·`brief`·
-`signal`·`pushdevice`는 각각 Spring Modulith nested 논리 모듈이고, `workspace`/`signal`의 nested
-분리(MOM-70·MOM-65)나 `project`의 하위 도메인 분리(MOM-71·MOM-0887)와 달리 aggregate가 아니라 화면 단위
+`signal`·`pushdevice`는 각각 Spring Modulith nested 논리 모듈이고, `workspace`의 하위 도메인
+분리(MOM-70, MOM-0894)나 `signal`의 nested 분리(MOM-65)나 `project`의 하위 도메인 분리(MOM-71·MOM-0887)와 달리 aggregate가 아니라 화면 단위
 조합 슬라이스다. 다른 모듈에 공개할
 계약이 없으므로 각 nested 패키지는 Controller·Docs·조합 서비스·DTO를 한곳에 모은다. 조합 서비스처럼
 같은 nested 패키지 안에서만 쓰는 타입은 package-private으로 닫아 두고, `dto` 서브패키지가 참조하는

@@ -66,8 +66,9 @@ interface WebAuthControllerDocs {
   @Operation(
       operationId = "webLogout",
       summary = "웹 로그아웃",
-      description = "refresh 쿠키를 폐기하고 access/refresh 쿠키를 정리합니다. 쿠키 유무·상태와 무관하게 204를 반환합니다(멱등).")
-  @ApiResponse(responseCode = "204", description = "로그아웃 성공(access/refresh 쿠키 정리)")
+      description =
+          "refresh 쿠키를 폐기하고 access/refresh/legacy session 쿠키를 정리합니다. 쿠키 유무·상태와 무관하게 204를 반환합니다(멱등).")
+  @ApiResponse(responseCode = "204", description = "로그아웃 성공(access/refresh/legacy session 쿠키 정리)")
   @SecurityRequirements
   ResponseEntity<Void> webLogout(@Parameter(hidden = true) HttpServletRequest request);
 }

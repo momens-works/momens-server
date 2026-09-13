@@ -6,7 +6,7 @@
 
 > **2026-08-23**: prod 스키마의 DDL 소유권에 관한 결정은 [ADR-0019](0019-prod-schema-ownership-transfer.md)로 대체되었습니다. 스키마 주도권이 momens-server로 이전되어 이 레포지토리의 마이그레이션이 운영 DDL로 사용되므로, 본문에서 "prod에는 레거시 마이그레이션으로 반영한다"고 설명하는 네 곳은 더 이상 현재 사실과 맞지 않습니다. `provider`의 CHECK 제약에 허용 값을 추가하거나 `user_identities(user_id)` 인덱스를 생성할 때 레거시 마이그레이션도 함께 수정해야 한다는 설명도 마찬가지입니다.
 >
-> 본문에서 참조하는 `MOM-0831`은 취소되었으며, 해당 범위는 `MOM-0909`의 부트스트랩 작업에 포함되었습니다. `V20260810090000__create_user_identities.sql`은 부트스트랩 실행 목록에 등록되어 momens-server의 Flyway가 운영 환경에 적용합니다.
+> 본문에서 참조하는 `MOM-0831`은 취소되었으며, 해당 범위는 `MOM-0909`의 부트스트랩 작업에 포함되었습니다. `V20260810090000__create_user_identities.sql`은 부트스트랩 실행 집합에 포함되어 2026-09-04에 momens-server의 Flyway가 운영 환경에 적용했습니다.
 >
 > 식별 키를 Google `sub`으로 전환하는 결정, `users`와 `user_identities`를 같은 트랜잭션에서 생성하는 결정, `user_identities`를 먼저 생성한 뒤 서버를 배포하는 순서와 그 근거, `user_identities(user_id)` 인덱스를 생성하지 않는 결정은 계속 유효합니다.
 

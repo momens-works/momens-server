@@ -2,7 +2,7 @@ package works.momens.server.web.workspace.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
-import works.momens.server.workspace.WorkspaceDetail;
+import works.momens.server.workspace.core.WorkspaceDetail;
 
 /** {@code GET /api/workspaces} 응답. 빈 결과는 {@code null}이 아니라 빈 배열입니다. */
 @Schema(description = "워크스페이스 목록 응답")

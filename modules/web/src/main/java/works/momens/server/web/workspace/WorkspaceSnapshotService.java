@@ -28,9 +28,9 @@ import works.momens.server.project.task.TaskSnapshot;
 import works.momens.server.source.LegacySourceRefDetail;
 import works.momens.server.source.SourceRefReader;
 import works.momens.server.web.workspace.dto.response.WorkspaceSnapshotResponse;
-import works.momens.server.workspace.WorkspaceDetail;
 import works.momens.server.workspace.WorkspaceErrorCode;
-import works.momens.server.workspace.WorkspaceReader;
+import works.momens.server.workspace.core.WorkspaceDetail;
+import works.momens.server.workspace.core.WorkspaceReader;
 
 /** 웹 보드가 한 번의 요청으로 읽는 workspace snapshot을 조합합니다. */
 @Service

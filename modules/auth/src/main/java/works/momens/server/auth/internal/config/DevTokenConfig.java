@@ -23,13 +23,13 @@ import works.momens.server.common.config.DevOnly;
 class DevTokenConfig {
 
   /**
-   * dev 토큰 엔드포인트 전용 공개 체인. {@code /api/auth/dev/token}만 매칭하고 자원서버를 얹지 않은 채 permitAll로 둡니다. 호출자 제한은
+   * dev 토큰 엔드포인트 전용 공개 체인. {@code /api/dev/auth/token}만 매칭하고 자원서버를 얹지 않은 채 permitAll로 둡니다. 호출자 제한은
    * 컨트롤러가 공유 시크릿 헤더로 처리합니다. 가장 좁은 매처라 공개 체인(@Order(1))·보호 체인(@Order(2))보다 앞에 둡니다.
    */
   @Bean
   @Order(0)
   SecurityFilterChain devTokenSecurityFilterChain(HttpSecurity http) throws Exception {
-    http.securityMatcher("/api/auth/dev/token")
+    http.securityMatcher("/api/dev/auth/token")
         .cors(Customizer.withDefaults())
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

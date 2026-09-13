@@ -31,8 +31,7 @@ import works.momens.server.notification.dispatch.PushDispatcher;
 import works.momens.server.outbox.OutboxEventReader;
 import works.momens.server.outbox.OutboxEventView;
 import works.momens.server.signal.SignalReader;
-import works.momens.server.workspace.WorkspaceAccess;
-import works.momens.server.workspace.WorkspaceMembership;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 /**
  * signal.created 소비의 수신자 결정(발송 위임), watermark 전진·시드를 실제 PostgreSQL(offset 원장)로 검증합니다.
@@ -60,7 +59,7 @@ class SignalCreatedDeliveryMaterializerIntegrationTest extends AbstractPostgresI
   @MockitoBean private PushInstallationDirectory pushInstallationDirectory;
   @MockitoBean private OutboxEventReader outboxEventReader;
   @MockitoBean private SignalReader signalReader;
-  @MockitoBean private WorkspaceAccess workspaceAccess;
+  @MockitoBean private WorkspaceMembershipReader workspaceMembershipReader;
 
   @BeforeEach
   void stubDefaults() {
@@ -166,11 +165,8 @@ class SignalCreatedDeliveryMaterializerIntegrationTest extends AbstractPostgresI
                     "결제 정책 결정 3일째 보류",
                     "설명",
                     "전체 영향")));
-    when(workspaceAccess.listMemberships(WORKSPACE_ID))
-        .thenReturn(
-            List.of(
-                new WorkspaceMembership(MEMBER_A, "owner"),
-                new WorkspaceMembership(MEMBER_B, "member")));
+    when(workspaceMembershipReader.listMemberUserIds(WORKSPACE_ID))
+        .thenReturn(List.of(MEMBER_A, MEMBER_B));
   }
 
   private static OutboxEventView signalCreatedEvent() {

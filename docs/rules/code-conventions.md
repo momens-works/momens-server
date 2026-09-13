@@ -87,7 +87,8 @@
   - 인증 정보 없음 → `AUTH_UNAUTHORIZED` (401)
   - 토큰 무효·만료·형식 오류 → `AUTH_INVALID_TOKEN` (401)
   - 인가 거부 → `AUTH_FORBIDDEN` (403)
-- 권한(RBAC) 검사는 service에서 workspace public API로 합니다(현재 사용자 = userId만 신뢰). 세부는 MOM-31 후속.
+- 요청자의 권한(RBAC)은 컨트롤러가 있는 `web`과 `mobile` 모듈의 조합 서비스에서 확인합니다(현재 사용자는 `userId`만 신뢰). 도메인 모듈의 쓰기 public API는 요청자의 권한을 확인하지 않으며, 호출하는 쪽에서 권한을 확인한 뒤 확정한 `workspaceId`를 전달받습니다.
+- 워크스페이스 권한 부족으로 `AUTH_FORBIDDEN`을 반환할 때 포함하는 `details`는 [서버 명세 > API 응답과 에러 코드](../spec/api-response-error-codes.md)의 「권한 details」 절을 따릅니다. `web` 모듈에서는 `WorkspaceAccessChecker`가 이 형식을 관리하며, 다른 클래스가 권한 거부 응답을 직접 생성하지 않는지는 `WebForbiddenResponseBoundaryTests`에서 검증한다.
 
 ### 테스트 인증 주입
 

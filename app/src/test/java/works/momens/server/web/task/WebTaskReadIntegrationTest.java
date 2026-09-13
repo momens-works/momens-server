@@ -157,7 +157,9 @@ class WebTaskReadIntegrationTest extends AbstractPostgresIntegrationTest {
     mockMvc
         .perform(authorized(get("/api/tasks/{taskId}", taskId), caller.id()))
         .andExpect(status().isForbidden())
-        .andExpect(jsonPath("$.error.code").value("AUTH_FORBIDDEN"));
+        .andExpect(jsonPath("$.error.code").value("AUTH_FORBIDDEN"))
+        .andExpect(jsonPath("$.error.details.workspace_id").value(workspaceId.toString()))
+        .andExpect(jsonPath("$.error.details.required_role").value("member"));
   }
 
   @Test

@@ -25,7 +25,7 @@ import works.momens.server.project.task.TaskWriter;
 import works.momens.server.project.task.UpdateTaskCommand;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
-import works.momens.server.workspace.WorkspaceAccess;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 /**
  * 모바일 태스크 표면(보드 조회, 생성, 상세 조회)의 조합 서비스입니다. project(태스크 도메인), workspace(멤버십), user(프로필), minsu(draft
@@ -43,7 +43,7 @@ import works.momens.server.workspace.WorkspaceAccess;
 class ProjectTaskService {
 
   private final ProjectReader projectReader;
-  private final WorkspaceAccess workspaceAccess;
+  private final WorkspaceMembershipReader workspaceMembershipReader;
   private final TaskReader taskReader;
   private final TaskWriter taskWriter;
   private final UserService userService;
@@ -147,7 +147,7 @@ class ProjectTaskService {
                 () ->
                     new BusinessException(
                         TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())));
-    if (!workspaceAccess.isMember(workspaceId, userId)) {
+    if (workspaceMembershipReader.roleOf(workspaceId, userId).isEmpty()) {
       throw new BusinessException(
           CommonErrorCode.AUTH_FORBIDDEN, Map.of("task_id", taskId.toString()));
     }
@@ -188,7 +188,7 @@ class ProjectTaskService {
                     new BusinessException(
                         ProjectErrorCode.PROJECT_NOT_FOUND,
                         Map.of("project_id", projectId.toString())));
-    if (!workspaceAccess.isMember(workspaceId, userId)) {
+    if (workspaceMembershipReader.roleOf(workspaceId, userId).isEmpty()) {
       throw new BusinessException(
           CommonErrorCode.AUTH_FORBIDDEN, Map.of("project_id", projectId.toString()));
     }

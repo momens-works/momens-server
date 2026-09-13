@@ -25,8 +25,8 @@ import org.springframework.web.servlet.config.annotation.ApiVersionConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import works.momens.server.web.workspace.dto.response.WorkspaceResponse;
 import works.momens.server.web.workspace.dto.response.WorkspaceSnapshotResponse;
-import works.momens.server.workspace.WorkspaceDetail;
-import works.momens.server.workspace.WorkspaceSlugAvailability;
+import works.momens.server.workspace.core.WorkspaceDetail;
+import works.momens.server.workspace.core.WorkspaceSlugAvailability;
 
 /**
  * 컨트롤러가 Principal을 조합 서비스에 그대로 전달하고

@@ -10,7 +10,7 @@ import works.momens.server.source.SourceRefDetail;
 import works.momens.server.source.SourceRefReader;
 import works.momens.server.source.SourceRefVerifier;
 import works.momens.server.web.WorkspaceAccessChecker;
-import works.momens.server.workspace.WorkspaceRole;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
  * source-ref 검증 흐름을 조합하는 서비스입니다.

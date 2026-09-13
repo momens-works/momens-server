@@ -13,7 +13,7 @@ import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.project.core.ProjectErrorCode;
 import works.momens.server.project.core.ProjectReader;
 import works.momens.server.signal.SignalDigestReader;
-import works.momens.server.workspace.WorkspaceAccess;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 /**
  * 시그널 요약 문단 조회 서비스. 프로젝트가 속한 workspace를 해석하고 요청자의 멤버십을 검사한 뒤 문단을 반환합니다. 검사 방식은 {@code
@@ -25,7 +25,7 @@ class SignalDigestReaderImpl implements SignalDigestReader {
 
   private final SignalDigestRepository signalDigestRepository;
   private final ProjectReader projectReader;
-  private final WorkspaceAccess workspaceAccess;
+  private final WorkspaceMembershipReader workspaceMembershipReader;
 
   @Override
   @Transactional(readOnly = true)
@@ -50,7 +50,7 @@ class SignalDigestReaderImpl implements SignalDigestReader {
                     new BusinessException(
                         ProjectErrorCode.PROJECT_NOT_FOUND,
                         Map.of("project_id", projectId.toString())));
-    if (!workspaceAccess.isMember(workspaceId, userId)) {
+    if (workspaceMembershipReader.roleOf(workspaceId, userId).isEmpty()) {
       throw new BusinessException(
           CommonErrorCode.AUTH_FORBIDDEN, Map.of("project_id", projectId.toString()));
     }

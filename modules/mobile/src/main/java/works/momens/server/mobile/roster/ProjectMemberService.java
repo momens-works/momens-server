@@ -14,8 +14,7 @@ import works.momens.server.project.core.ProjectErrorCode;
 import works.momens.server.project.core.ProjectReader;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
-import works.momens.server.workspace.WorkspaceAccess;
-import works.momens.server.workspace.WorkspaceMembership;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 /**
  * 프로젝트 멤버 조회 조합 서비스. 도메인 모듈 public API 3개(project, workspace, user)만 조합하고 도메인 정책을 소유하지 않습니다.
@@ -28,7 +27,7 @@ import works.momens.server.workspace.WorkspaceMembership;
 class ProjectMemberService {
 
   private final ProjectReader projectReader;
-  private final WorkspaceAccess workspaceAccess;
+  private final WorkspaceMembershipReader workspaceMembershipReader;
   private final UserService userService;
 
   @Transactional(readOnly = true)
@@ -41,21 +40,18 @@ class ProjectMemberService {
                     new BusinessException(
                         ProjectErrorCode.PROJECT_NOT_FOUND,
                         Map.of("project_id", projectId.toString())));
-    // 멤버십은 여기서 한 번만 읽고, 접근 검사와 응답 목록을 같은 스냅샷으로 판단한다(bootstrap의
-    // role 누락 경합과 같은 원칙). isMember로 따로 검사하면 READ_COMMITTED에서는 문장마다 최신
-    // 커밋을 봐서, 검사와 목록 조회 사이에 멤버십이 회수된 사용자가 목록을 받아 갈 수 있다.
-    List<WorkspaceMembership> memberships = workspaceAccess.listMemberships(workspaceId);
-    boolean callerIsMember =
-        memberships.stream().anyMatch(membership -> membership.userId().equals(userId));
-    if (!callerIsMember) {
+    // 멤버 목록은 한 번만 조회하고, 요청자의 접근 권한 확인과 응답 구성에 동일한 조회 결과를 사용합니다.
+    // 요청자의 멤버십을 별도로 조회하면 READ COMMITTED에서는 각 SQL 문 실행 시 최신 커밋을 확인하므로,
+    // 두 조회 사이에 멤버십이 회수된 사용자가 멤버 목록을 조회할 수 있습니다.
+    List<UUID> memberUserIds = workspaceMembershipReader.listMemberUserIds(workspaceId);
+    if (!memberUserIds.contains(userId)) {
       throw new BusinessException(
           CommonErrorCode.AUTH_FORBIDDEN, Map.of("project_id", projectId.toString()));
     }
-    List<UUID> memberIds = memberships.stream().map(WorkspaceMembership::userId).toList();
     // 검색은 이름 부분 일치에 대소문자 무시, 정렬은 이름 오름차순(같으면 id 보조)이다. 명세에 없는 세부라
     // 2026-07-04 가결정으로 구현했고 규칙은 docs/spec/mobile-api.md 프로젝트 멤버 절에 적었다.
     String needle = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
-    return userService.getProfiles(memberIds).stream()
+    return userService.getProfiles(memberUserIds).stream()
         .filter(
             profile -> needle.isEmpty() || profile.name().toLowerCase(Locale.ROOT).contains(needle))
         .sorted(Comparator.comparing(UserProfile::name).thenComparing(UserProfile::id))

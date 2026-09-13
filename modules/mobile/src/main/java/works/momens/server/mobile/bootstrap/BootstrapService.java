@@ -11,8 +11,8 @@ import works.momens.server.mobile.bootstrap.BootstrapContext.AccessibleProject;
 import works.momens.server.project.core.ProjectReader;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
-import works.momens.server.workspace.UserWorkspaceMembership;
-import works.momens.server.workspace.WorkspaceAccess;
+import works.momens.server.workspace.membership.UserWorkspaceMembership;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 /**
  * 모바일 진입 컨텍스트 조합 서비스. 도메인 모듈 public API 3개(user, project, workspace)만 조합하고 도메인 정책을 소유하지 않습니다.
@@ -26,7 +26,7 @@ class BootstrapService {
 
   private final UserService userService;
   private final ProjectReader projectReader;
-  private final WorkspaceAccess workspaceAccess;
+  private final WorkspaceMembershipReader workspaceMembershipReader;
 
   @Transactional(readOnly = true)
   public BootstrapContext load(UUID userId) {
@@ -35,7 +35,7 @@ class BootstrapService {
     // 두 번 읽으면 READ_COMMITTED에서는 문장마다 최신 커밋을 봐서, 두 조회 사이에 멤버십이 회수될
     // 때 role을 못 찾는 project가 생길 수 있습니다(PR #42 리뷰 반영).
     Map<UUID, String> roleByWorkspaceId =
-        workspaceAccess.listUserMemberships(userId).stream()
+        workspaceMembershipReader.listUserMemberships(userId).stream()
             .collect(
                 Collectors.toMap(
                     UserWorkspaceMembership::workspaceId, UserWorkspaceMembership::role));

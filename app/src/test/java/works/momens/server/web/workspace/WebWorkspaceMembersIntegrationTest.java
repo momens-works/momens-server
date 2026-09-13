@@ -74,7 +74,9 @@ class WebWorkspaceMembersIntegrationTest extends AbstractPostgresIntegrationTest
     mockMvc
         .perform(authorized(get("/api/workspaces/{id}/members", workspaceId), stranger.id()))
         .andExpect(status().isForbidden())
-        .andExpect(jsonPath("$.error.code").value("AUTH_FORBIDDEN"));
+        .andExpect(jsonPath("$.error.code").value("AUTH_FORBIDDEN"))
+        .andExpect(jsonPath("$.error.details.workspace_id").value(workspaceId.toString()))
+        .andExpect(jsonPath("$.error.details.required_role").value("member"));
   }
 
   @Test

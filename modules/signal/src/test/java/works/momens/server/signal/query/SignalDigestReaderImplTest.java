@@ -21,7 +21,8 @@ import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.project.core.ProjectErrorCode;
 import works.momens.server.project.core.ProjectReader;
 import works.momens.server.signal.SignalDigestReader;
-import works.momens.server.workspace.WorkspaceAccess;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
  * 시그널 요약 문단 조회 서비스 검증.
@@ -43,7 +44,7 @@ class SignalDigestReaderImplTest extends AbstractPostgresIntegrationTest {
   @Autowired private SignalDigestReader signalDigestReader;
   @Autowired private TestEntityManager entityManager;
   @MockitoBean private ProjectReader projectReader;
-  @MockitoBean private WorkspaceAccess workspaceAccess;
+  @MockitoBean private WorkspaceMembershipReader workspaceMembershipReader;
 
   @Test
   @DisplayName("범위에 있는 문단을 반환한다")
@@ -80,7 +81,7 @@ class SignalDigestReaderImplTest extends AbstractPostgresIntegrationTest {
   @DisplayName("워크스페이스 멤버가 아니면 거부한다")
   void throwsForbiddenForNonMember() {
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.of(WORKSPACE_ID));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(false);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID)).thenReturn(Optional.empty());
     insertDigest("남의 프로젝트 문단", FROM);
 
     assertThatThrownBy(
@@ -92,7 +93,8 @@ class SignalDigestReaderImplTest extends AbstractPostgresIntegrationTest {
 
   private void allowMember() {
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.of(WORKSPACE_ID));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
   }
 
   private void insertDigest(String summary, Instant createdAt) {

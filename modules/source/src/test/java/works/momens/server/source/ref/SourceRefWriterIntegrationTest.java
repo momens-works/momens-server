@@ -9,11 +9,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.source.SourceRefWriter;
+import works.momens.server.workspace.WorkspaceSeedSql;
 
 /**
  * 사용자가 붙여넣은 링크가 PostgreSQL에 어떤 값으로 저장되는지 검증합니다.
@@ -27,11 +29,12 @@ class SourceRefWriterIntegrationTest extends AbstractPostgresIntegrationTest {
 
   @Autowired private SourceRefWriter sourceRefWriter;
   @Autowired private JdbcTemplate jdbcTemplate;
+  @Autowired private TestEntityManager entityManager;
 
   @Test
   @DisplayName("붙여넣은 링크를 레거시와 같은 컬럼 값으로 저장한다")
   void storesManualLinkWithLegacyColumnValues() {
-    UUID workspaceId = UUID.randomUUID();
+    UUID workspaceId = insertWorkspace();
 
     UUID sourceRefId =
         sourceRefWriter.createManualLink(
@@ -58,7 +61,7 @@ class SourceRefWriterIntegrationTest extends AbstractPostgresIntegrationTest {
     UUID sourceRefId =
         sourceRefWriter.createManualLink(
             new SourceRefWriter.NewManualLink(
-                UUID.randomUUID(), "dropbox", "https://example.com/doc", "   "));
+                insertWorkspace(), "dropbox", "https://example.com/doc", "   "));
 
     Map<String, Object> row = row(sourceRefId);
     assertThat(row.get("source_type")).isEqualTo("LINK");
@@ -68,7 +71,7 @@ class SourceRefWriterIntegrationTest extends AbstractPostgresIntegrationTest {
   @Test
   @DisplayName("같은 주소를 두 번 붙이면 행을 두 개 만든다")
   void createsSeparateRowsForTheSameUrl() {
-    UUID workspaceId = UUID.randomUUID();
+    UUID workspaceId = insertWorkspace();
 
     UUID first =
         sourceRefWriter.createManualLink(
@@ -84,6 +87,10 @@ class SourceRefWriterIntegrationTest extends AbstractPostgresIntegrationTest {
             jdbcTemplate.queryForObject(
                 "SELECT count(*) FROM source_refs WHERE workspace_id = ?", Long.class, workspaceId))
         .isEqualTo(2L);
+  }
+
+  private UUID insertWorkspace() {
+    return WorkspaceSeedSql.insertWorkspace(entityManager, "ws-" + UUID.randomUUID());
   }
 
   private Map<String, Object> row(UUID sourceRefId) {

@@ -2,13 +2,11 @@ package works.momens.server.web.task;
 
 import java.time.LocalDate;
 import java.util.Locale;
-import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
-import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.project.core.ProjectErrorCode;
 import works.momens.server.project.core.ProjectReader;
@@ -19,7 +17,8 @@ import works.momens.server.project.task.TaskOrigin;
 import works.momens.server.project.task.TaskReader;
 import works.momens.server.project.task.TaskSnapshot;
 import works.momens.server.project.task.TaskWriter;
-import works.momens.server.workspace.WorkspaceAccess;
+import works.momens.server.web.WorkspaceAccessChecker;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +26,7 @@ class TaskWriteService {
   private final TaskWriter taskWriter;
   private final TaskReader taskReader;
   private final ProjectReader projectReader;
-  private final WorkspaceAccess workspaceAccess;
+  private final WorkspaceAccessChecker workspaceAccessChecker;
 
   @Transactional
   TaskSnapshot create(
@@ -133,10 +132,7 @@ class TaskWriteService {
   }
 
   private void requireMember(UUID workspaceId, UUID userId) {
-    if (!workspaceAccess.isMember(workspaceId, userId)) {
-      throw new BusinessException(
-          CommonErrorCode.AUTH_FORBIDDEN, Map.of("workspace_id", workspaceId.toString()));
-    }
+    workspaceAccessChecker.requireRoleAtLeast(workspaceId, userId, WorkspaceRole.MEMBER);
   }
 
   private static String normalizeStatus(String value, boolean allowDefault) {

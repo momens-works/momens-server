@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,7 +25,8 @@ import works.momens.server.signal.SignalDetailService;
 import works.momens.server.signal.SignalErrorCode;
 import works.momens.server.source.SourceRefReader;
 import works.momens.server.source.SourceRefView;
-import works.momens.server.workspace.WorkspaceAccess;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
  * Signal 상세 조립 검증. 접근 검사와 source hydrate(각각 mock), 근거의 의미 값(대상·변화·영향)과 정렬·원본 누락 제외, 처리·삭제된 Signal의
@@ -42,7 +44,8 @@ class SignalDetailServiceImplTest extends AbstractPostgresIntegrationTest {
   @Autowired private SignalEvidenceRepository signalEvidenceRepository;
   @Autowired private TestEntityManager entityManager;
 
-  private final WorkspaceAccess workspaceAccess = mock(WorkspaceAccess.class);
+  private final WorkspaceMembershipReader workspaceMembershipReader =
+      mock(WorkspaceMembershipReader.class);
   private final SourceRefReader sourceRefReader = mock(SourceRefReader.class);
   private SignalDetailService signalDetailService;
 
@@ -50,7 +53,7 @@ class SignalDetailServiceImplTest extends AbstractPostgresIntegrationTest {
   void setUp() {
     signalDetailService =
         new SignalDetailServiceImpl(
-            signalRepository, signalEvidenceRepository, workspaceAccess, sourceRefReader);
+            signalRepository, signalEvidenceRepository, workspaceMembershipReader, sourceRefReader);
   }
 
   @Test
@@ -78,7 +81,7 @@ class SignalDetailServiceImplTest extends AbstractPostgresIntegrationTest {
   @DisplayName("workspace 멤버가 아니면 AUTH_FORBIDDEN을 던진다")
   void throwsForbiddenWhenNotMember() {
     UUID signalId = insertSignal();
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(false);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> signalDetailService.getDetail(signalId, CALLER_ID))
         .isInstanceOf(BusinessException.class)
@@ -97,7 +100,8 @@ class SignalDetailServiceImplTest extends AbstractPostgresIntegrationTest {
     insertEvidence(signalId, ref0, 0, "대상0", "변화0", "영향0");
     insertEvidence(signalId, missing, 2, "대상x", "변화x", "영향x");
 
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     // missing은 source 원본이 반환되지 않아 제외된다.
     when(sourceRefReader.findByIds(any(), any()))
         .thenReturn(
@@ -139,7 +143,8 @@ class SignalDetailServiceImplTest extends AbstractPostgresIntegrationTest {
     insertEvidence(signalId, high, 0, "대상h", "변화h", "영향h");
     insertEvidence(signalId, low, 0, "대상l", "변화l", "영향l");
 
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     when(sourceRefReader.findByIds(any(), any()))
         .thenReturn(
             List.of(

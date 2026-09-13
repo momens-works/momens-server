@@ -90,16 +90,6 @@ jobs:
           ./scripts/prod-readiness-ledger-test.sh
           ./scripts/prod-readiness-ledger.sh --check
 
-      # 모든 마이그레이션이 부트스트랩에서 심기/실행 중 하나로 분류됐는지 검사합니다. 분류를
-      # 빠뜨리면 그 파일이 prod 에서 실행되고, 레거시가 이미 만든 객체라면 already exists 로
-      # 죽습니다. 그 실패는 prod 기동 실패로만 드러나므로 여기서 막습니다.
-      # 부트스트랩이 끝나면 이 검사와 두 목록은 함께 없앱니다(MOM-0909).
-      - name: Check prod bootstrap classification
-        run: |
-          ./scripts/prod-flyway-bootstrap-check-test.sh
-          ./scripts/prod-flyway-bootstrap-check.sh
-          ./scripts/prod-flyway-bootstrap-verify-test.sh
-
       # main 을 대상으로 하는 모든 PR에서 미반영 필수 설정을 막습니다. 미반영 상태로 배포하면
       # 설정 바인딩 단계에서 애플리케이션이 기동하지 않을 수 있습니다.
       #

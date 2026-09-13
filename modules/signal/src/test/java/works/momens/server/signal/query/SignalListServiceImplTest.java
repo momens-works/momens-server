@@ -26,7 +26,8 @@ import works.momens.server.project.core.ProjectReader;
 import works.momens.server.signal.SignalListService;
 import works.momens.server.signal.SignalSummary;
 import works.momens.server.signal.SignalSummaryPage;
-import works.momens.server.workspace.WorkspaceAccess;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
  * Signal 목록 서비스 검증.
@@ -42,7 +43,7 @@ class SignalListServiceImplTest extends AbstractPostgresIntegrationTest {
   @Autowired private SignalListService signalListService;
   @Autowired private TestEntityManager entityManager;
   @MockitoBean private ProjectReader projectReader;
-  @MockitoBean private WorkspaceAccess workspaceAccess;
+  @MockitoBean private WorkspaceMembershipReader workspaceMembershipReader;
 
   private static final UUID PROJECT_ID = UUID.randomUUID();
   private static final UUID WORKSPACE_ID = UUID.randomUUID();
@@ -66,7 +67,7 @@ class SignalListServiceImplTest extends AbstractPostgresIntegrationTest {
   @DisplayName("workspace 멤버가 아니면 AUTH_FORBIDDEN을 던진다")
   void throwsForbiddenWhenCallerIsNotMember() {
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.of(WORKSPACE_ID));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(false);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> signalListService.listUnprocessed(PROJECT_ID, CALLER_ID))
         .isInstanceOf(BusinessException.class)
@@ -78,7 +79,8 @@ class SignalListServiceImplTest extends AbstractPostgresIntegrationTest {
   @DisplayName("멤버에게 미처리 Signal만 요약으로 반환한다")
   void returnsUnprocessedSummariesForMember() {
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.of(WORKSPACE_ID));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     UUID unprocessed =
         insertSignal("risk", "이탈 가능성", "완료율에 영향", "점검 제안", Instant.parse("2026-07-01T00:00:00Z"));
     UUID processed =
@@ -263,7 +265,8 @@ class SignalListServiceImplTest extends AbstractPostgresIntegrationTest {
 
   private void allowMember() {
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.of(WORKSPACE_ID));
-    when(workspaceAccess.isMember(WORKSPACE_ID, CALLER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
   }
 
   private UUID insertSignal(

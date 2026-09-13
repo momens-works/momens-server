@@ -63,7 +63,7 @@ class MetricsEndpointIntegrationTest extends AbstractPostgresIntegrationTest {
     String response =
         mockMvc
             .perform(
-                post("/api/auth/dev/token")
+                post("/api/dev/auth/token")
                     .header(SECRET_HEADER, SECRET)
                     .header(API_VERSION_HEADER, API_VERSION))
             .andExpect(status().isOk())

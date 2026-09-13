@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Import;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.source.SourceRefReader;
 import works.momens.server.source.SourceRefView;
+import works.momens.server.workspace.WorkspaceSeedSql;
 
 /**
  * source_ref 조회 public API 검증.
@@ -34,7 +35,7 @@ class SourceRefReaderIntegrationTest extends AbstractPostgresIntegrationTest {
   @Test
   @DisplayName("id 목록 조회는 살아있는 source_ref만 반환하고 삭제·미존재 항목은 제외한다")
   void findByIdsReturnsLiveRefsAndSkipsDeletedAndUnknown() {
-    UUID workspaceId = UUID.randomUUID();
+    UUID workspaceId = insertWorkspace();
     UUID live = insertSourceRef(workspaceId, "figma", "권한 요청 화면 v2", "설명 문구 변경", null);
     UUID deleted = insertSourceRef(workspaceId, "slack", "스레드", "삭제됨", Instant.now());
 
@@ -47,8 +48,8 @@ class SourceRefReaderIntegrationTest extends AbstractPostgresIntegrationTest {
   @Test
   @DisplayName("id가 맞아도 다른 워크스페이스의 source_ref는 반환하지 않는다")
   void findByIdsExcludesOtherWorkspace() {
-    UUID workspaceId = UUID.randomUUID();
-    UUID otherWorkspaceId = UUID.randomUUID();
+    UUID workspaceId = insertWorkspace();
+    UUID otherWorkspaceId = insertWorkspace();
     UUID mine = insertSourceRef(workspaceId, "figma", "내 화면", "설명", null);
     UUID foreign = insertSourceRef(otherWorkspaceId, "slack", "남의 스레드", "설명", null);
 
@@ -66,7 +67,7 @@ class SourceRefReaderIntegrationTest extends AbstractPostgresIntegrationTest {
   @Test
   @DisplayName("source_refs 컬럼을 Signal evidence 카드에 필요한 SourceRefView 필드로 매핑한다")
   void findByIdsMapsEvidenceCardFields() {
-    UUID workspaceId = UUID.randomUUID();
+    UUID workspaceId = insertWorkspace();
     Instant occurredAt = Instant.parse("2026-06-28T00:48:00Z");
     UUID id =
         insertFullSourceRef(
@@ -92,14 +93,19 @@ class SourceRefReaderIntegrationTest extends AbstractPostgresIntegrationTest {
                 occurredAt));
   }
 
+  private UUID insertWorkspace() {
+    return WorkspaceSeedSql.insertWorkspace(entityManager, "ws-" + UUID.randomUUID());
+  }
+
   private UUID insertSourceRef(
       UUID workspaceId, String sourceType, String title, String snippet, Instant deletedAt) {
     UUID id = UUID.randomUUID();
     entityManager
         .getEntityManager()
         .createNativeQuery(
-            "INSERT INTO source_refs (id, workspace_id, source_type, title, snippet, deleted_at)"
-                + " VALUES (?1, ?2, ?3, ?4, ?5, ?6)")
+            "INSERT INTO source_refs (id, workspace_id, source_type, source_object_type,"
+                + " source_object_id, title, snippet, deleted_at)"
+                + " VALUES (?1, ?2, ?3, 'FILE_COMMENT', 'obj-1', ?4, ?5, ?6)")
         .setParameter(1, id)
         .setParameter(2, workspaceId)
         .setParameter(3, sourceType)
@@ -123,8 +129,9 @@ class SourceRefReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     entityManager
         .getEntityManager()
         .createNativeQuery(
-            "INSERT INTO source_refs (id, workspace_id, source_type, title, snippet, text,"
-                + " source_url, source_created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)")
+            "INSERT INTO source_refs (id, workspace_id, source_type, source_object_type,"
+                + " source_object_id, title, snippet, text, source_url, source_created_at)"
+                + " VALUES (?1, ?2, ?3, 'FILE_COMMENT', 'obj-1', ?4, ?5, ?6, ?7, ?8)")
         .setParameter(1, id)
         .setParameter(2, workspaceId)
         .setParameter(3, sourceType)

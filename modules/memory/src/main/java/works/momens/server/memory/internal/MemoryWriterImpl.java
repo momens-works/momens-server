@@ -18,8 +18,8 @@ import works.momens.server.memory.ConfirmedMemoryDetail;
 import works.momens.server.memory.MemoryErrorCode;
 import works.momens.server.memory.MemoryWriter;
 import works.momens.server.outbox.OutboxAppender;
-import works.momens.server.workspace.LabelAllocator;
-import works.momens.server.workspace.WorkspaceAccess;
+import works.momens.server.workspace.label.LabelAllocator;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 /**
  * 레거시 {@code memory/service.go}의 후보 리뷰·메모리 해결 write 경로를 옮긴 구현입니다.
@@ -50,7 +50,7 @@ class MemoryWriterImpl implements MemoryWriter {
   private static final String EVENT_UPDATED = "memory.updated";
 
   private final EntityManager entityManager;
-  private final WorkspaceAccess workspaceAccess;
+  private final WorkspaceMembershipReader workspaceMembershipReader;
   private final LabelAllocator labelAllocator;
   private final EntityRelationWriter relationWriter;
   private final ConfirmedMemoryRepository memoryRepository;
@@ -224,7 +224,7 @@ class MemoryWriterImpl implements MemoryWriter {
   }
 
   private void requireMembership(UUID workspaceId, UUID userId) {
-    if (!workspaceAccess.isMember(workspaceId, userId)) {
+    if (workspaceMembershipReader.roleOf(workspaceId, userId).isEmpty()) {
       throw new BusinessException(CommonErrorCode.AUTH_FORBIDDEN);
     }
   }

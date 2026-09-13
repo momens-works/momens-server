@@ -31,4 +31,6 @@ dependencies {
 
     testImplementation project(':workspace')
     testImplementation project(':user')
+    // WorkspaceSeedSql을 사용해 source_refs의 workspaces 및 users 외래 키 제약을 만족하는 행을 저장합니다.
+    testImplementation testFixtures(project(':workspace'))
 }

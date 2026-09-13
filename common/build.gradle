@@ -14,8 +14,10 @@ dependencies {
     // 영속성 베이스(@MappedSuperclass, JPA Auditing, Persistable)는 기능 모듈에 노출합니다.
     api 'org.springframework.boot:spring-boot-starter-data-jpa'
 
-    // @ApplicationModule(OPEN) 등 modulith 메타데이터.
-    api libs.spring.modulith.starter.core
+    // 모듈 경계 선언 애너테이션(@ApplicationModule, @NamedInterface)만 사용합니다. 애너테이션 클래스가
+    // 런타임 클래스패스에 없어도 JVM은 해당 애너테이션을 무시하므로 컴파일 클래스패스에만 둡니다. 경계 검증은
+    // app 테스트의 starter-test가 담당합니다(MOM-0921).
+    compileOnlyApi libs.spring.modulith.api
 
     // 공유 에러 응답(ErrorResponse)의 @JsonInclude. spring-web 없이 애너테이션만 사용합니다.
     implementation 'com.fasterxml.jackson.core:jackson-annotations'

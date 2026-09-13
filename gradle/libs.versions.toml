@@ -3,7 +3,7 @@
 
 [versions]
 firebase-admin = "9.10.0"
-google-genai = "1.68.0"
+google-genai = "1.70.0"
 momens-proto = "1.0.0"
 openapi-request-validator = "3.0.0"
 spring-boot = "4.1.1"
@@ -13,7 +13,7 @@ springdoc = "3.1.0"
 spotless = "8.10.1"
 # swagger-core와 swagger-annotations는 동일한 버전을 사용해야 합니다. 버전이 다르면 @Schema의
 # 기본값 sentinel을 잘못 해석해 request schema에 default: null이 추가됩니다.
-swagger = "2.2.54"
+swagger = "2.2.55"
 
 [libraries]
 firebase-admin = { module = "com.google.firebase:firebase-admin", version.ref = "firebase-admin" }
@@ -23,7 +23,7 @@ google-genai = { module = "com.google.genai:google-genai", version.ref = "google
 momens-proto = { module = "com.momens:momens-proto", version.ref = "momens-proto" }
 openapi-request-validator-mockmvc = { module = "com.atlassian.oai:openapi-request-validator-mockmvc", version.ref = "openapi-request-validator" }
 spring-dotenv = { module = "me.paulschwarz:spring-dotenv", version.ref = "spring-dotenv" }
-spring-modulith-starter-core = { module = "org.springframework.modulith:spring-modulith-starter-core", version.ref = "spring-modulith" }
+spring-modulith-api = { module = "org.springframework.modulith:spring-modulith-api", version.ref = "spring-modulith" }
 spring-modulith-starter-test = { module = "org.springframework.modulith:spring-modulith-starter-test", version.ref = "spring-modulith" }
 springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
 swagger-annotations-jakarta = { module = "io.swagger.core.v3:swagger-annotations-jakarta", version.ref = "swagger" }

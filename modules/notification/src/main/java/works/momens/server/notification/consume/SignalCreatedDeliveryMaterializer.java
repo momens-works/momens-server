@@ -12,8 +12,7 @@ import works.momens.server.notification.dispatch.PushDispatcher;
 import works.momens.server.outbox.OutboxEventReader;
 import works.momens.server.outbox.OutboxEventView;
 import works.momens.server.signal.SignalReader;
-import works.momens.server.workspace.WorkspaceAccess;
-import works.momens.server.workspace.WorkspaceMembership;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 /**
  * {@code signal.created} outbox event를 기기별 pending delivery로 materialize하는 consumer
@@ -42,7 +41,7 @@ class SignalCreatedDeliveryMaterializer {
   private final PushInstallationDirectory pushInstallationDirectory;
   private final OutboxEventReader outboxEventReader;
   private final SignalReader signalReader;
-  private final WorkspaceAccess workspaceAccess;
+  private final WorkspaceMembershipReader workspaceMembershipReader;
 
   /** 한 폴링 구간을 materialize한다. */
   @Transactional
@@ -97,10 +96,7 @@ class SignalCreatedDeliveryMaterializer {
   }
 
   private boolean materializeRecipients(long outboxEventId, SignalReader.Snapshot signal) {
-    List<UUID> memberIds =
-        workspaceAccess.listMemberships(signal.workspaceId()).stream()
-            .map(WorkspaceMembership::userId)
-            .toList();
+    List<UUID> memberIds = workspaceMembershipReader.listMemberUserIds(signal.workspaceId());
     List<PushDispatcher.Recipient> recipients =
         pushInstallationDirectory.findActiveAndroid(memberIds).stream()
             .map(

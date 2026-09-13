@@ -16,8 +16,8 @@ import works.momens.server.web.workspace.dto.request.AddWorkspaceMemberRequest;
 import works.momens.server.web.workspace.dto.request.CreateWorkspaceInvitationRequest;
 import works.momens.server.web.workspace.dto.response.WorkspaceInvitationResponse;
 import works.momens.server.web.workspace.dto.response.WorkspaceInvitationsResponse;
-import works.momens.server.workspace.InvitationErrorCode;
 import works.momens.server.workspace.WorkspaceErrorCode;
+import works.momens.server.workspace.invitation.InvitationErrorCode;
 
 /**
  * {@code /api/workspaces/{workspaceId}} 하위에 있는 초대 엔드포인트의 OpenAPI 문서입니다. Swagger 애너테이션을 컨트롤러 구현과

@@ -1,9 +1,20 @@
 # prod 스키마 주도권 이전 설계
 
-작성일: 2026-08-23 · 상태: Current design · 근거 ADR: [ADR-0019](../adr/0019-prod-schema-ownership-transfer.md)
+작성일: 2026-08-23 · 완료: 2026-09-07 · 상태: 실행 완료, 기록으로 보존 ·
+근거 ADR: [ADR-0019](../adr/0019-prod-schema-ownership-transfer.md)
 
 prod의 스키마 DDL 주도권을 레거시 `momens-api`에서 이 서버로 옮기는 설계다. 다섯 가지 결정을
 확정하고, 실행 티켓(MOM-0909·MOM-0910)이 그대로 입력으로 쓸 수 있는 형태로 사실을 남긴다.
+
+> **이전은 끝났고 실행 도구는 제거됐다(MOM-0947).** 8절이 부르는
+> `scripts/prod-flyway-bootstrap*`·`scripts/prod-ownership-transfer*`와 쌍둥이 리허설 환경
+> `scripts/prod-twin/`은 저장소에 없다. 전부 1회용이었고 부트스트랩이 성공한 뒤 다시 쓸 일이
+> 없어 걷어냈다. 필요하면 `git log -- scripts/prod-twin` 으로 꺼낼 수 있다.
+>
+> **이 문서는 절차를 재실행하기 위한 것이 아니라 무엇을 왜 그렇게 했는지 남기기 위한 것이다.**
+> 심기 28건과 실행 14건이 어떻게 갈렸는지, `outOfOrder`를 왜 1회만 켰는지, 접속 대상이 왜 direct
+> 가 아니라 session pooler 인지가 여기에만 있다. 적용 결과는 8절 끝의
+> 「부트스트랩 적용 결과」에 있다.
 
 ## 요약
 
@@ -949,7 +960,8 @@ MOM-0909가 요구하는 "prod와 같은 형상(레거시 러너가 만든 스�
 
 위 리허설은 `legacy-db`에서 돌았는데 그 DB는 **pg16 · superuser · 빈 DB · 무트래픽**이라 prod와
 네 가지가 동시에 달랐다. 그래서 재현할 수 없는 축이 남았고, 그것을 닫기 위해 prod와 같은 형상을
-로컬에 세웠다. 구축과 시나리오는 [`scripts/prod-twin`](../../scripts/prod-twin/README.md)이다.
+로컬에 세웠다. 구축과 시나리오는 `scripts/prod-twin` 이었고 이전 완료 후 제거했다(MOM-0947).
+아래 형상과 결과는 그 환경에서 실측한 것이다.
 
 PostgreSQL 17 · 레거시 `000001`~`000019` · Supabase role 형상(`anon`·`authenticated`·
 `service_role` + `ALTER DEFAULT PRIVILEGES`) · **비-superuser 창구 role**(SQL Editor 대역이자
@@ -1196,23 +1208,16 @@ session pooler 가 세션을 유지하므로 Flyway 의 세션 단위 잠금과 
 | 위험 | 대응 |
 | --- | --- |
 | 레거시·worker가 동결을 어긴다 | 강제 수단 없음. 합의 + 다음 배포의 `validate`로 사후 탐지. 제약·기본값·UNIQUE 변경은 탐지되지 않는다 |
-| 체크섬 불일치로 기동 실패 | 스크래치 DB에서 Flyway가 계산한 값을 그대로 복사한다. 실패해도 스키마 무변경 |
-| `mirror` 헤더가 더 잘못 붙어 있다 | 2.8이 한 건 드러났다. MOM-0909의 객체 대조가 실행 집합 전체를 다시 판정한다 |
 | local·prod가 완전히 같지 않다 | 2.6의 5개 컬럼. 의도된 것이며 `validate` 대상이 아니다 |
 | 레거시가 만든 20개 테이블에서 local과 prod의 DDL이 갈린다 | 주도권 이전으로 사라지지 않는 위험이다(6절). `persistence.md`의 충실도 규칙이 계속 적용된다 |
-| 리포 설정과 prod 실제 설정이 어긋난 채 방치된다 | 8절 9단계(정본화 PR)를 부트스트랩과 같은 스프린트에서 닫는다. ConfigMap 오버라이드는 임시 상태다 |
 | 롤아웃 실패 후 정리가 안 된 채 남는다 | `deploy-service.sh`에 `rollout undo`가 없다. 수동 정리 단계를 절차에 명시한다 |
-| DDL 선행 조건이 빠진 채 전환한다 | 쌍둥이 리허설이 창구의 `SET ROLE` 능력 · 레거시 테이블 20개 소유권 · `extensions` 접근(`USAGE` + `search_path`) 세 가지를 각각 실패로 재현했다. 8절 3단계가 SQL로 적는다 |
-| `momens_server`가 이력 테이블에 권한을 갖지 못한다 | 다음 기동이 `permission denied`로 죽고 심기 시점에는 신호가 없다. `--generate` 생성물이 트랜잭션 안에서 DML을 부여하고(소유권 이전이 아니다 — 8절 4단계), `prod-flyway-bootstrap-verify-test.sh`가 그 줄을 지킨다 |
 | `tasks` 소유권을 되돌리며 DML 재발급을 잊는다 | 기동이 성공해 배포에서 잡히지 않고 첫 요청에서 끊긴다. 7절에 재발급 한 줄을 절차로 적었다 |
 | Data API 소비자가 서버 소유 테이블을 읽고 있다 | 새 12개 테이블은 `momens_server` 소유라 `anon`·`authenticated`에 권한이 붙지 않는다. 소비자 목록은 MOM-0925에서 확인 중이다 |
-| 확장이 `public`이 아닌 스키마에 있다 | `uuid-ossp`가 `extensions`에 있고 실행 집합 2건이 한정 없이 호출한다. 8절 3.5단계의 `USAGE` + `search_path` 두 줄로 닫는다. 파일 수정은 체크섬 때문에 불가능하다 |
 | 접속이 트랜잭션 pooler다 | 해소. prod 는 session pooler(`aws-0-ap-southeast-1.pooler.supabase.com:5432`)를 쓰고 세션이 유지된다(2026-09-04 적용 실측). 접속 정보를 교체할 때 포트가 `6543`(transaction 모드)이 되지 않도록 본다 |
 
 ## 관련 문서
 
 - [ADR-0019 prod 스키마 주도권을 서버로 이전](../adr/0019-prod-schema-ownership-transfer.md)
-- [prod 쌍둥이 리허설 환경](../../scripts/prod-twin/README.md)
 - [데이터 규칙](../rules/persistence.md)
 - [prod 운영 준비 대장](../prod-readiness-ledger.md)
 - [레거시 Product API 이관 전략](legacy-product-api-migration/strategy.md)

@@ -48,9 +48,6 @@ dependencies {
     implementation 'org.flywaydb:flyway-database-postgresql'
     runtimeOnly 'org.postgresql:postgresql'
 
-    // Spring Modulith는 Spring Boot BOM과 별도의 릴리스 트레인을 따르므로, 버전은 버전 카탈로그에서 고정합니다.
-    implementation libs.spring.modulith.starter.core
-
     // API 문서 및 로컬 env 관련 의존성입니다. Spring Boot BOM 관리 대상이 아니므로
     // 버전 카탈로그에서 버전을 고정합니다.
     implementation libs.springdoc.openapi.starter.webmvc.ui

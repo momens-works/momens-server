@@ -2,7 +2,7 @@ package works.momens.server.web.workspace.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
-import works.momens.server.workspace.WorkspaceSlugAvailability;
+import works.momens.server.workspace.core.WorkspaceSlugAvailability;
 
 /**
  * {@code GET /api/workspaces/slug-available} 응답.

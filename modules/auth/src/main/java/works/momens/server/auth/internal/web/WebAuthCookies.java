@@ -23,6 +23,11 @@ public class WebAuthCookies {
   private static final String STATE_COOKIE = "oauth_state";
   private static final String PKCE_VERIFIER_COOKIE = "oauth_pkce_verifier";
 
+  /** 전환기 한시: 레거시 {@code momens-api}의 쿠키 정책(ADR-0018 결정 4, 제거는 MOM-0875). */
+  private static final String LEGACY_SESSION_COOKIE = "session_token";
+
+  private static final String LEGACY_SESSION_PATH = "/";
+
   private static final Duration HANDSHAKE_TTL = Duration.ofMinutes(10);
   private static final String HANDSHAKE_SAME_SITE = "Lax";
   private static final String ACCESS_PATH = "/";
@@ -46,6 +51,18 @@ public class WebAuthCookies {
 
   public ResponseCookie clearRefreshToken() {
     return base(cookie().refreshName(), "", REFRESH_PATH, Duration.ZERO).build();
+  }
+
+  /** 레거시 쿠키가 host-only이므로 설정된 신규 쿠키 domain을 적용하지 않습니다. */
+  public ResponseCookie clearLegacySessionToken() {
+    AuthProperties.Web.Cookie cfg = cookie();
+    return ResponseCookie.from(LEGACY_SESSION_COOKIE, "")
+        .httpOnly(true)
+        .secure(cfg.secure())
+        .sameSite(cfg.sameSite())
+        .path(LEGACY_SESSION_PATH)
+        .maxAge(Duration.ZERO)
+        .build();
   }
 
   /** 설정된 refresh 쿠키 이름으로 요청에서 refresh token 값을 읽습니다(쿠키명 지식을 한곳에 둡니다). */

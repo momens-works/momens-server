@@ -17,7 +17,7 @@ import works.momens.server.project.task.TaskErrorCode;
 import works.momens.server.project.task.TaskReader;
 import works.momens.server.source.SourceRefWriter;
 import works.momens.server.web.WorkspaceAccessChecker;
-import works.momens.server.workspace.WorkspaceRole;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
  * 태스크에 연결되는 엔티티의 연결과 해제를 조합하는 서비스입니다.

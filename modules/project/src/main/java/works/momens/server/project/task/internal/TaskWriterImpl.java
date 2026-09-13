@@ -23,8 +23,8 @@ import works.momens.server.project.task.TaskErrorCode;
 import works.momens.server.project.task.TaskSnapshot;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.project.task.UpdateTaskCommand;
-import works.momens.server.workspace.LabelAllocator;
-import works.momens.server.workspace.WorkspaceAccess;
+import works.momens.server.workspace.label.LabelAllocator;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 @Service
 @RequiredArgsConstructor
@@ -34,7 +34,7 @@ class TaskWriterImpl implements TaskWriter {
 
   private final TaskRepository taskRepository;
   private final MilestoneDirectory milestoneDirectory;
-  private final WorkspaceAccess workspaceAccess;
+  private final WorkspaceMembershipReader workspaceMembershipReader;
   private final LabelAllocator labelAllocator;
   private final OutboxAppender outboxAppender;
 
@@ -127,7 +127,7 @@ class TaskWriterImpl implements TaskWriter {
     if (milestoneId != null && !milestoneDirectory.existsInProject(milestoneId, projectId)) {
       throw FieldValidationException.forField("milestone_id");
     }
-    if (assigneeId != null && !workspaceAccess.isMember(workspaceId, assigneeId)) {
+    if (assigneeId != null && workspaceMembershipReader.roleOf(workspaceId, assigneeId).isEmpty()) {
       throw FieldValidationException.forField("assignee_id");
     }
   }

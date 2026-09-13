@@ -96,7 +96,10 @@ class WebAuthSessionImpl implements WebAuthSession {
               }
             });
     return new WebAuthCookieUpdate(
-        List.of(cookies.clearAccessToken().toString(), cookies.clearRefreshToken().toString()));
+        List.of(
+            cookies.clearAccessToken().toString(),
+            cookies.clearRefreshToken().toString(),
+            cookies.clearLegacySessionToken().toString()));
   }
 
   private String failureUri(String error) {

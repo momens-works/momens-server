@@ -229,7 +229,7 @@ JSON 에러 본문을 쓰지 않습니다. 콜백 실패는 브라우저에 JSON
 | 메서드·경로 | 성공 | 실패 |
 | --- | --- | --- |
 | `POST /api/auth/web/refresh` | `204` + `Set-Cookie`로 access/refresh 회전 | refresh 쿠키 없음·무효 → `401` `AUTH_REFRESH_TOKEN_INVALID` |
-| `POST /api/auth/web/logout` | `204` + access/refresh 쿠키 정리(`Max-Age=0`) | 없음(쿠키 유무·상태와 무관하게 `204`, 멱등) |
+| `POST /api/auth/web/logout` | `204` + access/refresh/legacy session 쿠키 정리(`Max-Age=0`) | 없음(쿠키 유무·상태와 무관하게 `204`, 멱등) |
 
 모바일 JSON 계약(`POST /api/auth/refresh`·`/api/auth/logout`, body의 `refresh_token`)은 그대로
 유지됩니다.

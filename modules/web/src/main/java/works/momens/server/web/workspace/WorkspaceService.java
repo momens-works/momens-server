@@ -7,19 +7,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
-import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.onboarding.WorkspaceOnboarding;
 import works.momens.server.web.WorkspaceAccessChecker;
-import works.momens.server.workspace.CreateWorkspaceCommand;
-import works.momens.server.workspace.UpdateWorkspaceCommand;
-import works.momens.server.workspace.WorkspaceAccess;
-import works.momens.server.workspace.WorkspaceDetail;
-import works.momens.server.workspace.WorkspaceEditor;
 import works.momens.server.workspace.WorkspaceErrorCode;
-import works.momens.server.workspace.WorkspaceReader;
-import works.momens.server.workspace.WorkspaceRole;
-import works.momens.server.workspace.WorkspaceSlugAvailability;
-import works.momens.server.workspace.WorkspaceSlugReader;
+import works.momens.server.workspace.core.CreateWorkspaceCommand;
+import works.momens.server.workspace.core.UpdateWorkspaceCommand;
+import works.momens.server.workspace.core.WorkspaceDetail;
+import works.momens.server.workspace.core.WorkspaceEditor;
+import works.momens.server.workspace.core.WorkspaceReader;
+import works.momens.server.workspace.core.WorkspaceSlugAvailability;
+import works.momens.server.workspace.core.WorkspaceSlugReader;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
  * 워크스페이스 조합 서비스입니다. 도메인 public API를 조합하며 정책은 소유하지 않습니다.
@@ -35,7 +33,6 @@ import works.momens.server.workspace.WorkspaceSlugReader;
 class WorkspaceService {
 
   private final WorkspaceReader workspaceReader;
-  private final WorkspaceAccess workspaceAccess;
   private final WorkspaceSlugReader workspaceSlugReader;
   private final WorkspaceEditor workspaceEditor;
   private final WorkspaceAccessChecker workspaceAccessChecker;
@@ -66,10 +63,7 @@ class WorkspaceService {
                     new BusinessException(
                         WorkspaceErrorCode.WORKSPACE_NOT_FOUND,
                         Map.of("workspace_id", workspaceId.toString())));
-    if (!workspaceAccess.isMember(workspaceId, userId)) {
-      throw new BusinessException(
-          CommonErrorCode.AUTH_FORBIDDEN, Map.of("workspace_id", workspaceId.toString()));
-    }
+    workspaceAccessChecker.requireRoleAtLeast(workspaceId, userId, WorkspaceRole.MEMBER);
     return detail;
   }
 
@@ -85,13 +79,4 @@ class WorkspaceService {
     workspaceAccessChecker.requireRoleAtLeast(workspaceId, userId, WorkspaceRole.ADMIN);
     return workspaceEditor.update(new UpdateWorkspaceCommand(workspaceId, name, description, slug));
   }
-
-  /** 워크스페이스가 없으면 WORKSPACE_NOT_FOUND를 던집니다. */
-
-  /**
-   * 사용자의 역할이 요구 수준을 충족하지 않으면 AUTH_FORBIDDEN을 던집니다.
-   *
-   * <p>멤버가 아닌 경우와 멤버이지만 권한이 부족한 경우를 같은 에러 코드로 처리합니다. 필요한 역할은 details의 {@code required_role}로 전달하므로
-   * 역할이 추가되더라도 에러 코드는 유지할 수 있습니다.
-   */
 }

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.UUID;
-import works.momens.server.workspace.WorkspaceInvitationDetail;
+import works.momens.server.workspace.invitation.WorkspaceInvitationDetail;
 
 @Schema(description = "워크스페이스 초대 한 건 응답")
 public record WorkspaceInvitationResponse(@Schema(description = "초대 정보") Invitation invitation) {

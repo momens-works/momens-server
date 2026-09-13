@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
-import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.context.EntityRelationReader;
 import works.momens.server.context.TaskContextLinks;
 import works.momens.server.memory.ConfirmedMemoryDetail;
@@ -19,7 +18,8 @@ import works.momens.server.project.task.TaskReader;
 import works.momens.server.project.task.TaskSnapshot;
 import works.momens.server.source.LegacySourceRefDetail;
 import works.momens.server.source.SourceRefReader;
-import works.momens.server.workspace.WorkspaceAccess;
+import works.momens.server.web.WorkspaceAccessChecker;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +29,7 @@ class TaskReadService {
   private final EntityRelationReader entityRelationReader;
   private final ConfirmedMemoryReader confirmedMemoryReader;
   private final SourceRefReader sourceRefReader;
-  private final WorkspaceAccess workspaceAccess;
+  private final WorkspaceAccessChecker workspaceAccessChecker;
 
   @Transactional(readOnly = true)
   public List<TaskSnapshot> list(UUID projectId, UUID userId) {
@@ -73,10 +73,7 @@ class TaskReadService {
   }
 
   private void requireMember(UUID workspaceId, UUID userId) {
-    if (!workspaceAccess.isMember(workspaceId, userId)) {
-      throw new BusinessException(
-          CommonErrorCode.AUTH_FORBIDDEN, Map.of("workspace_id", workspaceId.toString()));
-    }
+    workspaceAccessChecker.requireRoleAtLeast(workspaceId, userId, WorkspaceRole.MEMBER);
   }
 
   record TaskContext(

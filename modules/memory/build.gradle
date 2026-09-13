@@ -19,7 +19,7 @@ dependencies {
     implementation project(':context')
     // confirm(H084·H088)이 memory.confirmed, resolve 가 memory.updated 를 발행합니다(ADR-0008).
     implementation project(':outbox')
-    // 확정 시 MEM 라벨을 LabelAllocator 로 발급받고, 워크스페이스 멤버십을 WorkspaceAccess 로 확인합니다.
+    // 확정 시 MEM 라벨을 LabelAllocator 로 발급받고, 워크스페이스 멤버십을 WorkspaceMembershipReader 로 확인합니다.
     // 이 런타임 의존은 workspaces·workspace_members 마이그레이션도 테스트 클래스패스에 올립니다.
     implementation project(':workspace')
 

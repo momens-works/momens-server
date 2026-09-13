@@ -1,9 +1,9 @@
 /**
- * workspace 범위 라벨 발급 하위 도메인.
+ * 워크스페이스 단위의 라벨 발급 하위 도메인입니다.
  *
- * <p>workspace 모듈 안에서 라벨 발급 카운터가 담당하는 경계를 Spring Modulith nested 모듈로 명시합니다(MOM-70). 외부에는 모듈 root의
- * {@link works.momens.server.workspace.LabelAllocator}로만 공개합니다. 발급이 호출자 트랜잭션에 참여하는 이유는
- * docs/design/module-map.md workspace 절에 있습니다.
+ * <p>{@code WorkspaceLabelSequence} aggregate와 발급 카운터를 관리하며, 외부에는 {@code LabelAllocator}만 공개합니다.
+ * 구현은 {@code internal} 패키지에 둡니다. 라벨 발급이 호출자의 트랜잭션에 참여하는 이유는 {@code docs/design/module-map.md}의
+ * workspace 절에 설명되어 있습니다.
  */
-@org.springframework.modulith.ApplicationModule
+@org.springframework.modulith.NamedInterface
 package works.momens.server.workspace.label;

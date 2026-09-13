@@ -10,8 +10,8 @@ import works.momens.server.mobile.MobilePriority;
 import works.momens.server.mobile.board.BoardStatus;
 import works.momens.server.project.task.TaskOrigin;
 import works.momens.server.project.task.TaskStatus;
-import works.momens.server.workspace.InvitationStatus;
-import works.momens.server.workspace.WorkspaceRole;
+import works.momens.server.workspace.invitation.InvitationStatus;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
  * CHECK 제약과 enum이 같은 값 집합을 나타낸다는 대응 관계를 선언합니다.
@@ -56,7 +56,8 @@ final class CheckConstraintEnumLinks {
           new EnumLink(
               "workspace_label_sequences",
               "label_prefix",
-              internalEnumValues("works.momens.server.workspace.label.LabelPrefix", "value"),
+              internalEnumValues(
+                  "works.momens.server.workspace.label.internal.LabelPrefix", "value"),
               IntendedDifference.NONE),
           new EnumLink(
               "tasks",

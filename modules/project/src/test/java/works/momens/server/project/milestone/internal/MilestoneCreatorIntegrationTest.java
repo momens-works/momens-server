@@ -19,8 +19,7 @@ import works.momens.server.project.core.ProjectOwnerReader;
 import works.momens.server.project.milestone.CreateMilestoneCommand;
 import works.momens.server.project.milestone.MilestoneCreator;
 import works.momens.server.project.milestone.MilestoneDetail;
-import works.momens.server.workspace.WorkspaceAccess;
-import works.momens.server.workspace.WorkspaceMembership;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 /**
  * 마일스톤 생성 public API의 동작을 검증합니다.
@@ -45,7 +44,7 @@ class MilestoneCreatorIntegrationTest extends AbstractPostgresIntegrationTest {
   @Autowired private MilestoneOwnerRepository milestoneOwnerRepository;
   @Autowired private TestEntityManager entityManager;
 
-  @MockitoBean private WorkspaceAccess workspaceAccess;
+  @MockitoBean private WorkspaceMembershipReader workspaceMembershipReader;
   @MockitoBean private ProjectOwnerReader projectOwnerReader;
 
   @Test
@@ -103,9 +102,7 @@ class MilestoneCreatorIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   private void givenMembers(UUID workspaceId, UUID... userIds) {
-    given(workspaceAccess.listMemberships(workspaceId))
-        .willReturn(
-            List.of(userIds).stream().map(id -> new WorkspaceMembership(id, "member")).toList());
+    given(workspaceMembershipReader.listMemberUserIds(workspaceId)).willReturn(List.of(userIds));
   }
 
   private static CreateMilestoneCommand command(Fixture fixture, List<UUID> ownerUserIds) {

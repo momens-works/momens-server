@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,8 +32,9 @@ import works.momens.server.project.task.TaskScope;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.project.task.UpdateTaskCommand;
 import works.momens.server.project.task.UpdateTaskCommand.ChecklistItemEdit;
-import works.momens.server.workspace.LabelAllocator;
-import works.momens.server.workspace.WorkspaceAccess;
+import works.momens.server.workspace.label.LabelAllocator;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
  * task 수정 public API 검증.
@@ -48,7 +50,7 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
 
   @MockitoBean private ProjectReader projectReader;
   @MockitoBean private MilestoneDirectory milestoneDirectory;
-  @MockitoBean private WorkspaceAccess workspaceAccess;
+  @MockitoBean private WorkspaceMembershipReader workspaceMembershipReader;
   @MockitoBean private LabelAllocator labelAllocator;
   @MockitoBean private OutboxAppender outboxAppender;
 
@@ -59,7 +61,8 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
 
   @BeforeEach
   void allowAssigneeReference() {
-    when(workspaceAccess.isMember(any(), any())).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(any(), any()))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
   }
 
   @Test
@@ -98,7 +101,8 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
         .setParameter(2, fixture.taskId())
         .executeUpdate();
     entityManager.clear();
-    when(workspaceAccess.isMember(fixture.workspaceId(), assigneeId)).thenReturn(false);
+    when(workspaceMembershipReader.roleOf(fixture.workspaceId(), assigneeId))
+        .thenReturn(Optional.empty());
 
     TaskDetail updated =
         taskWriter.update(

@@ -358,6 +358,9 @@ prod 배포 전에는 [prod 운영 준비 대장](../../prod-readiness-ledger.md
 
 ## 롤백
 
+이 절은 원칙만 정한다. 웹 컷오버의 단계별 실행·롤백 절차는
+[웹 컷오버 실행과 rollback runbook](cutover.md)에 있다.
+
 롤백은 deploy rollback과 writer rollback을 구분한다.
 
 - **deploy rollback**: 신규 서버 코드나 routing을 직전 버전으로 되돌린다.
@@ -425,7 +428,10 @@ write 컷오버 전 다음을 확인한다.
 
 다음은 구현하면서 조용히 정하지 않는다.
 
-1. **레거시 웹 트래픽 컷오버**: 혼합 트래픽을 허용할지, 허용한다면 어떤 세션 브리지를 둘지.
+1. ~~**레거시 웹 트래픽 컷오버**: 혼합 트래픽을 허용할지, 허용한다면 어떤 세션 브리지를 둘지.~~
+   확정했다. Product capability별 혼합 전환은 하지 않고 인증과 Product API를 2단계로 나눈다.
+   미이관 OAuth interaction·MCP grant UI만 한시적 legacy base로 격리하고 ADR-0018의 세션 브리지를
+   유지한다([컷오버 문서](cutover.md), `MOM-0911`).
 2. **첫 수직 슬라이스**: 위 선정 기준에 따른 대상과 제외 endpoint.
 3. **retrieval 책임과 worker 소비 계약**: `module-map`의 신규 서버 `retrieval` 모듈 책임과 ADR-0008의
    worker projection 책임을 정합화하고, 공통 outbox 소비 기반과 aggregate별 hydrate·projection 경계를
@@ -444,5 +450,7 @@ write 컷오버 전 다음을 확인한다.
 1. 고정 SHA 기준 route·비-HTTP entry point 전수 원장을 만들고 공통 cross-repository 의존성을 등록한다.
 2. worker outbox 소비 기반과 aggregate별 projection 구현 작업을 분리해 만들고 원장에 연결한다.
 3. 원장에서 첫 수직 슬라이스 후보를 비교한다.
-4. 혼합 웹 트래픽이 필요한지 판단하고, 필요할 때만 세션 공존 ADR을 작성한다.
+4. ~~혼합 웹 트래픽이 필요한지 판단하고, 필요할 때만 세션 공존 ADR을 작성한다.~~ 완료. Product
+   capability별 혼합은 하지 않으며, 미이관 OAuth/MCP UI의 한시적 legacy base는 ADR-0018의 기존
+   세션 공존 결정으로 처리한다([컷오버 문서](cutover.md), `MOM-0911`).
 5. 선택한 슬라이스마다 `migrate-slice` 추적과 구현 작업을 별도 Momens task로 만든다.

@@ -40,11 +40,12 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
-      # 포맷, Gradle-Docker 모듈 정합성, 테스트를 한 호출로 검사합니다. bootJar 까지 같이
-      # 넘기면 Gradle 이 태스크 그래프 순서대로 bootJar 를 테스트보다 먼저 실행해, 테스트가
-      # 실패할 커밋도 jar 조립 비용을 먼저 치릅니다. 그래서 호출을 나눕니다.
+      # check에 연결된 검증 태스크(포맷, Gradle-Docker 모듈 정합성, 버전 카탈로그, 테스트)를 한 번에
+      # 실행합니다. 새 검증 태스크는 check에 dependsOn으로 연결하면 이 단계에 포함됩니다. bootJar를 같은
+      # 호출에 포함하면 Gradle이 태스크 그래프에 따라 테스트보다 bootJar를 먼저 실행할 수 있습니다. 그러면
+      # 테스트가 실패하는 커밋에서도 JAR 조립 비용이 먼저 발생하므로, 두 호출을 분리합니다.
       - name: Check and test
-        run: ./gradlew spotlessCheck verifyDockerModuleBuildScripts test
+        run: ./gradlew check
 
       - name: Upload test report
         if: failure()

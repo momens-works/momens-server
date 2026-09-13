@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,7 @@ import works.momens.server.context.EntityRelationCommand;
 import works.momens.server.context.EntityRelationWriter;
 import works.momens.server.context.EntityType;
 import works.momens.server.context.RelationType;
+import works.momens.server.workspace.WorkspaceSeedSql;
 
 /**
  * 엔티티 연결 쓰기 public API를 검증합니다.
@@ -36,9 +38,14 @@ class EntityRelationWriterIntegrationTest extends AbstractPostgresIntegrationTes
   @Autowired private EntityRelationWriter entityRelationWriter;
   @Autowired private TestEntityManager entityManager;
 
-  private final UUID workspaceId = UUID.randomUUID();
   private final UUID fromId = UUID.randomUUID();
   private final UUID toId = UUID.randomUUID();
+  private UUID workspaceId;
+
+  @BeforeEach
+  void insertWorkspace() {
+    workspaceId = WorkspaceSeedSql.insertWorkspace(entityManager, "ws-" + UUID.randomUUID());
+  }
 
   @Test
   @DisplayName("연결이 없으면 새로 만든다")

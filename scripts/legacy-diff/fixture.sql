@@ -18,12 +18,10 @@ BEGIN;
 SET LOCAL client_min_messages TO WARNING;
 
 TRUNCATE workspace_members, workspaces, users CASCADE;
-TRUNCATE source_refs CASCADE;
 -- memory 계열은 따로 비웁니다. 레거시에서는 workspaces CASCADE 로 함께 지워지지만, 신규 서버의
 -- 미러는 다른 모듈 테이블로 나가는 FK 를 두지 않아 CASCADE 가 닿지 않습니다. 명시하지 않으면 write
 -- 케이스마다 이 파일을 다시 적용할 때 신규 쪽만 이전 행이 남아 PK 충돌로 멈춥니다.
 TRUNCATE review_actions, confirmed_memories, memory_candidates CASCADE;
-TRUNCATE entity_relations CASCADE;
 
 INSERT INTO users (id, email, name, avatar_url, created_at, updated_at) VALUES
   ('00000000-0000-4000-8000-000000000001', 'owner@momens.works',    '홍길동', 'https://cdn.momens.works/avatars/owner.png', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z'),

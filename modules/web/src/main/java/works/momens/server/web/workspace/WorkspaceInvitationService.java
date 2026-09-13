@@ -7,16 +7,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.web.WorkspaceAccessChecker;
-import works.momens.server.workspace.AddMembershipByEmailCommand;
-import works.momens.server.workspace.CreateInvitationCommand;
-import works.momens.server.workspace.ResendInvitationCommand;
-import works.momens.server.workspace.RevokeInvitationCommand;
 import works.momens.server.workspace.WorkspaceErrorCode;
-import works.momens.server.workspace.WorkspaceInvitationDetail;
-import works.momens.server.workspace.WorkspaceInvitationReader;
-import works.momens.server.workspace.WorkspaceInvitationWriter;
-import works.momens.server.workspace.WorkspaceMembershipWriter;
-import works.momens.server.workspace.WorkspaceRole;
+import works.momens.server.workspace.invitation.CreateInvitationCommand;
+import works.momens.server.workspace.invitation.ResendInvitationCommand;
+import works.momens.server.workspace.invitation.RevokeInvitationCommand;
+import works.momens.server.workspace.invitation.WorkspaceInvitationDetail;
+import works.momens.server.workspace.invitation.WorkspaceInvitationReader;
+import works.momens.server.workspace.invitation.WorkspaceInvitationWriter;
+import works.momens.server.workspace.membership.AddMembershipByEmailCommand;
+import works.momens.server.workspace.membership.WorkspaceMembershipWriter;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
  * 워크스페이스 초대 조회와 변경 작업을 조합하는 서비스입니다.

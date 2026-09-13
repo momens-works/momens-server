@@ -172,26 +172,37 @@ class WebAuthSessionImplTest {
   }
 
   @Test
-  @DisplayName("로그아웃은 refresh를 폐기하고 세션 쿠키를 정리한다")
+  @DisplayName("로그아웃은 refresh를 폐기하고 access·refresh·legacy session 쿠키를 정리한다")
   void logoutRevokesRefreshAndClearsCookies() {
     WebAuthCookieUpdate result =
         session.logout(requestWithCookies(new Cookie("refresh_token", "web-refresh")));
 
     verify(webAuthService).logout("web-refresh");
-    assertThat(result.setCookieHeaders()).allMatch(c -> c.contains("Max-Age=0")).hasSize(2);
+    assertThat(result.setCookieHeaders())
+        .anyMatch(c -> c.startsWith("access_token=") && c.contains("Path=/;"))
+        .anyMatch(c -> c.startsWith("refresh_token=") && c.contains("Path=/api/auth"))
+        .anyMatch(c -> c.startsWith("session_token=") && c.contains("Path=/;"))
+        .allMatch(c -> c.contains("Max-Age=0"))
+        .hasSize(3);
+    String legacySessionCookie =
+        result.setCookieHeaders().stream()
+            .filter(c -> c.startsWith("session_token="))
+            .findFirst()
+            .orElseThrow();
+    assertThat(legacySessionCookie).doesNotContain("Domain=");
   }
 
   @Test
-  @DisplayName("refresh 쿠키가 없어도 폐기 없이 세션 쿠키를 정리한다")
+  @DisplayName("refresh 쿠키가 없어도 폐기 없이 세 쿠키를 정리한다")
   void logoutClearsCookiesWhenNoRefreshCookie() {
     WebAuthCookieUpdate result = session.logout(new MockHttpServletRequest());
 
     verify(webAuthService, never()).logout(any());
-    assertThat(result.setCookieHeaders()).allMatch(c -> c.contains("Max-Age=0")).hasSize(2);
+    assertThat(result.setCookieHeaders()).allMatch(c -> c.contains("Max-Age=0")).hasSize(3);
   }
 
   @Test
-  @DisplayName("이미 무효한 refresh여도 세션 쿠키를 정리한다(멱등)")
+  @DisplayName("이미 무효한 refresh여도 세 쿠키를 정리한다(멱등)")
   void logoutClearsCookiesEvenWhenRefreshAlreadyInactive() {
     doThrow(new BusinessException(AuthErrorCode.AUTH_REFRESH_TOKEN_INVALID))
         .when(webAuthService)
@@ -200,7 +211,7 @@ class WebAuthSessionImplTest {
     WebAuthCookieUpdate result =
         session.logout(requestWithCookies(new Cookie("refresh_token", "stale-refresh")));
 
-    assertThat(result.setCookieHeaders()).allMatch(c -> c.contains("Max-Age=0")).hasSize(2);
+    assertThat(result.setCookieHeaders()).allMatch(c -> c.contains("Max-Age=0")).hasSize(3);
   }
 
   private static MockHttpServletRequest callbackRequest() {
@@ -231,7 +242,8 @@ class WebAuthSessionImplTest {
                 null,
                 null,
                 null),
-            new AuthProperties.Web.Cookie(false, "Strict", "access_token", "refresh_token", null),
+            new AuthProperties.Web.Cookie(
+                false, "Strict", "access_token", "refresh_token", "momens.works"),
             new AuthProperties.Web.Redirect(SUCCESS_URI, FAILURE_URI)));
   }
 }

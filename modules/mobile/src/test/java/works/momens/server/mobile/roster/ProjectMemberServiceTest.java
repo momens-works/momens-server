@@ -19,8 +19,7 @@ import works.momens.server.project.core.ProjectErrorCode;
 import works.momens.server.project.core.ProjectReader;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
-import works.momens.server.workspace.WorkspaceAccess;
-import works.momens.server.workspace.WorkspaceMembership;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 /**
  * 프로젝트 멤버 조회 조합 규칙 검증. 도메인 모듈 public API는 각자 통합 테스트에서 검증하므로 여기서는 모두 mock으로 두고 조합 규칙(권한 검사 순서, 검색,
@@ -30,7 +29,7 @@ import works.momens.server.workspace.WorkspaceMembership;
 class ProjectMemberServiceTest {
 
   @Mock private ProjectReader projectReader;
-  @Mock private WorkspaceAccess workspaceAccess;
+  @Mock private WorkspaceMembershipReader workspaceMembershipReader;
   @Mock private UserService userService;
   @InjectMocks private ProjectMemberService projectMemberService;
 
@@ -50,10 +49,10 @@ class ProjectMemberServiceTest {
 
   @Test
   void listThrowsForbiddenWhenCallerIsNotInMembershipSnapshot() {
-    // 접근 검사는 별도 isMember 조회가 아니라 응답에 쓸 멤버십 스냅샷 안에서 판단한다.
+    // 요청자의 접근 권한은 별도로 조회하지 않고, 응답에 사용할 멤버 목록을 기준으로 확인합니다.
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.of(WORKSPACE_ID));
-    when(workspaceAccess.listMemberships(WORKSPACE_ID))
-        .thenReturn(List.of(new WorkspaceMembership(UUID.randomUUID(), "owner")));
+    when(workspaceMembershipReader.listMemberUserIds(WORKSPACE_ID))
+        .thenReturn(List.of(UUID.randomUUID()));
 
     assertThatThrownBy(() -> projectMemberService.list(PROJECT_ID, CALLER_ID, null))
         .isInstanceOf(BusinessException.class)
@@ -109,11 +108,8 @@ class ProjectMemberServiceTest {
     UUID existing = UUID.randomUUID();
     UUID missing = UUID.randomUUID();
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.of(WORKSPACE_ID));
-    when(workspaceAccess.listMemberships(WORKSPACE_ID))
-        .thenReturn(
-            List.of(
-                new WorkspaceMembership(existing, "member"),
-                new WorkspaceMembership(missing, "member")));
+    when(workspaceMembershipReader.listMemberUserIds(WORKSPACE_ID))
+        .thenReturn(List.of(existing, missing));
     // getProfiles는 없는 id를 에러 없이 결과에서 뺀다(user 모듈 계약). 응답은 프로필 기준이라 그대로 빠진다.
     when(userService.getProfiles(List.of(existing, missing)))
         .thenReturn(List.of(profile(existing, "신진수", null)));
@@ -127,8 +123,7 @@ class ProjectMemberServiceTest {
   private void stubMembers(UserProfile... profiles) {
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.of(WORKSPACE_ID));
     List<UUID> memberIds = List.of(profiles).stream().map(UserProfile::id).toList();
-    when(workspaceAccess.listMemberships(WORKSPACE_ID))
-        .thenReturn(memberIds.stream().map(id -> new WorkspaceMembership(id, "member")).toList());
+    when(workspaceMembershipReader.listMemberUserIds(WORKSPACE_ID)).thenReturn(memberIds);
     when(userService.getProfiles(memberIds)).thenReturn(List.of(profiles));
   }
 

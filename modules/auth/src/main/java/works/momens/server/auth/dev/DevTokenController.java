@@ -18,7 +18,7 @@ import works.momens.server.common.config.DevOnly;
  */
 @DevOnly
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/dev")
 @RequiredArgsConstructor
 class DevTokenController implements DevTokenControllerDocs {
 
@@ -27,7 +27,7 @@ class DevTokenController implements DevTokenControllerDocs {
   private final DevTokenService devTokenService;
 
   @Override
-  @PostMapping(path = "/dev/token", version = "1")
+  @PostMapping(path = "/auth/token", version = "1")
   public DevTokenResponse issueDevToken(
       @RequestHeader(name = SECRET_HEADER, required = false) String secret,
       @Valid @RequestBody(required = false) DevTokenRequest request) {

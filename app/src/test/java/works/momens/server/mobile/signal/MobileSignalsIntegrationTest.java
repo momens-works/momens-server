@@ -477,8 +477,9 @@ class MobileSignalsIntegrationTest extends AbstractPostgresIntegrationTest {
       UUID workspaceId, String sourceType, String title, String snippet, String text, String url) {
     UUID id = UUID.randomUUID();
     jdbcTemplate.update(
-        "INSERT INTO source_refs (id, workspace_id, source_type, title, snippet, text, source_url)"
-            + " VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO source_refs (id, workspace_id, source_type, source_object_type,"
+            + " source_object_id, title, snippet, text, source_url)"
+            + " VALUES (?, ?, ?, 'FILE_COMMENT', 'obj-1', ?, ?, ?, ?)",
         id,
         workspaceId,
         sourceType,

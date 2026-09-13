@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.UUID;
-import works.momens.server.workspace.WorkspaceDetail;
+import works.momens.server.workspace.core.WorkspaceDetail;
 
 /**
  * 워크스페이스 한 건의 응답. {@code GET /api/workspaces}의 배열 원소와 {@code GET /api/workspaces/{workspaceId}}(래퍼

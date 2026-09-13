@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import works.momens.server.common.api.BusinessException;
@@ -18,6 +19,7 @@ import works.momens.server.source.SourceErrorCode;
 import works.momens.server.source.SourceRefDetail;
 import works.momens.server.source.SourceRefReader;
 import works.momens.server.source.SourceRefVerifier;
+import works.momens.server.workspace.WorkspaceSeedSql;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -32,12 +34,13 @@ class SourceRefVerifierIntegrationTest extends AbstractPostgresIntegrationTest {
   @Autowired private SourceRefVerifier sourceRefVerifier;
   @Autowired private SourceRefReader sourceRefReader;
   @Autowired private JdbcTemplate jdbcTemplate;
+  @Autowired private TestEntityManager entityManager;
 
   @Test
   @DisplayName("source-ref를 검증 완료로 표시하고 레거시 응답의 모든 필드를 반환한다")
   void marksSourceRefVerifiedAndReturnsEveryFieldTheLegacyResponseCarries() {
-    UUID workspaceId = UUID.randomUUID();
-    UUID userId = UUID.randomUUID();
+    UUID workspaceId = insertWorkspace();
+    UUID userId = insertUser();
     UUID sourceRefId = insertSourceRef(workspaceId, null);
 
     SourceRefDetail detail = sourceRefVerifier.verify(sourceRefId, userId);
@@ -55,9 +58,9 @@ class SourceRefVerifierIntegrationTest extends AbstractPostgresIntegrationTest {
   @Test
   @DisplayName("source-ref를 다시 검증하면 마지막으로 검증한 사용자로 덮어쓴다")
   void overwritesAnEarlierVerification() {
-    UUID sourceRefId = insertSourceRef(UUID.randomUUID(), null);
-    UUID firstUser = UUID.randomUUID();
-    UUID secondUser = UUID.randomUUID();
+    UUID sourceRefId = insertSourceRef(insertWorkspace(), null);
+    UUID firstUser = insertUser();
+    UUID secondUser = insertUser();
 
     sourceRefVerifier.verify(sourceRefId, firstUser);
     SourceRefDetail second = sourceRefVerifier.verify(sourceRefId, secondUser);
@@ -78,7 +81,7 @@ class SourceRefVerifierIntegrationTest extends AbstractPostgresIntegrationTest {
   @Test
   @DisplayName("소프트 삭제된 source-ref는 거부한다")
   void rejectsSourceRefThatIsSoftDeleted() {
-    UUID sourceRefId = insertSourceRef(UUID.randomUUID(), Instant.now());
+    UUID sourceRefId = insertSourceRef(insertWorkspace(), Instant.now());
 
     assertThatThrownBy(() -> sourceRefVerifier.verify(sourceRefId, UUID.randomUUID()))
         .isInstanceOf(BusinessException.class)
@@ -88,13 +91,21 @@ class SourceRefVerifierIntegrationTest extends AbstractPostgresIntegrationTest {
   @Test
   @DisplayName("소프트 삭제되지 않은 source-ref의 워크스페이스만 조회한다")
   void findsWorkspaceOfLiveSourceRefOnly() {
-    UUID workspaceId = UUID.randomUUID();
+    UUID workspaceId = insertWorkspace();
     UUID live = insertSourceRef(workspaceId, null);
     UUID deleted = insertSourceRef(workspaceId, Instant.now());
 
     assertThat(sourceRefReader.findWorkspaceId(live)).contains(workspaceId);
     assertThat(sourceRefReader.findWorkspaceId(deleted)).isEmpty();
     assertThat(sourceRefReader.findWorkspaceId(UUID.randomUUID())).isEmpty();
+  }
+
+  private UUID insertWorkspace() {
+    return WorkspaceSeedSql.insertWorkspace(entityManager, "ws-" + UUID.randomUUID());
+  }
+
+  private UUID insertUser() {
+    return WorkspaceSeedSql.insertUser(entityManager, UUID.randomUUID() + "@momens.works");
   }
 
   private UUID insertSourceRef(UUID workspaceId, Instant deletedAt) {

@@ -3,7 +3,7 @@ package works.momens.server.web.workspace.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import works.momens.server.web.workspace.dto.response.WorkspaceInvitationResponse.Invitation;
-import works.momens.server.workspace.WorkspaceInvitationDetail;
+import works.momens.server.workspace.invitation.WorkspaceInvitationDetail;
 
 @Schema(description = "워크스페이스 초대 목록 응답")
 public record WorkspaceInvitationsResponse(

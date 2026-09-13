@@ -24,9 +24,8 @@ import works.momens.server.project.ProjectSeedSql;
 import works.momens.server.project.core.CreateProjectCommand;
 import works.momens.server.project.core.ProjectCreator;
 import works.momens.server.project.core.ProjectDetail;
-import works.momens.server.workspace.LabelAllocator;
-import works.momens.server.workspace.WorkspaceAccess;
-import works.momens.server.workspace.WorkspaceMembership;
+import works.momens.server.workspace.label.LabelAllocator;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 /**
  * 프로젝트 생성 public API의 동작을 검증합니다.
@@ -50,7 +49,7 @@ class ProjectCreatorIntegrationTest extends AbstractPostgresIntegrationTest {
   @Autowired private TestEntityManager entityManager;
 
   @MockitoBean private LabelAllocator labelAllocator;
-  @MockitoBean private WorkspaceAccess workspaceAccess;
+  @MockitoBean private WorkspaceMembershipReader workspaceMembershipReader;
 
   @Test
   void savesAllocatedLabelRequestedValuesAndOwners() {
@@ -134,9 +133,7 @@ class ProjectCreatorIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   private void givenMembers(UUID workspaceId, UUID... userIds) {
-    given(workspaceAccess.listMemberships(workspaceId))
-        .willReturn(
-            List.of(userIds).stream().map(id -> new WorkspaceMembership(id, "member")).toList());
+    given(workspaceMembershipReader.listMemberUserIds(workspaceId)).willReturn(List.of(userIds));
   }
 
   private static CreateProjectCommand command(

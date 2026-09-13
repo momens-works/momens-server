@@ -35,7 +35,8 @@ import works.momens.server.project.task.TaskReader;
 import works.momens.server.signal.SignalActionResult;
 import works.momens.server.signal.SignalErrorCode;
 import works.momens.server.signal.SignalReader;
-import works.momens.server.workspace.WorkspaceAccess;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 /** SignalActionServiceImpl의 가드·멱등·충돌·동시성 레이스 정책 검증(원자 쓰기는 SignalActionExecutor를 mock으로 분리). */
 class SignalActionServiceImplTest {
@@ -46,7 +47,8 @@ class SignalActionServiceImplTest {
   private static final UUID USER_ID = UUID.randomUUID();
 
   private final SignalReader signalReader = mock(SignalReader.class);
-  private final WorkspaceAccess workspaceAccess = mock(WorkspaceAccess.class);
+  private final WorkspaceMembershipReader workspaceMembershipReader =
+      mock(WorkspaceMembershipReader.class);
   private final SignalActionRepository signalActionRepository = mock(SignalActionRepository.class);
   private final SignalActionExecutor executor = mock(SignalActionExecutor.class);
   private final TaskReader taskReader = mock(TaskReader.class);
@@ -60,7 +62,7 @@ class SignalActionServiceImplTest {
     service =
         new SignalActionServiceImpl(
             signalReader,
-            workspaceAccess,
+            workspaceMembershipReader,
             signalActionRepository,
             executor,
             taskReader,
@@ -99,7 +101,7 @@ class SignalActionServiceImplTest {
   @DisplayName("workspace 멤버가 아니면 AUTH_FORBIDDEN을 던진다(404 우선)")
   void throwsForbiddenWhenNotMember() {
     when(signalReader.findLive(SIGNAL_ID)).thenReturn(Optional.of(snapshot()));
-    when(workspaceAccess.isMember(WORKSPACE_ID, USER_ID)).thenReturn(false);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, USER_ID)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> service.dismiss(SIGNAL_ID, USER_ID))
         .isInstanceOf(BusinessException.class)
@@ -112,7 +114,8 @@ class SignalActionServiceImplTest {
   void convertUsesGeneratedDraft() {
     SignalReader.Snapshot signal = snapshot();
     when(signalReader.findLive(SIGNAL_ID)).thenReturn(Optional.of(signal));
-    when(workspaceAccess.isMember(WORKSPACE_ID, USER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, USER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     when(signalActionRepository.findBySignalId(SIGNAL_ID)).thenReturn(Optional.empty());
     when(signalReader.findDraftEvidence(SIGNAL_ID)).thenReturn(List.of());
     when(taskDraftGenerator.prepare(any()))
@@ -138,7 +141,8 @@ class SignalActionServiceImplTest {
   void convertPassesFallbackDraftToExecutor() {
     SignalReader.Snapshot signal = snapshot();
     when(signalReader.findLive(SIGNAL_ID)).thenReturn(Optional.of(signal));
-    when(workspaceAccess.isMember(WORKSPACE_ID, USER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, USER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     when(signalActionRepository.findBySignalId(SIGNAL_ID)).thenReturn(Optional.empty());
     when(signalReader.findDraftEvidence(SIGNAL_ID)).thenReturn(List.of());
     when(taskDraftGenerator.prepare(any())).thenReturn(prepared("제목", Role.PM, Priority.MEDIUM));
@@ -161,7 +165,8 @@ class SignalActionServiceImplTest {
   @DisplayName("generator 입력은 Signal title/type/description/impact와 조회 순서를 유지한 evidence만 포함한다")
   void convertPassesSignalAndEvidenceToGenerator() {
     when(signalReader.findLive(SIGNAL_ID)).thenReturn(Optional.of(snapshot()));
-    when(workspaceAccess.isMember(WORKSPACE_ID, USER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, USER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     when(signalActionRepository.findBySignalId(SIGNAL_ID)).thenReturn(Optional.empty());
     when(signalReader.findDraftEvidence(SIGNAL_ID))
         .thenReturn(
@@ -193,7 +198,8 @@ class SignalActionServiceImplTest {
   @DisplayName("근거가 없으면 빈 evidence 목록으로 generator를 호출한다")
   void convertPassesEmptyEvidenceWhenSignalHasNone() {
     when(signalReader.findLive(SIGNAL_ID)).thenReturn(Optional.of(snapshot()));
-    when(workspaceAccess.isMember(WORKSPACE_ID, USER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, USER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     when(signalActionRepository.findBySignalId(SIGNAL_ID)).thenReturn(Optional.empty());
     when(signalReader.findDraftEvidence(SIGNAL_ID)).thenReturn(List.of());
     when(taskDraftGenerator.prepare(any())).thenReturn(prepared("제목", Role.PM, Priority.MEDIUM));
@@ -213,7 +219,8 @@ class SignalActionServiceImplTest {
   void dismissDoesNotTouchDraftGeneration() {
     SignalReader.Snapshot signal = snapshot();
     when(signalReader.findLive(SIGNAL_ID)).thenReturn(Optional.of(signal));
-    when(workspaceAccess.isMember(WORKSPACE_ID, USER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, USER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     when(signalActionRepository.findBySignalId(SIGNAL_ID)).thenReturn(Optional.empty());
     when(executor.dismiss(signal, USER_ID))
         .thenReturn(new SignalActionResult(SIGNAL_ID, "dismiss", true, null));
@@ -228,7 +235,8 @@ class SignalActionServiceImplTest {
   @DisplayName("같은 action 재요청은 executor를 호출하지 않고 기존 결과를 replay한다")
   void replaysExistingResultForSameAction() {
     when(signalReader.findLive(SIGNAL_ID)).thenReturn(Optional.of(snapshot()));
-    when(workspaceAccess.isMember(WORKSPACE_ID, USER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, USER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     UUID taskId = UUID.randomUUID();
     SignalAction existing =
         SignalAction.builder()
@@ -295,7 +303,8 @@ class SignalActionServiceImplTest {
   @DisplayName("replay는 원장을 task보다 먼저 읽고 그 상태를 응답에 담는다")
   void replayReadsLedgerBeforeTask() {
     when(signalReader.findLive(SIGNAL_ID)).thenReturn(Optional.of(snapshot()));
-    when(workspaceAccess.isMember(WORKSPACE_ID, USER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, USER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     UUID taskId = UUID.randomUUID();
     when(signalActionRepository.findBySignalId(SIGNAL_ID))
         .thenReturn(Optional.of(existingConvert(taskId)));
@@ -316,7 +325,8 @@ class SignalActionServiceImplTest {
   @DisplayName("replay 대상 task가 존재하지 않으면 진단 메시지를 담은 IllegalStateException을 던진다")
   void throwsIllegalStateWhenReplayTaskMissing() {
     when(signalReader.findLive(SIGNAL_ID)).thenReturn(Optional.of(snapshot()));
-    when(workspaceAccess.isMember(WORKSPACE_ID, USER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, USER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     UUID missingTaskId = UUID.randomUUID();
     SignalAction existing =
         SignalAction.builder()
@@ -339,7 +349,8 @@ class SignalActionServiceImplTest {
   @DisplayName("이미 다른 action으로 처리됐으면 SIGNAL_INVALID_STATE를 던진다")
   void throwsInvalidStateWhenProcessedByDifferentAction() {
     when(signalReader.findLive(SIGNAL_ID)).thenReturn(Optional.of(snapshot()));
-    when(workspaceAccess.isMember(WORKSPACE_ID, USER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, USER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     SignalAction existing =
         SignalAction.builder()
             .workspaceId(WORKSPACE_ID)
@@ -362,7 +373,8 @@ class SignalActionServiceImplTest {
   void recoversFromRaceByReplayingAfterConvertConstraintViolation() {
     SignalReader.Snapshot signal = snapshot();
     when(signalReader.findLive(SIGNAL_ID)).thenReturn(Optional.of(signal));
-    when(workspaceAccess.isMember(WORKSPACE_ID, USER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, USER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     UUID taskId = UUID.randomUUID();
     SignalAction racedRow =
         SignalAction.builder()
@@ -411,7 +423,8 @@ class SignalActionServiceImplTest {
     // 응답만 유실된 replay와 장애 성격이 다르다(5.3절). 둘을 같은 경로로 흡수하면 분석이 어긋난다.
     SignalReader.Snapshot signal = snapshot();
     when(signalReader.findLive(SIGNAL_ID)).thenReturn(Optional.of(signal));
-    when(workspaceAccess.isMember(WORKSPACE_ID, USER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, USER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     when(signalActionRepository.findBySignalId(SIGNAL_ID)).thenReturn(Optional.empty());
     when(signalReader.findDraftEvidence(SIGNAL_ID)).thenReturn(List.of());
     when(taskDraftGenerator.prepare(any())).thenReturn(prepared("제목", Role.PM, Priority.MEDIUM));
@@ -428,7 +441,8 @@ class SignalActionServiceImplTest {
   void recoversFromRaceByReplayingAfterConstraintViolation() {
     SignalReader.Snapshot signal = snapshot();
     when(signalReader.findLive(SIGNAL_ID)).thenReturn(Optional.of(signal));
-    when(workspaceAccess.isMember(WORKSPACE_ID, USER_ID)).thenReturn(true);
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, USER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     SignalAction racedRow =
         SignalAction.builder()
             .workspaceId(WORKSPACE_ID)

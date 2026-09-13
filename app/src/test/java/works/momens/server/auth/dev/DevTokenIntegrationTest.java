@@ -45,7 +45,7 @@ class DevTokenIntegrationTest extends AbstractPostgresIntegrationTest {
     String response =
         mockMvc
             .perform(
-                post("/api/auth/dev/token")
+                post("/api/dev/auth/token")
                     .header(SECRET_HEADER, SECRET)
                     .header(API_VERSION_HEADER, API_VERSION))
             .andExpect(status().isOk())
@@ -70,7 +70,7 @@ class DevTokenIntegrationTest extends AbstractPostgresIntegrationTest {
     String response =
         mockMvc
             .perform(
-                post("/api/auth/dev/token")
+                post("/api/dev/auth/token")
                     .header(SECRET_HEADER, SECRET)
                     .header(API_VERSION_HEADER, API_VERSION)
                     .contentType(MediaType.APPLICATION_JSON)
@@ -91,7 +91,7 @@ class DevTokenIntegrationTest extends AbstractPostgresIntegrationTest {
   void rejectsWrongSecret() throws Exception {
     mockMvc
         .perform(
-            post("/api/auth/dev/token")
+            post("/api/dev/auth/token")
                 .header(SECRET_HEADER, "wrong-secret")
                 .header(API_VERSION_HEADER, API_VERSION))
         .andExpect(status().isUnauthorized())
@@ -101,7 +101,7 @@ class DevTokenIntegrationTest extends AbstractPostgresIntegrationTest {
   @Test
   void rejectsMissingSecret() throws Exception {
     mockMvc
-        .perform(post("/api/auth/dev/token").header(API_VERSION_HEADER, API_VERSION))
+        .perform(post("/api/dev/auth/token").header(API_VERSION_HEADER, API_VERSION))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.error.code").value("AUTH_DEV_TOKEN_SECRET_INVALID"));
   }
@@ -110,7 +110,7 @@ class DevTokenIntegrationTest extends AbstractPostgresIntegrationTest {
   void rejectsEmailNotInAllowlist() throws Exception {
     mockMvc
         .perform(
-            post("/api/auth/dev/token")
+            post("/api/dev/auth/token")
                 .header(SECRET_HEADER, SECRET)
                 .header(API_VERSION_HEADER, API_VERSION)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -126,7 +126,7 @@ class DevTokenIntegrationTest extends AbstractPostgresIntegrationTest {
 
     mockMvc
         .perform(
-            post("/api/auth/dev/token")
+            post("/api/dev/auth/token")
                 .header(SECRET_HEADER, SECRET)
                 .header(API_VERSION_HEADER, API_VERSION)
                 .contentType(MediaType.APPLICATION_JSON)

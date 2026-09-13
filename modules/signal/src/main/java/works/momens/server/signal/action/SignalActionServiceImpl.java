@@ -20,7 +20,7 @@ import works.momens.server.signal.SignalActionResult;
 import works.momens.server.signal.SignalActionService;
 import works.momens.server.signal.SignalErrorCode;
 import works.momens.server.signal.SignalReader;
-import works.momens.server.workspace.WorkspaceAccess;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 /**
  * Signal action 멱등·충돌 정책 facade.
@@ -36,7 +36,7 @@ import works.momens.server.workspace.WorkspaceAccess;
 class SignalActionServiceImpl implements SignalActionService {
 
   private final SignalReader signalReader;
-  private final WorkspaceAccess workspaceAccess;
+  private final WorkspaceMembershipReader workspaceMembershipReader;
   private final SignalActionRepository signalActionRepository;
   private final SignalActionExecutor executor;
   private final TaskReader taskReader;
@@ -87,7 +87,7 @@ class SignalActionServiceImpl implements SignalActionService {
                     new BusinessException(
                         SignalErrorCode.SIGNAL_NOT_FOUND,
                         Map.of("signal_id", signalId.toString())));
-    if (!workspaceAccess.isMember(signal.workspaceId(), userId)) {
+    if (workspaceMembershipReader.roleOf(signal.workspaceId(), userId).isEmpty()) {
       throw new BusinessException(
           CommonErrorCode.AUTH_FORBIDDEN, Map.of("signal_id", signalId.toString()));
     }

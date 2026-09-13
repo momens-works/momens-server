@@ -8,9 +8,9 @@ import works.momens.server.user.UserService;
 import works.momens.server.web.workspace.dto.response.AcceptInvitationResponse;
 import works.momens.server.web.workspace.dto.response.WorkspaceMemberResponse;
 import works.momens.server.web.workspace.dto.response.WorkspaceResponse;
-import works.momens.server.workspace.AcceptInvitationCommand;
-import works.momens.server.workspace.AcceptedInvitation;
-import works.momens.server.workspace.WorkspaceInvitationAcceptor;
+import works.momens.server.workspace.invitation.AcceptInvitationCommand;
+import works.momens.server.workspace.invitation.AcceptedInvitation;
+import works.momens.server.workspace.invitation.WorkspaceInvitationAcceptor;
 
 /**
  * 초대 수락 결과를 응답 형식에 맞게 조합하는 서비스입니다.

@@ -21,4 +21,11 @@ dependencies {
 
     // common testFixtures의 Testcontainers 통합테스트 베이스를 재사용합니다.
     testImplementation testFixtures(project(':common'))
+
+    // entity_relations.workspace_id 외래 키 제약을 적용하려면 테스트 DB에 workspaces 테이블과 해당 테이블이
+    // 참조하는 users 테이블이 필요합니다. 외래 키 제약을 만족하는 행은 WorkspaceSeedSql로 저장합니다.
+    // main 소스에는 필요하지 않은 테스트 의존성이며, context 모듈은 다른 모듈을 참조하지 않습니다.
+    testImplementation project(':workspace')
+    testImplementation project(':user')
+    testImplementation testFixtures(project(':workspace'))
 }

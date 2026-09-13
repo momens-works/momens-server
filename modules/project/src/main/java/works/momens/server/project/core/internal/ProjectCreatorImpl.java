@@ -9,7 +9,7 @@ import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.project.core.CreateProjectCommand;
 import works.momens.server.project.core.ProjectCreator;
 import works.momens.server.project.core.ProjectDetail;
-import works.momens.server.workspace.LabelAllocator;
+import works.momens.server.workspace.label.LabelAllocator;
 
 /**
  * 레거시 프로젝트 생성 서비스의 검증과 저장 동작을 이관한 구현입니다.
@@ -19,8 +19,8 @@ import works.momens.server.workspace.LabelAllocator;
  *
  * <p>날짜 형식이 올바르지 않은 요청은 이 구현까지 전달되지 않으며 요청 본문 역직렬화 단계에서 거부됩니다.
  *
- * <p>프로젝트 라벨은 {@link works.momens.server.workspace.LabelAllocator}를 통해 발급합니다. 레거시는 라벨 없이 INSERT하면
- * 트리거가 값을 채우지만, 신규 서버의 local 스키마에는 해당 트리거가 없습니다. 따라서 라벨을 항상 직접 발급해 INSERT 문에 포함합니다.
+ * <p>프로젝트 라벨은 {@link works.momens.server.workspace.label.LabelAllocator}를 통해 발급합니다. 레거시는 라벨 없이
+ * INSERT하면 트리거가 값을 채우지만, 신규 서버의 local 스키마에는 해당 트리거가 없습니다. 따라서 라벨을 항상 직접 발급해 INSERT 문에 포함합니다.
  */
 @Service
 @RequiredArgsConstructor
