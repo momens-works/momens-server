@@ -9,7 +9,7 @@ openapi-request-validator = "3.0.0"
 spring-boot = "4.1.1"
 spring-dotenv = "5.1.0"
 spring-modulith = "2.1.1"
-springdoc = "3.1.0"
+springdoc = "3.1.1"
 spotless = "8.10.1"
 # swagger-core와 swagger-annotations는 동일한 버전을 사용해야 합니다. 버전이 다르면 @Schema의
 # 기본값 sentinel을 잘못 해석해 request schema에 default: null이 추가됩니다.
