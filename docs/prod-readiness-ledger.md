@@ -53,8 +53,9 @@ CI가 실제 Secret·ConfigMap의 존재나 값을 조회해 증명하지는 않
 | --- | --- | --- |
 | MOM-0836 `users.email` UNIQUE 제거 | `required` | 서버 코드를 먼저 배포한 뒤 제약을 제거합니다. 선행 배포는 `MOM-0914`에서 `ON CONFLICT (email)`을 제거하는 작업입니다. 이후 웹 로그인 요청이 신규 서버로 전환되어 `momens-server`가 `users`에 쓰는 유일한 서버가 되고, `MOM-0908`에서 마이그레이션 소유 레포지토리가 정해지면 `MOM-0836`에서 제약을 제거합니다. 선행 배포와 제약 제거가 모두 완료되면 해당 행을 갱신합니다 |
 | 두 서버 JWT 서명 키 동일성 (`MOM-0873`) | `확인 완료` | 별도 dev 배포 환경은 운영하지 않아 비교 대상이 없습니다. prod는 2026-09-10에 `k8s` 저장소 `production` Environment의 `MOMENS_API_JWT_SECRET`과 `MOMENS_SERVER_AUTH_JWT_SECRET`을 동일한 새 값으로 갱신하고 두 서버를 재기동했습니다. 재기동 뒤 레거시 로그인으로 발급된 `session_token`만 사용해 신규 `GET /api/workspaces`가 200을 반환하는 것을 확인했습니다. 실제 값과 해시는 기록하지 않습니다 |
-| Google OAuth redirect URI 등록 | `확인 필요` | Kubernetes 값은 `https://api.momens.works/api/auth/google/callback`입니다. Google Cloud 콘솔 등록 상태는 저장소에서 확인할 수 없습니다 |
-| 모바일·웹 client ID와 audiences 일치 | `확인 필요` | 실제 secret 값과 Google OAuth client ID 목록을 배포 전에 대조합니다 |
+| Google OAuth redirect URI 등록 | `확인 완료` | 2026-09-15에 prod web OAuth client에 신규 callback `https://api.momens.works/api/auth/google/callback`을 레거시 callback `https://api.momens.works/auth/google/callback`과 병행 등록했습니다. 등록 전에는 신규 로그인이 `redirect_uri_mismatch`로 실패했고, 등록 뒤 Google 로그인 화면까지 정상 진입합니다. 레거시 callback은 1단계 rollback 경로이므로 지우지 않습니다 |
+| 웹 client ID·secret과 audiences 일치 | `확인 완료` | 2026-09-15에 깨끗한 브라우저 프로필에서 prod 신규 웹 로그인 → callback → 쿠키 발급을 끝까지 통과했습니다. `access_token`(`Path=/`)과 `refresh_token`(`Path=/api/auth`)이 발급됐고, `app.momens.works`가 그 쿠키로 정상 로드됐습니다 |
+| 모바일 client ID와 audiences 일치 | `확인 필요` | 모바일 로그인(`POST /api/auth/google/token`)은 앱 client ID로 발급된 ID 토큰이 `MOMENS_AUTH_GOOGLE_AUDIENCES`를 통과해야 합니다. 웹 로그인 smoke로는 확인되지 않으므로 모바일 prod 로그인으로 따로 확인합니다 |
 | FCM 프로젝트·ADC 자격증명 | `비활성` | push 기본값은 꺼져 있습니다. 활성화할 때 `MOMENS_NOTIFICATION_PUSH_FIREBASE_PROJECT_ID`와 ADC를 확인합니다 |
 | Minsu GCP 프로젝트·리전·ADC | `비활성` | task draft와 비동기 enroll/drain 기본값은 꺼져 있습니다. 활성화 조건은 관련 설계 문서가 소유합니다 |
 | source provider redirect URI 등록 | `확인 필요` | GitHub, Slack, Notion, Figma의 관리 화면에 `https://api.momens.works/api/source-connections/oauth/callback`을 등록해야 합니다. 신규 경로에는 레거시 경로에 없는 `/api` 접두사가 포함되어 있어 서로 다른 주소입니다. 기존 주소를 삭제하지 않고 신규 주소를 추가하면 redirect URI 설정만 변경해 레거시 경로로 되돌릴 수 있습니다. 등록 여부는 레포지토리에서 확인할 수 없습니다. |
