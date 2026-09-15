@@ -86,11 +86,11 @@ login env와 API base의 독립은 조건부다. `VITE_AUTH_LOGIN_URL`이 비면
 2. **Google OAuth 운영 설정 확인.** 신규 callback
    `https://api.momens.works/api/auth/google/callback`과 레거시 callback
    `https://api.momens.works/auth/google/callback`을 실제 web OAuth client에 병행 등록한다.
-   `MOMENS_AUTH_GOOGLE_CLIENT_ID`·`MOMENS_AUTH_GOOGLE_CLIENT_SECRET`·
-   `MOMENS_AUTH_GOOGLE_AUDIENCES`의 실제 값 조합을 확인하고, 신규 로그인 → callback → 쿠키 발급을
-   prod에서 직접 검증한다. 운영 준비 대장의 Google OAuth redirect URI와 웹 client 수기 의무가
-   `확인 필요`인 동안은 1단계를 열지 않는다. 모바일 client 행은 웹 컷오버와 무관하므로 이 게이트에
-   포함하지 않는다.
+   `MOMENS_AUTH_GOOGLE_CLIENT_ID`·`MOMENS_AUTH_GOOGLE_CLIENT_SECRET`이 그 client와 짝인지
+   확인하고, 신규 로그인 → callback → 쿠키 발급을 prod에서 직접 검증한다. 운영 준비 대장의 Google
+   OAuth redirect URI와 웹 client 수기 의무가 `확인 필요`인 동안은 1단계를 열지 않는다.
+   `MOMENS_AUTH_GOOGLE_AUDIENCES`는 모바일 ID 토큰 검증에만 쓰이고 웹 callback은 읽지 않으므로,
+   대장의 모바일 client 행과 함께 이 게이트에 포함하지 않는다.
 3. **`MOM-0904` 레거시 `RequireAuth`의 신규 `access_token` 수용.** 레거시는 `session_token`
    쿠키 하나만 읽으므로(`momens-api/internal/platform/httpx/middleware.go:74`) 이것 없이
    로그인만 전환하면 레거시 Product API와 MCP 재인증에 쓰는 consent·grant API
