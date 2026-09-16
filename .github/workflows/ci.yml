@@ -161,5 +161,5 @@ jobs:
           curl -fsS -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $K8S_DEV_DISPATCH_TOKEN" \
-            https://api.github.com/repos/Momens-Works/momens-k8s-dev/dispatches \
+            https://api.github.com/repos/momens-works/momens-k8s-dev/dispatches \
             -d "{\"event_type\":\"deploy-momens-server\",\"client_payload\":{\"image_tag\":\"${GITHUB_SHA}\",\"source_branch\":\"${GITHUB_REF_NAME}\"}}"
