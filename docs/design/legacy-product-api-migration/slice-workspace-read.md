@@ -4,7 +4,7 @@
 
 작성일: 2026-08-17
 
-레거시 기준선: `Momens-Works/momens-api@71bbd07614fd2aef4dec726bafdf86c1bd097ba6`
+레거시 기준선: `momens-works/momens-api@71bbd07614fd2aef4dec726bafdf86c1bd097ba6`
 
 관련 작업: `MOM-0850`(계약 확정), `MOM-0851`(구현)
 

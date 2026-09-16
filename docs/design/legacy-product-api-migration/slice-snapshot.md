@@ -4,7 +4,7 @@
 
 작성일: 2026-08-18
 
-레거시 기준선: `Momens-Works/momens-api@71bbd07614fd2aef4dec726bafdf86c1bd097ba6`
+레거시 기준선: `momens-works/momens-api@71bbd07614fd2aef4dec726bafdf86c1bd097ba6`
 
 FE 기준선: `momens-fe@d76a2d5`
 
