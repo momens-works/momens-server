@@ -50,5 +50,5 @@ docs/
 ## 제품 레벨 문서는 어디에?
 
 PRD·ADR·**용어집(glossary)**·product language 등 **제품 레벨 문서**는 이 리포가 아니라
-[`teams`](https://github.com/Momens-Works/teams) 리포가 단일 출처입니다. 서버 문서에서는
+[`teams`](https://github.com/momens-works/teams) 리포가 단일 출처입니다. 서버 문서에서는
 제품 용어를 복제하지 않고 `teams`를 링크/참조합니다. (이 리포에는 **서버 명세**만 둡니다.)

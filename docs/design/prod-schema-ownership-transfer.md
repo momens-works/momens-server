@@ -648,7 +648,7 @@ Flyway 실행만 막고 Hibernate의 `ddl-auto=validate`는 막지 않는다. �
    release_pr=210
    release_head="$(gh pr view "$release_pr" --json headRefOid --jq .headRefOid)"
    release_base="$(gh pr view "$release_pr" --json baseRefOid --jq .baseRefOid)"
-   release_tree="$(gh api "repos/Momens-Works/momens-server/git/commits/$release_head" --jq .tree.sha)"
+   release_tree="$(gh api "repos/momens-works/momens-server/git/commits/$release_head" --jq .tree.sha)"
    printf 'release_head=%s\nrelease_tree=%s\nrelease_base=%s\n' \
      "$release_head" "$release_tree" "$release_base"
    gh pr checkout "$release_pr" --detach
@@ -864,7 +864,7 @@ Flyway 실행만 막고 Hibernate의 `ddl-auto=validate`는 막지 않는다. �
 
    ```bash
    test "$(gh pr view "$release_pr" --json headRefOid --jq .headRefOid)" = "$release_head"
-   test "$(gh api "repos/Momens-Works/momens-server/git/commits/$release_head" --jq .tree.sha)" = "$release_tree"
+   test "$(gh api "repos/momens-works/momens-server/git/commits/$release_head" --jq .tree.sha)" = "$release_tree"
    test "$(gh pr view "$release_pr" --json baseRefOid --jq .baseRefOid)" = "$release_base"
    gh pr checks "$release_pr" --required
    # checks 조회 중 변경도 배제한다.
@@ -887,8 +887,8 @@ Flyway 실행만 막고 Hibernate의 `ddl-auto=validate`는 막지 않는다. �
    호출한다. 머지 직후 아래를 실행한다.
 
    ```bash
-   main_head="$(gh api repos/Momens-Works/momens-server/branches/main --jq .commit.sha)"
-   main_tree="$(gh api "repos/Momens-Works/momens-server/git/commits/$main_head" --jq .tree.sha)"
+   main_head="$(gh api repos/momens-works/momens-server/branches/main --jq .commit.sha)"
+   main_tree="$(gh api "repos/momens-works/momens-server/git/commits/$main_head" --jq .tree.sha)"
    test "$main_tree" = "$release_tree"
    ```
 

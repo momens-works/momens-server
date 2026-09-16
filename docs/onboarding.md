@@ -20,7 +20,7 @@ Momens는 여러 레포로 나뉘어 있습니다.
 
 | 레포 | 역할 |
 | --- | --- |
-| [`teams`](https://github.com/Momens-Works/teams) | PRD·ADR·용어집·product language (제품 단일 출처) |
+| [`teams`](https://github.com/momens-works/teams) | PRD·ADR·용어집·product language (제품 단일 출처) |
 | `momens-api` | 레거시 Go/Gin API (대체 대상) |
 | **`momens-server`** | **새 Java Spring 제품 API 서버 (여기)** |
 | `momens-worker` | 외부 소스 수집·큐레이션 워커 |
@@ -47,7 +47,7 @@ Momens는 여러 레포로 나뉘어 있습니다.
 
 ```bash
 # 1) 클론
-git clone --recurse-submodules https://github.com/Momens-Works/momens-server.git
+git clone --recurse-submodules https://github.com/momens-works/momens-server.git
 cd momens-server
 
 # 이미 클론한 리포라면 submodule 초기화
@@ -299,5 +299,5 @@ PR 머지 후: finish-work
 
 - 로컬 실행/DB 문제 → [local-development.md](local-development.md)
 - 규칙/컨벤션 질문 → [기반 규칙](rules/README.md)
-- 제품 맥락/용어 → [`teams`](https://github.com/Momens-Works/teams)
-- 그래도 막히면 백엔드 팀(`@Momens-Works/momens-backend`)에 물어보세요.
+- 제품 맥락/용어 → [`teams`](https://github.com/momens-works/teams)
+- 그래도 막히면 백엔드 팀(`@momens-works/momens-backend`)에 물어보세요.
