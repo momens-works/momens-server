@@ -23,6 +23,7 @@ app/src/main/java/works/momens/server/support/openapi
 - `OpenAPI` 기본 정보(title, version, description, server)
 - Swagger UI가 사용하는 공통 component
 - 실패 응답 예시를 보강하는 `OperationCustomizer`
+- 컨트롤러 메서드에 적용되는 `@ApiException` 선언을 찾는 `ApiExceptionFinder`
 - `@ApiException` 선언을 `ErrorCode` 목록으로 변환하는 `ApiExceptionResolver`
 
 기능 모듈에는 해당 기능의 controller, request/response DTO, controller docs interface를 둡니다.
@@ -121,10 +122,8 @@ path는 `/api/me` 단일 경로이며 `version = "1"` mapping을 둡니다. 레�
 
 - `@ApiException`의 `value`에는 문서화할 `ErrorCode` enum 클래스를 지정하고, `codes`에는 해당 enum에서
   문서화할 에러 코드를 지정합니다. 같은 메서드에 여러 번 선언할 수 있습니다.
-- `OperationCustomizer`는 `ApiExceptionResolver`가 해석한 에러 코드를 바탕으로 HTTP 상태 코드별 OpenAPI
-  응답과 예시를 추가합니다.
-- `codes`에는 해당 엔드포인트에서 실제로 반환할 수 있는 도메인 에러 코드만 지정합니다. 반환할 수 없는
-  코드가 문서에 포함되면 클라이언트에 불필요한 예외 처리 분기가 생깁니다.
+- `OperationCustomizer`는 `ApiExceptionFinder`가 찾은 선언을 `ApiExceptionResolver`로 해석하고, HTTP 상태 코드별 OpenAPI 응답과 예시를 추가합니다.
+- `codes`에는 해당 엔드포인트의 호출 경로에서 도달하는 도메인 에러 코드를 모두 지정합니다. 호출 경로에서는 도달하지만 실제로 발생하지 않는 코드도 제외하지 않습니다. 코드의 발생 여부는 코드 외부의 조건에 따라 달라져 테스트로 보장할 수 없기 때문입니다.
 - `codes`를 비워 두면 해당 enum의 모든 상수를 문서화합니다. 공통 에러 코드처럼 엔드포인트별 범위가 아직
   정해지지 않은 경우에만 사용하는 과도기적 표현이며, 범위가 정해지면 `codes`를 명시합니다.
 - `codes`에 지정한 이름은 컴파일러가 검증하지 않습니다. `ApiExceptionDeclarationTest`에서 해당 이름이
@@ -150,6 +149,22 @@ Legacy compatible 모드 엔드포인트는 기존 Go API의 실패 body shape�
   "error": "unauthorized"
 }
 ```
+
+### 선언 검증
+
+`ApiExceptionConsistencyTest`는 엔드포인트별로 `@ApiException`에 선언된 도메인 에러 코드와 호출 경로에서 도달하는 도메인 에러 코드가 일치하는지 검사합니다. 호출 경로에서 도달하지만 선언에서 누락된 코드나, 선언되어 있지만 호출 경로에서 도달하지 않는 코드가 있으면 테스트가 실패합니다. 선언을 수정한 뒤에는 OpenAPI 스냅샷을 다시 생성해야 합니다. `CommonErrorCode`는 검사 대상에서 제외합니다.
+
+호출 경로는 ArchUnit으로 컴파일된 클래스를 읽고, 컨트롤러 메서드에서 시작해 메서드 호출과 메서드 참조를 따라가며 찾습니다. 인터페이스를 통한 호출은 모든 구현 클래스로 연결하므로 실행 시 선택되지 않는 구현에서 발생하는 에러 코드도 선언 대상에 포함될 수 있습니다.
+
+이 검사는 다음 조건을 모두 충족할 때만 에러 코드를 누락하지 않습니다. 조건을 위반하면 `ReachableDomainErrorCodeCollectorConditionTest`나 `ExceptionCatchingTryBlocksTest`가 실패합니다.
+
+- 탐색을 시작하는 컨트롤러 메서드의 `operationId` 집합이 OpenAPI 스냅샷과 일치해야 합니다. 매핑 애너테이션을 인터페이스 메서드에만 선언하면 이 조건을 충족하지 않습니다.
+- 도메인 에러 코드는 메서드 본문에서 enum 상수를 직접 참조해 `BusinessException`을 생성해야 합니다. `values()`나 `valueOf()`로 조회하거나 `BusinessException` 외의 클래스가 필드에 저장하면 안 됩니다.
+- 이벤트 리스너, AOP, 스케줄러처럼 프레임워크가 호출하는 메서드에서는 도메인 에러 코드에 도달하지 않아야 합니다.
+- 도메인 에러 코드를 생성하는 클래스는 외부 라이브러리의 타입을 구현하거나 상속하지 않아야 합니다.
+- 도메인 에러 코드에 도달하는 호출을 감싸면서 `BusinessException`이나 그 상위 타입을 잡는 `try` 블록은 `ExceptionCatchingTryBlocks`에 등록해야 합니다.
+
+`try` 블록을 등록할 때는 `catch` 블록을 직접 확인해 처리 방식을 결정합니다. 예외를 JSON 에러 응답이 아닌 다른 응답으로 변환하면 `TRANSLATES`로 등록합니다. 이 블록 내부의 호출로만 도달하는 코드는 선언하지 않습니다. 예외를 다시 던지면 `RETHROWS`로 등록하고, 블록 내부의 호출로 도달하는 코드도 선언합니다. 등록 항목에는 메서드의 전체 이름, 처리 방식, 판단 근거를 기록합니다. 메서드의 전체 이름은 테스트 실패 메시지에서 확인할 수 있습니다.
 
 ## DTO Schema
 
@@ -221,8 +236,7 @@ tag를 하나 추가하면 배열 전체가 재정렬되어 무관한 churn diff
 - controller docs interface를 둘지 먼저 결정합니다.
 - 성공 응답은 실제 DTO shape 그대로 문서화합니다.
 - 주요 실패 응답은 `@ApiException`으로 선언합니다.
-- 해당 엔드포인트에서 실제로 반환하는 도메인 에러 코드를 `codes`에 빠짐없이 지정했는지 리뷰에서
-  확인합니다.
+- 호출 경로에서 도달하는 도메인 에러 코드를 `codes`에 모두 지정하고 `ApiExceptionConsistencyTest`가 통과하는지 확인합니다.
 - 모든 엔드포인트에 `operationId`를 명시하고 [operationId](#operationid) 절의 명명 규칙을 따릅니다.
 - 모든 엔드포인트는 `API-Version` header를 문서화합니다.
 - controller docs에 `API-Version` parameter를 직접 중복 선언하지 않습니다.

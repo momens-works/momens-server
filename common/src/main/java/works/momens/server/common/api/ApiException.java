@@ -19,8 +19,12 @@ public @interface ApiException {
   Class<? extends ErrorCode> value();
 
   /**
-   * 문서화할 에러 코드는 {@link ErrorCode#code()} 값으로 지정합니다. 값을 비워 두면 해당 enum의 모든 에러 코드가 문서화됩니다. 원칙적으로
-   * 엔드포인트에서 실제로 반환할 수 있는 코드만 지정하며, 공통 에러 코드처럼 엔드포인트별 범위가 아직 정해지지 않은 경우에만 값을 비워 둡니다.
+   * 문서화할 에러 코드를 {@link ErrorCode#code()} 값으로 지정합니다.
+   *
+   * <p>값을 비워 두면 해당 enum의 모든 에러 코드가 문서화됩니다. 도메인 에러 코드는 엔드포인트의 호출 경로에서 도달하는 코드를 모두 지정해야 합니다. 공통 에러
+   * 코드처럼 엔드포인트별 범위가 아직 정해지지 않은 경우에만 값을 비워 둡니다.
+   *
+   * <p>도메인 에러 코드 선언이 호출 경로와 일치하는지는 {@code ApiExceptionConsistencyTest}에서 검증합니다.
    */
   String[] codes() default {};
 }
