@@ -17,6 +17,6 @@ public interface MobileAuthService {
   /** refresh token을 회전합니다. 무효·폐기된 토큰은 {@link AuthErrorCode#AUTH_REFRESH_TOKEN_INVALID}입니다. */
   AuthTokens refresh(String refreshToken);
 
-  /** refresh token을 폐기합니다. 무효·폐기된 토큰은 {@link AuthErrorCode#AUTH_REFRESH_TOKEN_INVALID}입니다. */
+  /** refresh token을 폐기합니다. 토큰이 비어 있거나 저장되어 있지 않은 경우, 이미 폐기되었거나 만료된 경우에도 예외를 던지지 않고 정상적으로 종료합니다. */
   void logout(String refreshToken);
 }

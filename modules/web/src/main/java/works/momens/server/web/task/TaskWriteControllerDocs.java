@@ -50,7 +50,7 @@ interface TaskWriteControllerDocs {
       content = @Content(schema = @Schema(implementation = WebTaskResponse.class)))
   @ApiException(
       value = TaskErrorCode.class,
-      codes = {"TASK_NOT_FOUND", "TASK_CHECKLIST_ITEM_NOT_FOUND"})
+      codes = {"TASK_NOT_FOUND"})
   @ApiException(CommonErrorCode.class)
   WebTaskResponse update(
       @Parameter(description = "태스크 식별자") UUID taskId,

@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.security.Principal;
 import works.momens.server.common.api.ApiException;
 import works.momens.server.common.api.CommonErrorCode;
+import works.momens.server.user.UserErrorCode;
 import works.momens.server.web.workspace.dto.request.AcceptInvitationRequest;
 import works.momens.server.web.workspace.dto.response.AcceptInvitationResponse;
 import works.momens.server.workspace.WorkspaceErrorCode;
@@ -45,6 +46,9 @@ interface InvitationAcceptControllerDocs {
   @ApiException(
       value = WorkspaceErrorCode.class,
       codes = {"WORKSPACE_INVALID_ROLE", "WORKSPACE_MEMBER_ALREADY_EXISTS", "WORKSPACE_NOT_FOUND"})
+  @ApiException(
+      value = UserErrorCode.class,
+      codes = {"USER_NOT_FOUND"})
   @ApiException(CommonErrorCode.class)
   AcceptInvitationResponse accept(AcceptInvitationRequest request, Principal principal);
 }
