@@ -61,7 +61,7 @@ public class OpenApiConfig {
   @Bean
   public OperationCustomizer swaggerOperationCustomizer() {
     return new SwaggerOperationCustomizer(
-        new ApiExceptionResolver(), new SwaggerErrorExampleGenerator());
+        new ApiExceptionFinder(), new ApiExceptionResolver(), new SwaggerErrorExampleGenerator());
   }
 
   /**

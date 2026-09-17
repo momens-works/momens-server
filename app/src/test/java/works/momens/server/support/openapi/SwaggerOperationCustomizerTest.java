@@ -13,7 +13,7 @@ class SwaggerOperationCustomizerTest {
 
   private final SwaggerOperationCustomizer customizer =
       new SwaggerOperationCustomizer(
-          new ApiExceptionResolver(), new SwaggerErrorExampleGenerator());
+          new ApiExceptionFinder(), new ApiExceptionResolver(), new SwaggerErrorExampleGenerator());
 
   @Test
   void readsApiExceptionsFromControllerDocsInterface() throws NoSuchMethodException {
