@@ -57,10 +57,13 @@ interface WorkspaceInvitationControllerDocs {
       content = @Content(schema = @Schema(implementation = WorkspaceInvitationResponse.class)))
   @ApiException(
       value = InvitationErrorCode.class,
-      codes = {"INVITATION_INVALID_EMAIL", "INVITATION_EMAIL_SEND_FAILED"})
+      codes = {"INVITATION_INVALID_EMAIL", "INVITATION_EMAIL_SEND_FAILED", "INVITATION_NOT_FOUND"})
   @ApiException(
       value = WorkspaceErrorCode.class,
       codes = {"WORKSPACE_NOT_FOUND", "WORKSPACE_MEMBER_ALREADY_EXISTS", "WORKSPACE_INVALID_ROLE"})
+  @ApiException(
+      value = UserErrorCode.class,
+      codes = {"USER_NOT_FOUND"})
   @ApiException(CommonErrorCode.class)
   WorkspaceInvitationResponse create(
       @Parameter(description = "워크스페이스 식별자") UUID workspaceId,
