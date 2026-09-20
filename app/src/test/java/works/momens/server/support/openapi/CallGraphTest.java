@@ -73,7 +73,9 @@ class CallGraphTest {
 
   static final class Fixture {
 
-    private final Converter<String> converter = new ThrowingConverter();
+    private final Converter<String> converter = new BridgeMethodConverter();
+
+    private final InheritedMethodTemplate template = new InheritedMethodTemplate();
 
     void callsHelperInLambda() {
       Optional.empty().orElseThrow(() -> lambdaFailure());
@@ -87,7 +89,7 @@ class CallGraphTest {
       converter.convert("value");
     }
 
-    void callsInheritedMethod(ThrowingTemplate template) {
+    void callsInheritedMethod() {
       template.run();
     }
 
@@ -97,7 +99,7 @@ class CallGraphTest {
               new Supplier<BusinessException>() {
                 @Override
                 public BusinessException get() {
-                  return new BusinessException(FixtureErrorCode.ANONYMOUS_CLASS);
+                  return anonymousClassFailure();
                 }
               });
     }
@@ -109,16 +111,24 @@ class CallGraphTest {
     private BusinessException methodReferenceFailure() {
       return new BusinessException(FixtureErrorCode.METHOD_REFERENCE);
     }
+
+    private static BusinessException anonymousClassFailure() {
+      return new BusinessException(FixtureErrorCode.ANONYMOUS_CLASS);
+    }
   }
 
   interface Converter<T> {
     T convert(T value);
   }
 
-  static final class ThrowingConverter implements Converter<String> {
+  static final class BridgeMethodConverter implements Converter<String> {
     @Override
     public String convert(String value) {
-      throw new BusinessException(FixtureErrorCode.BRIDGE_METHOD);
+      throw bridgeMethodFailure();
+    }
+
+    private static BusinessException bridgeMethodFailure() {
+      return new BusinessException(FixtureErrorCode.BRIDGE_METHOD);
     }
   }
 
@@ -130,10 +140,14 @@ class CallGraphTest {
     abstract void hook();
   }
 
-  static final class ThrowingTemplate extends Template {
+  static final class InheritedMethodTemplate extends Template {
     @Override
     void hook() {
-      throw new BusinessException(FixtureErrorCode.INHERITED_METHOD);
+      throw inheritedMethodFailure();
+    }
+
+    private static BusinessException inheritedMethodFailure() {
+      return new BusinessException(FixtureErrorCode.INHERITED_METHOD);
     }
   }
 }
