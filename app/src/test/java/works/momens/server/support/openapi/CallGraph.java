@@ -76,12 +76,24 @@ final class CallGraph {
   }
 
   /**
-   * 가져온 클래스 중 다른 코드에서 호출하거나 참조하지 않는 메서드와 생성자를 반환합니다.
+   * 가져온 클래스 중 애플리케이션 코드의 호출로 도달할 수 없는 메서드와 생성자를 반환합니다.
    *
-   * <p>호출 관계는 {@link #reachableFrom(JavaCodeUnit)}과 같은 규칙으로 판단합니다. 컨트롤러 메서드, 이벤트 리스너, 스케줄러 메서드처럼
-   * 애플리케이션 코드가 직접 호출하지 않고 프레임워크가 호출하는 코드가 결과에 포함됩니다.
+   * <p>호출하거나 참조하는 코드가 없는 코드 단위와, 해당 코드 단위에서 탐색을 시작해도 도달하지 않는 코드 단위를 함께 반환합니다. 후자는 서로 호출하는 메서드끼리만 호출
+   * 관계를 형성해 탐색의 시작 지점이 되지 못하는 코드 단위입니다.
+   *
+   * <p>호출 관계는 {@link #reachableFrom(JavaCodeUnit)}과 같은 규칙으로 판단합니다. 애플리케이션 코드가 호출하지 않고 프레임워크가 호출하는
+   * 코드가 결과에 포함됩니다.
    */
-  Set<JavaCodeUnit> codeUnitsWithoutCallers() {
+  Set<JavaCodeUnit> codeUnitsWithoutOutsideCallers() {
+    Set<JavaCodeUnit> withoutCallers = codeUnitsWithoutCallers();
+    Set<JavaCodeUnit> reachable = reachableFromAll(withoutCallers.stream());
+    Set<JavaCodeUnit> result = Collections.newSetFromMap(new IdentityHashMap<>());
+    result.addAll(withoutCallers);
+    allCodeUnits().filter(codeUnit -> !reachable.contains(codeUnit)).forEach(result::add);
+    return result;
+  }
+
+  private Set<JavaCodeUnit> codeUnitsWithoutCallers() {
     Set<JavaCodeUnit> called = Collections.newSetFromMap(new IdentityHashMap<>());
     allCodeUnits().flatMap(this::callees).forEach(called::add);
     Set<JavaCodeUnit> uncalled = Collections.newSetFromMap(new IdentityHashMap<>());
