@@ -29,8 +29,8 @@ import works.momens.server.common.api.ErrorCode;
  *   <li>탐색을 시작하는 컨트롤러 메서드의 {@code operationId} 집합이 OpenAPI 스냅샷과 일치해야 합니다.
  *   <li>도메인 에러 코드 enum 상수는 메서드 본문에서만 참조하고, {@code values()}나 {@code valueOf()}로 조회하지 않아야 합니다.
  *   <li>{@code BusinessException} 외에는 도메인 에러 코드를 필드에 저장하지 않아야 합니다.
- *   <li>애플리케이션 코드가 호출하지 않는 메서드에서는 도메인 에러 코드에 도달하지 않아야 합니다. 이벤트 리스너나 AOP처럼 프레임워크가 호출하는 경로는 탐색 대상이
- *       아니기 때문입니다.
+ *   <li>프레임워크가 호출하는 메서드에서는 도메인 에러 코드에 도달하지 않아야 합니다. 애플리케이션 코드가 호출하지 않는 경로는 탐색 대상이 아니기 때문입니다. 애플리케이션
+ *       코드의 호출로 도달할 수 없는 메서드와 진입 애너테이션이 붙은 메서드를 함께 검사합니다.
  *   <li>도메인 에러 코드를 생성하는 클래스는 외부 라이브러리의 타입을 구현하거나 상속하지 않아야 합니다. 외부 라이브러리가 호출하는 메서드는 탐색 대상이 아니기
  *       때문입니다.
  * </ul>
@@ -106,14 +106,14 @@ class ReachableDomainErrorCodeCollectorConditionTest {
   }
 
   @Test
-  void codeUnitsWithoutCallersDoNotReachDomainErrorCodes() {
+  void frameworkInvokedCodeUnitsDoNotReachDomainErrorCodes() {
     CallGraph callGraph = new CallGraph(classes);
     ReachableDomainErrorCodeCollector collector = new ReachableDomainErrorCodeCollector(callGraph);
     Set<JavaCodeUnit> handlerMethods = Collections.newSetFromMap(new IdentityHashMap<>());
     handlerMethods.addAll(HandlerMethods.declaredIn(classes));
 
     Map<String, Set<ErrorCode>> violations =
-        callGraph.codeUnitsWithoutCallers().stream()
+        FrameworkInvokedCodeUnits.in(classes, callGraph).stream()
             .filter(codeUnit -> !handlerMethods.contains(codeUnit))
             .map(codeUnit -> Map.entry(codeUnit.getFullName(), collector.collectFrom(codeUnit)))
             .filter(entry -> !entry.getValue().isEmpty())
@@ -121,7 +121,7 @@ class ReachableDomainErrorCodeCollectorConditionTest {
 
     assertThat(violations)
         .as(
-            "애플리케이션 코드가 호출하지 않는 메서드에서 도메인 에러 코드에 도달합니다. 프레임워크가 호출하는 경로는 호출 경로 탐색에 포함되지 않으므로 해당 에러 코드가 @ApiException 선언과의 대조에서 누락됩니다.")
+            "프레임워크가 호출하는 메서드에서 도메인 에러 코드에 도달합니다. 이 경로는 컨트롤러 메서드에서 시작하는 탐색에 포함되지 않으므로 해당 에러 코드가 @ApiException 선언과의 대조에서 누락됩니다.")
         .isEmpty();
   }
 
