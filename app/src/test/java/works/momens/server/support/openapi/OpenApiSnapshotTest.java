@@ -62,7 +62,7 @@ class OpenApiSnapshotTest extends AbstractPostgresIntegrationTest {
   @Test
   void snapshotMatchesLiveSpec() throws Exception {
     String actual = normalize(fetchApiDocs());
-    Path snapshot = OpenApiSnapshotFile.path();
+    Path snapshot = OpenApiSnapshot.path();
 
     if (Boolean.getBoolean(WRITE_PROPERTY)) {
       Files.createDirectories(snapshot.getParent());
