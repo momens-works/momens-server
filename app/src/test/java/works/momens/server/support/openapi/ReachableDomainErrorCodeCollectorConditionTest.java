@@ -6,7 +6,6 @@ import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.domain.JavaCodeUnit;
 import com.tngtech.archunit.core.domain.JavaMethod;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -16,8 +15,6 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.json.JsonMapper;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.ErrorCode;
 
@@ -41,9 +38,6 @@ import works.momens.server.common.api.ErrorCode;
  * <p>ArchUnit이 람다, 메서드 참조, 브리지 메서드, 익명 클래스를 해석하는 방식은 {@code CallGraphTest}에서 검증합니다.
  */
 class ReachableDomainErrorCodeCollectorConditionTest {
-
-  private static final Set<String> HTTP_METHODS =
-      Set.of("get", "put", "post", "delete", "options", "head", "patch", "trace");
 
   private final JavaClasses classes = MainSourceClasses.imported();
 
@@ -159,19 +153,8 @@ class ReachableDomainErrorCodeCollectorConditionTest {
   }
 
   private static Set<String> snapshotOperationIds() throws IOException {
-    JsonNode paths =
-        JsonMapper.builder()
-            .build()
-            .readTree(Files.readString(OpenApiSnapshotFile.path()))
-            .path("paths");
-    Set<String> operationIds = new TreeSet<>();
-    for (Map.Entry<String, JsonNode> pathItem : paths.properties()) {
-      for (Map.Entry<String, JsonNode> entry : pathItem.getValue().properties()) {
-        if (HTTP_METHODS.contains(entry.getKey())) {
-          operationIds.add(entry.getValue().path("operationId").asString());
-        }
-      }
-    }
-    return operationIds;
+    return OpenApiSnapshot.operations().stream()
+        .map(OpenApiOperation::operationId)
+        .collect(Collectors.toCollection(TreeSet::new));
   }
 }
