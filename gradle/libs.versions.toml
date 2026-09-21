@@ -3,7 +3,7 @@
 
 [versions]
 firebase-admin = "9.10.0"
-google-genai = "1.70.0"
+google-genai = "1.72.0"
 momens-proto = "1.0.0"
 openapi-request-validator = "3.0.0"
 spring-boot = "4.1.1"
