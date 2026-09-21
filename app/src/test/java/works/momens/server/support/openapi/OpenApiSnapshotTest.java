@@ -26,8 +26,9 @@ import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 /**
  * 커밋된 OpenAPI 스냅샷과 서버가 실제로 내보내는 문서를 대조하는 테스트.
  *
- * <p>다른 OpenAPI 테스트가 문서 자체의 성질(스키마 naming, 인증 스킴, 실응답 일치)을 보는 것과 달리, 여기서는 문서가 <b>바뀌었는지</b>를 본다. 웹
- * 이관의 전환 단위는 클라이언트 배포이고 소비자(momens-fe)는 이 스냅샷에서 타입을 생성하므로, 계약 변경이 PR diff에 드러나야 한다(MOM-0878).
+ * <p>다른 OpenAPI 테스트가 문서 자체의 성질(스키마 naming, 인증 스킴, 실응답 일치)을 보는 것과 달리, 여기서는 문서가 <b>바뀌었는지</b>를 본다. 커밋된
+ * 스냅샷과 생성된 OpenAPI 문서가 일치해야 계약 변경이 PR diff에 드러납니다. 리뷰어는 이 diff를 보고 변경 사항이 기존 클라이언트와 호환되는지 판단할 수
+ * 있습니다. 스냅샷을 유지하는 이유와 사용처는 {@code docs/spec/openapi.md}의 「스냅샷 고정」 절에 정리했습니다.
  *
  * <p>스냅샷 갱신은 의도적인 행위여야 하므로 이 테스트는 기본적으로 비교만 한다. 갱신은 {@code ./gradlew updateOpenApiSnapshot}이 같은
  * 테스트를 write 모드로 한 번 돌려서 수행한다. 생성과 비교가 {@link #normalize} 하나를 공유하므로 두 경로가 어긋날 수 없다.

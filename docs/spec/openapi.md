@@ -196,8 +196,7 @@ springdoc이 Spring MVC API versioning 설정과 handler의 `version` mapping을
 
 ## 스냅샷 고정
 
-`/v3/api-docs` 결과를 `docs/spec/openapi.json`으로 커밋합니다. 소비자(`momens-fe`)는 이 파일에서
-타입을 생성하므로, 계약 변경이 PR diff에 드러나야 합니다.
+`/v3/api-docs`에서 생성한 OpenAPI 문서를 `docs/spec/openapi.json`에 저장하고 커밋합니다. 스냅샷은 서버 코드에서 생성한 OpenAPI 문서의 커밋본입니다. `test` 프로필로 생성하므로 운영 환경에 등록되지 않는 dev 전용 엔드포인트도 포함됩니다.
 
 `OpenApiSnapshotTest`가 커밋본과 실제 문서를 대조하고 다르면 실패합니다. CI는 `test`를 돌리므로
 스냅샷을 갱신하지 않으면 계약 변경이 머지되지 않습니다.
@@ -230,6 +229,29 @@ tag를 하나 추가하면 배열 전체가 재정렬되어 무관한 churn diff
 
 환경마다 달라지는 값은 스냅샷에서 제외합니다. `servers`는 `MOMENS_OPENAPI_SERVER_URL`로 주입되므로
 그대로 두면 실행 환경이 스냅샷을 바꿉니다.
+
+### 유지하는 이유
+
+스냅샷을 유지하는 이유는 두 가지입니다.
+
+첫째, 계약 변경이 PR의 변경 파일 목록과 diff에 남습니다. 리뷰어는 diff를 보고 변경 사항이 기존 클라이언트와 호환되는지 판단할 수 있습니다. `.gitattributes`에서 스냅샷을 생성 파일로 지정했기 때문에 GitHub에서는 diff가 접힌 상태로 표시됩니다. 내용을 확인할 때는 diff를 펼쳐야 합니다.
+
+둘째, 서버를 실행하지 않아도 `git show`로 원하는 시점의 계약을 확인할 수 있습니다. prod 환경에서는 `/v3/api-docs`를 제공하지 않으며, dev 환경의 문서는 develop에 배포된 시점의 계약만 보여 줍니다. prod 계약은 `main` 브랜치의 스냅샷에서 확인합니다. 계약 변경 알림 워크플로는 PR의 base와 head에서 스냅샷을 읽어 비교합니다.
+
+### 사용처
+
+스냅샷을 삭제할 때는 다음 항목도 함께 수정해야 합니다.
+
+스냅샷 파일을 읽는 코드는 다음과 같습니다.
+
+- `OpenApiSnapshot`: 스냅샷을 사용하는 테스트는 모두 이 클래스를 통해 파일을 읽습니다. 스냅샷 대신 실행 중인 OpenAPI 문서를 읽도록 변경하면 해당 테스트에 Spring 컨텍스트와 PostgreSQL 컨테이너가 필요하게 됩니다.
+- `.github/workflows/openapi-change-notification.yml`: 머지된 PR의 base와 head에서 `git show`로 스냅샷을 읽습니다.
+- `app/build.gradle`: 테스트에 스냅샷 경로를 전달하고, `updateOpenApiSnapshot` 태스크로 스냅샷을 생성합니다.
+
+스냅샷 경로를 명시한 설정은 다음과 같습니다.
+
+- 계약 변경 알림 워크플로의 `paths` 필터
+- `.gitattributes`의 생성 파일 지정
 
 ## 구현 체크리스트
 
