@@ -35,7 +35,7 @@
 | `context` | task-memory/source-ref 연결·context API (얇은 orchestration) | `mobile`, `web` | `relation` |
 | `onboarding` | 새 워크스페이스 생성과 초기 데이터 구성. 도메인 public API를 조합하는 얇은 orchestration 계층. `MOM-0897`에서 추가 | `web` | `workspace.seedWelcome` |
 | `retrieval` | 검색 read-model projection·document/event schema 소유 | — | `retrieval` |
-| `minsu` | Minsu usecase·LLM provider/model 경계·gRPC client·Slack 표면 | `mobile` | `minsu`·`slackbot` |
+| `minsu` | Minsu usecase·LLM provider/model 경계 | `mobile` | `minsu` |
 
 ## 의존 방향
 
@@ -559,10 +559,6 @@ Minsu 유스케이스와 LLM provider/model 경계를 담당한다.
 - Signal `convert-to-task`의 task draft 생성 공개 API `SignalTaskDraftGenerator`와 생성 상태 조회
   `TaskDraftStatusReader`. 비동기 생성 원장을 소유하고, 생성 결과를 `tasks`에 반영하며 그 트랜잭션에서
   `task.draft_generated`를 발행한다(ADR-0015, MOM-0817·0818·0819·0820)
-- `/workspaces/:id/minsu/query`
-- retrieval SearchRequest assembly, PermissionContext assembly, answer synthesis
-- Slack bot 표면, LLM adapter, retrieval gRPC client adapter
-
 첫 수직 슬라이스는 Signal task draft로 시작한다(MOM-0805). 내부 벤더 중립 `LlmClient` port와
 배포 설정 기반 `ModelSelectionPolicy` 뒤에 Google Gen AI Java SDK adapter 하나를 두며, 기본
 model은 `gemini-3.5-flash-lite`다. `signal`에는 검증된 draft만 반환하고 SDK 타입과 prompt는
@@ -575,13 +571,8 @@ model은 `gemini-3.5-flash-lite`다. `signal`에는 검증된 draft만 반환하
 - `draft`는 동기 draft 준비와 비동기 생성 원장의 적재·claim·실행·재시도·결과 반영·상태 조회를
   소유한다. `generation`, `ledger`, `prompt`, `config`는 이 경계의 내부 패키지다.
 - `llm`은 provider 중립 호출 계약과 배포 설정 검증·model 선택을 소유한다. Google Gen AI SDK adapter는
-  `llm.google` 내부에 둔다. task draft와 향후 query는 이 계약만 공유한다.
+  `llm.google` 내부에 둔다. task draft는 이 계약을 사용한다.
 - 다른 Gradle 모듈에는 `minsu` root package의 공개 계약만 노출한다.
-
-Minsu query를 이관할 때는 별도 공개 유스케이스로 검색 호출과 답변 생성을 소유한다. task draft와
-query는 LLM adapter·model 선택·persona 기반만 공유하고 서로의 API DTO를 재사용하지 않는다.
-retrieval projection schema ownership과는 분리한다. 레거시 `slackbot`의 표면(Slack 이벤트 처리)도
-이 모듈이 흡수한다.
 
 ## 레거시 매핑 요약
 
@@ -598,7 +589,7 @@ retrieval projection schema ownership과는 분리한다. 레거시 `slackbot`�
 | `source` | `source` |
 | `context` | `relation` |
 | `retrieval` | `retrieval` |
-| `minsu` | `minsu`, `slackbot` |
+| `minsu` | `minsu` |
 
 **신규 모듈로 옮기지 않는 레거시 패키지 (런타임 API 아님):**
 
