@@ -8,8 +8,8 @@ import works.momens.server.common.api.BusinessException;
 import works.momens.server.project.core.ProjectErrorCode;
 import works.momens.server.project.core.ProjectReader;
 import works.momens.server.project.milestone.CreateMilestoneCommand;
-import works.momens.server.project.milestone.MilestoneCreator;
 import works.momens.server.project.milestone.MilestoneDetail;
+import works.momens.server.project.milestone.MilestoneWriter;
 import works.momens.server.web.WorkspaceAccessChecker;
 import works.momens.server.web.project.dto.request.CreateMilestoneRequest;
 import works.momens.server.workspace.membership.WorkspaceRole;
@@ -26,7 +26,7 @@ class MilestoneService {
 
   private final WorkspaceAccessChecker workspaceAccessChecker;
   private final ProjectReader projectReader;
-  private final MilestoneCreator milestoneCreator;
+  private final MilestoneWriter milestoneWriter;
 
   @Transactional
   public MilestoneDetail create(UUID projectId, UUID userId, CreateMilestoneRequest request) {
@@ -35,7 +35,7 @@ class MilestoneService {
             .workspaceIdOf(projectId)
             .orElseThrow(() -> new BusinessException(ProjectErrorCode.PROJECT_NOT_FOUND));
     workspaceAccessChecker.requireRoleAtLeast(workspaceId, userId, WorkspaceRole.MEMBER);
-    return milestoneCreator.create(
+    return milestoneWriter.create(
         new CreateMilestoneCommand(
             projectId,
             workspaceId,

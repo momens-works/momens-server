@@ -334,8 +334,8 @@ Standard 모드**이며, 모두 `MOM-0848`에서 `traced`됐다.
 | H054 | Product JSON | `POST /projects/:projectId/decisions` | `decision.Create` | `DEC` | W | `traced`; projection 동반 |
 | H055 | Product JSON | `GET /projects/:projectId/decisions` | `decision.List` | `DEC` | R | `traced`; 웹 미호출. 구현 작업 미생성 |
 | H056 | Product JSON | `GET /milestones/:milestoneId` | `milestone.Get` | `MIL` | R | `traced`. 전환 대상이 아니다. 웹 클라이언트에 호출 코드가 없다(FE 기준선 `src/api/client.ts`에 대응 메서드 없음). `MOM-0858`은 단건 조회 public API를 두지 않았다 |
-| H057 | Product JSON | `PATCH /milestones/:milestoneId` | `milestone.Update` | `MIL` | W | `traced`: 웹 미호출. `MOM-0866` 착수 시 확인한 결과 `momens-fe`에 호출 코드가 없어 이번 범위에서 제외했다. 하지만 레거시 MCP 도구인 `update_milestone`은 같은 서비스 함수를 직접 호출한다(`mcpserver/milestones.go:162`). HTTP endpoint는 사용하지 않지만 기능 자체는 사용 중이므로, MCP 도구를 이관할 때 해당 기능도 함께 옮겨야 한다. 이관 여부는 별도 판단 작업에서 결정한다 |
-| H058 | Product JSON | `DELETE /milestones/:milestoneId` | `milestone.Delete` | `MIL` | W | `traced`: soft delete, 웹 미호출. 레거시 MCP 도구인 `delete_milestone`은 같은 서비스 함수를 직접 호출한다(`mcpserver/milestones.go:192`). 확인 근거와 후속 처리는 H057과 같다 |
+| H057 | Product JSON | `PATCH /milestones/:milestoneId` | `milestone.Update` | `MIL` | W | `traced`: 웹 미호출. `momens-fe`에 호출 코드가 없어 HTTP endpoint는 이관하지 않는다. MCP 도구 `update_milestone`이 사용할 수 있도록 `:project`의 `MilestoneWriter` public contract와 구현을 추가했다(`MOM-0972`). MCP 도구 자체 이관은 N013에서 추적한다 |
+| H058 | Product JSON | `DELETE /milestones/:milestoneId` | `milestone.Delete` | `MIL` | W | `traced`: soft delete, 웹 미호출. HTTP endpoint는 이관하지 않는다. MCP 도구 `delete_milestone`이 사용할 수 있도록 `:project`의 `MilestoneWriter` soft-delete contract와 구현을 추가했다(`MOM-0972`). MCP 도구 자체 이관은 N014에서 추적한다 |
 | H059 | Product JSON | `POST /milestones/:milestoneId/blockers` | `blocker.CreateForMilestone` | `BLK` | W | `traced`; projection 동반 |
 | H060 | Product JSON | `GET /tasks/:taskId` | `task.Get` | `TSK` | R | `implemented` (`MOM-0861`); 모바일 상세 계약과 별도 |
 | H061 | Product JSON | `PATCH /tasks/:taskId` | `task.Update` | `TSK` | W | `implemented` (`MOM-0867`); 모바일 수정·체크리스트 계약과 별도. worker task projector와 aggregate writer 단일화가 cutover gate |

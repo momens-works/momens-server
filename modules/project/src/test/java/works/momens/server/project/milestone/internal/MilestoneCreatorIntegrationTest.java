@@ -17,8 +17,8 @@ import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.project.ProjectSeedSql;
 import works.momens.server.project.core.ProjectOwnerReader;
 import works.momens.server.project.milestone.CreateMilestoneCommand;
-import works.momens.server.project.milestone.MilestoneCreator;
 import works.momens.server.project.milestone.MilestoneDetail;
+import works.momens.server.project.milestone.MilestoneWriter;
 import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 /**
@@ -32,14 +32,10 @@ import works.momens.server.workspace.membership.WorkspaceMembershipReader;
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({
-  JpaAuditingConfig.class,
-  MilestoneCreatorImpl.class,
-  MilestoneOwnerMembershipChecker.class
-})
+@Import({JpaAuditingConfig.class, MilestoneWriterImpl.class, MilestoneOwnerMembershipChecker.class})
 class MilestoneCreatorIntegrationTest extends AbstractPostgresIntegrationTest {
 
-  @Autowired private MilestoneCreator milestoneCreator;
+  @Autowired private MilestoneWriter milestoneWriter;
   @Autowired private MilestoneRepository milestoneRepository;
   @Autowired private MilestoneOwnerRepository milestoneOwnerRepository;
   @Autowired private TestEntityManager entityManager;
@@ -53,7 +49,7 @@ class MilestoneCreatorIntegrationTest extends AbstractPostgresIntegrationTest {
     givenMembers(fixture.workspaceId(), fixture.requesterId());
 
     MilestoneDetail detail =
-        milestoneCreator.create(command(fixture, List.of(fixture.requesterId())));
+        milestoneWriter.create(command(fixture, List.of(fixture.requesterId())));
 
     assertThat(detail.status()).isEqualTo("planned");
     assertThat(detail.healthStatus()).isEqualTo("planned");
@@ -78,7 +74,7 @@ class MilestoneCreatorIntegrationTest extends AbstractPostgresIntegrationTest {
         .willReturn(List.of(projectOwnerId));
     givenMembers(fixture.workspaceId(), fixture.requesterId(), projectOwnerId);
 
-    MilestoneDetail detail = milestoneCreator.create(command(fixture, null));
+    MilestoneDetail detail = milestoneWriter.create(command(fixture, null));
 
     assertThat(detail.ownerUserIds()).containsExactly(projectOwnerId);
   }
@@ -89,7 +85,7 @@ class MilestoneCreatorIntegrationTest extends AbstractPostgresIntegrationTest {
     given(projectOwnerReader.listOwnerUserIds(fixture.projectId())).willReturn(List.of());
     givenMembers(fixture.workspaceId(), fixture.requesterId());
 
-    MilestoneDetail detail = milestoneCreator.create(command(fixture, null));
+    MilestoneDetail detail = milestoneWriter.create(command(fixture, null));
 
     assertThat(detail.ownerUserIds()).containsExactly(fixture.requesterId());
   }

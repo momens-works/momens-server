@@ -1,12 +1,15 @@
 package works.momens.server.project.milestone.internal;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 interface MilestoneRepository extends JpaRepository<Milestone, UUID> {
+
+  Optional<Milestone> findByIdAndDeletedAtIsNull(UUID id);
 
   boolean existsByIdAndProjectIdAndDeletedAtIsNull(UUID id, UUID projectId);
 

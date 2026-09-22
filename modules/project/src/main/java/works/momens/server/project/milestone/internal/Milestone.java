@@ -89,4 +89,39 @@ class Milestone extends BaseEntity {
     this.summary = summary;
     this.lastContextAt = lastContextAt;
   }
+
+  void update(
+      String name,
+      String description,
+      String status,
+      LocalDate targetDate,
+      String healthStatus,
+      Integer progress,
+      String summary) {
+    if (name != null && !name.isEmpty()) {
+      this.name = name;
+    }
+    if (description != null && !description.isEmpty()) {
+      this.description = description;
+    }
+    if (status != null && !status.isEmpty()) {
+      this.status = status;
+    }
+    if (targetDate != null) {
+      this.targetDate = targetDate;
+    }
+    if (healthStatus != null && !healthStatus.isEmpty()) {
+      this.healthStatus = healthStatus;
+    }
+    if (progress != null) {
+      this.progress = progress;
+    }
+    if (summary != null && !summary.isEmpty()) {
+      this.summary = summary;
+    }
+  }
+
+  void delete() {
+    this.deletedAt = Instant.now();
+  }
 }
