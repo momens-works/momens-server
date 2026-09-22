@@ -1,6 +1,6 @@
 # 웹 컷오버 실행과 rollback runbook
 
-상태: 전환 단위 확정 (1단계 착수 전)
+상태: 1단계 완료 (2026-09-22), 2단계 게이트 미해소
 
 작성일: 2026-09-08
 
@@ -50,7 +50,7 @@ Cloudflare FE deployment rollback 절차가 확정되어 당시의 "첫 슬라�
 | 선행 게이트 | 3절 | 5절 |
 | 저장소 밖 전제 | Google callback URI 병행 등록 | source provider callback URI 병행 등록 |
 | 롤백 | FE deployment rollback + 재로그인 허용 | 데이터 호환성 확인 필요 |
-| 착수 | 게이트 해소 (2026-09-15) | 게이트 미해소 |
+| 착수 | 완료 (2026-09-22, `MOM-0906`) | 게이트 미해소 (`MOM-0967`) |
 
 ## 2. 전환 스위치
 
@@ -61,14 +61,24 @@ Cloudflare FE deployment rollback 절차가 확정되어 당시의 "첫 슬라�
 | 스위치 | 무엇을 결정하는가 | 위치 |
 | --- | --- | --- |
 | `VITE_AUTH_LOGIN_URL` | 로그인 진입점. 브라우저 내비게이션이라 API client를 타지 않는다 | `src/api/config.ts:18` |
-| `VITE_AUTH_LOGOUT_URL` | 로그아웃 요청만 신규 서버로 보낸다. 1단계에서 추가할 명시적 auth URL이다 | `MOM-0906` |
+| `VITE_AUTH_LOGOUT_URL` | 로그아웃 요청만 신규 서버로 보낸다 | `src/api/config.ts`, `MOM-0906` |
 | `VITE_API_BASE_URL` | `MomensApiClient`의 모든 XHR. endpoint별 분기가 없다 | `src/api/config.ts:9`, `src/api/client.ts:58` |
-| `VITE_LEGACY_API_BASE_URL` | H009~H011·H035·H036만 레거시 서버로 보낸다. 2단계에서 추가할 한시적 base다 | `MOM-0906` |
+| `VITE_LEGACY_API_BASE_URL` | H009~H011·H035·H036만 레거시 서버로 보낸다. 2단계에서 추가할 한시적 base다 | `MOM-0967` |
 | Google callback URI 허용 목록 | 신규·레거시 로그인 callback을 provider가 허용하는가 | Google Cloud 콘솔 |
 | source provider callback URI 허용 목록 | 신규·레거시 소스 연결 callback을 provider가 허용하는가 | GitHub·Slack·Notion·Figma 콘솔 |
 
 Vite가 빌드 타임에 앞의 네 값을 굽는다. 전환은 FE 재빌드·재배포이고, 긴급 롤백은 Cloudflare의
 직전 deployment rollback으로 먼저 닫은 뒤 Git의 컷오버 커밋을 revert한다(7.4).
+
+**값의 출처가 둘이고 Cloudflare 쪽이 이긴다.** `momens-fe`의 빌드는 GitHub Actions가 아니라
+Cloudflare Workers Builds가 수행하고(저장소에 Actions secret·variable·environment가 없다),
+Cloudflare 빌드 변수에 같은 이름이 있으면 Vite가 그 값을 `.env.production`보다 우선한다. 1단계에서
+`.env.production`의 `VITE_AUTH_LOGIN_URL`을 바꿔 머지했는데 반영되지 않았고, Cloudflare 변수를
+고치고 재빌드한 뒤에야 전환이 완성됐다(`MOM-0911` 실행 기록). **스위치를 뒤집기 전에 Cloudflare
+빌드 변수에 그 이름이 있는지 먼저 확인한다.**
+
+환경변수는 빌드 타임에 번들에 구워지므로 변수만 바꾸면 아무 변화도 일어나지 않는다. 재빌드해야
+반영되고, 배포 뒤에는 번들에 실제로 들어간 URL을 확인한다.
 
 login env와 API base의 독립은 조건부다. `VITE_AUTH_LOGIN_URL`이 비면 `baseUrl`에서 파생된다
 (`src/api/config.ts:18-20`). `.env.production`이 값을 명시하고 있어서 독립이 성립하므로,
@@ -77,8 +87,13 @@ login env와 API base의 독립은 조건부다. `VITE_AUTH_LOGIN_URL`이 비면
 
 ## 3. 1단계 게이트
 
-순서대로 닫는다.
+순서대로 닫는다. **1단계는 2026-09-22에 이 네 게이트를 모두 닫고 실행했다**(`MOM-0906`).
 
+0. **전환 대상 서버가 지금 응답하는지 확인한다.** 아래 게이트는 전부 코드·설정·등록 상태를 보고,
+   "그 서버가 살아 있는가"를 묻지 않는다. 1단계 실행 당시 momens-server는 나흘간
+   `ImagePullBackOff`로 죽어 있었고 컷오버 직후에야 발견했다(`MOM-0911` 실행 기록, `MOM-0969`).
+   스위치를 뒤집기 직전에 `GET /api/health`가 401을 돌려주는지(503이 아닌지), 해당 Deployment의
+   pod가 `Running`인지 확인한다. 2단계에도 같은 확인을 먼저 한다.
 1. **`MOM-0873` 두 서버 JWT 서명 키 동일성 확인.** 확인 대상이 리포에 불변식으로 적혀 있다 —
    `k8s/manifests/apps/momens-server/secret.example.yaml:25-28`의
    *"TRANSITION INVARIANT: keep this EQUAL to momens-api's JWT_SECRET during the dual-run"*.
@@ -130,21 +145,19 @@ login env와 API base의 독립은 조건부다. `VITE_AUTH_LOGIN_URL`이 비면
 - **자동 refresh를 넣지 않는다.** 레거시 세션도 24시간, 신규 access TTL도 24시간이라 만료 시
   재로그인 동작이 지금과 같다.
 
-### 4.2 `MOM-0906`을 통째로 적용하지 않는다
+### 4.2 1단계와 2단계의 경계
 
-`MOM-0906`은 이 문서 이전에 세운 티켓이라 컷오버를 전부-아니면-전무 스위치로 보고 **env 두 개
-전환과 경로 수정(`/auth/me` → `/api/me`, `/auth/logout` → `/api/auth/web/logout`)을 한 묶음**으로
-잡고 있다.
+**1단계가 가져간 것은 `VITE_AUTH_LOGIN_URL`과 별도 `VITE_AUTH_LOGOUT_URL` 전환뿐이다**
+(`MOM-0906`). logout은 명시적 신규 URL로 보내고, API client의 `/auth/logout` 경로는 쓰지 않는다.
 
-**1단계가 가져가는 것은 `VITE_AUTH_LOGIN_URL`과 별도 `VITE_AUTH_LOGOUT_URL` 전환이다.** logout은
-명시적 신규 URL로 보내고, API client의 `/auth/logout` 경로는 쓰지 않는다. `/auth/me` → `/api/me`
-수정은 base가 신규 서버를 가리킬 때에만 의미가 있고 먼저 적용하면 레거시에 없는 경로를 불러 404가
-난다. Product API 경로 수정과 `VITE_LEGACY_API_BASE_URL` 도입은 2단계와 같은 배포에 묶는다.
+`/auth/me` → `/api/me` 수정은 base가 신규 서버를 가리킬 때에만 의미가 있고 먼저 적용하면 레거시에
+없는 경로를 불러 404가 난다. **Product API 경로 수정과 `VITE_LEGACY_API_BASE_URL` 도입은 2단계와
+같은 배포에 묶는다**(`MOM-0967`).
 
 ## 5. 2단계 게이트
 
-**미해소 게이트가 넷이라 지금 착수할 수 없다.** 착수 전에 `MOM-0906`을 4.2와 G4에 맞춰
-쪼갠다.
+**미해소 게이트가 넷이라 지금 착수할 수 없다.** 2단계 작업은 `MOM-0967`이 소유한다. 게이트를
+닫기 전에 3절 게이트 0(대상 서버 생존 확인)과 2절의 Cloudflare 빌드 변수 확인을 먼저 한다.
 
 ### G1 — retrieval 투영 공백 (`MOM-0898`, `MOM-0956`, `MOM-0957`)
 
@@ -198,14 +211,14 @@ G1과 달리 5xx로 드러나지만, 2단계에서 base를 뒤집는 순간 **�
 `/api` 접두사가 붙어 주소가 다르므로 네 provider 콘솔의 등록도 바꿔야 한다. **두 주소를 병행
 등록해 두고 전환한다** — 신규만 등록한 채 되돌리면 레거시 콜백이 깨진다.
 
-### G4 — 레거시 OAuth/MCP UI 라우팅 (`MOM-0906`)
+### G4 — 레거시 OAuth/MCP UI 라우팅 (`MOM-0967`)
 
 FE의 OAuth interaction 조회·승인·거절(H009~H011)과 MCP grant 조회·폐기(H035·H036)는
 `MomensApiClient`를 쓰지만 신규 서버에는 구현되지 않았다. 2단계에서 `VITE_API_BASE_URL`을
 `https://api.momens.works/api`로 바꾸기만 하면 이 요청도 `/api` ingress를 타고 신규 서버로 가서
 404가 된다.
 
-`MOM-0906`에서 `VITE_LEGACY_API_BASE_URL=https://api.momens.works`을 추가하고 이 다섯 메서드만
+`MOM-0967`에서 `VITE_LEGACY_API_BASE_URL=https://api.momens.works`을 추가하고 이 다섯 메서드만
 legacy client를 쓰게 한다. 나머지 Product API에 endpoint별 분기를 허용하지 않는다. 이 한시적
 base가 있는 동안 한 웹 세션이 두 서버를 호출하므로 `MOM-0904`의 신규 `access_token` 수용을
 유지한다.
