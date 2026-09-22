@@ -83,7 +83,7 @@
 | Product JSON API | workspace, project, task, memory, source 조회·명령 | 신규 경로는 `/api`, handler `version = "1"`; 계약 모드를 endpoint별 기록 |
 | Product 인증 | Google login/callback, session refresh/logout, `/me` | 확정된 신규 웹 인증 계약을 사용하고 클라이언트와 컷오버를 함께 검증 |
 | OAuth protocol | `/.well-known/*`, `/oauth/*` | 표준이 정한 path·method·content type을 우선하며 Product API path 규칙의 예외를 명시 |
-| MCP transport | `/mcp` | MCP·OAuth 계약과 기존 grant/token 처리 방식을 별도 슬라이스로 추적 |
+| MCP transport | 레거시 `/mcp` → 신규 `/api/mcp/` | MCP·OAuth 계약과 Grant authorization을 `:mcp` 별도 슬라이스로 추적 |
 | 외부 webhook | source OAuth callback | 외부 provider 검증·재시도·redirect URI와 무중단 인계 절차를 별도 추적. `/slack/events`는 신규 runtime으로 이관하지 않고 레거시에 남긴다 |
 | 운영 표면 | `/health`, actuator | 제품 로직 이관과 분리하고 배포·관측성 기준으로 검증 |
 | 백그라운드 런타임 | scheduler, managed goroutine, startup migration·backfill | 시작 조건·side effect·재시도·멱등성·종료 순서와 대체 owner를 추적 |

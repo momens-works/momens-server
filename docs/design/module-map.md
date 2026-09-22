@@ -23,6 +23,7 @@
 | `common` | 영속성 베이스·공유 확장·테스트 fixture (최소) | `mobile`, `web` | — |
 | `user` | 사용자 엔티티·로그인 수단·프로필, FindOrCreate public API | `mobile`, `web` | `domain.User` |
 | `auth` | OAuth 로그인·JWT·SecurityFilterChain·logout, dev 토큰 발급 | `mobile`, `web` | `auth` |
+| `mcp` | MCP OAuth protocol·Grant authorization·token·transport 경계. OAuth protocol state와 `McpGrant`를 분리 소유 | — | `mcpauth`·`mcpserver` |
 | `workspace` | workspace·멤버·초대·RBAC·label 발급 (중심 모듈) | `mobile`, `web` | `workspace`·`access`·`label` |
 | `project` | project·milestone·task·decision·blocker 운영 흐름 | `mobile`, `web` | 동명 5개 패키지 |
 | `signal` | 모바일 Signal 원본 조회·사용자 action ledger·Signal action outbox | `mobile` | 신규 |
@@ -42,6 +43,8 @@
 협력 기본은 application event, 단순한 경우 상대 모듈의 public API 직접 참조입니다([아키텍처 > 모듈 간 의존](../rules/architecture.md)).
 
 - `auth` → `user` public API (로그인 시 로그인 수단 기준 조회·생성, 프로필).
+- `mcp` → `workspace` public API (Grant 생성과 MCP 요청의 workspace membership 재검증). `mcp`는
+  `auth`·`web`·`mobile`의 내부 구현이나 persistence를 참조하지 않는다.
 - `workspace`는 RBAC·label을 public API로 제공하고 `project`·`memory`·`source`·`minsu`가 사용한다.
 - `context`는 `entity_relations`를 읽어 연결된 식별자만 돌려준다. 지금은 도메인 모듈에 의존하지 않고,
   식별자로 본문을 채우는 조합은 소비하는 쪽이 한다(`mobile`이 `context`의 링크와 `source`의
