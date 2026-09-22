@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -28,6 +29,7 @@ import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 import works.momens.server.workspace.membership.WorkspaceRole;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("MCP Grant 서비스 단위 테스트")
 class McpGrantServiceTest {
 
   private static final Instant NOW = Instant.parse("2026-09-23T08:00:00Z");
@@ -49,6 +51,7 @@ class McpGrantServiceTest {
   }
 
   @Test
+  @DisplayName("워크스페이스 멤버의 Grant를 생성하고 scope 순서를 정규화한다")
   void createsGrantOnlyForWorkspaceMember() {
     UUID userId = UUID.randomUUID();
     UUID workspaceId = UUID.randomUUID();
@@ -72,6 +75,7 @@ class McpGrantServiceTest {
   }
 
   @Test
+  @DisplayName("활성 Grant 동시 생성 충돌을 COMMON_CONFLICT로 변환한다")
   void mapsConcurrentActiveGrantConflict() {
     UUID userId = UUID.randomUUID();
     UUID workspaceId = UUID.randomUUID();
@@ -99,6 +103,7 @@ class McpGrantServiceTest {
   }
 
   @Test
+  @DisplayName("활성 Grant와 무관한 무결성 예외는 그대로 전파한다")
   void rethrowsUnrelatedConstraintViolation() {
     UUID userId = UUID.randomUUID();
     UUID workspaceId = UUID.randomUUID();
@@ -122,6 +127,7 @@ class McpGrantServiceTest {
   }
 
   @Test
+  @DisplayName("워크스페이스 비멤버의 Grant 생성을 거부한다")
   void rejectsGrantForAnotherWorkspace() {
     UUID userId = UUID.randomUUID();
     UUID workspaceId = UUID.randomUUID();
@@ -141,6 +147,7 @@ class McpGrantServiceTest {
   }
 
   @Test
+  @DisplayName("Grant를 철회하고 연결된 token family도 철회한다")
   void revokingGrantAlsoRevokesItsTokenFamily() {
     UUID grantId = UUID.randomUUID();
     McpGrant grant =
