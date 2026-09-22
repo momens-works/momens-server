@@ -13,11 +13,13 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.mcp.grant.CreateMcpGrantCommand;
@@ -55,7 +57,7 @@ class McpGrantServiceTest {
     when(mcpGrantRepository.existsByUserIdAndClientIdAndWorkspaceIdAndRevokedAtIsNull(
             userId, "client-1", workspaceId))
         .thenReturn(false);
-    when(mcpGrantRepository.save(any(McpGrant.class)))
+    when(mcpGrantRepository.saveAndFlush(any(McpGrant.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
     var detail =
@@ -67,6 +69,56 @@ class McpGrantServiceTest {
     assertThat(detail.workspaceId()).isEqualTo(workspaceId);
     assertThat(detail.scopes()).containsExactly("mcp:projects:read", "mcp:tasks:write");
     assertThat(detail.approvedAt()).isEqualTo(NOW);
+  }
+
+  @Test
+  void mapsConcurrentActiveGrantConflict() {
+    UUID userId = UUID.randomUUID();
+    UUID workspaceId = UUID.randomUUID();
+    when(workspaceMembershipReader.roleOf(workspaceId, userId))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
+    when(mcpGrantRepository.existsByUserIdAndClientIdAndWorkspaceIdAndRevokedAtIsNull(
+            userId, "client-1", workspaceId))
+        .thenReturn(false);
+    when(mcpGrantRepository.saveAndFlush(any(McpGrant.class)))
+        .thenThrow(
+            new DataIntegrityViolationException(
+                "duplicate active grant",
+                new ConstraintViolationException(
+                    "duplicate active grant", null, "uq_mcp_grants_active_subject")));
+
+    assertThatThrownBy(
+            () ->
+                service.create(
+                    new CreateMcpGrantCommand(
+                        userId, "client-1", workspaceId, List.of("mcp:tasks:read"))))
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            exception ->
+                assertThat(exception.getErrorCode()).isEqualTo(CommonErrorCode.COMMON_CONFLICT));
+  }
+
+  @Test
+  void rethrowsUnrelatedConstraintViolation() {
+    UUID userId = UUID.randomUUID();
+    UUID workspaceId = UUID.randomUUID();
+    when(workspaceMembershipReader.roleOf(workspaceId, userId))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
+    when(mcpGrantRepository.existsByUserIdAndClientIdAndWorkspaceIdAndRevokedAtIsNull(
+            userId, "client-1", workspaceId))
+        .thenReturn(false);
+    DataIntegrityViolationException exception =
+        new DataIntegrityViolationException(
+            "unsupported scope",
+            new ConstraintViolationException("unsupported scope", null, "ck_mcp_grants_scopes"));
+    when(mcpGrantRepository.saveAndFlush(any(McpGrant.class))).thenThrow(exception);
+
+    assertThatThrownBy(
+            () ->
+                service.create(
+                    new CreateMcpGrantCommand(
+                        userId, "client-1", workspaceId, List.of("mcp:tasks:read"))))
+        .isSameAs(exception);
   }
 
   @Test

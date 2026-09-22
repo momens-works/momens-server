@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
@@ -18,6 +20,8 @@ import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 @RequiredArgsConstructor
 class McpGrantService implements McpGrantWriter, McpGrantReader {
+
+  private static final String ACTIVE_SUBJECT_CONSTRAINT = "uq_mcp_grants_active_subject";
 
   private final McpGrantRepository mcpGrantRepository;
   private final WorkspaceMembershipReader workspaceMembershipReader;
@@ -44,7 +48,19 @@ class McpGrantService implements McpGrantWriter, McpGrantReader {
     } catch (IllegalArgumentException exception) {
       throw new BusinessException(CommonErrorCode.COMMON_VALIDATION_FAILED, exception.getMessage());
     }
-    return toDetail(mcpGrantRepository.save(grant));
+    try {
+      return toDetail(mcpGrantRepository.saveAndFlush(grant));
+    } catch (DataIntegrityViolationException exception) {
+      if (violatesConstraint(exception, ACTIVE_SUBJECT_CONSTRAINT)) {
+        throw new BusinessException(
+            CommonErrorCode.COMMON_CONFLICT,
+            Map.of(
+                "user_id", command.userId(),
+                "client_id", command.clientId(),
+                "workspace_id", command.workspaceId()));
+      }
+      throw exception;
+    }
   }
 
   @Override
@@ -95,5 +111,17 @@ class McpGrantService implements McpGrantWriter, McpGrantReader {
         grant.getApprovedAt(),
         grant.getRevokedAt(),
         grant.getCreatedAt());
+  }
+
+  private static boolean violatesConstraint(Throwable exception, String constraintName) {
+    Throwable current = exception;
+    while (current != null) {
+      if (current instanceof ConstraintViolationException violation
+          && constraintName.equals(violation.getConstraintName())) {
+        return true;
+      }
+      current = current.getCause();
+    }
+    return false;
   }
 }
