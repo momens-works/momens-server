@@ -79,7 +79,10 @@ class McpGrantIntegrationTest extends AbstractPostgresIntegrationTest {
     entityManager.flush();
     entityManager.clear();
 
-    assertThat(mcpGrantReader.findActive(created.id())).contains(created);
+    McpGrantDetail persisted = mcpGrantReader.findActive(created.id()).orElseThrow();
+
+    assertThat(persisted).usingRecursiveComparison().ignoringFields("createdAt").isEqualTo(created);
+    assertThat(persisted.createdAt()).isNotNull();
   }
 
   @Test
