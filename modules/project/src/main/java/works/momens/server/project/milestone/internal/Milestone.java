@@ -11,7 +11,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import works.momens.server.common.persistence.BaseEntity;
-import works.momens.server.project.milestone.MilestoneStatus;
 
 /**
  * 마일스톤.

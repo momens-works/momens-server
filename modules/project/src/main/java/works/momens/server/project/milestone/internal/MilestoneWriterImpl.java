@@ -1,6 +1,7 @@
 package works.momens.server.project.milestone.internal;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -11,7 +12,6 @@ import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.project.core.ProjectOwnerReader;
 import works.momens.server.project.milestone.CreateMilestoneCommand;
 import works.momens.server.project.milestone.MilestoneDetail;
-import works.momens.server.project.milestone.MilestoneStatus;
 import works.momens.server.project.milestone.MilestoneWriter;
 import works.momens.server.project.milestone.UpdateMilestoneCommand;
 
@@ -98,7 +98,7 @@ class MilestoneWriterImpl implements MilestoneWriter {
             () ->
                 new BusinessException(
                     CommonErrorCode.COMMON_NOT_FOUND,
-                    java.util.Map.of("milestone_id", milestoneId.toString())));
+                    Map.of("milestone_id", milestoneId.toString())));
   }
 
   private List<UUID> ownerUserIds(UUID milestoneId) {
