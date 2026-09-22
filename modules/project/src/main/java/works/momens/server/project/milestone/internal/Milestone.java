@@ -83,7 +83,7 @@ class Milestone extends BaseEntity {
     this.name = name;
     this.description = description;
     this.targetDate = targetDate;
-    this.status = status != null ? status : "planned";
+    this.status = status != null ? status : MilestoneStatus.PLANNED.value();
     this.healthStatus = healthStatus != null ? healthStatus : "planned";
     this.progress = progress;
     this.summary = summary;

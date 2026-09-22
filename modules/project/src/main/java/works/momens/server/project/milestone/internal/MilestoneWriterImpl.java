@@ -20,6 +20,7 @@ class MilestoneWriterImpl implements MilestoneWriter {
 
   private static final String FIELD_HEALTH_STATUS = "health_status";
   private static final String FIELD_PROGRESS = "progress";
+  private static final String FIELD_STATUS = "status";
 
   private final MilestoneRepository milestoneRepository;
   private final MilestoneOwnerRepository milestoneOwnerRepository;
@@ -63,6 +64,10 @@ class MilestoneWriterImpl implements MilestoneWriter {
       HealthStatus.from(command.healthStatus())
           .orElseThrow(() -> FieldValidationException.forField(FIELD_HEALTH_STATUS));
     }
+    if (command.status() != null && !command.status().isEmpty()) {
+      MilestoneStatus.from(command.status())
+          .orElseThrow(() -> FieldValidationException.forField(FIELD_STATUS));
+    }
     if (command.progress() != null && (command.progress() < 0 || command.progress() > 100)) {
       throw FieldValidationException.forField(FIELD_PROGRESS);
     }
@@ -75,6 +80,7 @@ class MilestoneWriterImpl implements MilestoneWriter {
         command.healthStatus(),
         command.progress(),
         command.summary());
+    milestoneRepository.saveAndFlush(milestone);
     return MilestoneDetailMapper.toDetail(milestone, ownerUserIds(milestone.getId()));
   }
 
