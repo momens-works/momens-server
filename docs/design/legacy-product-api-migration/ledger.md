@@ -191,10 +191,10 @@ handler/service/repository를 뜻한다.
 | Profile | capability·legacy trace | schema·test | target |
 | --- | --- | --- | --- |
 | `OP` | `bootstrap/router.go`의 inline health handler, `cmd/api/main.go`, `bootstrap/app.go` | DB 없음; `bootstrap/router_test.go`, `bootstrap/app_test.go` | `app`의 Actuator health |
-| `MOA-P` | `mcpauth/handler.go` → `service.go` → `repository.go` → `model.go` | `000019_mcp_oauth.sql`; `mcpauth/handler_test.go`, `service_test.go`, `repository_test.go` | **미결**: `auth` 또는 별도 MCP/OAuth 경계 |
-| `MOA-I` | `mcpauth/handler.go`의 interaction 조회·승인·거절 → 같은 service/repository/model | `000019_mcp_oauth.sql`, `users`, `workspace_members`; `mcpauth/*_test.go` | **미결**: MCP/OAuth 경계, 사용자 세션은 `auth`·`user`·`workspace` public API 사용 |
-| `MOA-G` | `mcpauth/handler.go`의 grant 목록·폐기 → 같은 service/repository/model | `000019_mcp_oauth.sql`; `mcpauth/*_test.go` | **미결**: MCP/OAuth 경계 |
-| `MCP` | `mcpserver/server.go`, `auth.go`, `tools.go`, `milestones.go`, `helpers.go` → `project`·`milestone`·`task`·`workspace` service/repository → `domain/models.go` | `000001_init.sql`, `000006_fe_contract.sql`, `000012_task_updates.sql`, `000017_project_label.sql`, `000019_mcp_oauth.sql`; `mcpserver/server_test.go`, `milestones_test.go` | **미결**: transport/tool 소유 경계. 도메인 write는 `workspace`·`project` public API로 위임 |
+| `MOA-P` | `mcpauth/handler.go` → `service.go` → `repository.go` → `model.go` | `000019_mcp_oauth.sql`; `mcpauth/handler_test.go`, `service_test.go`, `repository_test.go` | `:mcp`가 소유한다([ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover.md)). Spring Authorization Server를 우선 사용하고, 사용자 토큰과 MCP client 토큰은 분리한다 |
+| `MOA-I` | `mcpauth/handler.go`의 interaction 조회·승인·거절 → 같은 service/repository/model | `000019_mcp_oauth.sql`, `users`, `workspace_members`; `mcpauth/*_test.go` | `:mcp`가 소유한다([ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover.md)). 사용자·워크스페이스 확인은 `auth`·`user`·`workspace` public API를 사용한다 |
+| `MOA-G` | `mcpauth/handler.go`의 grant 목록·폐기 → 같은 service/repository/model | `000019_mcp_oauth.sql`; `mcpauth/*_test.go` | 기존 grant/client/token은 이전하지 않고 전부 재연결한다([ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover.md)) |
+| `MCP` | `mcpserver/server.go`, `auth.go`, `tools.go`, `milestones.go`, `helpers.go` → `project`·`milestone`·`task`·`workspace` service/repository → `domain/models.go` | `000001_init.sql`, `000006_fe_contract.sql`, `000012_task_updates.sql`, `000017_project_label.sql`, `000019_mcp_oauth.sql`; `mcpserver/server_test.go`, `milestones_test.go` | transport·tool 표면은 `:mcp`가 소유한다([ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover.md)). canonical 주소는 `/api/mcp`, 도메인 write는 기존 public API로 위임 |
 | `SLK` | `slackbot/handler.go`, `events.go`, `answerer.go`, `grounded.go`, `action.go` → `minsu/service.go`, `minsu/action/*`, `project`·`task`·`workspace` service/repository | task·retrieval schema; `slackbot/*_test.go`, `minsu/action/*_test.go` | `minsu`가 Slack 표면 흡수, task write는 `project` public API 사용 |
 | `AUT` | `auth/handler.go` → `auth/service.go` → `auth/repository.go` → `domain.User`, `platform/auth/jwt.go`, `platform/oauth/google.go` | `000001_init.sql`, `000007_user_job_role.sql`, `000018_refresh_tokens.sql`; `auth/service_integration_test.go`, `platform/auth/jwt_test.go` | 도메인 `auth` 세션과 `user` 신원·프로필, HTTP 표면은 `web`·`mobile`(`MOM-0852`) |
 | `USR` | legacy `auth/handler.go`의 `Me`·`UpdateMe` → `auth/service.go` → `auth/repository.go` → `domain.User` | `000001_init.sql`, `000007_user_job_role.sql`; `auth/service_integration_test.go` | 도메인 `user`, 웹 표면 `web`(`MOM-0852`); `/api/me` GET/PATCH 구현 완료 |
@@ -215,10 +215,10 @@ handler/service/repository를 뜻한다.
 | Profile | contract·auth/RBAC | writer·projection/external | gate·rollback·task |
 | --- | --- | --- | --- |
 | `OP` | 운영 계약. 공개 health | read-only, DB 없음 | 신규 `/actuator/health`는 구현됨. ingress/probe 전환과 routing rollback 필요. `MOM-0848` |
-| `MOA-P` | OAuth metadata·등록·인가·token·revoke protocol 계약. endpoint별 client/token 검증 | `oauth_*` writer; OAuth client와 MCP client 외부 의존 | `oauth_*` prod 존재와 target module 미확정. protocol client rollback/runbook 필요. 후속 MCP/OAuth 결정 작업 |
-| `MOA-I` | legacy `session_token` 인증 후 interaction user/workspace 검증 | `oauth_interactions`, grant/code writer | 웹 컷오버 시점 동작은 [ADR-0018](../../adr/0018-transitional-legacy-acceptance-of-new-access-token.md)로 해소(레거시가 신규 `access_token` 수용). 2단계에는 `MOM-0906`의 legacy base로 라우팅. writer rollback 미확정. 후속 MCP/OAuth 결정 작업 |
-| `MOA-G` | legacy 세션 + workspace membership/grant ownership | `oauth_grants` writer | 웹 컷오버 시점 동작은 [ADR-0018](../../adr/0018-transitional-legacy-acceptance-of-new-access-token.md)로 해소. 2단계에는 `MOM-0906`의 legacy base로 라우팅. grant/token drain·폐기 정책 필요. 후속 MCP/OAuth 결정 작업 |
-| `MCP` | MCP Streamable HTTP, OAuth bearer와 tool별 scope | project/milestone/task/comment writer가 REST와 같은 aggregate를 공유 | MCP client 재등록, grant/token 전환, 단일 writer와 rollback 필요. 후속 MCP/OAuth 결정 작업 |
+| `MOA-P` | OAuth metadata·등록·인가·token·revoke protocol 계약. endpoint별 client/token 검증 | `oauth_*` writer; OAuth client와 MCP client 외부 의존 | `:mcp`와 Spring Authorization Server 우선 검토로 결정([ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover)). 세부 protocol contract와 spike 필요 |
+| `MOA-I` | authorization server session으로 interaction user/workspace 검증 | `oauth_interactions`, grant/code writer | 신규 `:mcp`가 소유한다([ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover)); 웹 컷오버 시점의 레거시 보호 endpoint 동작은 [ADR-0018](../../adr/0018-transitional-legacy-acceptance-of-new-access-token.md)으로 유지하고 이후 신규 UI/API로 전환 |
+| `MOA-G` | MCP client grant + workspace ownership | `oauth_grants` writer | 기존 grant/client/token은 이전하지 않고 전부 재연결한다([ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover)); revoke·만료·재연결 runbook 필요 |
+| `MCP` | MCP Streamable HTTP, OAuth bearer와 tool별 scope | project/milestone/task/comment writer가 REST와 같은 aggregate를 공유 | canonical 주소는 `https://api.momens.works/api/mcp`; 기존 `/mcp`는 전환 후 제거·차단한다([ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover)). 단일 writer와 retrieval projection gate 필요 |
 | `SLK` | Slack signature·retry·3초 ack 계약 | retrieval·Vertex·Slack API; action layer가 task writer | signing secret, bot identity, redirect/event URL, 비동기 실패 관측 필요. task writer·projection과 함께 전환. 후속 Slack 표면 작업 |
 | `AUT` | 레거시 단일 JWT 대신 확정된 Standard 웹 access+refresh 쿠키 계약. H014~H016은 공개 transport | `users`, `user_identities`, `refresh_tokens`; Google OAuth. 아래 `users` writer 예외 적용 | 신규 경로 구현 완료(`MOM-0640`, `MOM-0641`). FE 로그인과 함께 전환하며 레거시 세션 rollback은 별도 브리지 없이는 불가 |
 | `USR` | 신규 `/api/me` Standard 계약. H017~H018은 legacy 세션, target은 cookie/Bearer 공통 인증의 현재 사용자 | `users` writer. 아래 `users` writer 예외 적용 | 구현 완료(`MOM-0632`, `MOM-0635`). legacy wrapper와 field 차이 characterization 및 FE 전환 필요 |
@@ -441,11 +441,12 @@ HTTP 인증이 없는 항목도 실행 주체와 자격증명을 적고, prod/cl
    — 해소. Product capability별 혼합 전환은 기각하고 인증과 Product API를 2단계로 나눴다. 다만
    미이관 OAuth interaction·MCP grant UI는 한시적 legacy base로 격리한다. 두 단계의 게이트와
    롤백 절차는 [웹 컷오버 실행과 rollback runbook](cutover.md)에 있다(`MOM-0911`)
-2. MCP transport·OAuth authorization server의 target Gradle module과 grant/token 이전 방식
-   — 미결정으로 남는다. 다만 **웹 컷오버 시점의 동작만은 분리해 결정했다**. 레거시가 신규
-   `access_token`을 수용해 H009~H011·H035·H036을 유지한다
-   ([ADR-0018](../../adr/0018-transitional-legacy-acceptance-of-new-access-token.md), `MOM-0871`).
-   표면 전체의 이관은 여전히 이 항목이 풀어야 한다
+2. ~~MCP transport·OAuth authorization server의 target Gradle module과 grant/token 이전 방식~~
+   — 해소. 별도 `:mcp` 모듈이 MCP/OAuth 표면을 소유하고 사용자 세션 토큰과 MCP client
+   토큰을 분리한다. 기존 grant/client/token은 이전하지 않고 전부 재연결하며, canonical
+   MCP 주소는 `/api/mcp`로 전환한다([ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover)).
+   웹 컷오버 시점의 레거시 보호 endpoint 동작은 별도로 [ADR-0018](../../adr/0018-transitional-legacy-acceptance-of-new-access-token.md)에서
+   정했다.
 3. `momens-worker`의 공통 outbox 소비 기반(offset·멱등·재시도·DLQ)과 task/decision/blocker/memory
    projector 분리
 4. startup retrieval backfill·embedding의 최종 owner와 기존 document 재projection 방식
@@ -464,10 +465,9 @@ HTTP 인증이 없는 항목도 실행 주체와 자격증명을 적고, prod/cl
 
 1. ~~`[Docs] 첫 웹 read 수직 슬라이스 선정과 계약 잠금`~~ — `MOM-0850`에서 완료.
    H020·H022로 확정하고 [계약 문서](slice-workspace-read.md)로 잠갔다
-2. `[Docs] MCP/OAuth target module·token/grant 전환 ADR`
-   - H002~H012, H035~H036, N009~N019 소유
-   - 웹 컷오버 시점의 동작은 여기서 빠졌다. `MOM-0871`이
-     [ADR-0018](../../adr/0018-transitional-legacy-acceptance-of-new-access-token.md)로 분리 결정했다
+2. ~~`[Docs] MCP/OAuth target module·token/grant 전환 ADR`~~ — `MOM-0973`과 [ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover)에서
+   별도 `:mcp` 모듈, 토큰 분리, 전면 재연결과 `/api/mcp` 전환을 결정했다. 웹 컷오버 시점의
+   동작은 `MOM-0871`과 [ADR-0018](../../adr/0018-transitional-legacy-acceptance-of-new-access-token.md)로 분리되어 있다.
 3. `[Feat] worker outbox 공통 소비 기반`
    - offset, idempotency, retry, DLQ와 관측성만 소유
 4. aggregate별 projection 작업
