@@ -3,6 +3,7 @@ package works.momens.server.project.milestone.internal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,7 @@ class MilestoneWriterIntegrationTest extends AbstractPostgresIntegrationTest {
   void updatesMcpFieldsAndKeepsExistingOwners() {
     Fixture fixture = newFixture("writer-update");
     Milestone milestone = saveMilestone(fixture.projectId(), "기존 마일스톤");
+    Instant updatedAtBefore = milestone.getUpdatedAt();
     UUID ownerId = ProjectSeedSql.insertUser(entityManager, "writer-owner@momens.works");
     milestoneOwnerRepository.saveAndFlush(MilestoneOwner.of(milestone.getId(), ownerId));
 
@@ -62,6 +64,7 @@ class MilestoneWriterIntegrationTest extends AbstractPostgresIntegrationTest {
     assertThat(detail.progress()).isEqualTo(60);
     assertThat(detail.summary()).isEqualTo("요약");
     assertThat(detail.ownerUserIds()).containsExactly(ownerId);
+    assertThat(detail.updatedAt()).isAfter(updatedAtBefore);
   }
 
   @Test
@@ -81,6 +84,19 @@ class MilestoneWriterIntegrationTest extends AbstractPostgresIntegrationTest {
                 milestoneWriter.update(
                     new UpdateMilestoneCommand(
                         milestone.getId(), null, null, null, null, null, 101, null)))
+        .isInstanceOf(FieldValidationException.class);
+  }
+
+  @Test
+  void rejectsInvalidStatus() {
+    Fixture fixture = newFixture("writer-status-validation");
+    Milestone milestone = saveMilestone(fixture.projectId(), "마일스톤");
+
+    assertThatThrownBy(
+            () ->
+                milestoneWriter.update(
+                    new UpdateMilestoneCommand(
+                        milestone.getId(), null, null, "unknown", null, null, null, null)))
         .isInstanceOf(FieldValidationException.class);
   }
 

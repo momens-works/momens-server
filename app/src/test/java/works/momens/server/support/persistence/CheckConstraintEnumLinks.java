@@ -99,6 +99,12 @@ final class CheckConstraintEnumLinks {
                   "works.momens.server.project.milestone.internal.HealthStatus", "value"),
               IntendedDifference.NONE),
           new EnumLink(
+              "milestones",
+              "status",
+              internalEnumValues(
+                  "works.momens.server.project.milestone.internal.MilestoneStatus", "value"),
+              IntendedDifference.NONE),
+          new EnumLink(
               "projects",
               "health_status",
               internalEnumValues("works.momens.server.project.core.internal.HealthStatus", "value"),
@@ -157,8 +163,6 @@ final class CheckConstraintEnumLinks {
               "memory_candidates",
               "status",
               "MemoryWriterImpl이 저장하는 값만 상수로 선언하며 값 집합 전체를 나타내는 enum은 없습니다"),
-          new ColumnWithoutEnum(
-              "milestones", "status", "Milestone 엔티티는 기본값인 planned만 사용하며 나머지 값은 레거시가 저장합니다"),
           new ColumnWithoutEnum(
               "outbox_events", "issued_by", "이 서버는 api-server만 저장하며 worker는 momens-worker가 저장합니다"),
           new ColumnWithoutEnum(
