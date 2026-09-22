@@ -1,5 +1,6 @@
 package works.momens.server.mcp.grant;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -31,7 +32,7 @@ public enum McpScope {
     }
     Set<String> requested = new LinkedHashSet<>(values);
     List<String> normalized =
-        java.util.Arrays.stream(values()).map(McpScope::value).filter(requested::contains).toList();
+        Arrays.stream(values()).map(McpScope::value).filter(requested::contains).toList();
     if (normalized.size() != requested.size()) {
       throw new IllegalArgumentException("MCP grant contains an unsupported scope");
     }
