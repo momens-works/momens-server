@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.function.Function;
 import works.momens.server.mobile.MobilePriority;
 import works.momens.server.mobile.board.BoardStatus;
+import works.momens.server.project.milestone.MilestoneStatus;
 import works.momens.server.project.task.TaskOrigin;
 import works.momens.server.project.task.TaskStatus;
 import works.momens.server.workspace.invitation.InvitationStatus;
@@ -101,8 +102,7 @@ final class CheckConstraintEnumLinks {
           new EnumLink(
               "milestones",
               "status",
-              internalEnumValues(
-                  "works.momens.server.project.milestone.internal.MilestoneStatus", "value"),
+              storedValues(MilestoneStatus.values(), MilestoneStatus::value),
               IntendedDifference.NONE),
           new EnumLink(
               "projects",

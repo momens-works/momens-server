@@ -1,9 +1,9 @@
-package works.momens.server.project.milestone.internal;
+package works.momens.server.project.milestone;
 
 import java.util.Optional;
 
-/** 마일스톤의 {@code status} 값입니다. {@code milestones.status} CHECK 제약과 같은 값 집합을 소유합니다. */
-enum MilestoneStatus {
+/** 마일스톤의 {@code status} 값입니다. */
+public enum MilestoneStatus {
   PLANNED("planned"),
   ACTIVE("active"),
   COMPLETED("completed"),
@@ -15,7 +15,7 @@ enum MilestoneStatus {
     this.value = value;
   }
 
-  static Optional<MilestoneStatus> from(String value) {
+  public static Optional<MilestoneStatus> from(String value) {
     for (MilestoneStatus status : values()) {
       if (status.value.equals(value)) {
         return Optional.of(status);
@@ -24,7 +24,7 @@ enum MilestoneStatus {
     return Optional.empty();
   }
 
-  String value() {
+  public String value() {
     return value;
   }
 }
