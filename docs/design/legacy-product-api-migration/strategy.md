@@ -414,7 +414,8 @@ write 컷오버 전 다음을 확인한다.
 
 - 전수 원장의 runtime entry point가 모두 `retired`이거나 명시적으로 다른 시스템에 남는다.
 - Product API와 Product 인증의 클라이언트 트래픽이 없다.
-- OAuth metadata/token/grant, MCP, Slack/source webhook의 소유 서버가 확정되고 전환됐다.
+- OAuth metadata/token/grant, MCP, source webhook의 소유 서버가 확정되고 전환됐다. @민수 Slack
+  webhook(H013·N004)은 전환 대상이 아니라 레거시와 함께 종료한다(`MOM-0971`).
 - aggregate별 레거시 writer가 모두 중단됐다.
 - background goroutine, scheduler, migration runner 등 HTTP 밖의 실행 경로가 남아 있지 않다.
 - 신규 서버와 worker의 projection 경로가 필요한 aggregate를 모두 담당한다.
