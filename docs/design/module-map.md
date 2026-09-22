@@ -248,10 +248,12 @@ projection도 함께 발생한다. 모델 언어와 변경 이유가 분리될 �
   않아서 호출 쪽 멤버십 스냅샷과 목록 기준이 항상 같다. 접근 범위(멤버십)는 여전히 호출 쪽이
   넘기지만, task 생성이 `LabelAllocator`를 쓰면서 project는 workspace public API에 런타임으로
   의존한다(MOM-62 이전에는 테스트 스코프의 FK 마이그레이션 의존만 있었다).
-- 프로젝트와 마일스톤 생성 public API는 각각 `ProjectCreator`와 `MilestoneCreator`이며, 입력 타입은
-  `CreateProjectCommand`와 `CreateMilestoneCommand`다(`MOM-0866`). 두 API는 요청자의 권한을 확인하지 않고,
-  호출하는 쪽에서 소속과 권한을 확인해 확정한 `workspaceId`를 전달받는다. 프로젝트를 생성할 때는 `workspace`
-  모듈의 `LabelAllocator`를 사용해 `PRJ` 라벨을 발급한다. 프로젝트와 마일스톤의 수정·삭제 API는 아직 없다.
+- 프로젝트와 마일스톤 쓰기 public API는 각각 `ProjectCreator`와 `MilestoneWriter`이며, 프로젝트 입력 타입은
+  `CreateProjectCommand`, 마일스톤 입력 타입은 `CreateMilestoneCommand`와 `UpdateMilestoneCommand`다
+  (`MOM-0866`, `MOM-0972`). 두 API는 요청자의 권한을 확인하지 않고, 호출하는 쪽에서 소속과 권한을 확인해
+  확정한 `workspaceId`를 전달받는다. 프로젝트를 생성할 때는 `workspace` 모듈의 `LabelAllocator`를 사용해
+  `PRJ` 라벨을 발급한다. `MilestoneWriter`는 마일스톤 생성과 MCP용 수정·soft delete contract를 함께 제공하며,
+  이번 범위에서는 HTTP endpoint를 추가하지 않는다.
 
 내부는 도메인 하위 경계로 논리 분리했다(MOM-71·MOM-0887). `:project` Gradle 모듈은 프로젝트 운영
 capability의 물리 경계로 유지하고, 배포 단위도 나누지 않는다.
