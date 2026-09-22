@@ -70,20 +70,24 @@ Cloudflare FE deployment rollback 절차가 확정되어 당시의 "첫 슬라�
 Vite가 빌드 타임에 앞의 네 값을 굽는다. 전환은 FE 재빌드·재배포이고, 긴급 롤백은 Cloudflare의
 직전 deployment rollback으로 먼저 닫은 뒤 Git의 컷오버 커밋을 revert한다(7.4).
 
-**값의 출처가 둘이고 Cloudflare 쪽이 이긴다.** `momens-fe`의 빌드는 GitHub Actions가 아니라
-Cloudflare Workers Builds가 수행하고(저장소에 Actions secret·variable·environment가 없다),
-Cloudflare 빌드 변수에 같은 이름이 있으면 Vite가 그 값을 `.env.production`보다 우선한다. 1단계에서
-`.env.production`의 `VITE_AUTH_LOGIN_URL`을 바꿔 머지했는데 반영되지 않았고, Cloudflare 변수를
-고치고 재빌드한 뒤에야 전환이 완성됐다(`MOM-0911` 실행 기록). **스위치를 뒤집기 전에 Cloudflare
-빌드 변수에 그 이름이 있는지 먼저 확인한다.**
+**운영 값의 정본은 Cloudflare 빌드 변수다**(2026-09-22 결정). `momens-fe`의 빌드는 GitHub
+Actions가 아니라 Cloudflare Workers Builds가 수행하고(저장소에 Actions secret·variable·environment가
+없다), 빌드 변수에 같은 이름이 있으면 Vite가 그 값을 `.env.production`보다 우선한다. **전환은
+대시보드에서 값을 바꾸고 재빌드하는 것이고, `.env.production` 수정만으로는 아무것도 바뀌지
+않는다.** 1단계에서 그 파일의 `VITE_AUTH_LOGIN_URL`을 바꿔 머지했는데 반영되지 않아, 절반만
+전환된 상태로 운영됐다(`MOM-0911` 실행 기록).
+
+따라야 할 순서는 둘이다.
+
+- **새 변수는 Cloudflare에 먼저 등록한다.** 대시보드에 없는 이름만 `.env.production` 값이
+  살아나므로, 등록 전에는 어느 쪽이 이길지가 변수마다 달라진다.
+- **저장소 값을 지우려면 Cloudflare에 그 이름이 있는지 먼저 확인한다.** 없는 값을 지우면
+  `src/api/config.ts`의 파생 규칙이 대신 적용된다. `VITE_AUTH_LOGIN_URL`이 비면 `baseUrl`에서
+  파생되므로, 2단계에서 `VITE_API_BASE_URL`을 뒤집을 때 로그인 진입점까지 함께 끌려간다.
 
 환경변수는 빌드 타임에 번들에 구워지므로 변수만 바꾸면 아무 변화도 일어나지 않는다. 재빌드해야
-반영되고, 배포 뒤에는 번들에 실제로 들어간 URL을 확인한다.
-
-login env와 API base의 독립은 조건부다. `VITE_AUTH_LOGIN_URL`이 비면 `baseUrl`에서 파생된다
-(`src/api/config.ts:18-20`). `.env.production`이 값을 명시하고 있어서 독립이 성립하므로,
-**그 값을 비우거나 지우면 `baseUrl` 전환이 로그인 진입점까지 함께 옮긴다.** 2단계 분할 전체가
-이 한 줄에 걸려 있다.
+반영되고, 배포 뒤에는 번들에 실제로 들어간 URL을 확인한다. 대시보드 값은 PR diff에 남지 않으므로
+무엇을 언제 바꿨는지는 `MOM-0911`에 기록한다.
 
 ## 3. 1단계 게이트
 
