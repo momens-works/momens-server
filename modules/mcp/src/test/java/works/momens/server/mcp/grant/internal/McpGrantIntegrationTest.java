@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -42,6 +43,7 @@ import works.momens.server.workspace.membership.WorkspaceRole;
   NoopMcpTokenFamilyRevoker.class,
   McpGrantIntegrationTest.McpTimeConfig.class
 })
+@DisplayName("MCP Grant 영속성 통합 테스트")
 class McpGrantIntegrationTest extends AbstractPostgresIntegrationTest {
 
   private static final Instant NOW = Instant.parse("2026-09-23T08:00:00Z");
@@ -73,6 +75,7 @@ class McpGrantIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
+  @DisplayName("저장한 Grant를 활성 상태로 조회한다")
   void persistsGrantAndReadsItAsActive() {
     McpGrantDetail created = createGrant();
 
@@ -86,6 +89,7 @@ class McpGrantIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
+  @DisplayName("같은 사용자·client·workspace의 활성 Grant 중복을 막는다")
   void doesNotAllowTwoActiveGrantsForTheSameClientAndWorkspace() {
     createGrant();
 
@@ -97,6 +101,7 @@ class McpGrantIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
+  @DisplayName("Grant 철회 후 활성 조회에서 제외하고 token family port를 호출한다")
   void revokeHidesGrantAndCallsTokenFamilyPort() {
     McpGrantDetail created = createGrant();
     Instant revokedAt = NOW.plusSeconds(30);
