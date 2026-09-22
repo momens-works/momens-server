@@ -1,6 +1,6 @@
 # 0023. MCP OAuth 인가 서버 모듈 경계와 재연결 전환
 
-- 상태: Proposed
+- 상태: Accepted
 - 날짜: 2026-09-23
 - 작성자: Kimgyuilli
 
@@ -48,11 +48,76 @@ MCP transport, OAuth authorization server, consent interaction, grant 관리와 
 통해 공유할 수 있지만, MCP 연결 하나를 revoke해도 Momens 웹·모바일 세션 전체가
 폐기되지는 않는다.
 
-인가 서버 구현은 Spring Authorization Server를 우선 사용한다. 표준 authorization code,
-PKCE, client registration, token, revoke와 metadata 흐름을 기반으로 하고, MCP consent와
-워크스페이스 grant는 `:mcp`의 저장소·서비스로 연결한다. Spring Boot/Spring Security
-버전과 필요한 MCP 흐름의 호환성은 첫 구현 spike에서 검증한다. 호환성으로 인해 표준
-구현을 사용할 수 없을 때만 별도 결정으로 대체한다.
+인가 서버 구현은 Spring Authorization Server를 사용한다. 표준 authorization code, PKCE,
+client registration, token, revoke와 metadata 흐름을 기반으로 하고, MCP consent와
+워크스페이스 grant는 `:mcp`의 저장소·서비스로 연결한다. Spring Authorization Server가
+소유하는 OAuth protocol state와 Momens가 소유하는 MCP 권한 상태는 같은 테이블이나
+하나의 aggregate로 합치지 않는다.
+
+### 2-1. OAuth protocol state와 MCP 권한 도메인을 분리한다
+
+Spring Authorization Server의 표준 모델과 서비스가 다음 protocol state를 소유한다.
+
+- `RegisteredClient`
+- `OAuth2Authorization`
+- `OAuth2AuthorizationConsent`
+- authorization code, access token, refresh token의 rotation·revoke 상태
+
+가능하면 Spring Authorization Server의 JDBC service와 표준 schema를 사용하고, 신규
+schema는 `:mcp`의 Flyway가 소유한다. 레거시 `oauth_clients`, `oauth_authorization_codes`
+등의 컬럼과 이름은 신규 protocol schema의 기준으로 복제하지 않는다.
+
+Momens 고유 권한은 별도 `McpGrant` aggregate가 소유한다. `McpGrant`는 user, client,
+workspace, 허용 scope, 승인·폐기 상태를 표현하며 OAuth authorization을 복제하지 않는다.
+MCP 요청은 token claim만으로 workspace 권한을 결정하지 않고 활성 `McpGrant`와 scope를
+검증한다.
+
+`McpGrant`의 유일성은 `(user_id, client_id, workspace_id)`로 두고, 폐기된 grant는 새
+승인으로 재활성화하지 않고 새 grant lifecycle을 시작한다. grant 폐기는 해당 grant에
+연결된 access/refresh token을 함께 무효화한다. 웹·모바일 사용자 session의 revoke와는
+독립적이다.
+
+### 2-2. MCP client registration은 public PKCE client로 제한한다
+
+MCP client는 client secret을 신뢰할 수 없는 public client로 취급한다. 등록 시
+`token_endpoint_auth_method=none`만 허용하고 authorization code + `S256` PKCE를
+강제한다. redirect URI는 정확히 등록된 값만 허용하며, loopback/localhost와 HTTPS
+redirect의 허용 규칙은 protocol contract 테스트로 고정한다.
+
+첫 구현은 표준 Dynamic Client Registration endpoint를 제공한다. 등록 결과는 SAS의
+`RegisteredClient`로 저장하며, client registration 응답에 secret을 발급하지 않는다.
+Client ID Metadata Documents는 후속 호환 확장으로 남기고, 기본 경로의 client 식별자와
+저장 모델을 URL 문서에 의존시키지 않는다.
+
+### 2-3. access token은 reference token으로 발급한다
+
+MCP access token은 JWT claim을 권한 원장으로 사용하지 않는 reference token을 기본으로
+한다. 원문 token은 응답으로 한 번만 반환하고 저장소에는 hash만 저장한다. MCP 요청은
+token hash, token 만료·폐기 상태, `McpGrant` 활성 상태와 scope를 함께 검증한다.
+
+refresh token은 rotation하며 family 재사용이 감지되면 해당 family를 폐기한다. SAS의
+authorization server와 persistence 모델을 기본으로 사용하되, public client의 refresh
+token 호환성은 기본 구현에 맡기지 않는다. Spring Security Authorization Server 7.1.1의
+기본 refresh token generator는 authorization code grant와 `token_endpoint_auth_method=none`
+조합에서 refresh token을 발급하지 않으며, 기본 public client authentication 경로도
+`code_verifier`가 있는 PKCE 요청만 처리한다. 따라서 public client의 refresh token 갱신은
+기본 설정만으로 완성된다고 가정하지 않는다.
+
+구현 전 compatibility spike에서 다음을 검증한다.
+
+- authorization code 교환 시 public client에 refresh token이 발급된다.
+- client secret 없이 `client_id`와 refresh token으로 갱신 요청이 인증된다.
+- refresh token rotation과 재사용 감지 시 family 폐기가 동작한다.
+- 원문 token을 저장하지 않고 `:mcp` persistence adapter의 hash 정책을 적용할 수 있다.
+
+SAS의 endpoint·authorization model·표준 persistence를 유지하면서 위 동작을 만족하기
+위해 필요한 custom token generator, client authentication converter/provider는 `:mcp`가
+소유한다. 이 확장으로도 정책을 만족할 수 없는 경우에만 SAS를 사용하지 않는 대체안을
+별도 ADR로 결정한다.
+
+현재 구현 spike에서 추가한 레거시 `oauth_*` 직접 매핑은 최종 모델이 아니다. PKCE와
+token hash 같은 순수 protocol utility는 재사용할 수 있지만, entity/repository 직접 매핑은
+표준 SAS persistence와 `McpGrant`로 대체한다.
 
 ### 3. 기존 grant/client/token은 이전하지 않고 전부 재연결한다
 
@@ -99,21 +164,43 @@ client가 탈취한 토큰으로 웹·모바일 세션 권한을 행사할 수 �
 허용하므로 신규 `/api/mcp`로 단일화한다.
 
 **OAuth protocol을 처음부터 커스텀 구현하는 방안은 기본안으로 채택하지 않았다.** 표준
-authorization code, PKCE, redirect URI, token rotation과 revoke 검증 책임이 애플리케이션에
-남는다. Spring Authorization Server 호환성 spike가 실패할 때만 대체안을 별도 결정한다.
+authorization code, PKCE, redirect URI, token rotation과 revoke 처리는 SAS를 기반으로
+구현하고, public client refresh token 호환성에 필요한 제한적인 extension만 `:mcp`에 둔다.
+호환성 spike에서 이 확장으로도 정책을 만족할 수 없을 때만 대체안을 별도 결정한다.
+
+**OAuth protocol state와 MCP grant를 하나의 레거시 호환 원장으로 합치는 방안은 채택하지
+않았다.** OAuth 표준 lifecycle과 workspace 권한 lifecycle은 변경 이유와 revoke 단위가
+다르다. 둘을 합치면 표준 SAS 교체·업그레이드와 Momens workspace 권한 변경이 서로의
+저장 모델에 끌려가며, MCP tool 요청에서 token claim을 권한 원장처럼 사용하게 된다.
+
+**MCP access token을 JWT로만 검증하는 방안은 기본안으로 채택하지 않았다.** JWT는 검증이
+간단하지만 grant 폐기와 workspace 권한 변경을 token 만료 전 즉시 반영하기 어렵다.
+reference token으로 서버 원장을 확인해 revoke와 권한 변경을 즉시 적용한다.
+
+**client secret을 발급하는 confidential client 모델은 채택하지 않았다.** MCP client는
+CLI·desktop host 등 사용자 환경에서 실행되므로 secret을 안전하게 보관한다고 가정할 수
+없다. public client + S256 PKCE로 authorization code 탈취를 방어한다.
 
 ## 결과
 
-MCP/OAuth의 데이터와 외부 protocol 표면이 별도 모듈에 모여 기존 `auth`와 경계가
-명확해진다. 사용자 세션과 MCP 위임 권한을 독립적으로 revoke·만료시킬 수 있고, 기존
-레거시 토큰 형식에 대한 장기 호환 부담 없이 신규 주소로 전환할 수 있다.
+MCP/OAuth의 외부 protocol 표면은 별도 모듈에 모이고, 표준 OAuth lifecycle과 Momens
+workspace 권한 lifecycle은 각자의 모델을 갖는다. 기존 `auth`와 경계가 명확해지며,
+사용자 세션과 MCP 위임 권한을 독립적으로 revoke·만료시킬 수 있다. 기존 레거시 토큰
+형식에 대한 장기 호환 부담 없이 신규 주소로 전환할 수 있다.
 
 대신 모든 MCP 사용자는 재연결해야 하며, 신규 authorization server와 consent UI가
-준비되기 전까지 기존 MCP client는 신규 주소를 사용할 수 없다. 후속 구현은 OAuth
-protocol core(H002~H008), interaction/grant UI API(H009~H011, H035~H036), MCP transport
-(H012), MCP 도구(N009~N019)의 순서와 단일 writer·retrieval projection gate를 명시해야
-한다. MCP 도구가 `tasks`를 쓰는 범위는 `MOM-0898`, `MOM-0956`, `MOM-0953`의 gate를
-따른다.
+준비되기 전까지 기존 MCP client는 신규 주소를 사용할 수 없다. 후속 구현은 public client
+refresh token compatibility spike를 먼저 통과시킨 뒤 표준 SAS schema·service와
+`McpGrant` schema를 확정하고 OAuth protocol core(H002~H008),
+interaction/grant UI API(H009~H011, H035~H036), MCP transport(H012), MCP 도구(N009~N019)의
+순서로 진행한다. MCP tool의 `name`, `inputSchema`, `outputSchema`는 외부 계약으로
+취급하고, 기존 tool의 의미 변경은 새 이름 또는 명시적 protocol version으로 도입한다.
+MCP 도구가 `tasks`를 쓰는 범위는 `MOM-0898`, `MOM-0956`, `MOM-0953`의 gate를 따른다.
+
+OAuth endpoint의 표준 경로와 MCP resource metadata는 `/api` canonical 주소 아래에서
+고정한다. MCP transport는 서버 단위 Bearer 인증을 기본으로 하고, 인증되지 않은 보호
+요청은 HTTP `401`과 Protected Resource Metadata 안내를 반환한다. tool handler는
+transport 인증과 별개로 `McpGrant`와 scope를 재확인한다.
 
 이 결정으로 기존 이관 원장의 MCP/OAuth target module·grant/token 이전 미결정은 해소한다.
 구현 중 protocol contract, token claim, scope 집합 또는 주소의 세부가 이 결정과 달라질
