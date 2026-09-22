@@ -27,6 +27,7 @@ COPY modules/context/build.gradle ./modules/context/
 COPY modules/memory/build.gradle ./modules/memory/
 COPY modules/minsu/build.gradle ./modules/minsu/
 COPY modules/mobile/build.gradle ./modules/mobile/
+COPY modules/mcp/build.gradle ./modules/mcp/
 COPY modules/notification/build.gradle ./modules/notification/
 COPY modules/onboarding/build.gradle ./modules/onboarding/
 COPY modules/outbox/build.gradle ./modules/outbox/

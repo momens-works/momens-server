@@ -25,6 +25,7 @@ dependencies {
     implementation project(':notification')
     implementation project(':onboarding')
     implementation project(':mobile')
+    implementation project(':mcp')
     implementation project(':minsu')
     implementation project(':web')
 
