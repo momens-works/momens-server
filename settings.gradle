@@ -17,6 +17,7 @@ def capabilityModules = [
     'memory',
     'minsu',
     'mobile',
+    'mcp',
     'notification',
     'onboarding',
     'outbox',
