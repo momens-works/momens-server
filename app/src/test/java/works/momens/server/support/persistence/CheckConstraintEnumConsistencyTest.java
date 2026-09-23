@@ -69,7 +69,9 @@ class CheckConstraintEnumConsistencyTest extends AbstractPostgresIntegrationTest
   private static final Pattern SINGLE_EQUALS =
       Pattern.compile("^CHECK \\(\\(\\w+ = '(.*)'::\\w+\\)\\)$");
 
-  private static final Pattern ARRAY_CONTAINS = Pattern.compile("\\b\\w+\\s+<@\\s+ARRAY\\[(.+?)]");
+  private static final Pattern ARRAY_SUBSET_CHECK =
+      Pattern.compile(
+          "^CHECK \\(\\(\\(cardinality\\((\\w+)\\) > 0\\) AND \\(\\1 <@ ARRAY\\[(.+)]\\)\\)\\)$");
 
   private static final Pattern LITERAL = Pattern.compile("'((?:[^']|'')*)'::\\w+");
 
@@ -230,10 +232,10 @@ class CheckConstraintEnumConsistencyTest extends AbstractPostgresIntegrationTest
     if (singleEquals.matches()) {
       return Set.of(singleEquals.group(1).replace("''", "'"));
     }
-    Matcher arrayContains = ARRAY_CONTAINS.matcher(definition);
-    if (arrayContains.find()) {
+    Matcher arraySubsetCheck = ARRAY_SUBSET_CHECK.matcher(definition);
+    if (arraySubsetCheck.matches()) {
       Set<String> values = new LinkedHashSet<>();
-      Matcher literal = LITERAL.matcher(arrayContains.group(1));
+      Matcher literal = LITERAL.matcher(arraySubsetCheck.group(2));
       while (literal.find()) {
         values.add(literal.group(1).replace("''", "'"));
       }
