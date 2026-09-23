@@ -6,6 +6,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
+import works.momens.server.mcp.grant.McpScope;
 import works.momens.server.mobile.MobilePriority;
 import works.momens.server.mobile.board.BoardStatus;
 import works.momens.server.project.task.TaskOrigin;
@@ -145,6 +146,11 @@ final class CheckConstraintEnumLinks {
               "baseline_role",
               storedValues(
                   works.momens.server.minsu.Role.values(), works.momens.server.minsu.Role::value),
+              IntendedDifference.NONE),
+          new EnumLink(
+              "mcp_grants",
+              "scopes",
+              storedValues(McpScope.values(), McpScope::value),
               IntendedDifference.NONE));
 
   /**
