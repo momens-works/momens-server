@@ -19,7 +19,10 @@ import works.momens.server.minsu.SignalTaskDraftGenerator;
 import works.momens.server.minsu.TaskDraft;
 import works.momens.server.outbox.OutboxAppender;
 import works.momens.server.project.task.CreateTaskCommand;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskSnapshot;
+import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.signal.SignalActionResult;
 import works.momens.server.signal.SignalReader;
@@ -58,7 +61,13 @@ class SignalActionExecutorTest {
     verify(taskWriter)
         .create(
             CreateTaskCommand.fromSignal(
-                PROJECT_ID, WORKSPACE_ID, title, "design", "high", SIGNAL_ID));
+                PROJECT_ID,
+                WORKSPACE_ID,
+                title,
+                TaskStatus.TODO,
+                TaskRole.DESIGN,
+                TaskPriority.HIGH,
+                SIGNAL_ID));
     verify(outboxAppender)
         .append(
             WORKSPACE_ID,

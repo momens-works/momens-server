@@ -37,6 +37,8 @@ import works.momens.server.minsu.draft.json.MinsuJson;
 import works.momens.server.project.task.ApplyTaskDraftCommand;
 import works.momens.server.project.task.TaskDraftApplyResult;
 import works.momens.server.project.task.TaskDraftValues;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 
 /**
  * claim·재시도·결과 기록을 실제 PostgreSQL로 검증한다(MOM-0819, 설계 7.1·8.2·8.5절).
@@ -217,10 +219,10 @@ class TaskDraftGenerationLedgerIntegrationTest extends AbstractPostgresIntegrati
         () -> assertThat(command.taskId()).isEqualTo(taskId),
         () ->
             assertThat(command.baseline())
-                .isEqualTo(new TaskDraftValues("결제 실패율 대응", "backend", "medium")),
+                .isEqualTo(new TaskDraftValues("결제 실패율 대응", TaskRole.BACKEND, TaskPriority.MEDIUM)),
         () ->
             assertThat(command.draft())
-                .isEqualTo(new TaskDraftValues("결제 실패율 대응", "backend", "high")));
+                .isEqualTo(new TaskDraftValues("결제 실패율 대응", TaskRole.BACKEND, TaskPriority.HIGH)));
   }
 
   @Test

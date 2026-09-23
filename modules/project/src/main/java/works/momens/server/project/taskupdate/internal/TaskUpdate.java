@@ -13,6 +13,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import works.momens.server.common.persistence.BaseEntity;
 import works.momens.server.project.taskupdate.TaskUpdateDetail;
+import works.momens.server.project.taskupdate.TaskUpdateKind;
 
 /** 레거시 task_updates 매핑입니다. */
 @Getter
@@ -52,14 +53,14 @@ class TaskUpdate extends BaseEntity {
       UUID taskId,
       UUID authorId,
       String body,
-      String kind,
+      TaskUpdateKind kind,
       Map<String, Object> metadata) {
     this.workspaceId = workspaceId;
     this.projectId = projectId;
     this.taskId = taskId;
     this.authorId = authorId;
     this.body = body;
-    this.kind = kind == null || kind.isBlank() ? "comment" : kind;
+    this.kind = (kind != null ? kind : TaskUpdateKind.COMMENT).value();
     this.metadata = metadata;
   }
 
@@ -69,7 +70,7 @@ class TaskUpdate extends BaseEntity {
       UUID taskId,
       UUID authorId,
       String body,
-      String kind,
+      TaskUpdateKind kind,
       Map<String, Object> metadata) {
     return new TaskUpdate(workspaceId, projectId, taskId, authorId, body, kind, metadata);
   }

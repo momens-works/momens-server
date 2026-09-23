@@ -39,11 +39,11 @@ class TaskDraftApplierImpl implements TaskDraftApplier {
       return TaskDraftApplyResult.TASK_GONE;
     }
     TaskDraftValues baseline = command.baseline();
-    if (!task.matchesDraft(baseline.title(), baseline.role(), baseline.priority())) {
+    if (!task.matchesDraft(baseline)) {
       return TaskDraftApplyResult.BASELINE_MISMATCH;
     }
     TaskDraftValues draft = command.draft();
-    task.applyDraft(draft.title(), draft.role(), draft.priority());
+    task.applyDraft(draft);
     return TaskDraftApplyResult.APPLIED;
   }
 }

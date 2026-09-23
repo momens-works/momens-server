@@ -24,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
+import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.minsu.DraftStatus;
 import works.momens.server.minsu.TaskDraftStatusReader;
 import works.momens.server.project.core.ProjectErrorCode;
@@ -32,9 +33,12 @@ import works.momens.server.project.task.BoardTask;
 import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.TaskDetail;
 import works.momens.server.project.task.TaskErrorCode;
+import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskReader;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskScope;
 import works.momens.server.project.task.TaskSnapshot;
+import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.project.task.UpdateTaskCommand;
 import works.momens.server.user.UserProfile;
@@ -166,9 +170,18 @@ class ProjectTaskServiceTest {
     assertThat(command.projectId()).isEqualTo(PROJECT_ID);
     assertThat(command.workspaceId()).isEqualTo(WORKSPACE_ID);
     assertThat(command.title()).isEqualTo("제목");
-    assertThat(command.role()).isEqualTo("pm");
-    assertThat(command.priority()).isEqualTo("high");
+    assertThat(command.status()).isEqualTo(TaskStatus.TODO);
+    assertThat(command.role()).isEqualTo(TaskRole.PM);
+    assertThat(command.priority()).isEqualTo(TaskPriority.HIGH);
     assertThat(result).isSameAs(created);
+  }
+
+  @Test
+  void createTaskRejectsUnknownRoleBeforeCallingCreator() {
+    assertThatThrownBy(
+            () -> projectTaskService.createTask(PROJECT_ID, CALLER_ID, "제목", "ceo", "high"))
+        .isInstanceOf(FieldValidationException.class);
+    org.mockito.Mockito.verifyNoInteractions(taskWriter);
   }
 
   @Test
@@ -176,7 +189,8 @@ class ProjectTaskServiceTest {
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.of(WORKSPACE_ID));
     when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> projectTaskService.createTask(PROJECT_ID, CALLER_ID, "제목", null, null))
+    assertThatThrownBy(
+            () -> projectTaskService.createTask(PROJECT_ID, CALLER_ID, "제목", "pm", "high"))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(CommonErrorCode.AUTH_FORBIDDEN);
@@ -380,10 +394,10 @@ class ProjectTaskServiceTest {
     UpdateTaskCommand command = captor.getValue();
     assertThat(command.taskId()).isEqualTo(TASK_ID);
     assertThat(command.title()).isEqualTo("제목");
-    assertThat(command.role()).isEqualTo("backend");
+    assertThat(command.role()).isEqualTo(TaskRole.BACKEND);
     assertThat(command.assigneeId()).isNull();
-    assertThat(command.priority()).isEqualTo("high");
-    assertThat(command.status()).isEqualTo("in_progress");
+    assertThat(command.priority()).isEqualTo(TaskPriority.HIGH);
+    assertThat(command.status()).isEqualTo(TaskStatus.IN_PROGRESS);
     assertThat(command.purpose()).isEqualTo("수정한 목적");
     assertThat(command.checklistItems())
         .containsExactly(new UpdateTaskCommand.ChecklistItemEdit(null, "A", true));

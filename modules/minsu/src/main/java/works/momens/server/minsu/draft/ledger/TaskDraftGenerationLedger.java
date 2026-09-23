@@ -21,6 +21,8 @@ import works.momens.server.project.task.ApplyTaskDraftCommand;
 import works.momens.server.project.task.TaskDraftApplier;
 import works.momens.server.project.task.TaskDraftApplyResult;
 import works.momens.server.project.task.TaskDraftValues;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 
 /**
  * claim과 결과 기록 트랜잭션(docs/design/minsu-async-task-draft-design.md 7.1·8.2·8.5절).
@@ -205,13 +207,19 @@ class TaskDraftGenerationLedger {
    * project}가 알 필요 없는 어휘가 늘기 때문이다(8.1절이 {@code USER_EDITED}를 두지 않은 것과 같은 이유).
    */
   private void applyDraft(TaskDraftGeneration generation, TaskDraft draft, Instant now) {
+    // 생성 기록에 저장된 baseline과 생성 결과를 태스크의 도메인 enum으로 변환해 비교합니다. 저장된 값이 enum에 없으면 불변식이 깨진 상태이므로 예외를
+    // 던집니다.
     TaskDraftValues baseline =
         new TaskDraftValues(
             generation.getBaselineTitle(),
-            generation.getBaselineRole(),
-            generation.getBaselinePriority());
+            TaskRole.from(generation.getBaselineRole()).orElseThrow(IllegalStateException::new),
+            TaskPriority.from(generation.getBaselinePriority())
+                .orElseThrow(IllegalStateException::new));
     TaskDraftValues generated =
-        new TaskDraftValues(draft.title(), draft.role().value(), draft.priority().value());
+        new TaskDraftValues(
+            draft.title(),
+            TaskRole.from(draft.role().value()).orElseThrow(IllegalStateException::new),
+            TaskPriority.from(draft.priority().value()).orElseThrow(IllegalStateException::new));
     TaskDraftApplyResult applied =
         taskDraftApplier.apply(
             new ApplyTaskDraftCommand(generation.getTaskId(), baseline, generated));

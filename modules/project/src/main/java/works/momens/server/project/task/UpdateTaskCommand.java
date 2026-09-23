@@ -14,10 +14,10 @@ import java.util.UUID;
 public record UpdateTaskCommand(
     UUID taskId,
     String title,
-    String role,
+    TaskRole role,
     UUID assigneeId,
-    String priority,
-    String status,
+    TaskPriority priority,
+    TaskStatus status,
     String purpose,
     List<ChecklistItemEdit> checklistItems) {
 

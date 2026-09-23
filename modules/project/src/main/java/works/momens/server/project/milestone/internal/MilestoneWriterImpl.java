@@ -12,6 +12,7 @@ import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.project.core.ProjectOwnerReader;
 import works.momens.server.project.milestone.CreateMilestoneCommand;
 import works.momens.server.project.milestone.MilestoneDetail;
+import works.momens.server.project.milestone.MilestoneHealthStatus;
 import works.momens.server.project.milestone.MilestoneWriter;
 import works.momens.server.project.milestone.UpdateMilestoneCommand;
 
@@ -62,7 +63,7 @@ class MilestoneWriterImpl implements MilestoneWriter {
   public MilestoneDetail update(UpdateMilestoneCommand command) {
     Milestone milestone = findMilestone(command.milestoneId());
     if (command.healthStatus() != null && !command.healthStatus().isEmpty()) {
-      HealthStatus.from(command.healthStatus())
+      MilestoneHealthStatus.from(command.healthStatus())
           .orElseThrow(() -> FieldValidationException.forField(FIELD_HEALTH_STATUS));
     }
     if (command.status() != null && !command.status().isEmpty()) {
@@ -120,9 +121,9 @@ class MilestoneWriterImpl implements MilestoneWriter {
 
   private static String healthStatusOf(String requested) {
     if (requested == null || requested.isEmpty()) {
-      return HealthStatus.PLANNED.value();
+      return MilestoneHealthStatus.PLANNED.value();
     }
-    return HealthStatus.from(requested)
+    return MilestoneHealthStatus.from(requested)
         .orElseThrow(() -> FieldValidationException.forField(FIELD_HEALTH_STATUS))
         .value();
   }

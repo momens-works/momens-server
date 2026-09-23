@@ -9,6 +9,8 @@ import java.util.function.Function;
 import works.momens.server.mcp.grant.McpScope;
 import works.momens.server.mobile.MobilePriority;
 import works.momens.server.mobile.board.BoardStatus;
+import works.momens.server.project.core.ProjectHealthStatus;
+import works.momens.server.project.milestone.MilestoneHealthStatus;
 import works.momens.server.project.task.TaskOrigin;
 import works.momens.server.project.task.TaskStatus;
 import works.momens.server.workspace.invitation.InvitationStatus;
@@ -96,8 +98,7 @@ final class CheckConstraintEnumLinks {
           new EnumLink(
               "milestones",
               "health_status",
-              internalEnumValues(
-                  "works.momens.server.project.milestone.internal.HealthStatus", "value"),
+              storedValues(MilestoneHealthStatus.values(), MilestoneHealthStatus::value),
               IntendedDifference.NONE),
           new EnumLink(
               "milestones",
@@ -108,7 +109,7 @@ final class CheckConstraintEnumLinks {
           new EnumLink(
               "projects",
               "health_status",
-              internalEnumValues("works.momens.server.project.core.internal.HealthStatus", "value"),
+              storedValues(ProjectHealthStatus.values(), ProjectHealthStatus::value),
               IntendedDifference.NONE),
           new EnumLink(
               "signal_actions",

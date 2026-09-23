@@ -11,6 +11,7 @@ import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.project.task.TaskErrorCode;
 import works.momens.server.project.taskupdate.CreateTaskUpdateCommand;
 import works.momens.server.project.taskupdate.TaskUpdateDetail;
+import works.momens.server.project.taskupdate.TaskUpdateKind;
 import works.momens.server.project.taskupdate.TaskUpdateWriter;
 
 @Service
@@ -56,12 +57,12 @@ class TaskUpdateWriterImpl implements TaskUpdateWriter {
     return new BusinessException(TaskErrorCode.TASK_NOT_FOUND);
   }
 
-  private static String normalizeKind(String value) {
+  private static TaskUpdateKind normalizeKind(String value) {
     String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
-    return switch (normalized) {
-      case "", "comment" -> "comment";
-      case "update" -> "update";
-      default -> throw FieldValidationException.forField("kind");
-    };
+    if (normalized.isEmpty()) {
+      return null;
+    }
+    return TaskUpdateKind.from(normalized)
+        .orElseThrow(() -> FieldValidationException.forField("kind"));
   }
 }

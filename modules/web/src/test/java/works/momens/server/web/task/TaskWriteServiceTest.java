@@ -15,11 +15,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import works.momens.server.common.api.BusinessException;
+import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.project.core.ProjectReader;
 import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.PatchTaskCommand;
+import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskReader;
 import works.momens.server.project.task.TaskScope;
+import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.web.WorkspaceAccessChecker;
 import works.momens.server.workspace.core.WorkspaceReader;
@@ -64,8 +67,34 @@ class TaskWriteServiceTest {
     verify(taskWriter).create(captor.capture());
     assertThat(captor.getValue().workspaceId()).isEqualTo(WORKSPACE_ID);
     assertThat(captor.getValue().description()).isNull();
-    assertThat(captor.getValue().status()).isEqualTo("in_progress");
-    assertThat(captor.getValue().priority()).isEqualTo("medium");
+    assertThat(captor.getValue().status()).isEqualTo(TaskStatus.IN_PROGRESS);
+    assertThat(captor.getValue().priority()).isEqualTo(TaskPriority.MEDIUM);
+  }
+
+  @Test
+  void createUsesBacklogAndLeavesPriorityDefaultToDomainWhenValuesAreEmpty() {
+    when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.of(WORKSPACE_ID));
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, USER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
+
+    service.create(PROJECT_ID, USER_ID, "제목", null, "", null, "", null, null);
+
+    ArgumentCaptor<CreateTaskCommand> captor = ArgumentCaptor.captor();
+    verify(taskWriter).create(captor.capture());
+    assertThat(captor.getValue().status()).isEqualTo(TaskStatus.BACKLOG);
+    assertThat(captor.getValue().priority()).isNull();
+  }
+
+  @Test
+  void createRejectsUnknownStatus() {
+    when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.of(WORKSPACE_ID));
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, USER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
+
+    assertThatThrownBy(
+            () ->
+                service.create(PROJECT_ID, USER_ID, "제목", null, "blocked", null, null, null, null))
+        .isInstanceOf(FieldValidationException.class);
   }
 
   @Test
@@ -96,7 +125,7 @@ class TaskWriteServiceTest {
     ArgumentCaptor<PatchTaskCommand> captor = ArgumentCaptor.captor();
     verify(taskWriter).patch(captor.capture());
     assertThat(captor.getValue().titleSet()).isFalse();
-    assertThat(captor.getValue().status()).isEqualTo("in_progress");
+    assertThat(captor.getValue().status()).isEqualTo(TaskStatus.IN_PROGRESS);
     assertThat(captor.getValue().statusSet()).isTrue();
     assertThat(captor.getValue().prioritySet()).isFalse();
 
