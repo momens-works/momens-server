@@ -30,25 +30,31 @@ interface WorkspaceInvitationRepository extends JpaRepository<WorkspaceInvitatio
       value =
           """
           UPDATE workspace_invitations
-          SET token_hash = :tokenHash, status = 'pending', revoked_at = NULL,
+          SET token_hash = :tokenHash, status = :pendingStatus, revoked_at = NULL,
               expires_at = :expiresAt, updated_at = :now
-          WHERE id = :id AND status <> 'accepted'
+          WHERE id = :id AND status <> :acceptedStatus
           """,
       nativeQuery = true)
   int rotateToken(
       @Param("id") UUID id,
       @Param("tokenHash") String tokenHash,
       @Param("expiresAt") Instant expiresAt,
-      @Param("now") Instant now);
+      @Param("now") Instant now,
+      @Param("pendingStatus") String pendingStatus,
+      @Param("acceptedStatus") String acceptedStatus);
 
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query(
       value =
           """
           UPDATE workspace_invitations
-          SET status = 'revoked', revoked_at = :now, updated_at = :now
-          WHERE id = :id AND status <> 'accepted'
+          SET status = :revokedStatus, revoked_at = :now, updated_at = :now
+          WHERE id = :id AND status <> :acceptedStatus
           """,
       nativeQuery = true)
-  int revoke(@Param("id") UUID id, @Param("now") Instant now);
+  int revoke(
+      @Param("id") UUID id,
+      @Param("now") Instant now,
+      @Param("revokedStatus") String revokedStatus,
+      @Param("acceptedStatus") String acceptedStatus);
 }
