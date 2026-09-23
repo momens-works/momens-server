@@ -21,6 +21,8 @@ dependencies {
     implementation project(':workspace')
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    // 도메인 enum의 value()에 @JsonValue를 적용해 OpenAPI 문서의 값 목록에 실제 저장 값을 사용합니다.
+    implementation 'com.fasterxml.jackson.core:jackson-annotations'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     // FCM 발송에 사용합니다. Spring Boot BOM 관리 대상이 아니므로 버전 카탈로그에서 버전을
     // 고정합니다. 인증은 ADC를 사용합니다(12절).

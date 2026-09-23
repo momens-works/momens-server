@@ -20,7 +20,10 @@ class PushDispatcherImpl implements PushDispatcher {
     recipients.forEach(
         recipient ->
             pushDeliveryRepository.insertPendingIgnoringConflict(
-                outboxEventId, recipient.installationId(), recipient.targetUserId()));
+                outboxEventId,
+                recipient.installationId(),
+                recipient.targetUserId(),
+                DeliveryStatus.PENDING.value()));
   }
 
   @Override
