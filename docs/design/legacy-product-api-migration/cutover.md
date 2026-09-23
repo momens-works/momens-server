@@ -68,7 +68,8 @@ Cloudflare FE deployment rollback 절차가 확정되어 당시의 "첫 슬라�
 | source provider callback URI 허용 목록 | 신규·레거시 소스 연결 callback을 provider가 허용하는가 | GitHub·Slack·Notion·Figma 콘솔 |
 
 Vite가 빌드 타임에 앞의 네 값을 굽는다. 전환은 FE 재빌드·재배포이고, 긴급 롤백은 Cloudflare의
-직전 deployment rollback으로 먼저 닫은 뒤 Git의 컷오버 커밋을 revert한다(7.4).
+직전 deployment rollback으로 먼저 닫은 뒤 빌드 변수와 Git의 컷오버 커밋을 함께 known-good 상태로
+되돌리고 재빌드한다(7.4).
 
 **운영 값의 정본은 Cloudflare 빌드 변수다**(2026-09-22 결정). `momens-fe`의 빌드는 GitHub
 Actions가 아니라 Cloudflare Workers Builds가 수행하고(저장소에 Actions secret·variable·environment가
@@ -364,7 +365,17 @@ Cloudflare에서 직전 FE deployment로 롤백해 로그인과 로그아웃 요
 3. active deployment가 직전 version으로 바뀌고 `app.momens.works`에서 해당 단계의 로그인과 첫
    보호 API가 성공하는지 확인한다. **5분 안에 확인되지 않으면 FE TL이 Cloudflare 상태와 route를
    직접 점검하고 컷오버를 중단한 상태로 유지한다.**
-4. Git의 컷오버 commit도 revert해 다음 `main` push가 실패한 설정을 다시 배포하지 않게 한다.
+4. **다음 `main` push 전에 Cloudflare 빌드 변수를 known-good deployment와 같은 값으로 되돌린다.**
+   컷오버에서 새로 등록한 변수는 known-good 상태에 없었다면 제거하고, 값이 바뀐 변수는 이전 값으로
+   복구한다. 특히 `VITE_AUTH_LOGIN_URL`, `VITE_AUTH_LOGOUT_URL`, `VITE_API_BASE_URL`,
+   `VITE_LEGACY_API_BASE_URL`의 존재 여부와 값을 함께 확인한다. 배포된 번들은 이미 구워진 값을
+   사용하므로 이 변경만으로 active deployment가 바뀌지는 않는다.
+5. Git의 컷오버 commit을 revert해 `main`에 push한다. 이 push가 새 빌드를 시작하므로, 4번의 Cloudflare
+   빌드 변수 복구가 끝나기 전에는 push하지 않는다.
+6. `Workers Builds: momens-fe`가 성공하고 새 deployment가 active가 될 때까지 기다린다. 이후
+   `app.momens.works`에서 로그인·로그아웃·첫 보호 API를 확인하고, 실제 번들에 포함된 URL을 검증한다.
+   빌드가 실패하거나 5분 안에 확인되지 않으면 추가 push를 하지 않고 FE TL이 Cloudflare 상태를
+   점검한다.
 
 실행 전에 Cloudflare dashboard 접근 권한, 기준선 deployment의 version ID, 컷오버 commit SHA를
 `MOM-0911`에 남긴다. 이 셋이 없으면 배포를 시작하지 않는다.
