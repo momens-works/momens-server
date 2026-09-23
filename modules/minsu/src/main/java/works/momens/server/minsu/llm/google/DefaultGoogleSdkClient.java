@@ -10,16 +10,16 @@ import com.google.genai.types.Part;
 import com.google.genai.types.Schema;
 import com.google.genai.types.Type;
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import works.momens.server.minsu.llm.LlmRequest;
 import works.momens.server.minsu.llm.LlmResponse;
+import works.momens.server.minsu.llm.LlmResponseField;
 import works.momens.server.minsu.llm.ModelSelection;
 
 final class DefaultGoogleSdkClient implements GoogleSdkClient {
-
-  private static final Schema RESPONSE_SCHEMA = responseSchema();
 
   private final Client client;
 
@@ -33,7 +33,7 @@ final class DefaultGoogleSdkClient implements GoogleSdkClient {
         GenerateContentConfig.builder()
             .candidateCount(1)
             .responseMimeType("application/json")
-            .responseSchema(RESPONSE_SCHEMA)
+            .responseSchema(responseSchema(request.responseFields()))
             .systemInstruction(Content.fromParts(Part.fromText(request.systemInstruction())))
             // 요청별 timeout(9.1절). client는 하나를 캐시해 재사용하므로 client-level 값으로는 동기와
             // 비동기가 다른 값을 가질 수 없다. apiVersion·retryOptions까지 포함해 통째로 넘기는 것은
@@ -73,21 +73,24 @@ final class DefaultGoogleSdkClient implements GoogleSdkClient {
         tokenUsage(response.usageMetadata().orElse(null)));
   }
 
-  static Schema responseSchema() {
-    Schema title =
-        Schema.builder().type(Type.Known.STRING).description("공백을 포함해 15자 이내인 한국어 실행 항목").build();
-    Schema role =
-        Schema.builder()
-            .type(Type.Known.STRING)
-            .enum_("pm", "design", "backend", "frontend")
-            .build();
-    Schema priority =
-        Schema.builder().type(Type.Known.STRING).enum_("low", "medium", "high").build();
+  static Schema responseSchema(List<LlmResponseField> fields) {
+    Map<String, Schema> properties = new LinkedHashMap<>();
+    for (LlmResponseField field : fields) {
+      Schema.Builder property = Schema.builder().type(Type.Known.STRING);
+      if (field.description() != null) {
+        property.description(field.description());
+      }
+      if (!field.allowedValues().isEmpty()) {
+        property.enum_(field.allowedValues());
+      }
+      properties.put(field.name(), property.build());
+    }
+    List<String> names = List.copyOf(properties.keySet());
     return Schema.builder()
         .type(Type.Known.OBJECT)
-        .properties(Map.of("title", title, "role", role, "priority", priority))
-        .required("title", "role", "priority")
-        .propertyOrdering("title", "role", "priority")
+        .properties(properties)
+        .required(names)
+        .propertyOrdering(names)
         .build();
   }
 

@@ -22,7 +22,7 @@ class GoogleGenAiLlmClientTest {
 
   private static final ModelSelection SELECTION =
       new ModelSelection("google", "gemini-3.5-flash-lite", "project", "global");
-  private static final LlmRequest REQUEST = new LlmRequest("v1", "system", "{}");
+  private static final LlmRequest REQUEST = new LlmRequest("v1", "system", "{}", List.of());
   private static final Duration TIMEOUT = Duration.ofSeconds(8);
 
   @Test

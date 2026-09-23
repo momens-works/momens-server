@@ -2,6 +2,7 @@ package works.momens.server.minsu.draft.ledger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -148,7 +149,8 @@ class MinsuLedgerMetricsIntegrationTest extends AbstractPostgresIntegrationTest 
     // 조회가 실패해도 직전 값이 남아 있으므로, 나이까지 갱신하면 낡은 숫자를 최신인 것처럼 계속
     // 보고하게 된다. 지표가 멀쩡해 보이는 것이 가장 나쁘다.
     TaskDraftGenerationRepository failing = mock(TaskDraftGenerationRepository.class);
-    when(failing.snapshotUnfinished()).thenThrow(new DataAccessResourceFailureException("DB 장애"));
+    when(failing.snapshotUnfinished(any(), any()))
+        .thenThrow(new DataAccessResourceFailureException("DB 장애"));
     SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
     MinsuLedgerMetrics metrics = new MinsuLedgerMetrics(failing, meterRegistry);
     Thread.sleep(30);
@@ -183,6 +185,8 @@ class MinsuLedgerMetricsIntegrationTest extends AbstractPostgresIntegrationTest 
         entityManager
             .getEntityManager()
             .createNativeQuery("EXPLAIN " + TaskDraftGenerationRepository.SNAPSHOT_UNFINISHED_SQL)
+            .setParameter("pendingStatus", GenerationStatus.PENDING.value())
+            .setParameter("processingStatus", GenerationStatus.PROCESSING.value())
             .getResultList();
 
     assertThat(String.join("\n", plan)).contains("idx_minsu_task_draft_generations_unfinished");

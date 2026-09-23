@@ -128,7 +128,7 @@ class MinsuLedgerObservability {
    * 적재부터 {@code tasks} 반영까지의 end-to-end 지연. 성공 반영에서만 기록한다.
    *
    * <p>시작 시각인 {@code created_at}은 JPA Auditing이 애플리케이션 시계로 쓰고 끝 시각은 DB 시계라, 편차에 따라 음수가 나올 수 있어 0에서
-   * 자른다({@link TaskDraftGenerationRepository#snapshotUnfinished()}의 나이와 같은 사정이다).
+   * 자른다({@link TaskDraftGenerationRepository#snapshotUnfinished}의 나이와 같은 사정이다).
    */
   void recordGenerationDuration(Duration duration) {
     afterCommit(() -> timer(GENERATION_DURATION).record(clampToZero(duration)));
