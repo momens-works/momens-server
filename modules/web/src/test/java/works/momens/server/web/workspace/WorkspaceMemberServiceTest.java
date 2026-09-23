@@ -22,6 +22,7 @@ import works.momens.server.web.WorkspaceAccessChecker;
 import works.momens.server.workspace.WorkspaceErrorCode;
 import works.momens.server.workspace.core.WorkspaceDetail;
 import works.momens.server.workspace.core.WorkspaceReader;
+import works.momens.server.workspace.membership.AssignableWorkspaceRole;
 import works.momens.server.workspace.membership.ChangeMembershipRoleCommand;
 import works.momens.server.workspace.membership.RemoveMembershipCommand;
 import works.momens.server.workspace.membership.WorkspaceMembershipReader;
@@ -81,7 +82,9 @@ class WorkspaceMemberServiceTest {
         ArgumentCaptor.forClass(ChangeMembershipRoleCommand.class);
     verify(workspaceMembershipWriter).changeRole(captor.capture());
     assertThat(captor.getValue())
-        .isEqualTo(new ChangeMembershipRoleCommand(WORKSPACE_ID, TARGET_ID, WorkspaceRole.ADMIN));
+        .isEqualTo(
+            new ChangeMembershipRoleCommand(
+                WORKSPACE_ID, TARGET_ID, AssignableWorkspaceRole.ADMIN));
   }
 
   @Test

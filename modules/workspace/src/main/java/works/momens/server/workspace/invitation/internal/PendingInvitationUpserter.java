@@ -3,6 +3,7 @@ package works.momens.server.workspace.invitation.internal;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import works.momens.server.workspace.invitation.InvitationStatus;
 
 /**
  * 대기 중인 워크스페이스 초대를 생성하거나 기존 초대를 갱신합니다.
@@ -12,12 +13,14 @@ import org.springframework.jdbc.core.simple.JdbcClient;
  */
 class PendingInvitationUpserter {
 
+  // PostgreSQL이 대상 인덱스를 찾으려면 ON CONFLICT의 status 조건이 부분 인덱스 조건과 같아야 하므로 리터럴로 유지합니다. 저장할 status 값은
+  // 파라미터로 전달합니다.
   private static final String UPSERT =
       """
       INSERT INTO workspace_invitations (
           id, workspace_id, email, role, inviter_id, token_hash, status, expires_at, created_at, updated_at
       )
-      VALUES (:id, :workspaceId, :email, :role, :inviterId, :tokenHash, 'pending', :expiresAt, :now, :now)
+      VALUES (:id, :workspaceId, :email, :role, :inviterId, :tokenHash, :pendingStatus, :expiresAt, :now, :now)
       ON CONFLICT (workspace_id, lower(email)) WHERE status = 'pending'
       DO UPDATE SET
           role = EXCLUDED.role,
@@ -50,6 +53,7 @@ class PendingInvitationUpserter {
         .param("role", role)
         .param("inviterId", inviterId)
         .param("tokenHash", tokenHash)
+        .param("pendingStatus", InvitationStatus.PENDING.value())
         .param("expiresAt", java.sql.Timestamp.from(expiresAt))
         .param("now", java.sql.Timestamp.from(now))
         .query(UUID.class)

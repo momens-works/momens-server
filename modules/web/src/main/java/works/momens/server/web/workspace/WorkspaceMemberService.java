@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.web.WorkspaceAccessChecker;
 import works.momens.server.workspace.WorkspaceErrorCode;
+import works.momens.server.workspace.membership.AssignableWorkspaceRole;
 import works.momens.server.workspace.membership.ChangeMembershipRoleCommand;
 import works.momens.server.workspace.membership.RemoveMembershipCommand;
 import works.momens.server.workspace.membership.WorkspaceMembershipWriter;
@@ -47,8 +48,8 @@ class WorkspaceMemberService {
   public void changeRole(UUID workspaceId, UUID userId, UUID targetUserId, String rawRole) {
     workspaceAccessChecker.requireWorkspaceExists(workspaceId);
     workspaceAccessChecker.requireRoleAtLeast(workspaceId, userId, WorkspaceRole.ADMIN);
-    WorkspaceRole role =
-        WorkspaceRole.assignableFrom(rawRole)
+    AssignableWorkspaceRole role =
+        AssignableWorkspaceRole.from(rawRole)
             .orElseThrow(
                 () ->
                     new BusinessException(

@@ -1,5 +1,6 @@
 package works.momens.server.workspace.invitation;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Optional;
 
 /**
@@ -29,6 +30,7 @@ public enum InvitationStatus {
     return Optional.empty();
   }
 
+  @JsonValue
   public String value() {
     return value;
   }

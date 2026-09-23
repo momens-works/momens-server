@@ -17,10 +17,10 @@ import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.workspace.StubUserServiceConfig;
 import works.momens.server.workspace.WorkspaceErrorCode;
 import works.momens.server.workspace.WorkspaceSeedSql;
+import works.momens.server.workspace.membership.AssignableWorkspaceRole;
 import works.momens.server.workspace.membership.ChangeMembershipRoleCommand;
 import works.momens.server.workspace.membership.RemoveMembershipCommand;
 import works.momens.server.workspace.membership.WorkspaceMembershipWriter;
-import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
  * 멤버십 변경을 담당하는 public API의 동작을 검증합니다.
@@ -46,7 +46,7 @@ class WorkspaceMembershipWriterIntegrationTest extends AbstractPostgresIntegrati
     entityManager.clear();
 
     workspaceMembershipWriter.changeRole(
-        new ChangeMembershipRoleCommand(workspaceId, member, WorkspaceRole.ADMIN));
+        new ChangeMembershipRoleCommand(workspaceId, member, AssignableWorkspaceRole.ADMIN));
     entityManager.flush();
     entityManager.clear();
 
@@ -64,7 +64,8 @@ class WorkspaceMembershipWriterIntegrationTest extends AbstractPostgresIntegrati
     assertThatThrownBy(
             () ->
                 workspaceMembershipWriter.changeRole(
-                    new ChangeMembershipRoleCommand(workspaceId, owner, WorkspaceRole.MEMBER)))
+                    new ChangeMembershipRoleCommand(
+                        workspaceId, owner, AssignableWorkspaceRole.MEMBER)))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(WorkspaceErrorCode.WORKSPACE_OWNER_PROTECTED);
@@ -80,7 +81,8 @@ class WorkspaceMembershipWriterIntegrationTest extends AbstractPostgresIntegrati
     assertThatThrownBy(
             () ->
                 workspaceMembershipWriter.changeRole(
-                    new ChangeMembershipRoleCommand(workspaceId, stranger, WorkspaceRole.ADMIN)))
+                    new ChangeMembershipRoleCommand(
+                        workspaceId, stranger, AssignableWorkspaceRole.ADMIN)))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(WorkspaceErrorCode.WORKSPACE_MEMBER_NOT_FOUND);

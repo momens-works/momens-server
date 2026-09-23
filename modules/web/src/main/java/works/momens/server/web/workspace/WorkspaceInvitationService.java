@@ -15,6 +15,7 @@ import works.momens.server.workspace.invitation.WorkspaceInvitationDetail;
 import works.momens.server.workspace.invitation.WorkspaceInvitationReader;
 import works.momens.server.workspace.invitation.WorkspaceInvitationWriter;
 import works.momens.server.workspace.membership.AddMembershipByEmailCommand;
+import works.momens.server.workspace.membership.AssignableWorkspaceRole;
 import works.momens.server.workspace.membership.WorkspaceMembershipWriter;
 import works.momens.server.workspace.membership.WorkspaceRole;
 
@@ -69,8 +70,8 @@ class WorkspaceInvitationService {
     workspaceAccessChecker.requireRoleAtLeast(workspaceId, userId, WorkspaceRole.ADMIN);
   }
 
-  private static WorkspaceRole assignableRole(String rawRole) {
-    return WorkspaceRole.assignableFrom(rawRole)
+  private static AssignableWorkspaceRole assignableRole(String rawRole) {
+    return AssignableWorkspaceRole.from(rawRole)
         .orElseThrow(
             () ->
                 new BusinessException(
