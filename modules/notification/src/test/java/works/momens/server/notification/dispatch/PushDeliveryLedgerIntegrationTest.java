@@ -238,7 +238,8 @@ class PushDeliveryLedgerIntegrationTest extends AbstractPostgresIntegrationTest 
   }
 
   private void materializePending() {
-    deliveryRepository.insertPendingIgnoringConflict(EVENT_ID, INSTALLATION_ID, USER_ID);
+    deliveryRepository.insertPendingIgnoringConflict(
+        EVENT_ID, INSTALLATION_ID, USER_ID, DeliveryStatus.PENDING.value());
     entityManager.clear();
   }
 

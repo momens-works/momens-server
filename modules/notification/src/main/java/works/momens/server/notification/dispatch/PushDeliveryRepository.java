@@ -24,19 +24,21 @@ interface PushDeliveryRepository extends JpaRepository<PushDelivery, PushDeliver
           "INSERT INTO push_deliveries "
               + "(outbox_event_id, installation_id, target_user_id, status, attempt_count, "
               + "next_attempt_at, created_at, updated_at) "
-              + "VALUES (:outboxEventId, :installationId, :targetUserId, 'pending', 0, NOW(), "
+              + "VALUES (:outboxEventId, :installationId, :targetUserId, :pendingStatus, 0, NOW(), "
               + "NOW(), NOW()) "
               + "ON CONFLICT (outbox_event_id, installation_id) DO NOTHING",
       nativeQuery = true)
   void insertPendingIgnoringConflict(
       @Param("outboxEventId") long outboxEventId,
       @Param("installationId") UUID installationId,
-      @Param("targetUserId") UUID targetUserId);
+      @Param("targetUserId") UUID targetUserId,
+      @Param("pendingStatus") String pendingStatus);
 
   /**
    * 재시도 시각이 지난 pending delivery를 {@code FOR UPDATE SKIP LOCKED}로 클레임해 여러 인스턴스가 같은 delivery를 이중 발송하지
    * 않게 한다(10.3절).
    */
+  // PostgreSQL이 인덱스를 사용하려면 WHERE의 status 조건이 부분 인덱스 조건과 같아야 하므로 리터럴로 유지합니다.
   @Query(
       value =
           "SELECT * FROM push_deliveries "

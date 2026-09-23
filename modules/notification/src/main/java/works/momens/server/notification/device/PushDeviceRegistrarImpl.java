@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.notification.PushDeviceRegistrar;
+import works.momens.server.notification.PushInstallationPlatform;
 
 /**
  * push 설치 등록·해제 구현.
@@ -23,7 +24,6 @@ import works.momens.server.notification.PushDeviceRegistrar;
 @RequiredArgsConstructor
 class PushDeviceRegistrarImpl implements PushDeviceRegistrar {
 
-  private static final String PLATFORM_ANDROID = "android";
   private static final String REGISTRATION_LOCK_NAME = "notification.push_installations";
 
   private final PushInstallationRepository pushInstallationRepository;
@@ -35,12 +35,13 @@ class PushDeviceRegistrarImpl implements PushDeviceRegistrar {
       UUID userId, String firebaseInstallationId, String fcmRegistrationToken, String platform) {
     requireNotBlank(firebaseInstallationId);
     requireNotBlank(fcmRegistrationToken);
-    if (!PLATFORM_ANDROID.equals(platform)) {
-      throw new BusinessException(CommonErrorCode.COMMON_VALIDATION_FAILED);
-    }
+    PushInstallationPlatform installationPlatform =
+        PushInstallationPlatform.from(platform)
+            .orElseThrow(() -> new BusinessException(CommonErrorCode.COMMON_VALIDATION_FAILED));
     lockRegistrationLedger();
     try {
-      registerLocked(userId, firebaseInstallationId, fcmRegistrationToken, platform);
+      registerLocked(
+          userId, firebaseInstallationId, fcmRegistrationToken, installationPlatform.value());
       pushInstallationRepository.flush();
     } catch (DataIntegrityViolationException e) {
       // unique 위반 detail에 FCM token이 포함될 수 있으므로 원인 예외를 전역 500 로그로 넘기지 않는다.
