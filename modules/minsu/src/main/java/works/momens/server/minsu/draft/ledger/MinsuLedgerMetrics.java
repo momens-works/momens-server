@@ -86,7 +86,10 @@ class MinsuLedgerMetrics {
   @Scheduled(fixedDelayString = "${momens.minsu.task-draft.metrics.snapshot-interval:10s}")
   void refresh() {
     try {
-      snapshot.set(Snapshot.of(repository.snapshotUnfinished()));
+      snapshot.set(
+          Snapshot.of(
+              repository.snapshotUnfinished(
+                  GenerationStatus.PENDING.value(), GenerationStatus.PROCESSING.value())));
       refreshedAtNanos = System.nanoTime();
       failing = false;
     } catch (RuntimeException e) {

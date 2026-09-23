@@ -11,19 +11,19 @@ import org.springframework.data.repository.query.Param;
 interface TaskDraftGenerationRepository extends JpaRepository<TaskDraftGeneration, UUID> {
 
   /**
-   * {@link #snapshotUnfinished()}의 SQL. 상수로 뺀 이유는 테스트가 <b>이 문장 그대로</b> EXPLAIN해 부분 인덱스가 실제로 쓰이는지 보기
+   * {@link #snapshotUnfinished}의 SQL. 상수로 뺀 이유는 테스트가 <b>이 문장 그대로</b> EXPLAIN해 부분 인덱스가 실제로 쓰이는지 보기
    * 위해서다. 테스트에 복사해 두면 WHERE를 바꿔도 복사본은 그대로라 통과한 채 인덱스만 놓친다.
    */
   String SNAPSHOT_UNFINISHED_SQL =
       """
-          SELECT COUNT(*) FILTER (WHERE status = 'pending') AS "pending",
-                 COUNT(*) FILTER (WHERE status = 'processing') AS "processing",
+          SELECT COUNT(*) FILTER (WHERE status = :pendingStatus) AS "pending",
+                 COUNT(*) FILTER (WHERE status = :processingStatus) AS "processing",
                  GREATEST(COALESCE(EXTRACT(EPOCH FROM NOW() - MIN(created_at)), 0), 0)
                      ::double precision AS "oldestUnfinishedAgeSeconds",
                  COUNT(*) FILTER (
-                     WHERE status = 'processing' AND lease_expires_at <= NOW()) AS "expiredLeases",
+                     WHERE status = :processingStatus AND lease_expires_at <= NOW()) AS "expiredLeases",
                  COALESCE(EXTRACT(EPOCH FROM NOW() - MIN(lease_expires_at) FILTER (
-                     WHERE status = 'processing' AND lease_expires_at <= NOW())), 0)::double precision
+                     WHERE status = :processingStatus AND lease_expires_at <= NOW())), 0)::double precision
                      AS "expiredLeaseMaxAgeSeconds",
                  COUNT(*) FILTER (WHERE read_deadline_at <= NOW()) AS "readDeadlineExceeded"
           FROM minsu_task_draft_generations
@@ -100,6 +100,9 @@ interface TaskDraftGenerationRepository extends JpaRepository<TaskDraftGeneratio
    * <p>WHERE 절이 {@code idx_minsu_task_draft_generations_unfinished}의 부분 인덱스 술어와 <b>문자 그대로</b> 같아야
    * planner가 그 인덱스를 쓴다. 조건을 바꿀 때 마이그레이션도 함께 봐야 한다.
    *
+   * <p>`COUNT FILTER`의 status 값은 호출하는 쪽에서 `GenerationStatus`의 값을 파라미터로 전달합니다. 부분 인덱스 사용 여부는 WHERE
+   * 조건으로 결정되므로 이 값은 리터럴로 작성하지 않아도 됩니다.
+   *
    * <p>{@code lease_expires_at}은 claim이 DB 시계로 계산해 저장한 값이라 여기서 {@code NOW()}와 빼는 것이 같은 시계 안의 연산이다.
    * 반면 <b>{@code created_at}은 JPA Auditing이 애플리케이션 시계로 쓴다.</b> 두 시계가 어긋나면 나이가 음수가 될 수 있어 {@code
    * GREATEST}로 0에서 자른다. 편차는 보통 밀리초 단위이고, 이 지표가 보려는 것은 정지로 인한 큰 양수라 0 절단이 판정을 가리지 않는다.
@@ -107,14 +110,16 @@ interface TaskDraftGenerationRepository extends JpaRepository<TaskDraftGeneratio
    * <p>별칭을 큰따옴표로 감싼 것은 Postgres가 따옴표 없는 식별자를 소문자로 접기 때문이다. interface projection은 별칭과 속성명을 맞춰야 한다.
    */
   @Query(value = SNAPSHOT_UNFINISHED_SQL, nativeQuery = true)
-  LedgerSnapshotRow snapshotUnfinished();
+  LedgerSnapshotRow snapshotUnfinished(
+      @Param("pendingStatus") String pendingStatus,
+      @Param("processingStatus") String processingStatus);
 
   /**
    * 반영 창이 닫혀 아무도 집을 수 없게 된 미종료 원장을 회수 대상으로 잠근다(11.1절).
    *
    * <p>두 claim 쿼리가 {@code apply_cutoff_at > NOW()}를 요구하므로 그 시각을 지난 행은 <b>영영 claim되지 않는다.</b> 종료 전이는
    * claim된 행에만 일어나므로 닫아 주는 경로가 없으면 미종료로 영구히 남고, 그러면 상태 gauge가 현재 적체와 버려진 행을 구분하지 못하며 {@link
-   * #snapshotUnfinished()}의 "미종료 집합은 유계"라는 전제도 깨진다.
+   * #snapshotUnfinished}의 "미종료 집합은 유계"라는 전제도 깨진다.
    *
    * <p><b>진행 중인 시도와 겹치지 않도록 조건을 좁힌다.</b> lease가 살아 있는 {@code processing}은 지금 누군가 실행 중이고, 그 결과는
    * {@link TaskDraftGenerationLedger#record}의 cutoff 분기가 {@code deadline_exceeded}로 닫는다. 여기서 먼저 닫으면

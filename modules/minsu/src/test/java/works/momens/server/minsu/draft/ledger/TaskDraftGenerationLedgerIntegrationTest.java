@@ -487,7 +487,13 @@ class TaskDraftGenerationLedgerIntegrationTest extends AbstractPostgresIntegrati
         // operationally_closed는 운영자가 명시적으로 끝내는 경우다. 이건 나이 상한 초과라 record()가
         // 같은 상황에 쓰는 사유와 같아야 한다.
         () -> assertThat(closedGeneration.getCompletionReason()).isEqualTo("deadline_exceeded"),
-        () -> assertThat(repository.snapshotUnfinished().getPending()).isZero());
+        () ->
+            assertThat(
+                    repository
+                        .snapshotUnfinished(
+                            GenerationStatus.PENDING.value(), GenerationStatus.PROCESSING.value())
+                        .getPending())
+                .isZero());
   }
 
   @Test
