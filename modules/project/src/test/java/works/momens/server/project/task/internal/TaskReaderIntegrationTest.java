@@ -12,7 +12,6 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.context.annotation.Import;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
@@ -21,8 +20,11 @@ import works.momens.server.project.core.ProjectReader;
 import works.momens.server.project.task.BoardTask;
 import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.TaskDetail;
+import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskReader;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskScope;
+import works.momens.server.project.task.TaskStatus;
 
 /**
  * task 조회 public API 검증.
@@ -49,11 +51,12 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     UUID workspaceId = ProjectSeedSql.insertWorkspace(entityManager, "board");
     UUID projectId = ProjectSeedSql.insertProject(entityManager, workspaceId, ownerId);
 
-    saveTask(workspaceId, projectId, "백로그", "backlog", "medium", "pm");
-    saveTask(workspaceId, projectId, "투두", "todo", "medium", "pm");
-    saveTask(workspaceId, projectId, "진행중", "in_progress", "medium", "pm");
-    saveTask(workspaceId, projectId, "완료", "done", "medium", "pm");
-    saveTask(workspaceId, projectId, "취소", "cancelled", "medium", "pm");
+    saveTask(workspaceId, projectId, "백로그", TaskStatus.BACKLOG, TaskPriority.MEDIUM, TaskRole.PM);
+    saveTask(workspaceId, projectId, "투두", TaskStatus.TODO, TaskPriority.MEDIUM, TaskRole.PM);
+    saveTask(
+        workspaceId, projectId, "진행중", TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, TaskRole.PM);
+    saveTask(workspaceId, projectId, "완료", TaskStatus.DONE, TaskPriority.MEDIUM, TaskRole.PM);
+    saveTask(workspaceId, projectId, "취소", TaskStatus.CANCELLED, TaskPriority.MEDIUM, TaskRole.PM);
 
     List<BoardTask> board = taskReader.listTasksByStatus(projectId, BOARD_STATUSES);
 
@@ -70,10 +73,12 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     UUID projectId = ProjectSeedSql.insertProject(entityManager, workspaceId, ownerId);
     UUID otherProjectId = ProjectSeedSql.insertProject(entityManager, workspaceId, ownerId);
 
-    saveTask(workspaceId, projectId, "살아있음", "todo", "medium", "pm");
-    UUID deleted = saveTask(workspaceId, projectId, "삭제됨", "todo", "medium", "pm");
+    saveTask(workspaceId, projectId, "살아있음", TaskStatus.TODO, TaskPriority.MEDIUM, TaskRole.PM);
+    UUID deleted =
+        saveTask(workspaceId, projectId, "삭제됨", TaskStatus.TODO, TaskPriority.MEDIUM, TaskRole.PM);
     softDelete(deleted);
-    saveTask(workspaceId, otherProjectId, "다른 프로젝트", "todo", "medium", "pm");
+    saveTask(
+        workspaceId, otherProjectId, "다른 프로젝트", TaskStatus.TODO, TaskPriority.MEDIUM, TaskRole.PM);
 
     List<BoardTask> board = taskReader.listTasksByStatus(projectId, BOARD_STATUSES);
 
@@ -86,8 +91,12 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     UUID workspaceId = ProjectSeedSql.insertWorkspace(entityManager, "order");
     UUID projectId = ProjectSeedSql.insertProject(entityManager, workspaceId, ownerId);
 
-    UUID earlier = saveTask(workspaceId, projectId, "먼저", "todo", "high", "backend");
-    UUID later = saveTask(workspaceId, projectId, "나중", "todo", "high", "frontend");
+    UUID earlier =
+        saveTask(
+            workspaceId, projectId, "먼저", TaskStatus.TODO, TaskPriority.HIGH, TaskRole.BACKEND);
+    UUID later =
+        saveTask(
+            workspaceId, projectId, "나중", TaskStatus.TODO, TaskPriority.HIGH, TaskRole.FRONTEND);
     // 두 태스크의 created_at이 같으면 id 보조 정렬로 순서가 흔들리므로, 생성 시각을 다르게 고정해 정렬을 결정적으로 만든다.
     setCreatedAt(earlier, "2026-07-06T00:00:00Z");
     setCreatedAt(later, "2026-07-06T00:00:01Z");
@@ -105,7 +114,14 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     UUID projectId = ProjectSeedSql.insertProject(entityManager, workspaceId, ownerId);
     UUID assigneeId = ProjectSeedSql.insertUser(entityManager, "jinsu@momens.works");
 
-    UUID taskId = saveTask(workspaceId, projectId, "1차 와이어프레임", "todo", "urgent", "backend");
+    UUID taskId =
+        saveTask(
+            workspaceId,
+            projectId,
+            "1차 와이어프레임",
+            TaskStatus.TODO,
+            TaskPriority.URGENT,
+            TaskRole.BACKEND);
     setDetailColumns(taskId, "이번 범위의 화면 흐름을 정리한다", assigneeId);
     // position 역순으로 넣어 조회 순서가 삽입 순서가 아니라 position 기준임을 확인한다.
     insertChecklistItem(taskId, "두 번째 완료기준", true, 1);
@@ -136,7 +152,13 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     UUID projectId = ProjectSeedSql.insertProject(entityManager, workspaceId, ownerId);
 
     UUID taskId =
-        saveTask(workspaceId, projectId, "비연속 position 완료기준", "todo", "medium", "backend");
+        saveTask(
+            workspaceId,
+            projectId,
+            "비연속 position 완료기준",
+            TaskStatus.TODO,
+            TaskPriority.MEDIUM,
+            TaskRole.BACKEND);
     // 앱 외부에서 1-based·gap으로 들어온 데이터. @OrderColumn(리스트 인덱스=position)이면 빈 인덱스가
     // null 원소가 되어 매핑이 NPE로 죽지만, @OrderBy는 position 순서로 정렬만 하므로 실제 항목만
     // 순서대로 내려주는지 확인한다.
@@ -155,7 +177,8 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     UUID ownerId = ProjectSeedSql.insertUser(entityManager, "empty-owner@momens.works");
     UUID workspaceId = ProjectSeedSql.insertWorkspace(entityManager, "empty");
     UUID projectId = ProjectSeedSql.insertProject(entityManager, workspaceId, ownerId);
-    UUID taskId = saveTask(workspaceId, projectId, "빈 상세", "todo", "medium", "pm");
+    UUID taskId =
+        saveTask(workspaceId, projectId, "빈 상세", TaskStatus.TODO, TaskPriority.MEDIUM, TaskRole.PM);
 
     TaskDetail detail = taskReader.findDetail(taskId).orElseThrow();
 
@@ -171,7 +194,9 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     UUID ownerId = ProjectSeedSql.insertUser(entityManager, "minsu-owner@momens.works");
     UUID workspaceId = ProjectSeedSql.insertWorkspace(entityManager, "minsu");
     UUID projectId = ProjectSeedSql.insertProject(entityManager, workspaceId, ownerId);
-    UUID taskId = saveTask(workspaceId, projectId, "민수 산출물", "todo", "medium", "pm");
+    UUID taskId =
+        saveTask(
+            workspaceId, projectId, "민수 산출물", TaskStatus.TODO, TaskPriority.MEDIUM, TaskRole.PM);
 
     // 민수(MVP에서는 fixture)가 채우는 값이라 앱 쓰기 경로 없이 SQL로 넣는다. sort_order 역순으로 넣어
     // 조회 순서가 삽입 순서가 아니라 sort_order 기준임을 확인한다.
@@ -192,7 +217,9 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     UUID ownerId = ProjectSeedSql.insertUser(entityManager, "tie-owner@momens.works");
     UUID workspaceId = ProjectSeedSql.insertWorkspace(entityManager, "tie");
     UUID projectId = ProjectSeedSql.insertProject(entityManager, workspaceId, ownerId);
-    UUID taskId = saveTask(workspaceId, projectId, "동률 열린질문", "todo", "medium", "pm");
+    UUID taskId =
+        saveTask(
+            workspaceId, projectId, "동률 열린질문", TaskStatus.TODO, TaskPriority.MEDIUM, TaskRole.PM);
 
     // sort_order는 DEFAULT 0이라 생산자가 순서를 안 주면 전부 0이 된다. 그때도 조회 순서가 흔들리지
     // 않도록 id로 보조 정렬하는지 확인한다(signal_evidence와 같은 이유).
@@ -217,7 +244,9 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     UUID ownerId = ProjectSeedSql.insertUser(entityManager, "question-length@momens.works");
     UUID workspaceId = ProjectSeedSql.insertWorkspace(entityManager, "question-length");
     UUID projectId = ProjectSeedSql.insertProject(entityManager, workspaceId, ownerId);
-    UUID taskId = saveTask(workspaceId, projectId, "열린질문 글자수", "todo", "medium", "pm");
+    UUID taskId =
+        saveTask(
+            workspaceId, projectId, "열린질문 글자수", TaskStatus.TODO, TaskPriority.MEDIUM, TaskRole.PM);
 
     assertThatThrownBy(() -> insertOpenQuestion(taskId, UUID.randomUUID(), "질".repeat(51), 0))
         .isInstanceOf(ConstraintViolationException.class);
@@ -228,7 +257,9 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     UUID ownerId = ProjectSeedSql.insertUser(entityManager, "action-length@momens.works");
     UUID workspaceId = ProjectSeedSql.insertWorkspace(entityManager, "action-length");
     UUID projectId = ProjectSeedSql.insertProject(entityManager, workspaceId, ownerId);
-    UUID taskId = saveTask(workspaceId, projectId, "다음행동 글자수", "todo", "medium", "pm");
+    UUID taskId =
+        saveTask(
+            workspaceId, projectId, "다음행동 글자수", TaskStatus.TODO, TaskPriority.MEDIUM, TaskRole.PM);
 
     assertThatThrownBy(() -> setNextAction(taskId, "행".repeat(101)))
         .isInstanceOf(ConstraintViolationException.class);
@@ -239,7 +270,8 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     UUID ownerId = ProjectSeedSql.insertUser(entityManager, "deleted-owner@momens.works");
     UUID workspaceId = ProjectSeedSql.insertWorkspace(entityManager, "deleted");
     UUID projectId = ProjectSeedSql.insertProject(entityManager, workspaceId, ownerId);
-    UUID deleted = saveTask(workspaceId, projectId, "삭제됨", "todo", "medium", "pm");
+    UUID deleted =
+        saveTask(workspaceId, projectId, "삭제됨", TaskStatus.TODO, TaskPriority.MEDIUM, TaskRole.PM);
     softDelete(deleted);
 
     assertThat(taskReader.findDetail(deleted)).isEmpty();
@@ -251,24 +283,17 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     UUID ownerId = ProjectSeedSql.insertUser(entityManager, "scope-owner@momens.works");
     UUID workspaceId = ProjectSeedSql.insertWorkspace(entityManager, "scope");
     UUID projectId = ProjectSeedSql.insertProject(entityManager, workspaceId, ownerId);
-    UUID live = saveTask(workspaceId, projectId, "살아있는 태스크", "todo", "medium", "pm");
-    UUID deleted = saveTask(workspaceId, projectId, "삭제된 태스크", "todo", "medium", "pm");
+    UUID live =
+        saveTask(
+            workspaceId, projectId, "살아있는 태스크", TaskStatus.TODO, TaskPriority.MEDIUM, TaskRole.PM);
+    UUID deleted =
+        saveTask(
+            workspaceId, projectId, "삭제된 태스크", TaskStatus.TODO, TaskPriority.MEDIUM, TaskRole.PM);
     softDelete(deleted);
 
     assertThat(taskReader.findScope(live)).contains(new TaskScope(workspaceId, projectId));
     assertThat(taskReader.findScope(deleted)).isEmpty();
     assertThat(taskReader.findScope(UUID.randomUUID())).isEmpty();
-  }
-
-  @Test
-  void saveRejectsRoleOutsideCheckConstraint() {
-    UUID ownerId = ProjectSeedSql.insertUser(entityManager, "check-owner@momens.works");
-    UUID workspaceId = ProjectSeedSql.insertWorkspace(entityManager, "check");
-    UUID projectId = ProjectSeedSql.insertProject(entityManager, workspaceId, ownerId);
-
-    assertThatThrownBy(
-            () -> saveTask(workspaceId, projectId, "폐기된 역할", "todo", "medium", "android"))
-        .isInstanceOf(DataIntegrityViolationException.class);
   }
 
   @Test
@@ -279,7 +304,8 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
 
     // 웹에서 만든 태스크는 role 없이 저장된다. NOT NULL 제거로 role=null 저장이 CHECK를 통과하는지,
     // 보드와 상세 조회가 role=null을 문제없이 내려주는지 확인한다.
-    UUID taskId = saveTask(workspaceId, projectId, "웹 태스크", "todo", "medium", null);
+    UUID taskId =
+        saveTask(workspaceId, projectId, "웹 태스크", TaskStatus.TODO, TaskPriority.MEDIUM, null);
 
     List<BoardTask> board = taskReader.listTasksByStatus(projectId, BOARD_STATUSES);
     assertThat(board).extracting(BoardTask::title).containsExactly("웹 태스크");
@@ -290,7 +316,12 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   private UUID saveTask(
-      UUID workspaceId, UUID projectId, String title, String status, String priority, String role) {
+      UUID workspaceId,
+      UUID projectId,
+      String title,
+      TaskStatus status,
+      TaskPriority priority,
+      TaskRole role) {
     return taskRepository
         .saveAndFlush(
             Task.create(

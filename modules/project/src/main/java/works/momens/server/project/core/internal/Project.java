@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import works.momens.server.common.persistence.BaseEntity;
+import works.momens.server.project.core.ProjectHealthStatus;
 
 /**
  * 프로젝트.
@@ -109,12 +110,12 @@ class Project extends BaseEntity {
     this.name = name;
     this.description = description;
     // INSERT 시 엔티티 값이 DB DEFAULT 보다 우선하므로, 레거시 기본값 'active'를 앱 생성에서도 보장한다.
-    this.status = status != null ? status : "active";
+    this.status = status != null ? status : ProjectStatus.ACTIVE.value();
     this.ownerId = ownerId;
     this.targetDate = targetDate;
     this.summary = summary;
     this.label = label;
-    this.healthStatus = healthStatus != null ? healthStatus : "open";
+    this.healthStatus = healthStatus != null ? healthStatus : ProjectHealthStatus.OPEN.value();
     this.progress = progress;
     this.unresolvedCount = unresolvedCount;
     this.vocSignalCount = vocSignalCount;

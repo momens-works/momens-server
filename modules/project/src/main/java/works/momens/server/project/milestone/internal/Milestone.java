@@ -11,6 +11,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import works.momens.server.common.persistence.BaseEntity;
+import works.momens.server.project.milestone.MilestoneHealthStatus;
 
 /**
  * 마일스톤.
@@ -84,7 +85,7 @@ class Milestone extends BaseEntity {
     this.description = description;
     this.targetDate = targetDate;
     this.status = status != null ? status : MilestoneStatus.PLANNED.value();
-    this.healthStatus = healthStatus != null ? healthStatus : "planned";
+    this.healthStatus = healthStatus != null ? healthStatus : MilestoneHealthStatus.PLANNED.value();
     this.progress = progress;
     this.summary = summary;
     this.lastContextAt = lastContextAt;

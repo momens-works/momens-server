@@ -20,6 +20,8 @@ dependencies {
     implementation project(':outbox')
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    // 도메인 enum의 value()에 @JsonValue를 적용해 OpenAPI 문서의 값 목록에 실제 저장 값을 사용합니다.
+    implementation 'com.fasterxml.jackson.core:jackson-annotations'
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

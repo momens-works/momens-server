@@ -10,22 +10,20 @@ class TaskCommandTest {
   @Test
   void createRequiresStatus() {
     assertThatIllegalArgumentException().isThrownBy(() -> createCommand(null));
-    assertThatIllegalArgumentException().isThrownBy(() -> createCommand(" "));
   }
 
   @Test
   void patchRequiresValueWhenNonNullableFieldIsSet() {
     assertThatIllegalArgumentException()
-        .isThrownBy(() -> patchCommand(null, true, "todo", false, "medium", false));
+        .isThrownBy(
+            () -> patchCommand(null, true, TaskStatus.TODO, false, TaskPriority.MEDIUM, false));
     assertThatIllegalArgumentException()
-        .isThrownBy(() -> patchCommand("제목", false, null, true, "medium", false));
+        .isThrownBy(() -> patchCommand("제목", false, null, true, TaskPriority.MEDIUM, false));
     assertThatIllegalArgumentException()
-        .isThrownBy(() -> patchCommand("제목", false, " ", true, "medium", false));
-    assertThatIllegalArgumentException()
-        .isThrownBy(() -> patchCommand("제목", false, "todo", false, null, true));
+        .isThrownBy(() -> patchCommand("제목", false, TaskStatus.TODO, false, null, true));
   }
 
-  private static CreateTaskCommand createCommand(String status) {
+  private static CreateTaskCommand createCommand(TaskStatus status) {
     return new CreateTaskCommand(
         UUID.randomUUID(),
         UUID.randomUUID(),
@@ -33,7 +31,7 @@ class TaskCommandTest {
         null,
         status,
         null,
-        "medium",
+        TaskPriority.MEDIUM,
         null,
         null,
         null,
@@ -44,9 +42,9 @@ class TaskCommandTest {
   private static PatchTaskCommand patchCommand(
       String title,
       boolean titleSet,
-      String status,
+      TaskStatus status,
       boolean statusSet,
-      String priority,
+      TaskPriority priority,
       boolean prioritySet) {
     return new PatchTaskCommand(
         UUID.randomUUID(),

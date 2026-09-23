@@ -11,7 +11,10 @@ import works.momens.server.minsu.SignalTaskDraftGenerator;
 import works.momens.server.minsu.TaskDraft;
 import works.momens.server.outbox.OutboxAppender;
 import works.momens.server.project.task.CreateTaskCommand;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskSnapshot;
+import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.signal.SignalActionResult;
 import works.momens.server.signal.SignalReader;
@@ -46,14 +49,17 @@ class SignalActionExecutor {
   SignalActionResult convert(
       SignalReader.Snapshot signal, UUID userId, PreparedTaskDraft prepared) {
     TaskDraft draft = prepared.draft();
+    // minsu의 draft 값을 저장에 사용하는 도메인 enum으로 변환합니다. 두 enum의 값이 일치하는지는
+    // CheckConstraintEnumConsistencyTest에서 검증합니다.
     TaskSnapshot created =
         taskWriter.create(
             CreateTaskCommand.fromSignal(
                 signal.projectId(),
                 signal.workspaceId(),
                 draft.title(),
-                draft.role().value(),
-                draft.priority().value(),
+                TaskStatus.TODO,
+                TaskRole.from(draft.role().value()).orElseThrow(IllegalStateException::new),
+                TaskPriority.from(draft.priority().value()).orElseThrow(IllegalStateException::new),
                 signal.id()));
     // 원장 baseline은 방금 tasks에 쓴 값이어야 한다(8.1절). task 생성 직후에 적재해 두 값이 갈릴 자리를 두지 않는다.
     // 응답의 draft_status는 이 반환값이고 원장을 다시 읽지 않는다(7.3절). 재조회하면 아래 title(방금 쓴

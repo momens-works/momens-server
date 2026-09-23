@@ -2,6 +2,8 @@ package works.momens.server.web.task;
 
 import java.time.LocalDate;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,8 +16,10 @@ import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.PatchTaskCommand;
 import works.momens.server.project.task.TaskErrorCode;
 import works.momens.server.project.task.TaskOrigin;
+import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskReader;
 import works.momens.server.project.task.TaskSnapshot;
+import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.web.WorkspaceAccessChecker;
 import works.momens.server.workspace.membership.WorkspaceRole;
@@ -23,6 +27,12 @@ import works.momens.server.workspace.membership.WorkspaceRole;
 @Service
 @RequiredArgsConstructor
 class TaskWriteService {
+  // 레거시 웹에서 사용하던 입력 별칭만 이 모듈에서 관리합니다. 정규 값인지 여부는 도메인 enum으로 판정합니다.
+  private static final Map<String, TaskStatus> STATUS_ALIASES =
+      Map.of("progress", TaskStatus.IN_PROGRESS, "in-progress", TaskStatus.IN_PROGRESS);
+  private static final Map<String, TaskPriority> PRIORITY_ALIASES =
+      Map.of("med", TaskPriority.MEDIUM);
+
   private final TaskWriter taskWriter;
   private final TaskReader taskReader;
   private final ProjectReader projectReader;
@@ -52,7 +62,7 @@ class TaskWriteService {
             description == null || description.isEmpty() ? null : description,
             normalizeStatus(status, true),
             null,
-            normalizePriority(priority, true),
+            normalizePriority(priority),
             milestoneId,
             assigneeId,
             dueDate,
@@ -98,9 +108,9 @@ class TaskWriteService {
             effectiveTitleSet,
             description,
             descriptionSet,
-            effectiveStatusSet ? normalizeStatus(status, false) : status,
+            effectiveStatusSet ? normalizeStatus(status, false) : null,
             effectiveStatusSet,
-            effectivePrioritySet ? normalizePriority(priority, false) : priority,
+            effectivePrioritySet ? normalizePriority(priority) : null,
             effectivePrioritySet,
             milestoneId,
             milestoneSet,
@@ -135,27 +145,23 @@ class TaskWriteService {
     workspaceAccessChecker.requireRoleAtLeast(workspaceId, userId, WorkspaceRole.MEMBER);
   }
 
-  private static String normalizeStatus(String value, boolean allowDefault) {
+  private static TaskStatus normalizeStatus(String value, boolean allowDefault) {
     String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
     if (normalized.isEmpty() && allowDefault) {
-      return "backlog";
+      return TaskStatus.BACKLOG;
     }
-    return switch (normalized) {
-      case "backlog", "todo", "done", "cancelled" -> normalized;
-      case "in_progress", "progress", "in-progress" -> "in_progress";
-      default -> throw FieldValidationException.forField("status");
-    };
+    return TaskStatus.from(normalized)
+        .or(() -> Optional.ofNullable(STATUS_ALIASES.get(normalized)))
+        .orElseThrow(() -> FieldValidationException.forField("status"));
   }
 
-  private static String normalizePriority(String value, boolean allowDefault) {
+  private static TaskPriority normalizePriority(String value) {
     String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
-    if (normalized.isEmpty() && allowDefault) {
-      return "medium";
+    if (normalized.isEmpty()) {
+      return null;
     }
-    return switch (normalized) {
-      case "low", "high", "urgent" -> normalized;
-      case "medium", "med" -> "medium";
-      default -> throw FieldValidationException.forField("priority");
-    };
+    return TaskPriority.from(normalized)
+        .or(() -> Optional.ofNullable(PRIORITY_ALIASES.get(normalized)))
+        .orElseThrow(() -> FieldValidationException.forField("priority"));
   }
 }

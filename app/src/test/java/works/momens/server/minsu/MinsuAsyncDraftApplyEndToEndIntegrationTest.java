@@ -27,6 +27,9 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import works.momens.server.auth.AccessTokenTestFactory;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
+import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.project.task.UpdateTaskCommand;
 import works.momens.server.user.UserProfile;
@@ -202,7 +205,15 @@ class MinsuAsyncDraftApplyEndToEndIntegrationTest extends AbstractPostgresIntegr
 
   private void editTitle(UUID taskId, String title) {
     taskWriter.update(
-        new UpdateTaskCommand(taskId, title, "pm", null, "medium", "todo", null, List.of()));
+        new UpdateTaskCommand(
+            taskId,
+            title,
+            TaskRole.PM,
+            null,
+            TaskPriority.MEDIUM,
+            TaskStatus.TODO,
+            null,
+            List.of()));
   }
 
   private void awaitCompletion(UUID taskId) {

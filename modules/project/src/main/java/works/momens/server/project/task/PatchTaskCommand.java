@@ -10,9 +10,9 @@ public record PatchTaskCommand(
     boolean titleSet,
     String description,
     boolean descriptionSet,
-    String status,
+    TaskStatus status,
     boolean statusSet,
-    String priority,
+    TaskPriority priority,
     boolean prioritySet,
     UUID milestoneId,
     boolean milestoneSet,
@@ -25,7 +25,7 @@ public record PatchTaskCommand(
     if (titleSet && title == null) {
       throw new IllegalArgumentException("titleSet이면 title이 필요합니다.");
     }
-    if (statusSet && (status == null || status.isBlank())) {
+    if (statusSet && status == null) {
       throw new IllegalArgumentException("statusSet이면 status가 필요합니다.");
     }
     if (prioritySet && priority == null) {

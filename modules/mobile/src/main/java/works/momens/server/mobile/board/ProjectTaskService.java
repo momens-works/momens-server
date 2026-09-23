@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
+import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.minsu.DraftStatus;
 import works.momens.server.minsu.TaskDraftStatusReader;
 import works.momens.server.mobile.MobilePriority;
@@ -19,8 +20,11 @@ import works.momens.server.project.task.BoardTask;
 import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.TaskDetail;
 import works.momens.server.project.task.TaskErrorCode;
+import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskReader;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskSnapshot;
+import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.project.task.UpdateTaskCommand;
 import works.momens.server.user.UserProfile;
@@ -75,9 +79,13 @@ class ProjectTaskService {
   @Transactional
   public TaskSnapshot createTask(
       UUID projectId, UUID userId, String title, String role, String priority) {
+    // 기존 응답 순서를 유지하기 위해 멤버 여부를 확인하기 전에 요청 값을 변환합니다. 잘못된 값은 권한 오류보다 먼저 400으로 응답합니다.
+    TaskRole taskRole = toTaskRole(role);
+    TaskPriority taskPriority = toTaskPriority(priority);
     UUID workspaceId = requireProjectMember(projectId, userId);
     return taskWriter.create(
-        CreateTaskCommand.manual(projectId, workspaceId, title, role, priority));
+        CreateTaskCommand.manual(
+            projectId, workspaceId, title, TaskStatus.TODO, taskRole, taskPriority));
   }
 
   /**
@@ -116,6 +124,10 @@ class ProjectTaskService {
       String status,
       String purpose,
       List<ChecklistEdit> checklistItems) {
+    // 기존 응답 순서를 유지하기 위해 멤버 여부를 확인하기 전에 요청 값을 변환합니다. 잘못된 값은 권한 오류보다 먼저 400으로 응답합니다.
+    TaskRole taskRole = toTaskRole(role);
+    TaskPriority taskPriority = toTaskPriority(priority);
+    TaskStatus taskStatus = toTaskStatus(status);
     requireTaskMember(taskId, userId);
     List<UpdateTaskCommand.ChecklistItemEdit> items =
         checklistItems.stream()
@@ -126,7 +138,8 @@ class ProjectTaskService {
             .toList();
     // 저장만 하고 상세는 반환하지 않는다. 저장 후 최신 상태는 클라이언트가 상세 조회로 다시 읽는다.
     taskWriter.update(
-        new UpdateTaskCommand(taskId, title, role, assigneeId, priority, status, purpose, items));
+        new UpdateTaskCommand(
+            taskId, title, taskRole, assigneeId, taskPriority, taskStatus, purpose, items));
   }
 
   @Transactional
@@ -193,6 +206,20 @@ class ProjectTaskService {
           CommonErrorCode.AUTH_FORBIDDEN, Map.of("project_id", projectId.toString()));
     }
     return workspaceId;
+  }
+
+  private static TaskRole toTaskRole(String role) {
+    return TaskRole.from(role).orElseThrow(() -> FieldValidationException.forField("role"));
+  }
+
+  private static TaskPriority toTaskPriority(String priority) {
+    return MobilePriority.from(priority)
+        .map(MobilePriority::taskPriority)
+        .orElseThrow(() -> FieldValidationException.forField("priority"));
+  }
+
+  private static TaskStatus toTaskStatus(String status) {
+    return TaskStatus.from(status).orElseThrow(() -> FieldValidationException.forField("status"));
   }
 
   private static MobileTaskCard toCard(BoardTask task, int materialCount) {
