@@ -69,6 +69,8 @@ class CheckConstraintEnumConsistencyTest extends AbstractPostgresIntegrationTest
   private static final Pattern SINGLE_EQUALS =
       Pattern.compile("^CHECK \\(\\(\\w+ = '(.*)'::\\w+\\)\\)$");
 
+  private static final Pattern ARRAY_CONTAINS = Pattern.compile("\\b\\w+\\s+<@\\s+ARRAY\\[(.+?)]");
+
   private static final Pattern LITERAL = Pattern.compile("'((?:[^']|'')*)'::\\w+");
 
   @Autowired private JdbcClient jdbcClient;
@@ -99,7 +101,9 @@ class CheckConstraintEnumConsistencyTest extends AbstractPostgresIntegrationTest
       String definition = (String) row.get("definition");
       Set<String> allowedValues = allowedValues(definition);
       if (allowedValues.isEmpty()) {
-        if (definition.contains("= ANY (ARRAY[") || definition.matches(".*= '.*'::\\w+.*")) {
+        if (definition.contains("= ANY (ARRAY[")
+            || definition.contains("<@ ARRAY[")
+            || definition.matches(".*= '.*'::\\w+.*")) {
           unrecognizedConstraints.add(row.get("constraint_name") + ": " + definition);
         }
         continue;
@@ -225,6 +229,15 @@ class CheckConstraintEnumConsistencyTest extends AbstractPostgresIntegrationTest
     Matcher singleEquals = SINGLE_EQUALS.matcher(definition);
     if (singleEquals.matches()) {
       return Set.of(singleEquals.group(1).replace("''", "'"));
+    }
+    Matcher arrayContains = ARRAY_CONTAINS.matcher(definition);
+    if (arrayContains.find()) {
+      Set<String> values = new LinkedHashSet<>();
+      Matcher literal = LITERAL.matcher(arrayContains.group(1));
+      while (literal.find()) {
+        values.add(literal.group(1).replace("''", "'"));
+      }
+      return values;
     }
     return Set.of();
   }
