@@ -18,7 +18,8 @@ class McpTransportConfig {
   @Order(0)
   SecurityFilterChain mcpSecurityFilterChain(HttpSecurity http) throws Exception {
     return http.securityMatcher("/api/mcp", "/api/mcp/**")
-        .csrf(csrf -> csrf.disable())
+        // MCP transport is stateless and authenticates requests with Bearer tokens, not cookies.
+        .csrf(csrf -> csrf.ignoringRequestMatchers("/api/mcp", "/api/mcp/**"))
         .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
         .build();
   }
