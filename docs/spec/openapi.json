@@ -3185,6 +3185,27 @@
   },
   "openapi" : "3.1.0",
   "paths" : {
+    "/.well-known/oauth-authorization-server/api" : {
+      "get" : {
+        "operationId" : "getMcpAuthorizationServerMetadata",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Authorization server metadata"
+          }
+        },
+        "summary" : "MCP OAuth authorization server metadata",
+        "tags" : [
+          "McpOAuth"
+        ]
+      }
+    },
     "/.well-known/oauth-protected-resource/api/mcp" : {
       "get" : {
         "operationId" : "mcpProtectedResourceMetadata",

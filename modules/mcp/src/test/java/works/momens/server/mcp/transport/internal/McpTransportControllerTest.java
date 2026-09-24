@@ -78,7 +78,10 @@ class McpTransportControllerTest {
     mockMvc
         .perform(get("/.well-known/oauth-protected-resource/api/mcp"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.resource").value("https://api.momens.works/api/mcp"));
+        .andExpect(jsonPath("$.resource").value("https://api.momens.works/api/mcp"))
+        .andExpect(jsonPath("$.authorization_servers[0]").value("https://api.momens.works/api"))
+        .andExpect(jsonPath("$.scopes_supported[0]").value("mcp:projects:read"))
+        .andExpect(jsonPath("$.bearer_methods_supported[0]").value("header"));
   }
 
   @Test
