@@ -31,7 +31,10 @@ interface McpTransportControllerDocs {
         responseCode = "401",
         description = "Bearer authentication required",
         content = @Content(schema = @Schema(type = "object"))),
-    @ApiResponse(responseCode = "403", description = "Origin is not allowed"),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Origin is not allowed",
+        content = @Content(schema = @Schema(type = "object"))),
     @ApiResponse(
         responseCode = "404",
         description = "MCP method not found",
