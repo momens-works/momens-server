@@ -85,6 +85,11 @@ public class OpenApiConfig {
    * null이 오는 필드가 문서에는 null 불허({@code type: string})로 나온다. 3.1의 표현({@code type: [..., "null"]})으로 전역
    * 변환해 문서가 실제 응답과 같은 null 계약을 갖게 한다. 필드별 {@code types = {"string", "null"}} 명시는 누락되기 쉬워 전역 변환으로
    * 통일한다.
+   *
+   * <p>
+   *
+   * <p>null을 허용하는 필드에 enum 목록이 있으면 해당 목록에도 null을 추가합니다. JSON Schema에서는 값이 enum 목록에 포함되어야 검증을 통과하므로,
+   * 목록에 null이 없으면 실제 null 응답과 문서의 schema가 일치하지 않습니다.
    */
   @Bean
   public OpenApiCustomizer nullableAsTypeCustomizer() {
@@ -100,6 +105,9 @@ public class OpenApiConfig {
     if (Boolean.TRUE.equals(schema.getNullable())) {
       schema.addType("null");
       schema.setNullable(null);
+      if (schema.getEnum() != null && !schema.getEnum().contains(null)) {
+        schema.addEnumItemObject(null);
+      }
     }
     Map<String, Schema> properties = schema.getProperties();
     if (properties != null) {

@@ -2,6 +2,7 @@ package works.momens.server.mobile.board;
 
 import java.util.Arrays;
 import java.util.List;
+import works.momens.server.project.task.TaskStatus;
 
 /**
  * 보드 상태.
@@ -13,23 +14,28 @@ import java.util.List;
  * 포함합니다(MOM-75).
  */
 public enum BoardStatus {
-  TODO("todo", "투두"),
-  IN_PROGRESS("in_progress", "진행중"),
-  DONE("done", "완료"),
-  BACKLOG("backlog", "백로그"),
-  CANCELLED("cancelled", "취소");
+  TODO(TaskStatus.TODO, "투두"),
+  IN_PROGRESS(TaskStatus.IN_PROGRESS, "진행중"),
+  DONE(TaskStatus.DONE, "완료"),
+  BACKLOG(TaskStatus.BACKLOG, "백로그"),
+  CANCELLED(TaskStatus.CANCELLED, "취소");
 
-  private final String key;
+  private final TaskStatus taskStatus;
   private final String label;
 
-  BoardStatus(String key, String label) {
-    this.key = key;
+  BoardStatus(TaskStatus taskStatus, String label) {
+    this.taskStatus = taskStatus;
     this.label = label;
   }
 
   /** 도메인 상태 문자열. 응답의 group_key이자 project 조회 필터로 넘기는 값입니다. */
   public String key() {
-    return key;
+    return taskStatus.value();
+  }
+
+  /** 보드 상태에 대응하는 태스크 상태를 반환합니다. */
+  public TaskStatus taskStatus() {
+    return taskStatus;
   }
 
   /** 화면에 보이는 그룹 이름입니다. */

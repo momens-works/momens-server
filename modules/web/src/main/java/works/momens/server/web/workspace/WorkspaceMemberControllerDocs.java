@@ -44,7 +44,7 @@ interface WorkspaceMemberControllerDocs {
   @Operation(
       operationId = "updateWorkspaceMemberRole",
       summary = "워크스페이스 멤버 역할 수정",
-      description = "멤버의 역할을 변경합니다. admin 또는 owner 권한이 필요하며 owner인 멤버는 변경할 수 없습니다.")
+      description = "멤버의 역할을 변경합니다. admin 이상의 권한이 필요하며, 워크스페이스 소유자의 역할은 변경할 수 없습니다.")
   @ApiResponse(
       responseCode = "200",
       description = "수정 성공",
@@ -67,7 +67,7 @@ interface WorkspaceMemberControllerDocs {
   @Operation(
       operationId = "removeWorkspaceMember",
       summary = "워크스페이스 멤버 제거",
-      description = "멤버를 워크스페이스에서 제거합니다. admin 또는 owner 권한이 필요하며 자기 자신과 owner인 멤버는 제거할 수 없습니다.")
+      description = "멤버를 워크스페이스에서 제거합니다. admin 이상의 권한이 필요하며, 자기 자신과 워크스페이스 소유자는 제거할 수 없습니다.")
   @ApiResponse(
       responseCode = "200",
       description = "제거 성공",

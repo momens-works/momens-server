@@ -45,7 +45,7 @@ interface SourceConnectionControllerDocs {
       operationId = "startSourceConnection",
       summary = "source 연결 시작",
       description =
-          "provider 승인 화면으로 이동할 URL을 발급합니다. admin 또는 owner 권한이 필요합니다. 지원하지 않는 provider는 400,"
+          "provider 승인 화면으로 이동할 URL을 발급합니다. admin 이상의 권한이 필요합니다. 지원하지 않는 provider는 400,"
               + " 서버에 해당 provider 설정이 없으면 500을 반환합니다.")
   @ApiResponse(
       responseCode = "200",

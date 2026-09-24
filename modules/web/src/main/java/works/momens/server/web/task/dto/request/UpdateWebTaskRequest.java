@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import java.util.UUID;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskStatus;
 
 /** PATCH의 누락과 null을 구분하는 웹 task 요청입니다. */
 @Schema(description = "웹 태스크 수정 요청")
@@ -20,22 +22,14 @@ public final class UpdateWebTaskRequest {
 
   @Schema(
       description = "태스크 상태. 빈 문자열은 기존 값을 유지하며 null은 허용하지 않습니다.",
-      allowableValues = {
-        "backlog",
-        "todo",
-        "in_progress",
-        "progress",
-        "in-progress",
-        "done",
-        "cancelled"
-      })
+      implementation = TaskStatus.class)
   private String status;
 
   private boolean statusSet;
 
   @Schema(
       description = "태스크 우선순위. 빈 문자열은 기존 값을 유지하며 null은 허용하지 않습니다.",
-      allowableValues = {"low", "medium", "med", "high", "urgent"})
+      implementation = TaskPriority.class)
   private String priority;
 
   private boolean prioritySet;

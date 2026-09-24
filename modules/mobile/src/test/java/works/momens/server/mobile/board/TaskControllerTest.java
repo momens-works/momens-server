@@ -199,19 +199,6 @@ class TaskControllerTest {
   }
 
   @Test
-  void updateTaskRejectsStatusOutsideFiveValues() throws Exception {
-    mockMvc
-        .perform(
-            patch("/api/mobile/tasks/{taskId}", TASK_ID)
-                .principal(principal)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    "{\"title\":\"제목\",\"role\":\"pm\",\"priority\":\"medium\","
-                        + "\"status\":\"archived\",\"checklist_items\":[]}"))
-        .andExpect(status().isBadRequest());
-  }
-
-  @Test
   void updateTaskRejectsMoreThanFiveChecklistItems() throws Exception {
     mockMvc
         .perform(

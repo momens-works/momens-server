@@ -17,6 +17,8 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
@@ -176,10 +178,21 @@ class ProjectTaskServiceTest {
     assertThat(result).isSameAs(created);
   }
 
-  @Test
-  void createTaskRejectsUnknownRoleBeforeCallingCreator() {
+  // 역할은 pm/design/backend/frontend 4종만 남기고 android, qa는 폐기했다(2026-07-08 기획 확정).
+  // 폐기된 값은 생성에서 400으로 거절한다.
+  @ParameterizedTest
+  @ValueSource(strings = {"ceo", "android", "qa"})
+  void createTaskRejectsUnknownRoleBeforeCallingCreator(String role) {
     assertThatThrownBy(
-            () -> projectTaskService.createTask(PROJECT_ID, CALLER_ID, "제목", "ceo", "high"))
+            () -> projectTaskService.createTask(PROJECT_ID, CALLER_ID, "제목", role, "high"))
+        .isInstanceOf(FieldValidationException.class);
+    org.mockito.Mockito.verifyNoInteractions(taskWriter);
+  }
+
+  @Test
+  void createTaskRejectsPriorityOutsideMobileThreeBeforeCallingCreator() {
+    assertThatThrownBy(
+            () -> projectTaskService.createTask(PROJECT_ID, CALLER_ID, "제목", "pm", "urgent"))
         .isInstanceOf(FieldValidationException.class);
     org.mockito.Mockito.verifyNoInteractions(taskWriter);
   }
@@ -361,6 +374,16 @@ class ProjectTaskServiceTest {
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(TaskErrorCode.TASK_NOT_FOUND);
+  }
+
+  @Test
+  void updateTaskRejectsStatusOutsideTaskStatusBeforeCallingEditor() {
+    assertThatThrownBy(
+            () ->
+                projectTaskService.updateTask(
+                    TASK_ID, CALLER_ID, "제목", "pm", null, "medium", "archived", null, List.of()))
+        .isInstanceOf(FieldValidationException.class);
+    org.mockito.Mockito.verifyNoInteractions(taskWriter);
   }
 
   @Test
