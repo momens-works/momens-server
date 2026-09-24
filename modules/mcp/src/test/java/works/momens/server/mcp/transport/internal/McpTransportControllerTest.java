@@ -23,6 +23,7 @@ import works.momens.server.mcp.transport.McpAuthenticationContext;
 import works.momens.server.mcp.transport.McpBearerTokenVerifier;
 import works.momens.server.mcp.transport.McpToolCatalog;
 import works.momens.server.mcp.transport.McpToolDefinition;
+import works.momens.server.mcp.transport.McpTransportController;
 
 @WebMvcTest(McpTransportController.class)
 class McpTransportControllerTest {
