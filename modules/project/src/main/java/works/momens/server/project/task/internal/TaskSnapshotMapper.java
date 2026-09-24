@@ -1,5 +1,6 @@
 package works.momens.server.project.task.internal;
 
+import java.util.UUID;
 import works.momens.server.project.task.TaskSnapshot;
 
 final class TaskSnapshotMapper {
@@ -10,11 +11,11 @@ final class TaskSnapshotMapper {
     return toSnapshot(task, task.getWorkspaceId());
   }
 
-  static TaskSnapshot toProjectWorkspaceSnapshot(Task task, java.util.UUID workspaceId) {
+  static TaskSnapshot toProjectWorkspaceSnapshot(Task task, UUID workspaceId) {
     return toSnapshot(task, workspaceId);
   }
 
-  private static TaskSnapshot toSnapshot(Task task, java.util.UUID workspaceId) {
+  private static TaskSnapshot toSnapshot(Task task, UUID workspaceId) {
     return new TaskSnapshot(
         task.getId(),
         workspaceId,

@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -98,7 +99,7 @@ class TaskProgressReaderImplTest {
 
   private void stubTasks(int done, int notDone) {
     // 개수가 0인 상태는 집계 결과에 없다. repository 계약과 같게 만든다.
-    List<StatusCount> counts = new java.util.ArrayList<>();
+    List<StatusCount> counts = new ArrayList<>();
     if (done > 0) {
       counts.add(new StatusCount(TaskStatus.DONE.value(), done));
     }

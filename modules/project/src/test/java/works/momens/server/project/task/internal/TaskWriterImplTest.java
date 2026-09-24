@@ -140,8 +140,7 @@ class TaskWriterImplTest {
         Task.create(
             CreateTaskCommand.manual(projectId, workspaceId, "기존", TaskRole.PM, TaskPriority.HIGH),
             "MOM-0003");
-    when(taskRepository.findByIdAndDeletedAtIsNull(task.getId()))
-        .thenReturn(java.util.Optional.of(task));
+    when(taskRepository.findByIdAndDeletedAtIsNull(task.getId())).thenReturn(Optional.of(task));
 
     taskWriter.patch(
         new PatchTaskCommand(

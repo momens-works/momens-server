@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.IntStream;
@@ -84,8 +86,8 @@ class SignalTaskDraftPromptTest {
     assertThat(data.path("evidence").get(9).path("target").asText()).isEqualTo("대상9");
   }
 
-  private static Set<String> toSet(java.util.Iterator<String> values) {
-    Set<String> result = new java.util.HashSet<>();
+  private static Set<String> toSet(Iterator<String> values) {
+    Set<String> result = new HashSet<>();
     values.forEachRemaining(result::add);
     return result;
   }

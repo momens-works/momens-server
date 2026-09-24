@@ -165,7 +165,7 @@ class ProjectTaskServiceTest {
         projectTaskService.createTask(PROJECT_ID, CALLER_ID, "제목", TaskRole.PM, TaskPriority.HIGH);
 
     ArgumentCaptor<CreateTaskCommand> captor = ArgumentCaptor.forClass(CreateTaskCommand.class);
-    org.mockito.Mockito.verify(taskWriter).create(captor.capture());
+    verify(taskWriter).create(captor.capture());
     CreateTaskCommand command = captor.getValue();
     assertThat(command.projectId()).isEqualTo(PROJECT_ID);
     assertThat(command.workspaceId()).isEqualTo(WORKSPACE_ID);
@@ -405,7 +405,7 @@ class ProjectTaskServiceTest {
         items);
 
     ArgumentCaptor<UpdateTaskCommand> captor = ArgumentCaptor.forClass(UpdateTaskCommand.class);
-    org.mockito.Mockito.verify(taskWriter).update(captor.capture());
+    verify(taskWriter).update(captor.capture());
     UpdateTaskCommand command = captor.getValue();
     assertThat(command.taskId()).isEqualTo(TASK_ID);
     assertThat(command.title()).isEqualTo("제목");

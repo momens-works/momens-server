@@ -9,6 +9,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.lang.ref.Reference;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -193,7 +194,7 @@ class MinsuLedgerMetricsIntegrationTest extends AbstractPostgresIntegrationTest 
         .executeUpdate();
 
     @SuppressWarnings("unchecked")
-    java.util.List<String> plan =
+    List<String> plan =
         entityManager
             .getEntityManager()
             .createNativeQuery("EXPLAIN " + TaskDraftGenerationRepository.SNAPSHOT_UNFINISHED_SQL)

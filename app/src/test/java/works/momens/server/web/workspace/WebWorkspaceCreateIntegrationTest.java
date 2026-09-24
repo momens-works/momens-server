@@ -1,6 +1,7 @@
 package works.momens.server.web.workspace;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.verify;
@@ -107,12 +108,9 @@ class WebWorkspaceCreateIntegrationTest extends AbstractPostgresIntegrationTest 
     assertThat(memories)
         .extracting(row -> row.get("label"), row -> row.get("memory_type"), row -> row.get("title"))
         .containsExactly(
-            org.assertj.core.groups.Tuple.tuple(
-                "MEM-0001", "DECISION", "This is what a captured decision looks like"),
-            org.assertj.core.groups.Tuple.tuple(
-                "MEM-0002", "OPEN_QUESTION", "Open questions stay visible until they resolve"),
-            org.assertj.core.groups.Tuple.tuple(
-                "MEM-0003", "INSIGHT", "Add your own context any time"));
+            tuple("MEM-0001", "DECISION", "This is what a captured decision looks like"),
+            tuple("MEM-0002", "OPEN_QUESTION", "Open questions stay visible until they resolve"),
+            tuple("MEM-0003", "INSIGHT", "Add your own context any time"));
     assertThat(memories)
         .allSatisfy(
             row -> {

@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import works.momens.server.project.task.TaskScope;
 
 interface TaskRepository extends JpaRepository<Task, UUID> {
 
@@ -31,7 +32,7 @@ interface TaskRepository extends JpaRepository<Task, UUID> {
       from Task t
       where t.id = :taskId and t.deletedAt is null
       """)
-  Optional<works.momens.server.project.task.TaskScope> findScopeById(UUID taskId);
+  Optional<TaskScope> findScopeById(UUID taskId);
 
   /**
    * 보드용 조회. 주어진 상태의 소프트 삭제되지 않은 태스크를 생성 시각 내림차순으로, 같은 시각은 id 내림차순으로 정렬합니다. id 보조 정렬은 같은 마이크로초 생성 행의

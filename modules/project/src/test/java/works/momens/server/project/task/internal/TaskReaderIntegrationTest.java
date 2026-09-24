@@ -20,6 +20,7 @@ import works.momens.server.project.core.ProjectReader;
 import works.momens.server.project.task.BoardTask;
 import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.TaskDetail;
+import works.momens.server.project.task.TaskOrigin;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskReader;
 import works.momens.server.project.task.TaskRole;
@@ -336,7 +337,7 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
                     null,
                     null,
                     null,
-                    works.momens.server.project.task.TaskOrigin.MANUAL,
+                    TaskOrigin.MANUAL,
                     null),
                 null))
         .getId();
