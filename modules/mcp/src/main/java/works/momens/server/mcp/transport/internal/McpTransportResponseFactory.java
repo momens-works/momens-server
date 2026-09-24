@@ -1,6 +1,5 @@
 package works.momens.server.mcp.transport.internal;
 
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -16,11 +15,13 @@ import tools.jackson.databind.node.ObjectNode;
 class McpTransportResponseFactory {
 
   private final ObjectMapper objectMapper;
+  private final McpEndpointProperties endpointProperties;
 
-  ResponseEntity<JsonNode> unauthorized(HttpServletRequest request) {
+  ResponseEntity<JsonNode> unauthorized() {
     HttpHeaders headers = new HttpHeaders();
     headers.set(
-        HttpHeaders.WWW_AUTHENTICATE, "Bearer resource_metadata=\"" + metadataUrl(request) + "\"");
+        HttpHeaders.WWW_AUTHENTICATE,
+        "Bearer resource_metadata=\"" + endpointProperties.protectedResourceMetadataUri() + "\"");
     return new ResponseEntity<>(null, headers, HttpStatus.UNAUTHORIZED);
   }
 
@@ -33,33 +34,40 @@ class McpTransportResponseFactory {
   }
 
   ResponseEntity<JsonNode> jsonRpcError(JsonNode id, int code, String message) {
+    return jsonRpcError(id, code, message, null, HttpStatus.OK);
+  }
+
+  ResponseEntity<JsonNode> badRequest(JsonNode id, int code, String message) {
+    return jsonRpcError(id, code, message, null, HttpStatus.BAD_REQUEST);
+  }
+
+  ResponseEntity<JsonNode> badRequest(JsonNode id, int code, String message, JsonNode data) {
+    return jsonRpcError(id, code, message, data, HttpStatus.BAD_REQUEST);
+  }
+
+  ResponseEntity<JsonNode> unsupportedProtocolVersion(JsonNode id, String requestedVersion) {
+    ObjectNode data = objectMapper.createObjectNode();
+    data.putArray("supported").add(McpProtocol.VERSION);
+    data.put("requested", requestedVersion);
+    return badRequest(id, -32022, "Unsupported protocol version", data);
+  }
+
+  ResponseEntity<JsonNode> notFound(JsonNode id, int code, String message) {
+    return jsonRpcError(id, code, message, null, HttpStatus.NOT_FOUND);
+  }
+
+  private ResponseEntity<JsonNode> jsonRpcError(
+      JsonNode id, int code, String message, JsonNode data, HttpStatus status) {
     ObjectNode error = objectMapper.createObjectNode();
     error.put("code", code);
     error.put("message", message);
+    if (data != null) {
+      error.set("data", data);
+    }
     ObjectNode response = objectMapper.createObjectNode();
     response.put("jsonrpc", "2.0");
     response.set("id", id);
     response.set("error", error);
-    return ResponseEntity.ok(response);
-  }
-
-  ResponseEntity<JsonNode> badRequest(JsonNode id, int code, String message) {
-    ObjectNode response = (ObjectNode) jsonRpcError(id, code, message).getBody().deepCopy();
-    return ResponseEntity.badRequest().body(response);
-  }
-
-  ResponseEntity<JsonNode> notFound(JsonNode id, int code, String message) {
-    ObjectNode response = (ObjectNode) jsonRpcError(id, code, message).getBody().deepCopy();
-    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-  }
-
-  private String metadataUrl(HttpServletRequest request) {
-    StringBuilder url =
-        new StringBuilder(request.getScheme()).append("://").append(request.getServerName());
-    if (("http".equals(request.getScheme()) && request.getServerPort() != 80)
-        || ("https".equals(request.getScheme()) && request.getServerPort() != 443)) {
-      url.append(':').append(request.getServerPort());
-    }
-    return url.append("/.well-known/oauth-protected-resource/mcp").toString();
+    return ResponseEntity.status(status).body(response);
   }
 }

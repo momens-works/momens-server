@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import tools.jackson.databind.JsonNode;
 
@@ -19,5 +18,5 @@ interface McpProtectedResourceMetadataControllerDocs {
       responseCode = "200",
       description = "Protected resource metadata",
       content = @Content(schema = @Schema(type = "object")))
-  ResponseEntity<JsonNode> get(HttpServletRequest request);
+  ResponseEntity<JsonNode> get();
 }

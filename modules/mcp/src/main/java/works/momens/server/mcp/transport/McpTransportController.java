@@ -24,7 +24,7 @@ public class McpTransportController implements McpTransportControllerDocs {
       produces = MediaType.APPLICATION_JSON_VALUE)
   @Override
   public ResponseEntity<JsonNode> post(
-      @RequestBody JsonNode request, HttpServletRequest httpServletRequest) {
+      @RequestBody String request, HttpServletRequest httpServletRequest) {
     return transportHandler.handle(request, httpServletRequest);
   }
 }

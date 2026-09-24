@@ -16,7 +16,6 @@ import works.momens.server.mcp.transport.McpToolDefinition;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 class McpTransportMethodHandler {
 
-  private static final String PROTOCOL_VERSION = "2026-07-28";
   private static final String SERVER_NAME = "momens-mcp";
   private static final String SERVER_VERSION = "0.1.0";
 
@@ -37,13 +36,9 @@ class McpTransportMethodHandler {
   private ObjectNode discoverResult() {
     ObjectNode result = objectMapper.createObjectNode();
     result.put("resultType", "complete");
-    result.putArray("supportedVersions").add(PROTOCOL_VERSION);
+    result.putArray("supportedVersions").add(McpProtocol.VERSION);
     result.putObject("capabilities").putObject("tools").put("listChanged", false);
-    result
-        .putObject("_meta")
-        .putObject("io.modelcontextprotocol/serverInfo")
-        .put("name", SERVER_NAME)
-        .put("version", SERVER_VERSION);
+    addServerInfo(result);
     result.put("ttlMs", 3600000);
     result.put("cacheScope", "public");
     return result;
@@ -63,6 +58,15 @@ class McpTransportMethodHandler {
     }
     result.put("ttlMs", 300000);
     result.put("cacheScope", "private");
+    addServerInfo(result);
     return result;
+  }
+
+  private static void addServerInfo(ObjectNode result) {
+    result
+        .putObject("_meta")
+        .putObject("io.modelcontextprotocol/serverInfo")
+        .put("name", SERVER_NAME)
+        .put("version", SERVER_VERSION);
   }
 }

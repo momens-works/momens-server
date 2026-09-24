@@ -11,13 +11,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -37,7 +40,8 @@ import works.momens.server.mcp.transport.McpTransportController;
   McpTransportRequestValidator.class,
   McpTransportMethodHandler.class,
   McpTransportResponseFactory.class,
-  McpTransportAuthenticator.class
+  McpTransportAuthenticator.class,
+  McpTransportControllerTest.TestConfig.class
 })
 class McpTransportControllerTest {
 
@@ -65,16 +69,16 @@ class McpTransportControllerTest {
             header()
                 .string(
                     "WWW-Authenticate",
-                    "Bearer resource_metadata=\"http://localhost/.well-known/oauth-protected-resource/mcp\""))
+                    "Bearer resource_metadata=\"https://api.momens.works/.well-known/oauth-protected-resource/api/mcp\""))
         .andExpect(content().string(""));
   }
 
   @Test
   void exposesProtectedResourceMetadata() throws Exception {
     mockMvc
-        .perform(get("/.well-known/oauth-protected-resource/mcp"))
+        .perform(get("/.well-known/oauth-protected-resource/api/mcp"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.resource").value("http://localhost/api/mcp"));
+        .andExpect(jsonPath("$.resource").value("https://api.momens.works/api/mcp"));
   }
 
   @Test
@@ -87,6 +91,7 @@ class McpTransportControllerTest {
                 .header("Authorization", "Bearer token")
                 .header("MCP-Protocol-Version", "2026-07-28")
                 .header("Mcp-Method", "server/discover")
+                .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_EVENT_STREAM)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(discoverRequest()))
         .andExpect(status().isOk())
@@ -114,6 +119,7 @@ class McpTransportControllerTest {
                 .header("Authorization", "Bearer token")
                 .header("MCP-Protocol-Version", "2026-07-28")
                 .header("Mcp-Method", "tools/list")
+                .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_EVENT_STREAM)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(toolsListRequest()))
         .andExpect(status().isOk())
@@ -121,7 +127,10 @@ class McpTransportControllerTest {
         .andExpect(jsonPath("$.result.tools[0].name").value("list_projects"))
         .andExpect(jsonPath("$.result.tools[0].inputSchema.type").value("object"))
         .andExpect(jsonPath("$.result.ttlMs").value(300000))
-        .andExpect(jsonPath("$.result.cacheScope").value("private"));
+        .andExpect(jsonPath("$.result.cacheScope").value("private"))
+        .andExpect(
+            jsonPath("$.result._meta['io.modelcontextprotocol/serverInfo'].name")
+                .value("momens-mcp"));
 
     verify(toolCatalog).list(eq(AUTHENTICATION_CONTEXT));
   }
@@ -136,6 +145,7 @@ class McpTransportControllerTest {
                 .header("Authorization", "bEaReR token")
                 .header("MCP-Protocol-Version", "2026-07-28")
                 .header("Mcp-Method", "unknown")
+                .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_EVENT_STREAM)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(request("unknown", 3)))
         .andExpect(status().isNotFound())
@@ -151,10 +161,64 @@ class McpTransportControllerTest {
         .perform(
             post("/api/mcp")
                 .header("Authorization", "Bearer token")
+                .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_EVENT_STREAM)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(discoverRequest()))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error.code").value(-32020));
+  }
+
+  @Test
+  void rejectsRequestWithoutBothRequiredAcceptTypes() throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+
+    mockMvc
+        .perform(
+            post("/api/mcp")
+                .header("Authorization", "Bearer token")
+                .header("MCP-Protocol-Version", "2026-07-28")
+                .header("Mcp-Method", "server/discover")
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(discoverRequest()))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value(-32020));
+  }
+
+  @Test
+  void rejectsUnsupportedProtocolVersionWithSupportedVersions() throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+    String request = discoverRequest().replace("2026-07-28", "2025-03-26");
+
+    mockMvc
+        .perform(
+            post("/api/mcp")
+                .header("Authorization", "Bearer token")
+                .header("MCP-Protocol-Version", "2025-03-26")
+                .header("Mcp-Method", "server/discover")
+                .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_EVENT_STREAM)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(request))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value(-32022))
+        .andExpect(jsonPath("$.error.data.supported[0]").value("2026-07-28"))
+        .andExpect(jsonPath("$.error.data.requested").value("2025-03-26"));
+  }
+
+  @Test
+  void mapsMalformedJsonToJsonRpcParseError() throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+
+    mockMvc
+        .perform(
+            post("/api/mcp")
+                .header("Authorization", "Bearer token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{not-json"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.jsonrpc").value("2.0"))
+        .andExpect(jsonPath("$.id").doesNotExist())
+        .andExpect(jsonPath("$.error.code").value(-32700));
   }
 
   @Test
@@ -167,6 +231,7 @@ class McpTransportControllerTest {
                 .header("Authorization", "Bearer token")
                 .header("MCP-Protocol-Version", "2026-07-28")
                 .header("Mcp-Method", "server/discover")
+                .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_EVENT_STREAM)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestWithoutClientInfo("server/discover", 4)))
         .andExpect(status().isOk());
@@ -206,6 +271,7 @@ class McpTransportControllerTest {
                 .header("MCP-Protocol-Version", "2026-07-28")
                 .header("Mcp-Method", "tools/call")
                 .header("Mcp-Name", "=?base64?Z2V0X3dlYXRoZXI=?=")
+                .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_EVENT_STREAM)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestWithName("tools/call", 5, "get_weather")))
         .andExpect(status().isNotFound())
@@ -262,5 +328,14 @@ class McpTransportControllerTest {
 
   private static JsonNode schema() {
     return new ObjectMapper().createObjectNode().put("type", "object");
+  }
+
+  @TestConfiguration
+  static class TestConfig {
+
+    @Bean
+    McpEndpointProperties mcpEndpointProperties() {
+      return new McpEndpointProperties(URI.create("https://api.momens.works/api/mcp"), List.of());
+    }
   }
 }

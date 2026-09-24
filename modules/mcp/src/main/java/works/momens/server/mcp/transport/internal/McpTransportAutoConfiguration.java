@@ -4,11 +4,13 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import works.momens.server.mcp.transport.McpBearerTokenVerifier;
 import works.momens.server.mcp.transport.McpToolCatalog;
 
 @AutoConfiguration
+@EnableConfigurationProperties(McpEndpointProperties.class)
 public class McpTransportAutoConfiguration {
 
   @Bean
