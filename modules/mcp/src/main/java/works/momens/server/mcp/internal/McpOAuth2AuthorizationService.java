@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.List;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
@@ -34,12 +35,38 @@ final class McpOAuth2AuthorizationService extends JdbcOAuth2AuthorizationService
 
   @Override
   public OAuth2Authorization findByToken(String token, OAuth2TokenType tokenType) {
-    if (tokenType == null || "state".equals(tokenType.getValue())) {
-      OAuth2Authorization authorization = super.findByToken(token, tokenType);
-      if (authorization != null || "state".equals(tokenType.getValue())) {
-        return authorization;
+    if (tokenType == null) {
+      for (OAuth2TokenType type : HASHED_TOKEN_TYPES) {
+        OAuth2Authorization authorization = findHashedToken(token, type);
+        if (authorization != null) {
+          return authorization;
+        }
       }
+      for (OAuth2TokenType type : PLAIN_TOKEN_TYPES) {
+        OAuth2Authorization authorization = super.findByToken(token, type);
+        if (authorization != null) {
+          return authorization;
+        }
+      }
+      return null;
     }
+    return HASHED_TOKEN_TYPES.contains(tokenType)
+        ? findHashedToken(token, tokenType)
+        : super.findByToken(token, tokenType);
+  }
+
+  private static final List<OAuth2TokenType> HASHED_TOKEN_TYPES =
+      List.of(
+          new OAuth2TokenType("code"), OAuth2TokenType.ACCESS_TOKEN, OAuth2TokenType.REFRESH_TOKEN);
+
+  private static final List<OAuth2TokenType> PLAIN_TOKEN_TYPES =
+      List.of(
+          new OAuth2TokenType("state"),
+          new OAuth2TokenType("id_token"),
+          new OAuth2TokenType("user_code"),
+          new OAuth2TokenType("device_code"));
+
+  private OAuth2Authorization findHashedToken(String token, OAuth2TokenType tokenType) {
     OAuth2Authorization authorization = super.findByToken(hash(token), tokenType);
     return authorization == null ? null : restorePresentedToken(authorization, token);
   }
