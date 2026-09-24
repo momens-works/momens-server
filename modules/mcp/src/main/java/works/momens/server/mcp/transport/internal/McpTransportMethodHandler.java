@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 import works.momens.server.mcp.transport.McpAuthenticationContext;
 import works.momens.server.mcp.transport.McpToolCatalog;
@@ -51,7 +52,7 @@ class McpTransportMethodHandler {
   private ObjectNode toolsListResult(McpAuthenticationContext authenticationContext) {
     ObjectNode result = objectMapper.createObjectNode();
     result.put("resultType", "complete");
-    var tools = result.putArray("tools");
+    ArrayNode tools = result.putArray("tools");
     for (McpToolDefinition definition : toolCatalog.list(authenticationContext)) {
       ObjectNode tool = tools.addObject();
       tool.put("name", definition.name());
