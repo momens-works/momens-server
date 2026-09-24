@@ -1002,94 +1002,6 @@
           }
         }
       },
-      "JsonNode" : {
-        "properties" : {
-          "array" : {
-            "type" : "boolean"
-          },
-          "big_decimal" : {
-            "type" : "boolean"
-          },
-          "big_integer" : {
-            "type" : "boolean"
-          },
-          "binary" : {
-            "type" : "boolean"
-          },
-          "boolean" : {
-            "type" : "boolean"
-          },
-          "container" : {
-            "type" : "boolean"
-          },
-          "double" : {
-            "type" : "boolean"
-          },
-          "embedded_value" : {
-            "type" : "boolean"
-          },
-          "empty" : {
-            "type" : "boolean"
-          },
-          "float" : {
-            "type" : "boolean"
-          },
-          "floating_point_number" : {
-            "type" : "boolean"
-          },
-          "int" : {
-            "type" : "boolean"
-          },
-          "integral_number" : {
-            "type" : "boolean"
-          },
-          "long" : {
-            "type" : "boolean"
-          },
-          "missing_node" : {
-            "type" : "boolean"
-          },
-          "node_type" : {
-            "enum" : [
-              "ARRAY",
-              "BINARY",
-              "BOOLEAN",
-              "MISSING",
-              "NULL",
-              "NUMBER",
-              "OBJECT",
-              "POJO",
-              "STRING"
-            ],
-            "type" : "string"
-          },
-          "null" : {
-            "type" : "boolean"
-          },
-          "number" : {
-            "type" : "boolean"
-          },
-          "object" : {
-            "type" : "boolean"
-          },
-          "pojo" : {
-            "type" : "boolean"
-          },
-          "short" : {
-            "type" : "boolean"
-          },
-          "string" : {
-            "type" : "boolean"
-          },
-          "textual" : {
-            "deprecated" : true,
-            "type" : "boolean"
-          },
-          "value_node" : {
-            "type" : "boolean"
-          }
-        }
-      },
       "LogoutRequest" : {
         "description" : "로그아웃 요청",
         "properties" : {
@@ -3273,6 +3185,27 @@
   },
   "openapi" : "3.1.0",
   "paths" : {
+    "/.well-known/oauth-protected-resource/mcp" : {
+      "get" : {
+        "operationId" : "mcpProtectedResourceMetadata",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "Protected resource metadata"
+          }
+        },
+        "summary" : "MCP OAuth protected resource metadata",
+        "tags" : [
+          "McpOAuth"
+        ]
+      }
+    },
     "/api/auth/google/callback" : {
       "get" : {
         "description" : "code를 교환해 WEB 세션 토큰을 발급합니다. 성공: access/refresh HttpOnly 쿠키 설정 후 success-uri로 리다이렉트. 실패: failure-uri로 리다이렉트하며 `?error=`에는 `invalid_state`, `email_not_verified`, `email_conflict`, `google_error`, `server_error` 중 하나를 전달합니다.",
@@ -5323,7 +5256,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/JsonNode"
+                "type" : "object"
               }
             }
           },
@@ -5334,7 +5267,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/JsonNode"
+                  "type" : "object"
                 }
               }
             },
@@ -5344,7 +5277,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/JsonNode"
+                  "type" : "object"
                 }
               }
             },
@@ -5354,7 +5287,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/JsonNode"
+                  "type" : "object"
                 }
               }
             },
@@ -5364,7 +5297,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/JsonNode"
+                  "type" : "object"
                 }
               }
             },
@@ -5373,7 +5306,7 @@
         },
         "summary" : "MCP Streamable HTTP transport",
         "tags" : [
-          "mcp-transport-controller"
+          "McpTransport"
         ]
       }
     },
@@ -19734,6 +19667,14 @@
     {
       "description" : "dev 데모용 Signal 생성 API. local/dev/test 프로필에서만 존재합니다.",
       "name" : "DevSignal"
+    },
+    {
+      "description" : "MCP OAuth metadata API",
+      "name" : "McpOAuth"
+    },
+    {
+      "description" : "MCP Streamable HTTP transport API",
+      "name" : "McpTransport"
     },
     {
       "description" : "모바일 앱 진입 API",
