@@ -18,7 +18,9 @@ class McpTransportAuthenticator {
 
   Optional<McpAuthenticationContext> authenticate(HttpServletRequest request) {
     String authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
-    if (authorization == null || !authorization.startsWith("Bearer ")) {
+    if (authorization == null
+        || authorization.length() <= "Bearer ".length()
+        || !authorization.regionMatches(true, 0, "Bearer ", 0, "Bearer ".length())) {
       return Optional.empty();
     }
     String token = authorization.substring("Bearer ".length()).trim();

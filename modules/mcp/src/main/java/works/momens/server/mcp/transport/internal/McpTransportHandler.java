@@ -38,7 +38,7 @@ public class McpTransportHandler {
     JsonNode id = request.get("id");
     String method = request.get("method").asText();
     if (!requestValidator.hasLatestProtocolHeaders(httpRequest, request, method)) {
-      return responseFactory.badRequest(id, -32600, "Invalid Request");
+      return responseFactory.badRequest(id, -32020, "Header mismatch");
     }
     return methodHandler.handle(method, id, authentication.get());
   }

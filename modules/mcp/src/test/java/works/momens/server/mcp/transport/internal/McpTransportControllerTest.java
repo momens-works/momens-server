@@ -74,7 +74,6 @@ class McpTransportControllerTest {
                 .header("Authorization", "Bearer token")
                 .header("MCP-Protocol-Version", "2026-07-28")
                 .header("Mcp-Method", "server/discover")
-                .header("Mcp-Name", "server/discover")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(discoverRequest()))
         .andExpect(status().isOk())
@@ -102,7 +101,6 @@ class McpTransportControllerTest {
                 .header("Authorization", "Bearer token")
                 .header("MCP-Protocol-Version", "2026-07-28")
                 .header("Mcp-Method", "tools/list")
-                .header("Mcp-Name", "tools/list")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(toolsListRequest()))
         .andExpect(status().isOk())
@@ -122,13 +120,12 @@ class McpTransportControllerTest {
     mockMvc
         .perform(
             post("/api/mcp")
-                .header("Authorization", "Bearer token")
+                .header("Authorization", "bEaReR token")
                 .header("MCP-Protocol-Version", "2026-07-28")
                 .header("Mcp-Method", "unknown")
-                .header("Mcp-Name", "unknown")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(request("unknown", 3)))
-        .andExpect(status().isOk())
+        .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.error.code").value(-32601))
         .andExpect(jsonPath("$.error.message").value("Method not found"));
   }
@@ -144,7 +141,39 @@ class McpTransportControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(discoverRequest()))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error.code").value(-32600));
+        .andExpect(jsonPath("$.error.code").value(-32020));
+  }
+
+  @Test
+  void acceptsDiscoveryWithoutClientInfoOrName() throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+
+    mockMvc
+        .perform(
+            post("/api/mcp")
+                .header("Authorization", "Bearer token")
+                .header("MCP-Protocol-Version", "2026-07-28")
+                .header("Mcp-Method", "server/discover")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestWithoutClientInfo("server/discover", 4)))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  void decodesBase64SentinelMcpNameBeforeValidation() throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+
+    mockMvc
+        .perform(
+            post("/api/mcp")
+                .header("Authorization", "Bearer token")
+                .header("MCP-Protocol-Version", "2026-07-28")
+                .header("Mcp-Method", "tools/call")
+                .header("Mcp-Name", "=?base64?Z2V0X3dlYXRoZXI=?=")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestWithName("tools/call", 5, "get_weather")))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.error.code").value(-32601));
   }
 
   private static String discoverRequest() {
@@ -156,11 +185,35 @@ class McpTransportControllerTest {
   }
 
   private static String request(String method, int id) {
+    return requestWithMetadata(
+        method,
+        id,
+        "\"io.modelcontextprotocol/clientInfo\":{"
+            + "\"name\":\"test-client\",\"version\":\"1.0\"},");
+  }
+
+  private static String requestWithName(String method, int id, String name) {
     return "{\"jsonrpc\":\"2.0\",\"id\":"
         + id
         + ",\"method\":\""
         + method
-        + "\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"test-client\",\"version\":\"1.0\"},\"io.modelcontextprotocol/clientCapabilities\":{}}}}";
+        + "\",\"params\":{\"name\":\""
+        + name
+        + "\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientCapabilities\":{}}}}";
+  }
+
+  private static String requestWithoutClientInfo(String method, int id) {
+    return requestWithMetadata(method, id, "");
+  }
+
+  private static String requestWithMetadata(String method, int id, String clientInfo) {
+    return "{\"jsonrpc\":\"2.0\",\"id\":"
+        + id
+        + ",\"method\":\""
+        + method
+        + "\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\","
+        + clientInfo
+        + "\"io.modelcontextprotocol/clientCapabilities\":{}}}}";
   }
 
   private static tools.jackson.databind.JsonNode schema() {
