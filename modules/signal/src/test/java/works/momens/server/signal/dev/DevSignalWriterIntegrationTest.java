@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import works.momens.server.common.api.BusinessException;
+import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.outbox.OutboxAppender;
 import works.momens.server.project.core.ProjectReader;
@@ -171,5 +172,17 @@ class DevSignalWriterIntegrationTest extends AbstractPostgresIntegrationTest {
                 assertThat(((BusinessException) e).getErrorCode().code())
                     .isEqualTo("PROJECT_NOT_FOUND"));
     verifyNoInteractions(outboxAppender);
+  }
+
+  @Test
+  @DisplayName("허용하지 않는 Signal type은 project를 조회하기 전에 `FieldValidationException`으로 거부합니다")
+  void rejectsUnknownType() {
+    assertThatThrownBy(
+            () ->
+                writer.create(
+                    PROJECT_ID,
+                    new CreateDevSignalRequest("issue", "제목", "설명", null, null, null, null)))
+        .isInstanceOf(FieldValidationException.class);
+    verifyNoInteractions(projectReader, outboxAppender);
   }
 }

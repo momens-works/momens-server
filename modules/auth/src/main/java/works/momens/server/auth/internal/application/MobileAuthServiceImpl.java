@@ -9,6 +9,7 @@ import works.momens.server.auth.internal.google.GoogleUserInfo;
 import works.momens.server.auth.internal.jwt.JwtTokenService;
 import works.momens.server.auth.internal.jwt.TokenPair;
 import works.momens.server.auth.internal.refresh.ClientType;
+import works.momens.server.user.UserIdentityProvider;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
@@ -30,7 +31,7 @@ class MobileAuthServiceImpl implements MobileAuthService {
     GoogleUserInfo googleUser = googleIdTokenVerifier.verify(idToken);
     UserProfile user =
         userService.findOrCreateByIdentity(
-            UserService.PROVIDER_GOOGLE,
+            UserIdentityProvider.GOOGLE,
             googleUser.sub(),
             googleUser.email(),
             displayName(googleUser),

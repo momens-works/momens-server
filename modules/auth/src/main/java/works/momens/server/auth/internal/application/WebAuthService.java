@@ -14,6 +14,7 @@ import works.momens.server.auth.internal.jwt.JwtTokenService;
 import works.momens.server.auth.internal.jwt.TokenPair;
 import works.momens.server.auth.internal.refresh.ClientType;
 import works.momens.server.common.api.BusinessException;
+import works.momens.server.user.UserIdentityProvider;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
@@ -52,7 +53,7 @@ public class WebAuthService {
     GoogleUserInfo user = googleOAuthClient.fetchUserInfo(googleAccessToken);
     UserProfile profile =
         userService.findOrCreateByIdentity(
-            UserService.PROVIDER_GOOGLE,
+            UserIdentityProvider.GOOGLE,
             user.sub(),
             user.email(),
             displayName(user),

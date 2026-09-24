@@ -74,7 +74,7 @@ public class SourceConnection extends BaseEntity {
   SourceConnection(
       UUID workspaceId,
       String sourceType,
-      String status,
+      SourceConnectionStatus status,
       String externalWorkspaceId,
       String externalWorkspaceName,
       UUID connectedByUserId,
@@ -82,7 +82,7 @@ public class SourceConnection extends BaseEntity {
       Map<String, Object> metadata) {
     this.workspaceId = workspaceId;
     this.sourceType = sourceType;
-    this.status = status;
+    this.status = status.value();
     this.externalWorkspaceId = externalWorkspaceId;
     this.externalWorkspaceName = externalWorkspaceName;
     this.connectedByUserId = connectedByUserId;
@@ -96,12 +96,12 @@ public class SourceConnection extends BaseEntity {
    * <p>레거시의 연결 갱신 경로와 동일한 동작입니다. 비활성화된 연결도 다시 승인되면 활성 상태로 전환됩니다.
    */
   public void reconnect(
-      String status,
+      SourceConnectionStatus status,
       String externalWorkspaceName,
       UUID connectedByUserId,
       Instant connectedAt,
       Map<String, Object> metadata) {
-    this.status = status;
+    this.status = status.value();
     this.externalWorkspaceName = externalWorkspaceName;
     this.connectedByUserId = connectedByUserId;
     this.connectedAt = connectedAt;

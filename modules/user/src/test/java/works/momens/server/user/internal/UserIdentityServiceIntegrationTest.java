@@ -26,6 +26,7 @@ import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.user.UserErrorCode;
+import works.momens.server.user.UserIdentityProvider;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
@@ -50,7 +51,7 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
   void createsUserWithIdentity() {
     UserProfile created =
         userService.findOrCreateByIdentity(
-            UserService.PROVIDER_GOOGLE, "sub-new", "new@momens.works", "홍길동", "https://a/x.png");
+            UserIdentityProvider.GOOGLE, "sub-new", "new@momens.works", "홍길동", "https://a/x.png");
 
     assertThat(created.id()).isNotNull();
     assertThat(created.email()).isEqualTo("new@momens.works");
@@ -58,7 +59,7 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
     assertThat(created.avatarUrl()).isEqualTo("https://a/x.png");
     assertThat(
             userIdentityRepository
-                .findByProviderAndProviderUserId(UserService.PROVIDER_GOOGLE, "sub-new")
+                .findByProviderAndProviderUserId(UserIdentityProvider.GOOGLE.value(), "sub-new")
                 .orElseThrow()
                 .getUserId())
         .isEqualTo(created.id());
@@ -69,11 +70,11 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
   void keepsSameUserOnRelogin() {
     UserProfile first =
         userService.findOrCreateByIdentity(
-            UserService.PROVIDER_GOOGLE, "sub-relogin", "relogin@momens.works", "이전", null);
+            UserIdentityProvider.GOOGLE, "sub-relogin", "relogin@momens.works", "이전", null);
 
     UserProfile second =
         userService.findOrCreateByIdentity(
-            UserService.PROVIDER_GOOGLE,
+            UserIdentityProvider.GOOGLE,
             "sub-relogin",
             "relogin@momens.works",
             "변경",
@@ -89,11 +90,11 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
   void keepsSameUserWhenEmailChanges() {
     UserProfile first =
         userService.findOrCreateByIdentity(
-            UserService.PROVIDER_GOOGLE, "sub-email", "before@momens.works", "홍길동", null);
+            UserIdentityProvider.GOOGLE, "sub-email", "before@momens.works", "홍길동", null);
 
     UserProfile second =
         userService.findOrCreateByIdentity(
-            UserService.PROVIDER_GOOGLE, "sub-email", "after@momens.works", "홍길동", null);
+            UserIdentityProvider.GOOGLE, "sub-email", "after@momens.works", "홍길동", null);
 
     assertThat(second.id()).isEqualTo(first.id());
     assertThat(second.email()).isEqualTo("after@momens.works");
@@ -106,13 +107,13 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
 
     UserProfile linked =
         userService.findOrCreateByIdentity(
-            UserService.PROVIDER_GOOGLE, "sub-legacy", "legacy@momens.works", "홍길동", null);
+            UserIdentityProvider.GOOGLE, "sub-legacy", "legacy@momens.works", "홍길동", null);
 
     assertThat(linked.id()).isEqualTo(existing.id());
     assertThat(linked.name()).isEqualTo("홍길동");
     assertThat(
             userIdentityRepository
-                .findByProviderAndProviderUserId(UserService.PROVIDER_GOOGLE, "sub-legacy")
+                .findByProviderAndProviderUserId(UserIdentityProvider.GOOGLE.value(), "sub-legacy")
                 .orElseThrow()
                 .getUserId())
         .isEqualTo(existing.id());
@@ -122,12 +123,12 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
   @DisplayName("이메일로 조회된 사용자에게 이미 다른 로그인 수단이 연결되어 있으면 로그인을 거부한다")
   void rejectsWhenEmailBelongsToAnotherIdentity() {
     userService.findOrCreateByIdentity(
-        UserService.PROVIDER_GOOGLE, "sub-owner", "shared@momens.works", "이전주인", null);
+        UserIdentityProvider.GOOGLE, "sub-owner", "shared@momens.works", "이전주인", null);
 
     assertThatThrownBy(
             () ->
                 userService.findOrCreateByIdentity(
-                    UserService.PROVIDER_GOOGLE,
+                    UserIdentityProvider.GOOGLE,
                     "sub-newcomer",
                     "shared@momens.works",
                     "새주인",
@@ -143,11 +144,11 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
     UserProfile taken = userService.findOrCreate("taken@momens.works", "선점자", null);
     UserProfile mine =
         userService.findOrCreateByIdentity(
-            UserService.PROVIDER_GOOGLE, "sub-mine", "mine@momens.works", "홍길동", null);
+            UserIdentityProvider.GOOGLE, "sub-mine", "mine@momens.works", "홍길동", null);
 
     UserProfile after =
         userService.findOrCreateByIdentity(
-            UserService.PROVIDER_GOOGLE, "sub-mine", "taken@momens.works", "홍길동", null);
+            UserIdentityProvider.GOOGLE, "sub-mine", "taken@momens.works", "홍길동", null);
 
     assertThat(after.id()).isEqualTo(mine.id());
     assertThat(after.email()).as("이메일 갱신을 건너뛰면 기존 이메일 값이 유지된다").isEqualTo("mine@momens.works");
@@ -180,7 +181,7 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
                             return tx.execute(
                                     status ->
                                         userService.findOrCreateByIdentity(
-                                            UserService.PROVIDER_GOOGLE,
+                                            UserIdentityProvider.GOOGLE,
                                             "sub-race",
                                             "race@momens.works",
                                             "홍길동",
@@ -198,7 +199,7 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
       assertThat(ids).hasSize(threads).containsOnly(ids.getFirst());
       assertThat(
               userIdentityRepository
-                  .findByProviderAndProviderUserId(UserService.PROVIDER_GOOGLE, "sub-race")
+                  .findByProviderAndProviderUserId(UserIdentityProvider.GOOGLE.value(), "sub-race")
                   .orElseThrow()
                   .getUserId())
           .isEqualTo(ids.getFirst());
@@ -244,7 +245,7 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
                                 return tx.execute(
                                         status ->
                                             userService.findOrCreateByIdentity(
-                                                UserService.PROVIDER_GOOGLE,
+                                                UserIdentityProvider.GOOGLE,
                                                 providerUserId,
                                                 email,
                                                 "홍길동",

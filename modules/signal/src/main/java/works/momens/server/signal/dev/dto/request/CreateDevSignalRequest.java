@@ -7,15 +7,13 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.List;
+import works.momens.server.signal.SignalType;
 
 /** dev 데모용 Signal 생성 요청(docs/design/signal-push-demo-design.md 5.2·5.3절). */
 @Schema(description = "dev 데모용 Signal 생성 요청")
 public record CreateDevSignalRequest(
-    @Schema(description = "Signal type", example = "risk")
+    @Schema(description = "Signal type", example = "risk", implementation = SignalType.class)
         @NotBlank
-        @Pattern(
-            regexp = "decision|risk|question|change",
-            message = "type은 decision, risk, question, change만 허용합니다.")
         String type,
     @Schema(description = "Signal 제목", example = "결제 정책 결정 3일째 보류") @NotBlank String title,
     @Schema(description = "Signal 설명", example = "결제 정책 결정이 3일 동안 보류된 상태입니다.") @NotBlank

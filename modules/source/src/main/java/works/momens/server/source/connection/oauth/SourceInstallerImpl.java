@@ -17,6 +17,7 @@ import works.momens.server.source.SourceErrorCode;
 import works.momens.server.source.SourceInstaller;
 import works.momens.server.source.connection.SourceConnection;
 import works.momens.server.source.connection.SourceConnectionRepository;
+import works.momens.server.source.connection.SourceConnectionStatus;
 import works.momens.server.source.connection.SourceCredential;
 import works.momens.server.source.connection.SourceCredentialRepository;
 
@@ -31,9 +32,6 @@ import works.momens.server.source.connection.SourceCredentialRepository;
 @Component
 @RequiredArgsConstructor
 class SourceInstallerImpl implements SourceInstaller {
-
-  private static final String STATUS_ACTIVE = "ACTIVE";
-  private static final String STATUS_PENDING = "PENDING";
 
   private final OAuthProviderRegistry providerRegistry;
   private final OAuthStateSigner stateSigner;
@@ -124,8 +122,10 @@ class SourceInstallerImpl implements SourceInstaller {
 
   private SourceConnection upsertConnection(
       OAuthState state, OAuthProvider provider, ProviderIdentity identity) {
-    String status =
-        OAuthProviderRegistry.FIGMA.equals(provider.sourceType()) ? STATUS_PENDING : STATUS_ACTIVE;
+    SourceConnectionStatus status =
+        OAuthProviderRegistry.FIGMA.equals(provider.sourceType())
+            ? SourceConnectionStatus.PENDING
+            : SourceConnectionStatus.ACTIVE;
     Instant now = Instant.now();
     List<SourceConnection> existing =
         sourceConnectionRepository

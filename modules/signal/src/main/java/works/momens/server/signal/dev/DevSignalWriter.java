@@ -12,10 +12,12 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
+import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.common.config.DevOnly;
 import works.momens.server.outbox.OutboxAppender;
 import works.momens.server.project.core.ProjectErrorCode;
 import works.momens.server.project.core.ProjectReader;
+import works.momens.server.signal.SignalType;
 import works.momens.server.signal.dev.dto.request.CreateDevSignalRequest;
 import works.momens.server.source.DevSourceRefWriter;
 
@@ -39,12 +41,15 @@ class DevSignalWriter {
 
   @Transactional
   public UUID create(UUID projectId, CreateDevSignalRequest request) {
+    SignalType type =
+        SignalType.from(request.type())
+            .orElseThrow(() -> FieldValidationException.forField("type"));
     UUID workspaceId =
         projectReader
             .workspaceIdOf(projectId)
             .orElseThrow(() -> new BusinessException(ProjectErrorCode.PROJECT_NOT_FOUND));
     UUID signalId = UUID.randomUUID();
-    insertSignal(signalId, workspaceId, projectId, request);
+    insertSignal(signalId, workspaceId, projectId, type, request);
     List<CreateDevSignalRequest.Evidence> evidence = request.evidenceOrEmpty();
     for (int sortOrder = 0; sortOrder < evidence.size(); sortOrder++) {
       insertEvidence(signalId, workspaceId, evidence.get(sortOrder), sortOrder);
@@ -60,7 +65,11 @@ class DevSignalWriter {
   }
 
   private void insertSignal(
-      UUID signalId, UUID workspaceId, UUID projectId, CreateDevSignalRequest request) {
+      UUID signalId,
+      UUID workspaceId,
+      UUID projectId,
+      SignalType type,
+      CreateDevSignalRequest request) {
     jdbcClient
         .sql(
             "INSERT INTO signals "
@@ -71,7 +80,7 @@ class DevSignalWriter {
         .param("id", signalId)
         .param("workspaceId", workspaceId)
         .param("projectId", projectId)
-        .param("type", request.type())
+        .param("type", type.value())
         .param("title", request.title())
         .param("description", request.description())
         .param("impact", request.impact())

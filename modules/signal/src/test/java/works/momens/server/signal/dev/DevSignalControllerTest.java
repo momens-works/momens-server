@@ -70,23 +70,6 @@ class DevSignalControllerTest {
   }
 
   @Test
-  @DisplayName("허용하지 않은 Signal type은 400으로 거부한다")
-  void rejectsUnknownType() throws Exception {
-    mockMvc
-        .perform(
-            post("/api/dev/projects/{projectId}/signals", PROJECT_ID)
-                .header("API-Version", "1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """
-                    {"type": "issue", "title": "제목", "description": "설명"}
-                    """))
-        .andExpect(status().isBadRequest());
-
-    verifyNoInteractions(devSignalWriter);
-  }
-
-  @Test
   @DisplayName("허용하지 않은 evidence source_type은 400으로 거부한다")
   void rejectsUnknownSourceType() throws Exception {
     mockMvc

@@ -13,9 +13,6 @@ import java.util.UUID;
  */
 public interface UserService {
 
-  /** Google 로그인 수단의 provider 값. {@code user_identities}의 CHECK 제약 허용 목록과 같습니다. */
-  String PROVIDER_GOOGLE = "google";
-
   /**
    * 검증된 외부 신원 정보를 기준으로 사용자를 조회하거나 생성합니다.
    *
@@ -27,7 +24,11 @@ public interface UserService {
    * <p>이메일 기반으로 기존 사용자를 연결하는 로직은 외부 신원과 이메일 검증이 완료된 경우에만 동작합니다.
    */
   UserProfile findOrCreateByIdentity(
-      String provider, String providerUserId, String email, String name, String avatarUrl);
+      UserIdentityProvider provider,
+      String providerUserId,
+      String email,
+      String name,
+      String avatarUrl);
 
   /**
    * 로그인 수단 없이 이메일을 기준으로 사용자를 조회하거나 생성합니다.

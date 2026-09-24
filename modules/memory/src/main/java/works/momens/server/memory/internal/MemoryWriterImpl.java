@@ -39,7 +39,6 @@ import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 @RequiredArgsConstructor
 class MemoryWriterImpl implements MemoryWriter {
 
-  private static final String STATUS_PROPOSED = "PROPOSED";
   private static final String ACTION_CONFIRM = "CONFIRM";
   private static final String ACTION_EDIT_AND_CONFIRM = "EDIT_AND_CONFIRM";
   private static final String ACTION_REJECT = "REJECT";
@@ -82,7 +81,7 @@ class MemoryWriterImpl implements MemoryWriter {
     String editedSummary = edits == null ? null : emptyToNull(edits.summary());
     String editedBody = edits == null ? null : emptyToNull(edits.body());
 
-    markCandidateReviewed(candidateId, "CONFIRMED", userId, null, now);
+    markCandidateReviewed(candidateId, MemoryCandidateStatus.CONFIRMED, userId, null, now);
     // metadata는 담지 않습니다. 레거시는 확정 메모리를 만들 때 후보의 metadata를 옮기지 않고 항상 NULL로
     // 둡니다(memory/repository.go InsertMemory가 세팅되지 않은 필드를 그대로 넣습니다). 후보 metadata는
     // 워커가 남긴 추출 정보라 확정 메모리로 새어 나가면 안 됩니다.
@@ -97,7 +96,7 @@ class MemoryWriterImpl implements MemoryWriter {
                    COALESCE(CAST(:title AS TEXT), title),
                    COALESCE(CAST(:summary AS TEXT), summary),
                    COALESCE(CAST(:body AS TEXT), body),
-                   'ACTIVE', source_ref_ids, related_entity_ids, id,
+                   :status, source_ref_ids, related_entity_ids, id,
                    :userId, :now, :now, :now
             FROM memory_candidates WHERE id = :candidateId
             """)
@@ -107,6 +106,7 @@ class MemoryWriterImpl implements MemoryWriter {
         .setParameter("summary", editedSummary)
         .setParameter("body", editedBody)
         .setParameter("userId", userId)
+        .setParameter("status", ConfirmedMemoryStatus.ACTIVE.value())
         .setParameter("now", now)
         .setParameter("candidateId", candidateId)
         .executeUpdate();
@@ -139,7 +139,8 @@ class MemoryWriterImpl implements MemoryWriter {
     lockProposedCandidate(candidateId);
 
     String rejectionReason = emptyToNull(reason);
-    markCandidateReviewed(candidateId, "REJECTED", userId, rejectionReason, Instant.now());
+    markCandidateReviewed(
+        candidateId, MemoryCandidateStatus.REJECTED, userId, rejectionReason, Instant.now());
     insertReviewAction(
         workspaceId, candidateId, ACTION_REJECT, userId, null, null, null, rejectionReason, null);
   }
@@ -156,7 +157,7 @@ class MemoryWriterImpl implements MemoryWriter {
     lockProposedCandidate(candidateId);
     lockMemory(targetMemoryId);
 
-    markCandidateReviewed(candidateId, "MERGED", userId, null, Instant.now());
+    markCandidateReviewed(candidateId, MemoryCandidateStatus.MERGED, userId, null, Instant.now());
     insertReviewAction(
         candidateWorkspaceId,
         candidateId,
@@ -175,7 +176,7 @@ class MemoryWriterImpl implements MemoryWriter {
     UUID workspaceId = requireCandidateMembership(candidateId, userId);
     lockProposedCandidate(candidateId);
 
-    markCandidateReviewed(candidateId, "EXPIRED", userId, null, Instant.now());
+    markCandidateReviewed(candidateId, MemoryCandidateStatus.EXPIRED, userId, null, Instant.now());
     insertReviewAction(
         workspaceId, candidateId, ACTION_EXPIRE, userId, null, null, null, null, null);
   }
@@ -205,7 +206,8 @@ class MemoryWriterImpl implements MemoryWriter {
             resolvedMemoryId));
     entityManager
         .createNativeQuery(
-            "UPDATE confirmed_memories SET status = 'ARCHIVED', updated_at = :now WHERE id = :id")
+            "UPDATE confirmed_memories SET status = :status, updated_at = :now WHERE id = :id")
+        .setParameter("status", ConfirmedMemoryStatus.ARCHIVED.value())
         .setParameter("now", Instant.now())
         .setParameter("id", resolvedMemoryId)
         .executeUpdate();
@@ -258,7 +260,7 @@ class MemoryWriterImpl implements MemoryWriter {
     if (rows.isEmpty()) {
       throw new BusinessException(MemoryErrorCode.MEMORY_CANDIDATE_NOT_FOUND);
     }
-    if (!STATUS_PROPOSED.equals(rows.getFirst())) {
+    if (!MemoryCandidateStatus.PROPOSED.value().equals(rows.getFirst())) {
       throw new BusinessException(MemoryErrorCode.MEMORY_INVALID_STATE);
     }
   }
@@ -280,7 +282,11 @@ class MemoryWriterImpl implements MemoryWriter {
    * 갱신되며 그때는 {@code NULL}입니다.
    */
   private void markCandidateReviewed(
-      UUID candidateId, String status, UUID reviewerId, String rejectionReason, Instant now) {
+      UUID candidateId,
+      MemoryCandidateStatus status,
+      UUID reviewerId,
+      String rejectionReason,
+      Instant now) {
     entityManager
         .createNativeQuery(
             """
@@ -289,7 +295,7 @@ class MemoryWriterImpl implements MemoryWriter {
                 rejection_reason = :reason, updated_at = :now
             WHERE id = :id
             """)
-        .setParameter("status", status)
+        .setParameter("status", status.value())
         .setParameter("now", now)
         .setParameter("reviewerId", reviewerId)
         .setParameter("reason", rejectionReason)
