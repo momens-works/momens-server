@@ -224,9 +224,7 @@ projection도 함께 발생한다. 모델 언어와 변경 이유가 분리될 �
 - 상태는 `TaskStatus` enum에서 정의하며, `tasks.status`의 DB CHECK 제약과 동일한 5가지 값을 사용한다.
 - 진행률 분모는 상태를 개별적으로 나열하지 않고 `TaskStatus` 전체에서 `cancelled`만 제외해 계산한다.
   이렇게 하면 상태가 추가되더라도 별도 수정 없이 계산 대상에 포함된다.
-- 보드의 그룹, 표시 순서와 라벨은 화면 정책이므로 mobile 모듈의 `BoardStatus`에서 관리한다. `BoardStatus`와
-  수정 요청 검증용 `@Pattern`이 `TaskStatus`를 참조하도록 변경하는 작업은 후속 티켓에서 진행한다
-  ([ADR-0022](../adr/0022-column-value-set-ownership.md)).
+- 보드의 그룹, 표시 순서와 label은 화면 정책이므로 mobile 모듈의 `BoardStatus`에서 관리합니다. `BoardStatus`는 값을 다시 선언하지 않고 `TaskStatus`를 감싸며, 모든 `TaskStatus`가 보드에 포함되는지는 `BoardStatusTest`에서 확인합니다([ADR-0022](../adr/0022-column-value-set-ownership.md)).
 - 진행률은 task 저장소의 상태별 집계 한 번으로 전체 태스크 수와 `done` 태스크 수를 함께 계산한다. 목록
   조회와 동일한 조건(projectId, status, 소프트 삭제 제외)을 한 쿼리에 고정해 목록과 진행률이 항상 같은 기준을
   쓰게 하고, 개수만 필요하므로 본문과 정렬은 읽지 않는다. 두 값을 각각 조회하면 기준이 갈릴 수 있다
@@ -276,8 +274,7 @@ capability의 물리 경계로 유지하고, 배포 단위도 나누지 않는�
 - taskupdate는 호출자가 확정한 workspace와 project 소속을 전달받아 사용하며, task 내부 저장소를 직접
   참조하지 않는다. 허용하는 의존 방향은 `taskupdate → task`이고, task는 taskupdate를 참조하지 않는다.
 - blocker는 workspace id를 직접 가진 읽기 모델이라 다른 project 하위 경계에 의존하지 않는다.
-- `HealthStatus`와 소유자 멤버십 검증은 project와 milestone의 구현 계약이다. 현재 저장값과 검증 동작은
-  같아도 변경 이유가 다르므로 각 하위 경계가 독립적으로 소유한다.
+- `ProjectHealthStatus`, `MilestoneHealthStatus`와 owner membership 검증은 project와 milestone의 구현 계약입니다. 현재 저장 값과 검증 동작이 같더라도 변경 이유가 다르므로 각 하위 경계에서 독립적으로 소유합니다.
 - 마일스톤 workspace 목록은 `milestones`에 workspace id가 없어 project를 조인한다. snapshot 쿼리 예산
   14회를 유지하기 위해 `MilestoneRepository`의 JPQL 조인을 persistence 예외로 허용한다. 엔티티 타입을
   Java 코드로 공유하거나 쓰기 경계를 넘기는 예외는 아니며, 통합 테스트가 workspace 격리와 project
