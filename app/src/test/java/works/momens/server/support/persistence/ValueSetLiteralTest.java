@@ -105,18 +105,29 @@ class ValueSetLiteralTest {
    */
   private static List<ValueSet> valueSets() {
     Map<String, Set<String>> byColumn = new LinkedHashMap<>();
+    Map<String, Set<String>> enumsByColumn = new LinkedHashMap<>();
     for (EnumLink link : CheckConstraintEnumLinks.ENUM_LINKS) {
+      String column = link.table() + "." + link.column();
       Set<String> values = new TreeSet<>(link.storedValues().values());
       values.addAll(link.difference().constraintOnly());
       values.removeAll(link.difference().enumOnly());
-      byColumn.putIfAbsent(link.table() + "." + link.column(), values);
+      byColumn.putIfAbsent(column, values);
+      String enumClassName = link.storedValues().enumClassName();
+      enumsByColumn
+          .computeIfAbsent(column, key -> new LinkedHashSet<>())
+          .add(enumClassName.substring(enumClassName.lastIndexOf('.') + 1));
     }
     Map<Set<String>, List<String>> columnsByValues = new LinkedHashMap<>();
     byColumn.forEach(
         (column, values) ->
             columnsByValues.computeIfAbsent(values, key -> new ArrayList<>()).add(column));
     return columnsByValues.entrySet().stream()
-        .map(entry -> new ValueSet(entry.getValue(), entry.getKey()))
+        .map(
+            entry -> {
+              Set<String> enums = new LinkedHashSet<>();
+              entry.getValue().forEach(column -> enums.addAll(enumsByColumn.get(column)));
+              return new ValueSet(entry.getValue(), entry.getKey(), List.copyOf(enums));
+            })
         .toList();
   }
 
@@ -176,7 +187,7 @@ class ValueSetLiteralTest {
     return root.relativize(file).toString().replace('\\', '/');
   }
 
-  record ValueSet(List<String> columns, Set<String> values) {
+  record ValueSet(List<String> columns, Set<String> values, List<String> enums) {
 
     Set<String> valuesIn(String text) {
       Set<String> found = new TreeSet<>();
@@ -194,7 +205,7 @@ class ValueSetLiteralTest {
   record Violation(String path, ValueSet valueSet, Set<String> found) {
 
     String describe() {
-      return path + " " + valueSet.columns() + " " + found;
+      return path + " " + valueSet.columns() + " " + found + " 참조할 enum: " + valueSet.enums();
     }
   }
 
