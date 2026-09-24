@@ -2659,33 +2659,53 @@
         "description" : "웹 태스크 수정 요청",
         "properties" : {
           "assignee_id" : {
+            "description" : "담당자 식별자. null이면 담당자를 해제합니다.",
             "format" : "uuid",
             "type" : "string",
             "writeOnly" : true
           },
           "description" : {
+            "description" : "태스크 설명. null이면 설명을 제거합니다.",
             "type" : "string",
             "writeOnly" : true
           },
           "due_date" : {
+            "description" : "마감일. null이면 마감일을 제거합니다.",
             "format" : "date",
             "type" : "string",
             "writeOnly" : true
           },
           "milestone_id" : {
+            "description" : "마일스톤 식별자. null이면 연결을 해제합니다.",
             "format" : "uuid",
             "type" : "string",
             "writeOnly" : true
           },
           "priority" : {
+            "description" : "태스크 우선순위. 빈 문자열은 기존 값을 유지하며 null은 허용하지 않습니다.",
+            "enum" : [
+              "low",
+              "medium",
+              "high",
+              "urgent"
+            ],
             "type" : "string",
             "writeOnly" : true
           },
           "status" : {
+            "description" : "태스크 상태. 빈 문자열은 기존 값을 유지하며 null은 허용하지 않습니다.",
+            "enum" : [
+              "backlog",
+              "todo",
+              "in_progress",
+              "done",
+              "cancelled"
+            ],
             "type" : "string",
             "writeOnly" : true
           },
           "title" : {
+            "description" : "태스크 제목. 빈 문자열은 기존 값을 유지하며 null은 허용하지 않습니다.",
             "type" : "string",
             "writeOnly" : true
           }
