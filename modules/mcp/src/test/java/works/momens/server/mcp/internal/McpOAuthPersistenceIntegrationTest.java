@@ -99,7 +99,7 @@ class McpOAuthPersistenceIntegrationTest extends AbstractPostgresIntegrationTest
     assertThat((String) persistedState.getAttribute("state")).isEqualTo("oauth-state");
 
     OAuth2Authorization persistedCode =
-        authorizationService.findByToken("authorization-code", new OAuth2TokenType("code"));
+        authorizationService.findByToken("authorization-code", null);
     assertThat(persistedCode).isNotNull();
     assertThat(persistedCode.getToken(OAuth2AuthorizationCode.class).getToken().getTokenValue())
         .isEqualTo("authorization-code");
