@@ -34,8 +34,6 @@ import works.momens.server.common.persistence.BaseEntity;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 class ConfirmedMemory extends BaseEntity {
 
-  private static final String STATUS_ACTIVE = "ACTIVE";
-
   @Column(name = "workspace_id", nullable = false, columnDefinition = "uuid")
   private UUID workspaceId;
 
@@ -110,7 +108,7 @@ class ConfirmedMemory extends BaseEntity {
     this.memoryType = memoryType;
     this.title = title;
     this.body = body;
-    this.status = STATUS_ACTIVE;
+    this.status = ConfirmedMemoryStatus.ACTIVE.value();
     this.relatedEntityIds = relatedEntityIds;
     this.confirmedByUserId = confirmedByUserId;
     this.confirmedAt = confirmedAt;

@@ -385,9 +385,14 @@
           },
           "type" : {
             "description" : "Signal type",
+            "enum" : [
+              "decision",
+              "risk",
+              "question",
+              "change"
+            ],
             "example" : "risk",
             "minLength" : 1,
-            "pattern" : "decision|risk|question|change",
             "type" : "string"
           }
         },

@@ -26,6 +26,8 @@ dependencies {
     implementation libs.momens.proto
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    // 도메인 enum의 value()에 @JsonValue를 적용해 OpenAPI 문서의 값 목록에 실제 저장 값을 사용합니다.
+    implementation 'com.fasterxml.jackson.core:jackson-annotations'
     // dev 데모용 Signal 생성 컨트롤러(@DevOnly, docs/design/signal-push-demo-design.md 11.2절).
     // 앱이 호출하는 /api/mobile/* 표면과 달리 dev 도구 표면이라 이 모듈이 소유합니다.
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'

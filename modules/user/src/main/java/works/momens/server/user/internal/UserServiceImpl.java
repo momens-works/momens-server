@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.user.UserErrorCode;
+import works.momens.server.user.UserIdentityProvider;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
@@ -25,7 +26,12 @@ class UserServiceImpl implements UserService {
   @Override
   @Transactional
   public UserProfile findOrCreateByIdentity(
-      String provider, String providerUserId, String email, String name, String avatarUrl) {
+      UserIdentityProvider identityProvider,
+      String providerUserId,
+      String email,
+      String name,
+      String avatarUrl) {
+    String provider = identityProvider.value();
     Optional<UserIdentity> identity =
         userIdentityRepository.findByProviderAndProviderUserId(provider, providerUserId);
     if (identity.isPresent()) {

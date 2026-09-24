@@ -16,6 +16,7 @@ import works.momens.server.auth.internal.jwt.JwtTokenService;
 import works.momens.server.auth.internal.jwt.TokenPair;
 import works.momens.server.auth.internal.refresh.ClientType;
 import works.momens.server.common.api.BusinessException;
+import works.momens.server.user.UserIdentityProvider;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
@@ -38,7 +39,7 @@ class WebAuthServiceTest {
     when(googleOAuthClient.fetchUserInfo("google-access"))
         .thenReturn(new GoogleUserInfo("google-sub", "hong@momens.works", "홍길동", "pic"));
     when(userService.findOrCreateByIdentity(
-            UserService.PROVIDER_GOOGLE, "google-sub", "hong@momens.works", "홍길동", "pic"))
+            UserIdentityProvider.GOOGLE, "google-sub", "hong@momens.works", "홍길동", "pic"))
         .thenReturn(profile);
     when(jwtTokenService.issueTokenPair(userId, ClientType.WEB, null))
         .thenReturn(new TokenPair("access-jwt", "refresh-token", 900));
