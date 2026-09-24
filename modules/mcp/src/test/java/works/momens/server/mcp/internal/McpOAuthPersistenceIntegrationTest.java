@@ -157,6 +157,31 @@ class McpOAuthPersistenceIntegrationTest extends AbstractPostgresIntegrationTest
                 .getTokenValue())
         .isEqualTo("authorization-code");
 
+    String rotatedAccessToken = "rotated-access-token";
+    OAuth2Authorization rotatedAuthorization =
+        OAuth2Authorization.from(persistedAccessToken)
+            .accessToken(
+                new OAuth2AccessToken(
+                    OAuth2AccessToken.TokenType.BEARER,
+                    rotatedAccessToken,
+                    ISSUED_AT,
+                    EXPIRES_AT,
+                    Set.of("mcp:projects:read")))
+            .build();
+    authorizationService.save(rotatedAuthorization);
+
+    assertThat(
+            jdbcTemplate.queryForObject(
+                "SELECT access_token_value FROM oauth2_authorization WHERE id = ?",
+                String.class,
+                authorization.getId()))
+        .isEqualTo(sha256(rotatedAccessToken));
+    OAuth2Authorization persistedRotatedAccessToken =
+        authorizationService.findByToken(rotatedAccessToken, OAuth2TokenType.ACCESS_TOKEN);
+    assertThat(persistedRotatedAccessToken).isNotNull();
+    assertThat(persistedRotatedAccessToken.getAccessToken().getToken().getTokenValue())
+        .isEqualTo(rotatedAccessToken);
+
     String hexToken = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
     OAuth2Authorization hexAuthorization =
         OAuth2Authorization.withRegisteredClient(client)
