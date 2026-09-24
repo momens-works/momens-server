@@ -15,6 +15,11 @@ public record McpEndpointProperties(@NotNull URI resourceUri, List<URI> allowedO
     allowedOrigins = allowedOrigins == null ? List.of() : List.copyOf(allowedOrigins);
   }
 
+  /** OAuth issuer는 resource와 같은 origin의 {@code /api}입니다(ADR-0023). */
+  public URI issuerUri() {
+    return URI.create(resourceUri.getScheme() + "://" + resourceUri.getAuthority() + "/api");
+  }
+
   public URI protectedResourceMetadataUri() {
     return URI.create(
         resourceUri.getScheme()
