@@ -7,7 +7,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
+import works.momens.server.mcp.grant.McpScope;
 import works.momens.server.mcp.transport.internal.McpEndpointProperties;
 
 @RestController
@@ -27,6 +29,12 @@ public class McpProtectedResourceMetadataController
   private JsonNode metadata() {
     ObjectNode metadata = objectMapper.createObjectNode();
     metadata.put("resource", endpointProperties.resourceUri().toString());
+    metadata.putArray("authorization_servers").add(endpointProperties.issuerUri().toString());
+    ArrayNode scopes = metadata.putArray("scopes_supported");
+    for (McpScope scope : McpScope.values()) {
+      scopes.add(scope.value());
+    }
+    metadata.putArray("bearer_methods_supported").add("header");
     return metadata;
   }
 }

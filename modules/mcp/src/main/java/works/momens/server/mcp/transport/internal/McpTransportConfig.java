@@ -15,7 +15,10 @@ class McpTransportConfig {
   SecurityFilterChain mcpSecurityFilterChain(
       HttpSecurity http, McpEndpointProperties endpointProperties) throws Exception {
     return http.securityMatcher(
-            "/api/mcp", "/api/mcp/**", "/.well-known/oauth-protected-resource/api/mcp")
+            "/api/mcp",
+            "/api/mcp/**",
+            "/.well-known/oauth-protected-resource/api/mcp",
+            "/.well-known/oauth-authorization-server/api")
         // MCP transport is stateless and authenticates requests with Bearer tokens, not cookies.
         .csrf(csrf -> csrf.ignoringRequestMatchers("/api/mcp", "/api/mcp/**"))
         .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
