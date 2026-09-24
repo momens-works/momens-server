@@ -49,9 +49,7 @@
   목록에 등록해야 하며, 등록되지 않았거나 선언한 차이와 실제 값 집합이 일치하지 않으면
   `CheckConstraintEnumConsistencyTest`가 실패합니다. 도메인 enum과 동일한 값 집합을 가진 별도의 enum은 이 목록에
   등록하지 않습니다.
-- mobile과 web 모듈은 값 집합을 별도로 선언하지 않고 도메인 enum을 참조합니다. 표시 순서와 라벨, 레거시 입력
-  별칭은 각 모듈에서 관리합니다. 컬럼별로 도메인 enum을 하나만 두는 원칙과 이 참조 규칙은 테스트로 검출할 수
-  없으므로 리뷰에서 확인합니다.
+- mobile과 web 모듈에서는 값 집합을 별도로 선언하지 않고 도메인 enum을 참조합니다. 표시 순서와 label, 레거시 input alias는 각 모듈에서 관리합니다. 도메인 enum이 아닌 파일에 같은 값 집합의 값이 둘 이상 나오면 `ValueSetLiteralTest`가 실패하며, enum을 참조할 수 없는 경우는 `ValueSetLiteralAllowlist`에 사유와 함께 등록합니다. 값 하나만 사용하는 경우는 리뷰에서 확인합니다.
 - 값을 추가할 때는 Flyway 마이그레이션, 도메인 enum과 `CheckConstraintEnumLinks`를 같은 PR에서 변경합니다. 값을
   제거할 때는 쓰기 경로에서 해당 값을 먼저 제거하고 기존 데이터를 정리한 뒤 CHECK 제약을 축소합니다.
 

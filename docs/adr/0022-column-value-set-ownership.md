@@ -1,6 +1,6 @@
 # 0022. 컬럼 허용 값의 관리 기준과 도메인 enum의 역할
 
-- 상태: Proposed
+- 상태: Accepted
 - 날짜: 2026-09-06
 - 작성자: jsshin8128
 
@@ -16,7 +16,7 @@ DB 컬럼의 허용 값 집합이 여러 위치에 중복 정의되어 있습니
 
 셋째, `ddl-auto=validate`는 CHECK 제약을 검증하지 않습니다. 따라서 DB 제약과 코드가 일치하지 않아도 애플리케이션 기동 시점에는 문제가 드러나지 않습니다.
 
-CHECK 제약과 enum의 값 집합이 의도적으로 다른 경우도 있습니다. `workspace_invitations.role`의 CHECK 제약은 `owner`를 허용하지 않지만, `WorkspaceRole`에는 `owner`가 포함되어 있습니다. 초대를 통해 `owner` 역할을 부여할 수 없다는 규칙은 `isAssignable()`로 표현합니다. 따라서 값 집합 관리 규칙은 이러한 의도적인 차이까지 설명할 수 있어야 합니다.
+CHECK 제약과 enum의 값 집합이 의도적으로 다른 경우도 있습니다. `workspace_invitations.role`의 CHECK 제약은 `owner`를 허용하지 않지만, `WorkspaceRole`에는 `owner`가 포함되어 있습니다. 초대를 통해 `owner` 역할을 부여할 수 없다는 규칙은 `AssignableWorkspaceRole`로 표현합니다. 따라서 값 집합 관리 규칙은 이러한 의도적인 차이까지 설명할 수 있어야 합니다.
 
 ## 결정
 
@@ -36,7 +36,7 @@ CHECK 제약과 enum의 값 집합이 의도적으로 다른 경우도 있습니
 
 값을 제거할 때는 먼저 쓰기 경로에서 해당 값을 제거하고, 기존 데이터를 정리한 뒤 CHECK 제약을 축소합니다.
 
-**`MOM-0884`에서 추가한 테스트는 등록 의무와 값 집합의 일치 여부를 강제합니다.** 값 집합을 제한하는 CHECK 제약이 `CheckConstraintEnumLinks`에 등록되지 않았거나, 연결된 enum의 값 집합이 선언된 차이와 일치하지 않으면 테스트가 실패합니다. 컬럼별로 도메인 enum을 하나만 두는 원칙과 mobile·web 모듈이 값 집합을 중복 선언하지 않는 규칙은 테스트로 검출할 수 없으므로 리뷰에서 확인합니다. 상시 적용할 규칙은 `docs/rules/persistence.md`의 「값 집합」 소절에 기록합니다.
+**`CheckConstraintEnumConsistencyTest`와 `ValueSetLiteralTest`가 이 결정을 강제합니다.** 값 집합을 제한하는 CHECK 제약이 `CheckConstraintEnumLinks`에 등록되지 않았거나, 연결된 enum의 값 집합이 선언된 차이와 일치하지 않으면 `CheckConstraintEnumConsistencyTest`가 실패합니다. 한 파일에 같은 값 집합의 값이 둘 이상 나오는데 해당 파일이 링크에 등록된 enum 파일도 아니고 `ValueSetLiteralAllowlist`에도 없으면 `ValueSetLiteralTest`가 실패합니다. 값 하나만 사용하는 경우는 일반적인 단어와 구분하기 어려워 검사하지 않고 리뷰에서 확인합니다. 상시 적용할 규칙은 `docs/rules/persistence.md`의 「값 집합」 소절에 기록합니다.
 
 ## 대안
 
@@ -50,6 +50,4 @@ CHECK 제약과 enum의 값 집합이 의도적으로 다른 경우도 있습니
 
 값을 추가하거나 제거할 때 각 선언을 변경하는 순서가 명확해집니다. 다른 쓰기 주체에서 새로운 값을 기록해야 한다면 이 레포지토리에 CHECK 제약 변경을 요청해야 합니다. `momens-proto` 계약과 CHECK 제약 간 정합성은 이 결정의 범위에 포함하지 않습니다.
 
-결정에 어긋나는 선언을 전수 조사한 결과, `tasks.status`, `tasks.priority`, `tasks.role`은 아직 이 결정을 따르지 않고 있습니다. project 모듈은 세 값을 도메인 enum으로 검증하지 않으며, mobile·web·minsu 모듈은 값 집합을 문자열로 중복 선언하고 있습니다. `projects.health_status`, `milestones.health_status`, `task_updates.kind`도 web 모듈의 OpenAPI 설명과 엔티티 기본값에서 허용 값을 다시 선언하고 있습니다.
-
-결정에 어긋나는 선언은 후속 구현 티켓 MOM-0949에서 모듈 구분 없이 정리합니다.
+결정에 어긋나던 선언은 MOM-0949에서 정리했습니다. 값 집합을 제한하는 CHECK 제약이 있는 29개 컬럼을 모두 해당 테이블을 소유한 모듈의 도메인 enum과 연결했고, mobile과 web, minsu 모듈에서는 값 집합을 문자열로 다시 선언하지 않고 도메인 enum을 참조합니다. 부분 인덱스 조건과 일치해야 하는 SQL 리터럴이나 LLM prompt처럼 enum을 참조할 수 없는 경우는 `ValueSetLiteralAllowlist`에 사유와 함께 등록합니다.
