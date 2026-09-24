@@ -25,6 +25,7 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 final class McpOAuth2AuthorizationService extends JdbcOAuth2AuthorizationService {
 
   private static final String TOKEN_PERSISTENCE_STATE = "mcp.token.persistence.state";
+  private static final String TOKEN_PERSISTED_DIGEST = "mcp.token.persistence.digest";
   private static final String PERSISTED_DIGEST = "persisted-digest";
   private static final String PRESENTED_VALUE = "presented-value";
 
@@ -123,15 +124,18 @@ final class McpOAuth2AuthorizationService extends JdbcOAuth2AuthorizationService
   }
 
   private static String maskTokenValue(OAuth2Authorization.Token<?> token) {
+    String tokenValue = token.getToken().getTokenValue();
     return PERSISTED_DIGEST.equals(token.getMetadata().get(TOKEN_PERSISTENCE_STATE))
-        ? token.getToken().getTokenValue()
-        : hash(token.getToken().getTokenValue());
+            && tokenValue.equals(token.getMetadata().get(TOKEN_PERSISTED_DIGEST))
+        ? tokenValue
+        : hash(tokenValue);
   }
 
   private static void markPersisted(
       Map<String, Object> metadata, OAuth2Authorization.Token<?> token) {
     metadata.putAll(token.getMetadata());
     metadata.put(TOKEN_PERSISTENCE_STATE, PERSISTED_DIGEST);
+    metadata.put(TOKEN_PERSISTED_DIGEST, maskTokenValue(token));
   }
 
   private static OAuth2Authorization restorePresentedToken(
