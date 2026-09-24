@@ -1,4 +1,4 @@
-package works.momens.server.mcp.transport.internal;
+package works.momens.server.mcp.transport;
 
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,14 +14,10 @@ import org.springframework.web.bind.annotation.RestController;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ObjectNode;
-import works.momens.server.mcp.transport.McpAuthenticationContext;
-import works.momens.server.mcp.transport.McpBearerTokenVerifier;
-import works.momens.server.mcp.transport.McpToolCatalog;
-import works.momens.server.mcp.transport.McpToolDefinition;
 
 @RestController
 @RequestMapping("/api/mcp")
-class McpTransportController {
+public class McpTransportController {
 
   private static final String PROTOCOL_VERSION = "2026-07-28";
   private static final String PROTOCOL_VERSION_HEADER = "MCP-Protocol-Version";
