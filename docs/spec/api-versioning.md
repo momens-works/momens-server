@@ -37,6 +37,8 @@ MCP/OAuth client와 표준 discovery 호환성을 위해 다음 endpoint에는 S
 `API-Version` 헤더를 적용하지 않습니다.
 
 - MCP Streamable HTTP `/api/mcp`: `MCP-Protocol-Version` 헤더와 요청 metadata로 MCP 버전을 협상합니다.
+- OAuth protocol endpoint `/api/oauth2/**`: Spring Authorization Server가 처리하며 요청·응답 형식은
+  OAuth 표준(RFC 6749, RFC 7591 등)을 따릅니다.
 - `/.well-known/**`: 표준이 정한 discovery 경로이므로 `/api` prefix와 `API-Version`을 사용하지 않습니다.
 
 이 예외는 `:mcp`가 소유하는 외부 표준 protocol 표면에만 적용합니다. 같은 모듈 안에서도 Momens 관리용

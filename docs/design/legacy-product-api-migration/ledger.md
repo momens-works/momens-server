@@ -78,7 +78,7 @@ rg --files ../momens-api/cmd
 그 결과 MCP tool 11개, startup migration runner, retrieval backfill·embedding loop, Slack 비동기
 처리, HTTP server lifecycle, 오프라인 CLI 3개를 확인했다. 별도 cron/scheduler 등록은 없었다.
 
-현재 HTTP 항목은 `implemented` 46개, `traced` 50개다. 비-HTTP·tool 항목 19개는 모두
+현재 HTTP 항목은 `implemented` 50개, `traced` 46개다. 비-HTTP·tool 항목 19개는 모두
 `traced` 상태다. `cutover_ready` 이상인 항목은 아직 없다.
 
 ## 공통 전환 규칙
@@ -279,10 +279,10 @@ Standard 모드**이며, 모두 `MOM-0848`에서 `traced`됐다.
 | ID | surface | legacy entry point | handler | profile | mode | status·메모 |
 | --- | --- | --- | --- | --- | --- | --- |
 | H001 | operational | `GET /health` | inline | `OP` | R | `implemented`: target은 `/actuator/health`, 아직 probe 전환 아님 |
-| H002 | OAuth | `GET /.well-known/oauth-authorization-server` | `AuthorizationServerMetadata` | `MOA-P` | R | `traced`; 조건부 등록 |
-| H003 | OAuth | `GET /.well-known/oauth-protected-resource` | `ProtectedResourceMetadata` | `MOA-P` | R | `traced`; 조건부 등록 |
-| H004 | OAuth | `GET /.well-known/oauth-protected-resource/mcp` | `ProtectedResourceMetadata` | `MOA-P` | R | `traced`; 조건부 등록 |
-| H005 | OAuth | `POST /oauth/register` | `Register` | `MOA-P` | W | `traced`; dynamic client registration |
+| H002 | OAuth | `GET /.well-known/oauth-authorization-server` | `AuthorizationServerMetadata` | `MOA-P` | R | `implemented` (`MOM-0988`): target `/.well-known/oauth-authorization-server/api`, issuer `https://api.momens.works/api`. `/.well-known` ingress 라우팅은 전환(`MOM-0992`)에서 연다 |
+| H003 | OAuth | `GET /.well-known/oauth-protected-resource` | `ProtectedResourceMetadata` | `MOA-P` | R | `implemented` (`MOM-0988`): root 문서는 두지 않고 H004 target으로 통합한다 |
+| H004 | OAuth | `GET /.well-known/oauth-protected-resource/mcp` | `ProtectedResourceMetadata` | `MOA-P` | R | `implemented` (`MOM-0987`, `MOM-0988`): target `/.well-known/oauth-protected-resource/api/mcp` |
+| H005 | OAuth | `POST /oauth/register` | `Register` | `MOA-P` | W | `implemented` (`MOM-0988`): target `/api/oauth2/register`. public PKCE client(`token_endpoint_auth_method=none`)만 open registration으로 등록한다 |
 | H006 | OAuth | `GET /oauth/authorize` | `Authorize` | `MOA-P` | W | `traced`; consent interaction 생성·redirect |
 | H007 | OAuth | `POST /oauth/token` | `Token` | `MOA-P` | W | `traced`; code 교환·refresh 회전 |
 | H008 | OAuth | `POST /oauth/revoke` | `Revoke` | `MOA-P` | W | `traced` |
