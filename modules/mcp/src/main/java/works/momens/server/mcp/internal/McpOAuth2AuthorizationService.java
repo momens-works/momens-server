@@ -5,6 +5,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
@@ -22,6 +23,10 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
  * value before delegating to the standard JDBC queries.
  */
 final class McpOAuth2AuthorizationService extends JdbcOAuth2AuthorizationService {
+
+  private static final String TOKEN_PERSISTENCE_STATE = "mcp.token.persistence.state";
+  private static final String PERSISTED_DIGEST = "persisted-digest";
+  private static final String PRESENTED_VALUE = "presented-value";
 
   McpOAuth2AuthorizationService(
       JdbcOperations jdbcOperations, RegisteredClientRepository registeredClientRepository) {
@@ -86,8 +91,8 @@ final class McpOAuth2AuthorizationService extends JdbcOAuth2AuthorizationService
       OAuth2AuthorizationCode code = token.getToken();
       builder.token(
           new OAuth2AuthorizationCode(
-              hash(code.getTokenValue()), code.getIssuedAt(), code.getExpiresAt()),
-          metadata -> metadata.putAll(token.getMetadata()));
+              maskTokenValue(token), code.getIssuedAt(), code.getExpiresAt()),
+          metadata -> markPersisted(metadata, token));
     }
   }
 
@@ -98,11 +103,11 @@ final class McpOAuth2AuthorizationService extends JdbcOAuth2AuthorizationService
       builder.token(
           new OAuth2AccessToken(
               accessToken.getTokenType(),
-              hash(accessToken.getTokenValue()),
+              maskTokenValue(token),
               accessToken.getIssuedAt(),
               accessToken.getExpiresAt(),
               accessToken.getScopes()),
-          metadata -> metadata.putAll(token.getMetadata()));
+          metadata -> markPersisted(metadata, token));
     }
   }
 
@@ -112,11 +117,21 @@ final class McpOAuth2AuthorizationService extends JdbcOAuth2AuthorizationService
       OAuth2RefreshToken refreshToken = token.getToken();
       builder.token(
           new OAuth2RefreshToken(
-              hash(refreshToken.getTokenValue()),
-              refreshToken.getIssuedAt(),
-              refreshToken.getExpiresAt()),
-          metadata -> metadata.putAll(token.getMetadata()));
+              maskTokenValue(token), refreshToken.getIssuedAt(), refreshToken.getExpiresAt()),
+          metadata -> markPersisted(metadata, token));
     }
+  }
+
+  private static String maskTokenValue(OAuth2Authorization.Token<?> token) {
+    return PERSISTED_DIGEST.equals(token.getMetadata().get(TOKEN_PERSISTENCE_STATE))
+        ? token.getToken().getTokenValue()
+        : hash(token.getToken().getTokenValue());
+  }
+
+  private static void markPersisted(
+      Map<String, Object> metadata, OAuth2Authorization.Token<?> token) {
+    metadata.putAll(token.getMetadata());
+    metadata.put(TOKEN_PERSISTENCE_STATE, PERSISTED_DIGEST);
   }
 
   private static OAuth2Authorization restorePresentedToken(
@@ -139,7 +154,7 @@ final class McpOAuth2AuthorizationService extends JdbcOAuth2AuthorizationService
       OAuth2AuthorizationCode code = token.getToken();
       builder.token(
           new OAuth2AuthorizationCode(presentedToken, code.getIssuedAt(), code.getExpiresAt()),
-          metadata -> metadata.putAll(token.getMetadata()));
+          metadata -> markPresented(metadata, token));
     }
   }
 
@@ -157,7 +172,7 @@ final class McpOAuth2AuthorizationService extends JdbcOAuth2AuthorizationService
               accessToken.getIssuedAt(),
               accessToken.getExpiresAt(),
               accessToken.getScopes()),
-          metadata -> metadata.putAll(token.getMetadata()));
+          metadata -> markPresented(metadata, token));
     }
   }
 
@@ -171,8 +186,14 @@ final class McpOAuth2AuthorizationService extends JdbcOAuth2AuthorizationService
       builder.token(
           new OAuth2RefreshToken(
               presentedToken, refreshToken.getIssuedAt(), refreshToken.getExpiresAt()),
-          metadata -> metadata.putAll(token.getMetadata()));
+          metadata -> markPresented(metadata, token));
     }
+  }
+
+  private static void markPresented(
+      Map<String, Object> metadata, OAuth2Authorization.Token<?> token) {
+    metadata.putAll(token.getMetadata());
+    metadata.put(TOKEN_PERSISTENCE_STATE, PRESENTED_VALUE);
   }
 
   private static String hash(String value) {

@@ -133,6 +133,30 @@ class McpOAuthPersistenceIntegrationTest extends AbstractPostgresIntegrationTest
                 authorization.getId()))
         .isEqualTo(sha256("refresh-token"));
 
+    authorizationService.save(persistedAccessToken);
+
+    OAuth2Authorization persistedAfterUpdate =
+        authorizationService.findByToken("refresh-token", OAuth2TokenType.REFRESH_TOKEN);
+    assertThat(persistedAfterUpdate).isNotNull();
+    assertThat(persistedAfterUpdate.getRefreshToken().getToken().getTokenValue())
+        .isEqualTo("refresh-token");
+    assertThat(
+            jdbcTemplate.queryForObject(
+                "SELECT refresh_token_value FROM oauth2_authorization WHERE id = ?",
+                String.class,
+                authorization.getId()))
+        .isEqualTo(sha256("refresh-token"));
+
+    OAuth2Authorization persistedCodeAfterUpdate =
+        authorizationService.findByToken("authorization-code", null);
+    assertThat(persistedCodeAfterUpdate).isNotNull();
+    assertThat(
+            persistedCodeAfterUpdate
+                .getToken(OAuth2AuthorizationCode.class)
+                .getToken()
+                .getTokenValue())
+        .isEqualTo("authorization-code");
+
     String hexToken = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
     OAuth2Authorization hexAuthorization =
         OAuth2Authorization.withRegisteredClient(client)
