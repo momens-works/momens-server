@@ -20,6 +20,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import works.momens.server.mcp.transport.McpAuthenticationContext;
 import works.momens.server.mcp.transport.McpBearerTokenVerifier;
 import works.momens.server.mcp.transport.McpToolCatalog;
@@ -216,7 +218,7 @@ class McpTransportControllerTest {
         + "\"io.modelcontextprotocol/clientCapabilities\":{}}}}";
   }
 
-  private static tools.jackson.databind.JsonNode schema() {
-    return new tools.jackson.databind.ObjectMapper().createObjectNode().put("type", "object");
+  private static JsonNode schema() {
+    return new ObjectMapper().createObjectNode().put("type", "object");
   }
 }

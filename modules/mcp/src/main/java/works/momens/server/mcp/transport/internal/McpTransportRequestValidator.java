@@ -3,6 +3,7 @@ package works.momens.server.mcp.transport.internal;
 import jakarta.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Optional;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 
@@ -64,16 +65,15 @@ class McpTransportRequestValidator {
     };
   }
 
-  private static java.util.Optional<String> decodeName(String value) {
+  private static Optional<String> decodeName(String value) {
     if (!value.startsWith("=?base64?") || !value.endsWith("?=")) {
-      return java.util.Optional.of(value);
+      return Optional.of(value);
     }
     String encoded = value.substring("=?base64?".length(), value.length() - 2);
     try {
-      return java.util.Optional.of(
-          new String(Base64.getDecoder().decode(encoded), StandardCharsets.UTF_8));
+      return Optional.of(new String(Base64.getDecoder().decode(encoded), StandardCharsets.UTF_8));
     } catch (IllegalArgumentException exception) {
-      return java.util.Optional.empty();
+      return Optional.empty();
     }
   }
 }

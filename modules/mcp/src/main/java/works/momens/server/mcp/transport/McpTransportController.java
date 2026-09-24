@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,13 +21,10 @@ import works.momens.server.mcp.transport.internal.McpTransportHandler;
 
 @RestController
 @RequestMapping("/api/mcp")
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class McpTransportController {
 
   private final McpTransportHandler transportHandler;
-
-  McpTransportController(McpTransportHandler transportHandler) {
-    this.transportHandler = transportHandler;
-  }
 
   @PostMapping(
       consumes = MediaType.APPLICATION_JSON_VALUE,
