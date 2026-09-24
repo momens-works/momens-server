@@ -80,6 +80,7 @@ class McpOAuthPersistenceIntegrationTest extends AbstractPostgresIntegrationTest
             .principalName("user-1")
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
             .authorizedScopes(Set.of("mcp:projects:read"))
+            .attribute("state", "oauth-state")
             .token(new OAuth2AuthorizationCode("authorization-code", ISSUED_AT, EXPIRES_AT))
             .accessToken(
                 new OAuth2AccessToken(
@@ -93,14 +94,26 @@ class McpOAuthPersistenceIntegrationTest extends AbstractPostgresIntegrationTest
 
     authorizationService.save(authorization);
 
-    assertThat(authorizationService.findByToken("authorization-code", null)).isNotNull();
+    OAuth2Authorization persistedState = authorizationService.findByToken("oauth-state", null);
+    assertThat(persistedState).isNotNull();
+    assertThat((String) persistedState.getAttribute("state")).isEqualTo("oauth-state");
+
+    OAuth2Authorization persistedCode =
+        authorizationService.findByToken("authorization-code", new OAuth2TokenType("code"));
+    assertThat(persistedCode).isNotNull();
+    assertThat(persistedCode.getToken(OAuth2AuthorizationCode.class).getToken().getTokenValue())
+        .isEqualTo("authorization-code");
+
     OAuth2Authorization persistedAccessToken =
         authorizationService.findByToken("access-token", OAuth2TokenType.ACCESS_TOKEN);
-    assertThat(authorizationService.findByToken("refresh-token", OAuth2TokenType.REFRESH_TOKEN))
-        .isNotNull();
+    OAuth2Authorization persistedRefreshToken =
+        authorizationService.findByToken("refresh-token", OAuth2TokenType.REFRESH_TOKEN);
     assertThat(persistedAccessToken).isNotNull();
+    assertThat(persistedRefreshToken).isNotNull();
     assertThat(persistedAccessToken.getAccessToken().getToken().getTokenValue())
         .isEqualTo("access-token");
+    assertThat(persistedRefreshToken.getRefreshToken().getToken().getTokenValue())
+        .isEqualTo("refresh-token");
     assertThat(
             jdbcTemplate.queryForObject(
                 "SELECT access_token_value FROM oauth2_authorization WHERE id = ?",
@@ -119,6 +132,24 @@ class McpOAuthPersistenceIntegrationTest extends AbstractPostgresIntegrationTest
                 String.class,
                 authorization.getId()))
         .isEqualTo(sha256("refresh-token"));
+
+    String hexToken = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    OAuth2Authorization hexAuthorization =
+        OAuth2Authorization.withRegisteredClient(client)
+            .principalName("user-1")
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .accessToken(
+                new OAuth2AccessToken(
+                    OAuth2AccessToken.TokenType.BEARER, hexToken, ISSUED_AT, EXPIRES_AT))
+            .build();
+    authorizationService.save(hexAuthorization);
+
+    assertThat(
+            jdbcTemplate.queryForObject(
+                "SELECT access_token_value FROM oauth2_authorization WHERE id = ?",
+                String.class,
+                hexAuthorization.getId()))
+        .isEqualTo(sha256(hexToken));
   }
 
   private static RegisteredClient registeredClient() {
