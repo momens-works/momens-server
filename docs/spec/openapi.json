@@ -1002,6 +1002,94 @@
           }
         }
       },
+      "JsonNode" : {
+        "properties" : {
+          "array" : {
+            "type" : "boolean"
+          },
+          "big_decimal" : {
+            "type" : "boolean"
+          },
+          "big_integer" : {
+            "type" : "boolean"
+          },
+          "binary" : {
+            "type" : "boolean"
+          },
+          "boolean" : {
+            "type" : "boolean"
+          },
+          "container" : {
+            "type" : "boolean"
+          },
+          "double" : {
+            "type" : "boolean"
+          },
+          "embedded_value" : {
+            "type" : "boolean"
+          },
+          "empty" : {
+            "type" : "boolean"
+          },
+          "float" : {
+            "type" : "boolean"
+          },
+          "floating_point_number" : {
+            "type" : "boolean"
+          },
+          "int" : {
+            "type" : "boolean"
+          },
+          "integral_number" : {
+            "type" : "boolean"
+          },
+          "long" : {
+            "type" : "boolean"
+          },
+          "missing_node" : {
+            "type" : "boolean"
+          },
+          "node_type" : {
+            "enum" : [
+              "ARRAY",
+              "BINARY",
+              "BOOLEAN",
+              "MISSING",
+              "NULL",
+              "NUMBER",
+              "OBJECT",
+              "POJO",
+              "STRING"
+            ],
+            "type" : "string"
+          },
+          "null" : {
+            "type" : "boolean"
+          },
+          "number" : {
+            "type" : "boolean"
+          },
+          "object" : {
+            "type" : "boolean"
+          },
+          "pojo" : {
+            "type" : "boolean"
+          },
+          "short" : {
+            "type" : "boolean"
+          },
+          "string" : {
+            "type" : "boolean"
+          },
+          "textual" : {
+            "deprecated" : true,
+            "type" : "boolean"
+          },
+          "value_node" : {
+            "type" : "boolean"
+          }
+        }
+      },
       "LogoutRequest" : {
         "description" : "로그아웃 요청",
         "properties" : {
@@ -5187,6 +5275,37 @@
         "summary" : "워크스페이스 초대 수락",
         "tags" : [
           "Web"
+        ]
+      }
+    },
+    "/api/mcp" : {
+      "post" : {
+        "operationId" : "mcpPost",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/JsonNode"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/JsonNode"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "MCP Streamable HTTP transport",
+        "tags" : [
+          "mcp-transport-controller"
         ]
       }
     },
