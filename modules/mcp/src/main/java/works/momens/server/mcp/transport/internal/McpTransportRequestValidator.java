@@ -3,17 +3,16 @@ package works.momens.server.mcp.transport.internal;
 import jakarta.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
+import org.springframework.http.InvalidMediaTypeException;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 
 @Component
 class McpTransportRequestValidator {
 
-  private static final String PROTOCOL_VERSION = "2026-07-28";
-  private static final String PROTOCOL_VERSION_HEADER = "MCP-Protocol-Version";
-  private static final String METHOD_HEADER = "Mcp-Method";
-  private static final String NAME_HEADER = "Mcp-Name";
   private static final String CLIENT_INFO = "io.modelcontextprotocol/clientInfo";
 
   boolean isJsonRpcRequest(JsonNode request) {
@@ -26,27 +25,16 @@ class McpTransportRequestValidator {
         && request.get("method").isTextual();
   }
 
-  boolean hasLatestProtocolHeaders(HttpServletRequest request, JsonNode body, String method) {
-    if (!PROTOCOL_VERSION.equals(request.getHeader(PROTOCOL_VERSION_HEADER))
-        || !method.equals(request.getHeader(METHOD_HEADER))) {
-      return false;
-    }
-    JsonNode metadata = body.path("params").path("_meta");
-    if (!PROTOCOL_VERSION.equals(metadata.path("io.modelcontextprotocol/protocolVersion").asText())
-        || !metadata.path("io.modelcontextprotocol/clientCapabilities").isObject()) {
-      return false;
-    }
-    JsonNode clientInfo = metadata.get(CLIENT_INFO);
-    if (clientInfo != null
-        && (!clientInfo.isObject()
-            || !clientInfo.path("name").isTextual()
-            || !clientInfo.path("version").isTextual())) {
+  boolean hasMatchingHeaders(HttpServletRequest request, JsonNode body, String method) {
+    if (!protocolVersion(body).equals(request.getHeader(McpProtocol.VERSION_HEADER))
+        || !method.equals(request.getHeader(McpProtocol.METHOD_HEADER))
+        || !hasRequiredAcceptTypes(request)) {
       return false;
     }
     if (!requiresName(method)) {
       return true;
     }
-    String name = request.getHeader(NAME_HEADER);
+    String name = request.getHeader(McpProtocol.NAME_HEADER);
     if (name == null || name.isBlank()) {
       return false;
     }
@@ -57,6 +45,42 @@ class McpTransportRequestValidator {
           default -> "";
         };
     return decodeName(name).map(expectedName::equals).orElse(false);
+  }
+
+  private static boolean hasRequiredAcceptTypes(HttpServletRequest request) {
+    try {
+      List<MediaType> accepted = MediaType.parseMediaTypes(request.getHeader("Accept"));
+      return accepted.stream()
+              .map(MediaType::removeQualityValue)
+              .anyMatch(MediaType.APPLICATION_JSON::equals)
+          && accepted.stream()
+              .map(MediaType::removeQualityValue)
+              .anyMatch(MediaType.TEXT_EVENT_STREAM::equals);
+    } catch (InvalidMediaTypeException | NullPointerException exception) {
+      return false;
+    }
+  }
+
+  String protocolVersion(JsonNode body) {
+    return body.path("params")
+        .path("_meta")
+        .path("io.modelcontextprotocol/protocolVersion")
+        .asText();
+  }
+
+  boolean hasValidClientMetadata(JsonNode body) {
+    JsonNode metadata = body.path("params").path("_meta");
+    if (!metadata.path("io.modelcontextprotocol/clientCapabilities").isObject()) {
+      return false;
+    }
+    JsonNode clientInfo = metadata.get(CLIENT_INFO);
+    if (clientInfo != null
+        && (!clientInfo.isObject()
+            || !clientInfo.path("name").isTextual()
+            || !clientInfo.path("version").isTextual())) {
+      return false;
+    }
+    return true;
   }
 
   private static boolean requiresName(String method) {

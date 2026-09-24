@@ -44,6 +44,12 @@ server:
   port: ${SERVER_PORT:8080}
 
 momens:
+  mcp:
+    # MCP client가 외부에서 보는 resource 정본입니다(ADR-0023). Host 헤더로 조립하지 않습니다.
+    resource-uri: ${MOMENS_MCP_RESOURCE_URI:https://api.momens.works/api/mcp}
+    # Origin 헤더가 있는 요청은 resource origin과 이 목록만 허용합니다. 네이티브 MCP client는
+    # 일반적으로 Origin을 보내지 않습니다.
+    allowed-origins: ${MOMENS_MCP_ALLOWED_ORIGINS:}
   openapi:
     server-url: ${MOMENS_OPENAPI_SERVER_URL:http://localhost:8080}
   # 웹 브라우저 cross-origin 허용(MOM-55). 허용 origin은 환경별로 주입합니다.

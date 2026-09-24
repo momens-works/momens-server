@@ -31,6 +31,7 @@ interface McpTransportControllerDocs {
         responseCode = "401",
         description = "Bearer authentication required",
         content = @Content(schema = @Schema(type = "object"))),
+    @ApiResponse(responseCode = "403", description = "Origin is not allowed"),
     @ApiResponse(
         responseCode = "404",
         description = "MCP method not found",
@@ -62,5 +63,5 @@ interface McpTransportControllerDocs {
         schema = @Schema(type = "string"))
   })
   @RequestBody(required = true, content = @Content(schema = @Schema(type = "object")))
-  ResponseEntity<JsonNode> post(JsonNode request, HttpServletRequest httpServletRequest);
+  ResponseEntity<JsonNode> post(String request, HttpServletRequest httpServletRequest);
 }
