@@ -3200,6 +3200,7 @@
             "description" : "Authorization server metadata"
           }
         },
+        "security" : [ ],
         "summary" : "MCP OAuth authorization server metadata",
         "tags" : [
           "McpOAuth"
@@ -3221,6 +3222,7 @@
             "description" : "Protected resource metadata"
           }
         },
+        "security" : [ ],
         "summary" : "MCP OAuth protected resource metadata",
         "tags" : [
           "McpOAuth"
