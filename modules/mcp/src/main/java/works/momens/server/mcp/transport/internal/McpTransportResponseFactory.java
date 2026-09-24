@@ -49,6 +49,11 @@ class McpTransportResponseFactory {
     return ResponseEntity.badRequest().body(response);
   }
 
+  ResponseEntity<JsonNode> notFound(JsonNode id, int code, String message) {
+    ObjectNode response = (ObjectNode) jsonRpcError(id, code, message).getBody().deepCopy();
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+  }
+
   private String metadataUrl(HttpServletRequest request) {
     StringBuilder url =
         new StringBuilder(request.getScheme()).append("://").append(request.getServerName());

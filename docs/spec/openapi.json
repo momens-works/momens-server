@@ -5281,6 +5281,44 @@
     "/api/mcp" : {
       "post" : {
         "operationId" : "mcpPost",
+        "parameters" : [
+          {
+            "in" : "header",
+            "name" : "MCP-Protocol-Version",
+            "required" : true,
+            "schema" : {
+              "example" : "2026-07-28",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "header",
+            "name" : "Mcp-Method",
+            "required" : true,
+            "schema" : {
+              "example" : "tools/list",
+              "type" : "string"
+            }
+          },
+          {
+            "description" : "Clients should advertise both JSON and SSE response support.",
+            "in" : "header",
+            "name" : "Accept",
+            "required" : true,
+            "schema" : {
+              "example" : "application/json, text/event-stream",
+              "type" : "string"
+            }
+          },
+          {
+            "description" : "Required for tools/call, resources/read, and prompts/get; supports the Base64 sentinel format.",
+            "in" : "header",
+            "name" : "Mcp-Name",
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -5300,7 +5338,37 @@
                 }
               }
             },
-            "description" : "OK"
+            "description" : "JSON-RPC response"
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/JsonNode"
+                }
+              }
+            },
+            "description" : "Invalid request or header mismatch"
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/JsonNode"
+                }
+              }
+            },
+            "description" : "Bearer authentication required"
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/JsonNode"
+                }
+              }
+            },
+            "description" : "MCP method not found"
           }
         },
         "summary" : "MCP Streamable HTTP transport",

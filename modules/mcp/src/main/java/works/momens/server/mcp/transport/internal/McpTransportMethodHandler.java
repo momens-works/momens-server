@@ -35,7 +35,7 @@ class McpTransportMethodHandler {
       case "server/discover" -> responseFactory.jsonRpcResult(id, discoverResult());
       case "tools/list" ->
           responseFactory.jsonRpcResult(id, toolsListResult(authenticationContext));
-      default -> responseFactory.jsonRpcError(id, -32601, "Method not found");
+      default -> responseFactory.notFound(id, -32601, "Method not found");
     };
   }
 
