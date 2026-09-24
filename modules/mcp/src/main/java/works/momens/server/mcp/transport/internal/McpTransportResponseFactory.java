@@ -1,6 +1,8 @@
 package works.momens.server.mcp.transport.internal;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,13 +12,10 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ObjectNode;
 
 @Component
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 class McpTransportResponseFactory {
 
   private final ObjectMapper objectMapper;
-
-  McpTransportResponseFactory(ObjectMapper objectMapper) {
-    this.objectMapper = objectMapper;
-  }
 
   ResponseEntity<JsonNode> unauthorized(HttpServletRequest request) {
     HttpHeaders headers = new HttpHeaders();

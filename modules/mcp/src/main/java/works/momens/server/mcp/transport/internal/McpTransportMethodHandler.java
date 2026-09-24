@@ -1,5 +1,7 @@
 package works.momens.server.mcp.transport.internal;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
@@ -10,6 +12,7 @@ import works.momens.server.mcp.transport.McpToolCatalog;
 import works.momens.server.mcp.transport.McpToolDefinition;
 
 @Component
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 class McpTransportMethodHandler {
 
   private static final String PROTOCOL_VERSION = "2026-07-28";
@@ -19,15 +22,6 @@ class McpTransportMethodHandler {
   private final ObjectMapper objectMapper;
   private final McpToolCatalog toolCatalog;
   private final McpTransportResponseFactory responseFactory;
-
-  McpTransportMethodHandler(
-      ObjectMapper objectMapper,
-      McpToolCatalog toolCatalog,
-      McpTransportResponseFactory responseFactory) {
-    this.objectMapper = objectMapper;
-    this.toolCatalog = toolCatalog;
-    this.responseFactory = responseFactory;
-  }
 
   ResponseEntity<JsonNode> handle(
       String method, JsonNode id, McpAuthenticationContext authenticationContext) {
