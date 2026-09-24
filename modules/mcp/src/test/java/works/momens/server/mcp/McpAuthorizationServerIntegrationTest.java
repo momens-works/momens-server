@@ -181,6 +181,13 @@ class McpAuthorizationServerIntegrationTest extends AbstractPostgresIntegrationT
         Arguments.of(List.of("https://user@client.example.com/callback")),
         Arguments.of(List.of("com.example.app:/callback")),
         Arguments.of(List.of("/callback")),
+        Arguments.of(List.of("https://client.example.com/callback?state=a,b")),
+        Arguments.of(List.of("https://client.example.com/" + "a".repeat(1100))),
+        Arguments.of(
+            Stream.iterate(0, i -> i + 1)
+                .limit(10)
+                .map(i -> "https://client.example.com/" + i + "/" + "a".repeat(100))
+                .toList()),
         Arguments.of(
             Stream.iterate(0, i -> i + 1)
                 .limit(11)
@@ -204,7 +211,19 @@ class McpAuthorizationServerIntegrationTest extends AbstractPostgresIntegrationT
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json(Map.of("client_name", "client", "redirect_uris", List.of()))))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error").value("invalid_request"));
+        .andExpect(jsonPath("$.error").value("invalid_request"))
+        .andExpect(jsonPath("$.error_description").value("Invalid client registration request"));
+  }
+
+  @Test
+  @DisplayName("invalid_request 오류는 내부 예외 메시지 대신 일반 설명을 반환한다")
+  void hidesInternalMessageInInvalidRequest() throws Exception {
+    mockMvc
+        .perform(
+            post(REGISTER).contentType(MediaType.APPLICATION_JSON).content("{\"client_name\":"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error").value("invalid_request"))
+        .andExpect(jsonPath("$.error_description").value("Invalid client registration request"));
   }
 
   @ParameterizedTest

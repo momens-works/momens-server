@@ -51,6 +51,7 @@ class McpAuthorizationServerConfig {
                     registration ->
                         registration
                             .openRegistrationAllowed(true)
+                            .errorResponseHandler(new McpClientRegistrationErrorHandler())
                             .authenticationProviders(
                                 providers ->
                                     providers.forEach(
