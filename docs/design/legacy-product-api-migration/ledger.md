@@ -395,7 +395,7 @@ HTTP 인증이 없는 항목도 실행 주체와 자격증명을 적고, prod/cl
 
 | ID | surface | legacy entry point·trace | profile/target | writer·dependency | status·gate |
 | --- | --- | --- | --- | --- | --- |
-| N001 | startup migration | `bootstrap.New` → `db.RunMigrations` → `migrations/*.sql` | `N-MIG` → infra | schema writer, advisory lock | `traced`; prod는 현재 legacy owner 유지, 최종 DDL 소유권 미결 |
+| N001 | startup migration | `bootstrap.New` → `db.RunMigrations` → `migrations/*.sql` | `N-MIG` → infra | schema writer, advisory lock | `implemented` (`MOM-0909`): prod DDL owner는 `momens-server`로 이전 완료([ADR-0019](../../adr/0019-prod-schema-ownership-transfer.md)). `momens-api` 러너는 아직 켜져 있으며 레거시 종료 시 정지한다. `momens-worker` 러너는 worker 소유 객체를 위해 유지한다 |
 | N002 | startup backfill | `bootstrap.New` goroutine → `retrieval.BackfillSearchTokens` | `N-BACKFILL` → retrieval/worker 경계 | `retrieval_documents.search_tokens` writer | `traced`; worker projection·backfill owner와 재처리 계약 필요 |
 | N003 | background loop | `bootstrap.New` goroutine → `retrieval.Embedder.Run` ticker | `N-EMBED` → retrieval/worker 경계 | retrieval document embedding writer, Vertex AI | `traced`; 중복 실행·비용·지연 관측과 owner 결정 필요 |
 | N004 | webhook child runtime | `slackbot.Handler.dispatch` → goroutine `answerAndPost` | `N-SLK`; 신규 runtime으로 이관하지 않음 | Slack API·retrieval·Vertex, action이면 task write | `traced`; **이관 대상이 아니다 — H013과 함께 레거시 잔류**(`MOM-0971`). 사유·재개 조건은 H013 행에 있다 |
