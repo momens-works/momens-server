@@ -7,7 +7,6 @@ import java.util.HexFormat;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
-import org.springframework.security.oauth2.core.OAuth2Token;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationCode;
@@ -35,6 +34,12 @@ final class McpOAuth2AuthorizationService extends JdbcOAuth2AuthorizationService
 
   @Override
   public OAuth2Authorization findByToken(String token, OAuth2TokenType tokenType) {
+    if (tokenType == null || "state".equals(tokenType.getValue())) {
+      OAuth2Authorization authorization = super.findByToken(token, tokenType);
+      if (authorization != null || "state".equals(tokenType.getValue())) {
+        return authorization;
+      }
+    }
     OAuth2Authorization authorization = super.findByToken(hash(token), tokenType);
     return authorization == null ? null : restorePresentedToken(authorization, token);
   }
@@ -53,7 +58,8 @@ final class McpOAuth2AuthorizationService extends JdbcOAuth2AuthorizationService
     if (token != null) {
       OAuth2AuthorizationCode code = token.getToken();
       builder.token(
-          new OAuth2AuthorizationCode(hashIfNeeded(code), code.getIssuedAt(), code.getExpiresAt()),
+          new OAuth2AuthorizationCode(
+              hash(code.getTokenValue()), code.getIssuedAt(), code.getExpiresAt()),
           metadata -> metadata.putAll(token.getMetadata()));
     }
   }
@@ -65,7 +71,7 @@ final class McpOAuth2AuthorizationService extends JdbcOAuth2AuthorizationService
       builder.token(
           new OAuth2AccessToken(
               accessToken.getTokenType(),
-              hashIfNeeded(accessToken),
+              hash(accessToken.getTokenValue()),
               accessToken.getIssuedAt(),
               accessToken.getExpiresAt(),
               accessToken.getScopes()),
@@ -79,7 +85,9 @@ final class McpOAuth2AuthorizationService extends JdbcOAuth2AuthorizationService
       OAuth2RefreshToken refreshToken = token.getToken();
       builder.token(
           new OAuth2RefreshToken(
-              hashIfNeeded(refreshToken), refreshToken.getIssuedAt(), refreshToken.getExpiresAt()),
+              hash(refreshToken.getTokenValue()),
+              refreshToken.getIssuedAt(),
+              refreshToken.getExpiresAt()),
           metadata -> metadata.putAll(token.getMetadata()));
     }
   }
@@ -140,11 +148,6 @@ final class McpOAuth2AuthorizationService extends JdbcOAuth2AuthorizationService
     }
   }
 
-  private static String hashIfNeeded(OAuth2Token token) {
-    String value = token.getTokenValue();
-    return isSha256(value) ? value : hash(value);
-  }
-
   private static String hash(String value) {
     try {
       return HexFormat.of()
@@ -153,10 +156,5 @@ final class McpOAuth2AuthorizationService extends JdbcOAuth2AuthorizationService
     } catch (NoSuchAlgorithmException exception) {
       throw new IllegalStateException("SHA-256 is not available", exception);
     }
-  }
-
-  private static boolean isSha256(String value) {
-    return value.length() == 64
-        && value.chars().allMatch(c -> (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'));
   }
 }
