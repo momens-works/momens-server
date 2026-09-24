@@ -8,12 +8,19 @@ import java.util.Set;
 import java.util.function.Function;
 import works.momens.server.mcp.grant.McpScope;
 import works.momens.server.mobile.MobilePriority;
-import works.momens.server.mobile.board.BoardStatus;
+import works.momens.server.notification.PushInstallationPlatform;
 import works.momens.server.project.core.ProjectHealthStatus;
 import works.momens.server.project.milestone.MilestoneHealthStatus;
 import works.momens.server.project.task.TaskOrigin;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskStatus;
+import works.momens.server.project.taskupdate.TaskUpdateKind;
+import works.momens.server.signal.SignalType;
+import works.momens.server.source.connection.SourceConnectionStatus;
+import works.momens.server.user.UserIdentityProvider;
 import works.momens.server.workspace.invitation.InvitationStatus;
+import works.momens.server.workspace.membership.AssignableWorkspaceRole;
 import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
@@ -22,16 +29,17 @@ import works.momens.server.workspace.membership.WorkspaceRole;
  * <p>기존에는 어떤 컬럼의 허용 값이 어떤 enum과 일치해야 하는지가 코드로 드러나지 않고 주석에만 기록되어 있었습니다. 이 파일은 해당 관계를 검증 가능한 선언으로 옮긴
  * 것이며, {@code CheckConstraintEnumConsistencyTest}가 선언 내용과 실제 스키마를 대조합니다.
  *
- * <p>값 집합을 제한하는 모든 CHECK 제약은 아래 두 목록 중 하나에 등록되어야 합니다. 새 컬럼을 추가하고 등록하지 않으면 테스트가 실패하므로 이관 과정에서 컬럼이
- * 늘어나도 검증 대상에서 누락되지 않습니다.
+ * <p>값 집합을 제한하는 모든 CHECK 제약은 {@link #ENUM_LINKS}에 등록해야 합니다. 각 컬럼에는 해당 테이블을 소유한 모듈의 도메인 enum을 하나
+ * 연결하고, 다른 모듈의 enum은 값 집합이 의도적으로 다를 때만 함께 연결합니다. 새 컬럼을 추가한 뒤 등록하지 않으면 테스트가 실패하므로, 이관 과정에서 컬럼이
+ * 늘어나더라도 검증 대상에서 누락되지 않습니다.
  *
  * <p>완전성은 DB의 CHECK 제약에 대해서만 보장합니다. CHECK 제약은 DB에서 빠짐없이 조회할 수 있지만, 어떤 enum이 특정 컬럼의 값 집합을 나타내는지는
  * 자동으로 판정할 수 없습니다. 따라서 기존 컬럼과 같은 값 집합을 나타내는 enum을 새로 만들고 이 목록에 등록하지 않으면 해당 enum은 검증 대상에 포함되지 않습니다.
  *
- * <p>같은 값 집합을 나타내는 enum이 여러 개이면 어떤 enum을 연결했는지까지는 검증하지 않습니다. {@code projects.health_status}와 {@code
- * milestones.health_status}가 해당합니다. {@code MOM-0887}에서 {@code HealthStatus}를 {@code
- * project.core.internal}과 {@code project.milestone.internal}에 같은 값으로 각각 정의했으므로 두 컬럼의 enum 연결을 서로
- * 바꾸어도 테스트가 통과합니다.
+ * <p>같은 값 집합을 표현하는 enum이 여러 개이면 어떤 enum을 연결했는지까지는 검증하지 않습니다. {@code projects.health_status}와 {@code
+ * milestones.health_status}, {@code tasks.role}과 {@code
+ * minsu_task_draft_generations.baseline_role}이 이에 해당합니다. 각 쌍에 연결된 두 enum은 값이 같으므로 서로 바꾸어 연결해도 테스트가
+ * 통과합니다.
  *
  * <p>두 enum 중 하나의 값 집합이 달라지면 테스트는 실패하지만, 실패 메시지가 가리키는 컬럼은 실제 소유 관계와 다를 수 있습니다. 연결된 enum이 해당 테이블을
  * 소유한 모듈에 속하는지까지 검증하려면 테이블과 모듈의 대응 관계를 별도로 선언해야 합니다. 해당 선언도 수동으로 관리해야 하는 또 다른 대응 목록이 되므로 추가하지 않습니다.
@@ -49,8 +57,8 @@ final class CheckConstraintEnumLinks {
           new EnumLink(
               "workspace_invitations",
               "role",
-              storedValues(WorkspaceRole.values(), WorkspaceRole::value),
-              IntendedDifference.onlyInEnum("owner는 워크스페이스 생성 시 결정되므로 초대로 부여할 수 없습니다", "owner")),
+              storedValues(AssignableWorkspaceRole.values(), AssignableWorkspaceRole::value),
+              IntendedDifference.NONE),
           new EnumLink(
               "workspace_invitations",
               "status",
@@ -69,13 +77,13 @@ final class CheckConstraintEnumLinks {
               IntendedDifference.NONE),
           new EnumLink(
               "tasks",
-              "status",
-              storedValues(BoardStatus.values(), BoardStatus::key),
+              "origin_type",
+              storedValues(TaskOrigin.values(), TaskOrigin::value),
               IntendedDifference.NONE),
           new EnumLink(
               "tasks",
-              "origin_type",
-              storedValues(TaskOrigin.values(), TaskOrigin::value),
+              "priority",
+              storedValues(TaskPriority.values(), TaskPriority::value),
               IntendedDifference.NONE),
           new EnumLink(
               "tasks",
@@ -92,8 +100,7 @@ final class CheckConstraintEnumLinks {
           new EnumLink(
               "tasks",
               "role",
-              storedValues(
-                  works.momens.server.minsu.Role.values(), works.momens.server.minsu.Role::value),
+              storedValues(TaskRole.values(), TaskRole::value),
               IntendedDifference.NONE),
           new EnumLink(
               "milestones",
@@ -149,43 +156,70 @@ final class CheckConstraintEnumLinks {
                   works.momens.server.minsu.Role.values(), works.momens.server.minsu.Role::value),
               IntendedDifference.NONE),
           new EnumLink(
+              "projects",
+              "status",
+              internalEnumValues(
+                  "works.momens.server.project.core.internal.ProjectStatus", "value"),
+              IntendedDifference.NONE),
+          new EnumLink(
+              "signals",
+              "type",
+              storedValues(SignalType.values(), SignalType::value),
+              IntendedDifference.NONE),
+          new EnumLink(
+              "outbox_events",
+              "issued_by",
+              internalEnumValues("works.momens.server.outbox.internal.OutboxEventIssuer", "value"),
+              IntendedDifference.NONE),
+          new EnumLink(
+              "push_installations",
+              "platform",
+              storedValues(PushInstallationPlatform.values(), PushInstallationPlatform::value),
+              IntendedDifference.NONE),
+          new EnumLink(
+              "user_identities",
+              "provider",
+              storedValues(UserIdentityProvider.values(), UserIdentityProvider::value),
+              IntendedDifference.NONE),
+          new EnumLink(
+              "memory_candidates",
+              "status",
+              internalEnumValues(
+                  "works.momens.server.memory.internal.MemoryCandidateStatus", "value"),
+              IntendedDifference.NONE),
+          new EnumLink(
+              "confirmed_memories",
+              "status",
+              internalEnumValues(
+                  "works.momens.server.memory.internal.ConfirmedMemoryStatus", "value"),
+              IntendedDifference.NONE),
+          new EnumLink(
+              "blockers",
+              "status",
+              internalEnumValues(
+                  "works.momens.server.project.blocker.internal.BlockerStatus", "value"),
+              IntendedDifference.NONE),
+          new EnumLink(
+              "blockers",
+              "blocked_entity_type",
+              internalEnumValues(
+                  "works.momens.server.project.blocker.internal.BlockedEntityType", "value"),
+              IntendedDifference.NONE),
+          new EnumLink(
+              "task_updates",
+              "kind",
+              storedValues(TaskUpdateKind.values(), TaskUpdateKind::value),
+              IntendedDifference.NONE),
+          new EnumLink(
+              "source_connections",
+              "status",
+              storedValues(SourceConnectionStatus.values(), SourceConnectionStatus::value),
+              IntendedDifference.NONE),
+          new EnumLink(
               "mcp_grants",
               "scopes",
               storedValues(McpScope.values(), McpScope::value),
               IntendedDifference.NONE));
-
-  /**
-   * 값 집합 전체를 선언하는 enum이 없는 컬럼의 목록입니다. 저장하는 값 하나만 상수로 선언한 경우도 있지만, 상수 하나는 값 집합이 아니라 원소이므로 대조하지 않습니다.
-   */
-  static final List<ColumnWithoutEnum> COLUMNS_WITHOUT_ENUM =
-      List.of(
-          new ColumnWithoutEnum(
-              "blockers", "blocked_entity_type", "레거시가 소유하는 테이블이며 이 서버에는 쓰기 경로가 없습니다"),
-          new ColumnWithoutEnum("blockers", "status", "레거시가 소유하는 테이블이며 이 서버에는 쓰기 경로가 없습니다"),
-          new ColumnWithoutEnum(
-              "confirmed_memories",
-              "status",
-              "MemoryWriterImpl이 저장하는 값만 상수로 선언하며 값 집합 전체를 나타내는 enum은 없습니다"),
-          new ColumnWithoutEnum(
-              "memory_candidates",
-              "status",
-              "MemoryWriterImpl이 저장하는 값만 상수로 선언하며 값 집합 전체를 나타내는 enum은 없습니다"),
-          new ColumnWithoutEnum(
-              "outbox_events", "issued_by", "이 서버는 api-server만 저장하며 worker는 momens-worker가 저장합니다"),
-          new ColumnWithoutEnum(
-              "projects", "status", "마이그레이션 기본값인 active만 사용하며 코드에는 값 집합을 나타내는 enum이 없습니다"),
-          new ColumnWithoutEnum("push_installations", "platform", "허용 값이 하나이므로 상수와 요청 검증으로만 관리합니다"),
-          new ColumnWithoutEnum("signals", "type", "worker가 생성하는 원본 데이터이며 이 서버는 읽기만 합니다"),
-          new ColumnWithoutEnum(
-              "source_connections",
-              "status",
-              "SourceInstallerImpl이 저장하는 ACTIVE와 PENDING만 상수로 선언합니다"),
-          new ColumnWithoutEnum(
-              "task_updates",
-              "kind",
-              "TaskUpdateWriterImpl의 switch가 두 값을 처리하며 값 집합을 나타내는 enum은 없습니다"),
-          new ColumnWithoutEnum(
-              "user_identities", "provider", "허용 값이 하나이므로 UserService.PROVIDER_GOOGLE 상수로만 관리합니다"));
 
   private CheckConstraintEnumLinks() {}
 
@@ -199,7 +233,7 @@ final class CheckConstraintEnumLinks {
       E[] constants, Function<E, String> storedValue) {
     Set<String> values = new LinkedHashSet<>();
     Arrays.stream(constants).map(storedValue).forEach(values::add);
-    return new StoredValues(constants[0].getDeclaringClass().getSimpleName(), values);
+    return new StoredValues(constants[0].getDeclaringClass().getName(), values);
   }
 
   /**
@@ -217,14 +251,14 @@ final class CheckConstraintEnumLinks {
       for (Object constant : type.getEnumConstants()) {
         values.add((String) accessor.invoke(constant));
       }
-      return new StoredValues(type.getSimpleName(), values);
+      return new StoredValues(type.getName(), values);
     } catch (ReflectiveOperationException e) {
       throw new IllegalStateException(className + "." + accessorName, e);
     }
   }
 
   /** enum 하나가 DB에 저장하는 값의 집합입니다. */
-  record StoredValues(String enumName, Set<String> values) {}
+  record StoredValues(String enumClassName, Set<String> values) {}
 
   /**
    * 두 값 집합 사이의 의도된 차이를 정확히 선언합니다.
@@ -254,14 +288,4 @@ final class CheckConstraintEnumLinks {
   /** 컬럼 하나와 enum 하나의 대응 관계입니다. */
   record EnumLink(
       String table, String column, StoredValues storedValues, IntendedDifference difference) {}
-
-  /** 값 집합 전체를 선언하는 enum이 없는 컬럼입니다. */
-  record ColumnWithoutEnum(String table, String column, String reason) {
-
-    ColumnWithoutEnum {
-      if (reason.isBlank()) {
-        throw new IllegalArgumentException("대조하지 않는 컬럼에는 근거를 작성해야 합니다.");
-      }
-    }
-  }
 }

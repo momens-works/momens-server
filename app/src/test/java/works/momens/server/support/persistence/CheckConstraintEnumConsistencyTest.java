@@ -18,7 +18,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
-import works.momens.server.support.persistence.CheckConstraintEnumLinks.ColumnWithoutEnum;
 import works.momens.server.support.persistence.CheckConstraintEnumLinks.EnumLink;
 
 /**
@@ -135,12 +134,6 @@ class CheckConstraintEnumConsistencyTest extends AbstractPostgresIntegrationTest
     for (EnumLink link : CheckConstraintEnumLinks.ENUM_LINKS) {
       declared.add(link.table() + "." + link.column());
     }
-    for (ColumnWithoutEnum column : CheckConstraintEnumLinks.COLUMNS_WITHOUT_ENUM) {
-      String qualified = column.table() + "." + column.column();
-      if (!declared.add(qualified)) {
-        problems.add("같은 컬럼이 중복 선언되었습니다: " + qualified);
-      }
-    }
 
     Set<String> actual = new LinkedHashSet<>();
     for (ValueLimitingConstraint constraint : valueLimitingConstraints) {
@@ -205,7 +198,7 @@ class CheckConstraintEnumConsistencyTest extends AbstractPostgresIntegrationTest
         + "."
         + link.column()
         + " ("
-        + link.storedValues().enumName()
+        + link.storedValues().enumClassName()
         + ", 실제 "
         + new TreeSet<>(actual)
         + ", 선언 "
