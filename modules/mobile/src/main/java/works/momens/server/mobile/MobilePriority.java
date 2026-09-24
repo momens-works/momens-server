@@ -1,5 +1,6 @@
 package works.momens.server.mobile;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
 import java.util.Optional;
 import works.momens.server.project.task.TaskPriority;
@@ -23,6 +24,7 @@ public enum MobilePriority {
   }
 
   /** 응답으로 반환하는 모바일 priority 값입니다. */
+  @JsonValue
   public String key() {
     return taskPriority.value();
   }

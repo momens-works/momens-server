@@ -105,7 +105,7 @@ interface WorkspaceControllerDocs {
   @Operation(
       operationId = "updateWorkspace",
       summary = "워크스페이스 수정",
-      description = "워크스페이스의 이름, 설명, slug를 수정합니다. admin 또는 owner 권한이 필요합니다.")
+      description = "워크스페이스의 이름, 설명, slug를 수정합니다. admin 이상의 권한이 필요합니다.")
   @ApiResponse(
       responseCode = "200",
       description = "수정 성공. 변경된 워크스페이스를 반환합니다.",

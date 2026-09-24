@@ -2,8 +2,9 @@ package works.momens.server.mobile.board.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import works.momens.server.mobile.MobilePriority;
+import works.momens.server.project.task.TaskRole;
 
 /**
  * 일반 태스크 생성 요청. 요청 형식은 docs/spec/mobile-api.md 태스크 절을 따릅니다.
@@ -16,11 +17,8 @@ import jakarta.validation.constraints.Size;
 public record CreateTaskRequest(
     @Schema(description = "제목. 최대 15자(공백 포함).", example = "권한 요청 플로우 점검") @NotBlank @Size(max = 15)
         String title,
-    @Schema(description = "역할. 생성은 pm/design/backend/frontend 중 하나", example = "backend")
-        @NotBlank
-        @Pattern(regexp = "pm|design|backend|frontend")
+    @Schema(description = "역할", example = "backend", implementation = TaskRole.class) @NotBlank
         String role,
-    @Schema(description = "우선순위. low/medium/high", example = "medium")
+    @Schema(description = "우선순위", example = "medium", implementation = MobilePriority.class)
         @NotBlank
-        @Pattern(regexp = "low|medium|high")
         String priority) {}

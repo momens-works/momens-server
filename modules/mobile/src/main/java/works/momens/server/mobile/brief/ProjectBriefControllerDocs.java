@@ -62,9 +62,7 @@ interface ProjectBriefControllerDocs {
   @ApiException(CommonErrorCode.class)
   BriefSignalSummaryPageResponse getSignalSummaryPage(
       @Parameter(description = "project 식별자") UUID projectId,
-      @Parameter(
-              description = "필터 키. all 또는 signal type(change, decision, risk, question). 기본값은 all")
-          String filter,
+      @Parameter(description = "필터 key. `all` 또는 Signal type을 사용합니다. 기본값은 `all`입니다.") String filter,
       @Parameter(
               description =
                   "직전 응답의 next_cursor입니다. 없으면 첫 페이지를 조회하며, next_cursor가 null이 될 때까지 이어 조회하면 모든 항목을 받을 수 있습니다.")

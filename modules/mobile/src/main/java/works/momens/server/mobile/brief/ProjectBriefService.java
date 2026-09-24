@@ -20,6 +20,7 @@ import works.momens.server.project.core.ProjectSnapshot;
 import works.momens.server.project.task.BoardTask;
 import works.momens.server.project.task.TaskProgressReader;
 import works.momens.server.project.task.TaskReader;
+import works.momens.server.project.task.TaskStatus;
 import works.momens.server.signal.SignalDigestReader;
 import works.momens.server.signal.SignalListService;
 import works.momens.server.signal.SignalSummary;
@@ -64,7 +65,8 @@ class ProjectBriefService {
   private static final int PRIORITY_LIMIT = 4;
 
   /** 현재 우선순위 후보 상태. 진행 중인 todo와 in_progress만 담고 backlog와 완료 상태는 제외합니다(2026-07-10 기획 확정). */
-  private static final List<String> PRIORITY_STATUSES = List.of("todo", "in_progress");
+  private static final List<String> PRIORITY_STATUSES =
+      List.of(TaskStatus.TODO.value(), TaskStatus.IN_PROGRESS.value());
 
   /**
    * 우선순위 정렬. priority 높은 순이고, 같으면 생성 오래된 순, 생성 시각까지 같으면 id 순으로 고정합니다. id 비교는 canonical hex 문자열로

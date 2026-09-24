@@ -5,8 +5,11 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import works.momens.server.mobile.MobileDraftStatus;
+import works.momens.server.mobile.MobilePriority;
 import works.momens.server.mobile.board.MobileTaskDetail;
 import works.momens.server.mobile.board.MobileTaskDetailView;
+import works.momens.server.project.task.TaskRole;
+import works.momens.server.project.task.TaskStatus;
 
 /**
  * {@code GET /api/mobile/tasks/{taskId}} 응답. 응답 형식은 docs/spec/mobile-api.md 태스크 상세 절을 따릅니다.
@@ -23,15 +26,16 @@ public record TaskDetailResponse(
     @Schema(description = "태스크 식별자") UUID id,
     @Schema(description = "소속 project 식별자") UUID projectId,
     @Schema(description = "제목") String title,
-    @Schema(description = "상태. backlog/todo/in_progress/done/cancelled", example = "todo")
-        String status,
+    @Schema(description = "상태", example = "todo", implementation = TaskStatus.class) String status,
     @Schema(
-            description = "역할. pm/design/backend/frontend 중 하나. 웹에서 만든 태스크는 미지정이면 null",
+            description = "역할. 웹에서 만든 태스크는 역할을 지정하지 않으면 null",
             example = "pm",
-            nullable = true)
+            nullable = true,
+            implementation = TaskRole.class)
         String role,
     @Schema(description = "담당자. 미지정이면 null") AssigneeResponse assignee,
-    @Schema(description = "우선순위. low/medium/high", example = "medium") String priority,
+    @Schema(description = "우선순위", example = "medium", implementation = MobilePriority.class)
+        String priority,
     @Schema(description = "목적. 작성 전이면 null") String purpose,
     @Schema(description = "완료기준") ChecklistResponse checklist,
     @Schema(description = "관련자료 목록. 연결된 자료가 없으면 빈 배열") List<MaterialResponse> materials,

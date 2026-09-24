@@ -8,6 +8,7 @@ import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 import works.momens.server.mobile.brief.MobileBrief;
 import works.momens.server.project.core.ProjectSnapshot;
+import works.momens.server.signal.SignalType;
 
 /**
  * {@code GET /api/mobile/projects/{projectId}/brief} 응답. 응답 형식은 docs/spec/mobile-api.md 브리프 절을
@@ -27,7 +28,8 @@ public record BriefResponse(
       @Schema(description = "이름", example = "Q2 Activation Readiness") String name,
       @Schema(description = "목표일. 미설정이면 null로 포함됩니다.", nullable = true) LocalDate targetDate,
       @Schema(
-              description = "진행률(0~100 정수 퍼센트). cancelled를 제외한 태스크 중 done 비율이고, 소수점은 버립니다.",
+              description =
+                  "진행률(0~100의 정수 퍼센트). 취소한 태스크를 제외한 전체 태스크 중 완료한 태스크의 비율이며, 소수점 이하는 버립니다.",
               example = "64")
           int progress,
       @Schema(description = "핵심 목표 요약. 작성 전이면 null로 포함됩니다.", nullable = true) String summary) {}
@@ -61,7 +63,7 @@ public record BriefResponse(
   @Schema(description = "시그널 요약 항목")
   public record SignalItemResponse(
       @Schema(description = "signal 식별자") UUID id,
-      @Schema(description = "signal type. change, decision, risk, question 등이 온다", example = "risk")
+      @Schema(description = "Signal type", example = "risk", implementation = SignalType.class)
           String type,
       @Schema(description = "제목") String title) {}
 

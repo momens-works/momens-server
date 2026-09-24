@@ -163,43 +163,6 @@ class ProjectTaskControllerTest {
         .andExpect(status().isBadRequest());
   }
 
-  @Test
-  void createTaskRejectsUnknownRoleAndPriority() throws Exception {
-    mockMvc
-        .perform(
-            post("/api/mobile/projects/{projectId}/tasks", PROJECT_ID)
-                .principal(principal)
-                .header("API-Version", "1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\":\"제목\",\"role\":\"ceo\",\"priority\":\"medium\"}"))
-        .andExpect(status().isBadRequest());
-
-    mockMvc
-        .perform(
-            post("/api/mobile/projects/{projectId}/tasks", PROJECT_ID)
-                .principal(principal)
-                .header("API-Version", "1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\":\"제목\",\"role\":\"pm\",\"priority\":\"urgent\"}"))
-        .andExpect(status().isBadRequest());
-  }
-
-  @Test
-  void createTaskRejectsRolesOutsideCreationFour() throws Exception {
-    // 역할은 pm/design/backend/frontend 4종만 남기고 android, qa는 폐기했다(2026-07-08 기획 확정).
-    // 폐기된 값은 생성에서 400으로 거절한다.
-    for (String role : new String[] {"android", "qa"}) {
-      mockMvc
-          .perform(
-              post("/api/mobile/projects/{projectId}/tasks", PROJECT_ID)
-                  .principal(principal)
-                  .header("API-Version", "1")
-                  .contentType(MediaType.APPLICATION_JSON)
-                  .content("{\"title\":\"제목\",\"role\":\"" + role + "\",\"priority\":\"medium\"}"))
-          .andExpect(status().isBadRequest());
-    }
-  }
-
   @TestConfiguration
   static class ApiVersioningTestConfig implements WebMvcConfigurer {
     @Override

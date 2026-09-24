@@ -4,10 +4,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.UUID;
+import works.momens.server.mobile.MobilePriority;
+import works.momens.server.project.task.TaskRole;
+import works.momens.server.project.task.TaskStatus;
 
 /**
  * 태스크 수정 요청. 요청 형식은 docs/spec/mobile-api.md 태스크 수정 절을 따릅니다.
@@ -24,20 +26,14 @@ public record UpdateTaskRequest(
         @NotNull
         @Size(max = 15)
         String title,
-    @Schema(description = "역할. pm/design/backend/frontend 중 하나", example = "pm")
-        @NotBlank
-        @Pattern(regexp = "pm|design|backend|frontend")
+    @Schema(description = "역할", example = "pm", implementation = TaskRole.class) @NotBlank
         String role,
     @Schema(description = "담당자 식별자. 비우려면 null을 보냅니다.") UUID assigneeId,
-    @Schema(description = "우선순위. low/medium/high", example = "medium")
+    @Schema(description = "우선순위", example = "medium", implementation = MobilePriority.class)
         @NotBlank
-        @Pattern(regexp = "low|medium|high")
         String priority,
-    @Schema(
-            description = "상태. backlog/todo/in_progress/done/cancelled 중 하나",
-            example = "in_progress")
+    @Schema(description = "상태", example = "in_progress", implementation = TaskStatus.class)
         @NotBlank
-        @Pattern(regexp = "backlog|todo|in_progress|done|cancelled")
         String status,
     @Schema(description = "목적. 비우면 빈 문자열이나 null입니다. 최대 300자(공백 포함).") @Size(max = 300)
         String purpose,

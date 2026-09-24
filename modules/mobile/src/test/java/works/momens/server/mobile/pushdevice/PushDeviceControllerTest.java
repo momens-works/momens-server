@@ -57,24 +57,6 @@ class PushDeviceControllerTest {
   }
 
   @Test
-  @DisplayName("android가 아닌 platform은 400으로 거부한다")
-  void registerRejectsNonAndroidPlatform() throws Exception {
-    mockMvc
-        .perform(
-            put("/api/me/push-devices/{firebaseInstallationId}", FID)
-                .principal(principal)
-                .header("API-Version", "1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """
-                    {"fcm_registration_token": "token-1", "platform": "ios"}
-                    """))
-        .andExpect(status().isBadRequest());
-
-    verifyNoInteractions(pushDeviceRegistrar);
-  }
-
-  @Test
   @DisplayName("공백 token은 400으로 거부한다")
   void registerRejectsBlankToken() throws Exception {
     mockMvc

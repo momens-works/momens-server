@@ -3,7 +3,10 @@ package works.momens.server.mobile.board.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.UUID;
+import works.momens.server.mobile.MobilePriority;
 import works.momens.server.mobile.board.MobileTaskGroup;
+import works.momens.server.project.task.TaskRole;
+import works.momens.server.project.task.TaskStatus;
 
 /**
  * 보드 응답.
@@ -24,15 +27,15 @@ import works.momens.server.mobile.board.MobileTaskGroup;
 public record TaskBoardResponse(
     @Schema(description = "화면 제목", example = "프로젝트 태스크") String title,
     @Schema(description = "화면 안내 문구") String description,
-    @Schema(description = "상태 그룹 목록(todo, in_progress, done, backlog, cancelled 순서)")
-        List<GroupResponse> groups) {
+    @Schema(description = "상태 그룹 목록(보드에 노출되는 순서)") List<GroupResponse> groups) {
 
   private static final String BOARD_TITLE = "프로젝트 태스크";
   private static final String BOARD_DESCRIPTION = "업무를 한눈에 확인하고 상세 내용을 확인하세요.";
 
   @Schema(description = "상태 그룹")
   public record GroupResponse(
-      @Schema(description = "그룹 키", example = "todo") String groupKey,
+      @Schema(description = "그룹 키", example = "todo", implementation = TaskStatus.class)
+          String groupKey,
       @Schema(description = "그룹 라벨", example = "투두") String label,
       @Schema(description = "그룹 태스크 수") int count,
       @Schema(description = "그룹 태스크 목록") List<TaskCardResponse> tasks) {}
@@ -42,11 +45,13 @@ public record TaskBoardResponse(
       @Schema(description = "태스크 식별자") UUID id,
       @Schema(description = "제목") String title,
       @Schema(
-              description = "역할. pm/design/backend/frontend 중 하나. 웹에서 만든 태스크는 미지정이면 null",
+              description = "역할. 웹에서 만든 태스크는 역할을 지정하지 않으면 null",
               example = "pm",
-              nullable = true)
+              nullable = true,
+              implementation = TaskRole.class)
           String role,
-      @Schema(description = "우선순위. low/medium/high", example = "low") String priority,
+      @Schema(description = "우선순위", example = "low", implementation = MobilePriority.class)
+          String priority,
       @Schema(description = "관련 자료 수") int materialCount) {}
 
   public static TaskBoardResponse from(List<MobileTaskGroup> groups) {

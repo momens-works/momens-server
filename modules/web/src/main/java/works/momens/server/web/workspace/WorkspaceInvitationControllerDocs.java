@@ -33,7 +33,7 @@ interface WorkspaceInvitationControllerDocs {
   @Operation(
       operationId = "listWorkspaceInvitations",
       summary = "워크스페이스 초대 목록 조회",
-      description = "워크스페이스의 초대 목록을 생성 시각 기준 내림차순으로 조회합니다. admin 또는 owner 권한이 필요합니다.")
+      description = "워크스페이스의 초대 목록을 생성 시각 기준 내림차순으로 조회합니다. admin 이상의 권한이 필요합니다.")
   @ApiResponse(
       responseCode = "200",
       description = "목록 조회 성공",
@@ -49,7 +49,7 @@ interface WorkspaceInvitationControllerDocs {
       operationId = "createWorkspaceInvitation",
       summary = "워크스페이스 초대 생성",
       description =
-          "이메일 주소로 초대를 생성하고 초대 링크를 발송합니다. admin 또는 owner 권한이 필요합니다. 같은 이메일 주소로 대기 중인 초대가 있으면 기존"
+          "이메일 주소로 초대를 생성하고 초대 링크를 발송합니다. admin 이상의 권한이 필요합니다. 같은 이메일 주소로 대기 중인 초대가 있으면 기존"
               + " 초대를 갱신합니다.")
   @ApiResponse(
       responseCode = "201",
@@ -122,7 +122,7 @@ interface WorkspaceInvitationControllerDocs {
   @Operation(
       operationId = "addWorkspaceMember",
       summary = "워크스페이스 멤버 추가",
-      description = "초대를 생성하지 않고 이메일 주소로 사용자를 찾아 워크스페이스 멤버로 바로 추가합니다. admin 또는 owner 권한이 필요합니다.")
+      description = "초대를 생성하지 않고 이메일 주소로 사용자를 찾아 워크스페이스 멤버로 바로 추가합니다. admin 이상의 권한이 필요합니다.")
   @ApiResponse(
       responseCode = "200",
       description = "멤버 추가 성공",

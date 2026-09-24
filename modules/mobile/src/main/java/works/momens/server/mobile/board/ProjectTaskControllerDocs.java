@@ -28,9 +28,7 @@ interface ProjectTaskControllerDocs {
   @Operation(
       operationId = "mobileGetTaskBoard",
       summary = "프로젝트 태스크 보드 조회",
-      description =
-          "태스크를 todo, in_progress, done, backlog, cancelled 다섯 그룹으로 조회합니다. 수정 화면이 상태 5종을 모두 편집하므로 보드도"
-              + " 5종을 담습니다.")
+      description = "태스크를 보드의 상태 그룹별로 조회합니다. 수정 화면에서는 5가지 상태를 모두 편집할 수 있으므로 보드에도 5가지 상태를 모두 포함합니다.")
   @ApiResponse(
       responseCode = "200",
       description = "보드 조회 성공. 다섯 그룹을 항상 포함하고, 비어 있으면 tasks는 빈 배열입니다.",
