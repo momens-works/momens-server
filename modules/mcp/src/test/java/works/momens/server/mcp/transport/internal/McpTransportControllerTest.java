@@ -247,7 +247,22 @@ class McpTransportControllerTest {
                 .header("Authorization", "Bearer token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestWithId("server/discover", "1.5")))
-        .andExpect(status().isOk())
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value(-32600));
+  }
+
+  @Test
+  void rejectsNotificationWithBadRequest() throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+
+    mockMvc
+        .perform(
+            post("/api/mcp")
+                .header("Authorization", "Bearer token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/cancelled\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.id").doesNotExist())
         .andExpect(jsonPath("$.error.code").value(-32600));
   }
 

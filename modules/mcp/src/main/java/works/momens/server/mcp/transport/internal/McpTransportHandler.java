@@ -33,7 +33,7 @@ public class McpTransportHandler {
       return responseFactory.badRequest(null, -32700, "Parse error");
     }
     if (!requestValidator.isJsonRpcRequest(request)) {
-      return responseFactory.jsonRpcError(null, -32600, "Invalid Request");
+      return responseFactory.badRequest(null, -32600, "Invalid Request");
     }
 
     JsonNode id = request.get("id");
