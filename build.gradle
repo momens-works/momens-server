@@ -178,7 +178,7 @@ tasks.register('verifyNoUnnecessaryFqn') {
                         Void visitMemberSelect(com.sun.source.tree.MemberSelectTree node, Void ignored) {
                             // 심볼 해석 없이 일반 필드 체인(options.mode.DEFAULT)을 FQN으로 오인하지 않도록
                             // 이 저장소가 사용하는 최상위 패키지 이름으로 시작하는 타입 참조만 검사합니다.
-                            if (node.expression.toString() ==~ /^(java|javax|jakarta|org|com|io|net|lombok|works)(\.[a-z][A-Za-z0-9_]*)+$/
+                            if (node.expression.toString() ==~ /^(ch|com|io|jakarta|java|javax|lombok|org|tools|works)(\.[a-z][A-Za-z0-9_]*)+$/
                                     && node.identifier.toString() ==~ /^[A-Z][A-Za-z0-9_]*$/) {
                                 def line = unit.lineMap.getLineNumber(positions.getStartPosition(unit, node))
                                 def location = rootPath.relativize(source.toPath())
