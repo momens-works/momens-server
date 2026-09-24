@@ -9,6 +9,7 @@
 - API 버저닝은 Spring Boot 4 / Spring Framework 7의 API versioning 기능을 사용합니다.
 - 버전별 핸들러 분기는 Spring MVC request mapping의 `version` 속성으로 표현합니다.
 - 클라이언트는 request header `API-Version`으로 요청 API 버전을 전달합니다.
+- 초기 버전의 정본 헤더 표기는 `1`이며, OpenAPI의 허용 값과 기본값도 `1`로 문서화합니다.
 - Momens 제품 API path는 `/api` prefix를 사용합니다. 레거시 path alias(`/me` 등)는 두지 않습니다.
 - 버저닝은 레거시 이관 엔드포인트를 포함한 모든 제품 API에 적용하며, 초기 버전은 `1`입니다.
 - 외부 표준이 자체 버전 협상·well-known 경로를 정의하는 MCP/OAuth protocol endpoint는 아래 예외 규칙을

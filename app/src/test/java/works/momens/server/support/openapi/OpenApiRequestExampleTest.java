@@ -55,6 +55,39 @@ class OpenApiRequestExampleTest extends AbstractPostgresIntegrationTest {
     assertThat(apiVersion.path("schema").path("type").asString()).isEqualTo("string");
   }
 
+  @Test
+  void apiVersionDefaultMatchesSupportedVersionOnEveryOperation() throws Exception {
+    String body =
+        mockMvc
+            .perform(get("/v3/api-docs"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    JsonNode paths = new ObjectMapper().readTree(body).path("paths");
+    List<String> mismatches = new ArrayList<>();
+    int checked = 0;
+    for (Map.Entry<String, JsonNode> path : paths.properties()) {
+      for (Map.Entry<String, JsonNode> operation : path.getValue().properties()) {
+        JsonNode apiVersion = findParameter(operation.getValue(), "API-Version");
+        if (apiVersion == null) {
+          continue;
+        }
+        checked++;
+        JsonNode schema = apiVersion.path("schema");
+        if (!"1".equals(schema.path("default").asString())
+            || schema.path("enum").size() != 1
+            || !"1".equals(schema.path("enum").get(0).asString())) {
+          mismatches.add(path.getKey() + " " + operation.getKey());
+        }
+      }
+    }
+
+    assertThat(checked).isPositive();
+    assertThat(mismatches).as("API-Version default must use supported header value 1").isEmpty();
+  }
+
   /**
    * Dev Signal 생성 엔드포인트는 Swagger의 request body에 예시를 제공해 Try it out만으로 바로 호출할 수 있도록 한다.
    *
