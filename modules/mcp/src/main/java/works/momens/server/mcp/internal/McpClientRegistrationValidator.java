@@ -2,6 +2,7 @@ package works.momens.server.mcp.internal;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -27,6 +28,8 @@ final class McpClientRegistrationValidator
 
   private static final int MAX_CLIENT_NAME_LENGTH = 120;
   private static final int MAX_REDIRECT_URIS = 10;
+  // oauth2_registered_client.redirect_uris is varchar(1000) holding the comma-joined URIs.
+  private static final int MAX_STORED_REDIRECT_URIS_LENGTH = 1000;
 
   private static final String INVALID_CLIENT_METADATA = "invalid_client_metadata";
   private static final String ERROR_URI =
@@ -63,9 +66,14 @@ final class McpClientRegistrationValidator
       throw invalidRedirectUri("redirect_uris must contain 1 to 10 URIs");
     }
     for (String redirectUri : redirectUris) {
-      if (!isAllowedRedirectUri(redirectUri)) {
+      // Stored comma-joined, so a comma would split one URI into several on read.
+      if (redirectUri.contains(",") || !isAllowedRedirectUri(redirectUri)) {
         throw invalidRedirectUri("redirect_uri must be https or an http loopback URI");
       }
+    }
+    if (String.join(",", new LinkedHashSet<>(redirectUris)).length()
+        > MAX_STORED_REDIRECT_URIS_LENGTH) {
+      throw invalidRedirectUri("redirect_uris must be at most 1000 characters in total");
     }
   }
 
