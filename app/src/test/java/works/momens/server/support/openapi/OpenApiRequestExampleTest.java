@@ -69,11 +69,14 @@ class OpenApiRequestExampleTest extends AbstractPostgresIntegrationTest {
     List<String> mismatches = new ArrayList<>();
     int checked = 0;
     for (Map.Entry<String, JsonNode> path : paths.properties()) {
+      if (!path.getKey().startsWith("/api/") || "/api/mcp".equals(path.getKey())) {
+        continue;
+      }
       for (Map.Entry<String, JsonNode> operation : path.getValue().properties()) {
         JsonNode apiVersion = findParameter(operation.getValue(), "API-Version");
-        if (apiVersion == null) {
-          continue;
-        }
+        assertThat(apiVersion)
+            .as("%s %s must document API-Version", operation.getKey(), path.getKey())
+            .isNotNull();
         checked++;
         JsonNode schema = apiVersion.path("schema");
         if (!"1".equals(schema.path("default").asString())
