@@ -1,8 +1,10 @@
 package works.momens.server.mcp.transport.internal;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -24,11 +26,12 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import works.momens.server.mcp.transport.McpAuthenticationContext;
 import works.momens.server.mcp.transport.McpBearerTokenVerifier;
+import works.momens.server.mcp.transport.McpProtectedResourceMetadataController;
 import works.momens.server.mcp.transport.McpToolCatalog;
 import works.momens.server.mcp.transport.McpToolDefinition;
 import works.momens.server.mcp.transport.McpTransportController;
 
-@WebMvcTest(McpTransportController.class)
+@WebMvcTest({McpTransportController.class, McpProtectedResourceMetadataController.class})
 @Import({
   McpTransportHandler.class,
   McpTransportRequestValidator.class,
@@ -64,6 +67,14 @@ class McpTransportControllerTest {
                     "WWW-Authenticate",
                     "Bearer resource_metadata=\"http://localhost/.well-known/oauth-protected-resource/mcp\""))
         .andExpect(content().string(""));
+  }
+
+  @Test
+  void exposesProtectedResourceMetadata() throws Exception {
+    mockMvc
+        .perform(get("/.well-known/oauth-protected-resource/mcp"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.resource").value("http://localhost/api/mcp"));
   }
 
   @Test
@@ -162,6 +173,29 @@ class McpTransportControllerTest {
   }
 
   @Test
+  void rejectsNonIntegralJsonRpcId() throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+
+    mockMvc
+        .perform(
+            post("/api/mcp")
+                .header("Authorization", "Bearer token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestWithId("server/discover", "1.5")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.error.code").value(-32600));
+  }
+
+  @Test
+  void rejectsInvalidToolDefinition() {
+    assertThrows(
+        IllegalArgumentException.class, () -> new McpToolDefinition(" ", "description", schema()));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new McpToolDefinition("tool", "description", new ObjectMapper().createArrayNode()));
+  }
+
+  @Test
   void decodesBase64SentinelMcpNameBeforeValidation() throws Exception {
     when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
 
@@ -208,7 +242,15 @@ class McpTransportControllerTest {
     return requestWithMetadata(method, id, "");
   }
 
+  private static String requestWithId(String method, String id) {
+    return requestWithMetadata(method, id, "");
+  }
+
   private static String requestWithMetadata(String method, int id, String clientInfo) {
+    return requestWithMetadata(method, Integer.toString(id), clientInfo);
+  }
+
+  private static String requestWithMetadata(String method, String id, String clientInfo) {
     return "{\"jsonrpc\":\"2.0\",\"id\":"
         + id
         + ",\"method\":\""

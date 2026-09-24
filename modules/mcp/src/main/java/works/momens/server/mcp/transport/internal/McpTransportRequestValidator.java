@@ -21,6 +21,7 @@ class McpTransportRequestValidator {
         && request.isObject()
         && "2.0".equals(request.path("jsonrpc").asText())
         && request.hasNonNull("id")
+        && (request.get("id").isTextual() || request.get("id").isIntegralNumber())
         && request.hasNonNull("method")
         && request.get("method").isTextual();
   }
