@@ -95,6 +95,8 @@ def configureOpenApiSnapshotTest = { Test task ->
 
 tasks.named('test', Test) {
     configureOpenApiSnapshotTest(it)
+    // 값 집합 리터럴 검사(`ValueSetLiteralTest`)에서 모든 모듈의 main 소스를 읽을 수 있도록 repository root 경로를 전달합니다.
+    systemProperty 'momens.source.root', rootProject.projectDir.absolutePath
     // 스냅샷 파일은 test 의 입력이므로 명시합니다. 선언하지 않으면 스냅샷만 바뀌었을 때
     // test 가 up-to-date 로 스킵되거나 빌드 캐시에서 복원되어 게이트가 조용히 통과합니다.
     //

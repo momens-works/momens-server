@@ -33,8 +33,8 @@ import works.momens.server.workspace.membership.WorkspaceRole;
  * 연결하고, 다른 모듈의 enum은 값 집합이 의도적으로 다를 때만 함께 연결합니다. 새 컬럼을 추가한 뒤 등록하지 않으면 테스트가 실패하므로, 이관 과정에서 컬럼이
  * 늘어나더라도 검증 대상에서 누락되지 않습니다.
  *
- * <p>완전성은 DB의 CHECK 제약에 대해서만 보장합니다. CHECK 제약은 DB에서 빠짐없이 조회할 수 있지만, 어떤 enum이 특정 컬럼의 값 집합을 나타내는지는
- * 자동으로 판정할 수 없습니다. 따라서 기존 컬럼과 같은 값 집합을 나타내는 enum을 새로 만들고 이 목록에 등록하지 않으면 해당 enum은 검증 대상에 포함되지 않습니다.
+ * <p>완전성은 DB의 CHECK 제약을 기준으로 보장합니다. 같은 값 집합을 포함하는 enum을 새로 만들고 이 목록에 등록하지 않으면 해당 enum 파일은
+ * `ValueSetLiteralTest`에서 실패합니다. 하지만 값이 하나뿐인 enum은 검사하지 않습니다.
  *
  * <p>같은 값 집합을 표현하는 enum이 여러 개이면 어떤 enum을 연결했는지까지는 검증하지 않습니다. {@code projects.health_status}와 {@code
  * milestones.health_status}, {@code tasks.role}과 {@code
