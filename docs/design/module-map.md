@@ -224,9 +224,7 @@ projection도 함께 발생한다. 모델 언어와 변경 이유가 분리될 �
 - 상태는 `TaskStatus` enum에서 정의하며, `tasks.status`의 DB CHECK 제약과 동일한 5가지 값을 사용한다.
 - 진행률 분모는 상태를 개별적으로 나열하지 않고 `TaskStatus` 전체에서 `cancelled`만 제외해 계산한다.
   이렇게 하면 상태가 추가되더라도 별도 수정 없이 계산 대상에 포함된다.
-- 보드의 그룹, 표시 순서와 라벨은 화면 정책이므로 mobile 모듈의 `BoardStatus`에서 관리한다. `BoardStatus`와
-  수정 요청 검증용 `@Pattern`이 `TaskStatus`를 참조하도록 변경하는 작업은 후속 티켓에서 진행한다
-  ([ADR-0022](../adr/0022-column-value-set-ownership.md)).
+- 보드의 그룹, 표시 순서와 라벨은 화면 정책이므로 mobile 모듈의 `MobileTaskStatus`에서 관리한다. 각 그룹은 하나의 `TaskStatus`에 대응하며, 태스크 요청 DTO는 `TaskStatus` 타입으로 값을 받습니다([ADR-0022](../adr/0022-column-value-set-ownership.md)).
 - 진행률은 task 저장소의 상태별 집계 한 번으로 전체 태스크 수와 `done` 태스크 수를 함께 계산한다. 목록
   조회와 동일한 조건(projectId, status, 소프트 삭제 제외)을 한 쿼리에 고정해 목록과 진행률이 항상 같은 기준을
   쓰게 하고, 개수만 필요하므로 본문과 정렬은 읽지 않는다. 두 값을 각각 조회하면 기준이 갈릴 수 있다
@@ -276,7 +274,7 @@ capability의 물리 경계로 유지하고, 배포 단위도 나누지 않는�
 - taskupdate는 호출자가 확정한 workspace와 project 소속을 전달받아 사용하며, task 내부 저장소를 직접
   참조하지 않는다. 허용하는 의존 방향은 `taskupdate → task`이고, task는 taskupdate를 참조하지 않는다.
 - blocker는 workspace id를 직접 가진 읽기 모델이라 다른 project 하위 경계에 의존하지 않는다.
-- `HealthStatus`와 소유자 멤버십 검증은 project와 milestone의 구현 계약이다. 현재 저장값과 검증 동작은
+- `ProjectHealthStatus`, `MilestoneHealthStatus`와 소유자 멤버십 검증은 project와 milestone의 구현 계약이다. 현재 저장값과 검증 동작은
   같아도 변경 이유가 다르므로 각 하위 경계가 독립적으로 소유한다.
 - 마일스톤 workspace 목록은 `milestones`에 workspace id가 없어 project를 조인한다. snapshot 쿼리 예산
   14회를 유지하기 위해 `MilestoneRepository`의 JPQL 조인을 persistence 예외로 허용한다. 엔티티 타입을
@@ -353,7 +351,7 @@ dispatch`(`PushDispatcher`: 수신 설치별 발송 기록 enqueue와 발송 패
   스냅샷(workspace), 프로필 결합(user)을 조합해 담당자 선택용 멤버 목록을 내린다. 검색과
   정렬은 조합 규칙이라 이 모듈이 소유한다(MOM-61).
 - `GET`과 `POST /api/mobile/projects/{projectId}/tasks`: project의 태스크 도메인(보드 조회, 생성)과
-  workspace 멤버십을 조합한다. 보드에 노출할 상태와 순서, 라벨은 `BoardStatus` enum 한곳에 모아
+  workspace 멤버십을 조합한다. 보드에 노출할 상태와 순서, 라벨은 `MobileTaskStatus` enum 한곳에 모아
   이 모듈이 소유하고(저장 상태 5종 전부. MOM-75에서 backlog와 cancelled를 추가), project 조회에는
   그 상태 목록을 넘긴다. priority 매핑(urgent를 high로 반환), material_count 기본값도 조합
   규칙이라 이 모듈이 소유한다(MOM-62).
@@ -368,7 +366,7 @@ dispatch`(`PushDispatcher`: 수신 설치별 발송 기록 enqueue와 발송 패
   대문자로 바꾸고, All을 맨 앞에 둔 뒤 라벨 글자수와 알파벳순 정렬)도 조합 규칙이다.
 - 기본 크기는 20이다(MOM-0798에서 3에서 변경). 현재 우선순위(진행 중인 `todo`와 `in_progress`만 대상,
   `priority` 내림차순, 생성일 오름차순, 상위 4개)와 시그널 타입 라벨은 브리프 조합 규칙이므로
-  `SignalTypeLabel`, `MobilePriority`, 조합 서비스에서 관리한다(MOM-67).
+  `SignalTypeLabel`, `MobileTaskPriority`, 조합 서비스에서 관리한다(MOM-67).
 - 진행률은 `TaskProgressReader.progressOf`가 반환한 값을 그대로 사용한다. 조합 서비스는 계산에 관여하지
   않으며, 진행률 계산 규칙은 project Gradle 모듈 안의 task 경계에서 관리한다(MOM-0800·MOM-0887).
 - `GET /api/mobile/tasks/{taskId}`: project의 태스크 상세(`TaskReader.findDetail`)와 workspace
@@ -399,14 +397,14 @@ dispatch`(`PushDispatcher`: 수신 설치별 발송 기록 enqueue와 발송 패
 같은 nested 패키지 안에서만 쓰는 타입은 package-private으로 닫아 두고, `dto` 서브패키지가 참조하는
 타입은 Java package-private이 서브패키지까지 뻗지 않아 부득이 public으로 남긴다. 모듈 root에는 두
 개 이상의 nested 모듈이 공유하거나 모듈 밖에서 참조해야 하는 계약만 남긴다(`MobileClock`,
-`MobilePriority`).
+`MobileTaskPriority`).
 
 - `bootstrap` — `GET /api/mobile/bootstrap`.
 - `roster` — `GET /api/mobile/projects/{projectId}/members`. `workspace`의 멤버십, `user`의 프로필
   결합과 헷갈리지 않도록 `members`가 아닌 `roster`로 이름 붙였다.
 - `board` — 태스크 보드·생성(`/api/mobile/projects/{projectId}/tasks`)과 태스크 상세·수정·완료기준
   토글(`/api/mobile/tasks/{taskId}` 계열). `project`가 Task aggregate를 소유하는 `task` 하위 경계와
-  이름이 겹치지 않도록 화면 이름을 따 `board`로 붙였다. priority 저장값 해석(`MobilePriority`)은
+  이름이 겹치지 않도록 화면 이름을 따 `board`로 붙였다. priority 저장값 해석(`MobileTaskPriority`)은
   `brief`와 공유해 모듈 root에 둔다.
 - `brief` — `GET /api/mobile/projects/{projectId}/brief`, `.../brief/signal-summary`.
 - `signal` — Signal 목록·상세·action 컨트롤러. 위임 전용이라 조합 서비스가 없다.
