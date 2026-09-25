@@ -394,9 +394,11 @@ N006~N008의 처분은 `MOM-0976`에서 정했다.
 | `N-EVAL` | JSON eval set을 retrieval gRPC로 실행해 Recall@nDCG·MRR을 stdout에 출력하며 synthetic owner permission을 사용. 제품 사용자 auth/RBAC는 N/A, 로컬 운영자가 retrieval 접근권한과 선택적 Vertex ADC를 소유 | `cmd/minsu-eval/main.go` → `eval/eval.go`, `metrics.go` → `retrieval/client.go`; `eval/eval_test.go`, `retrieval/client_test.go` | writer 없음, retrieval gRPC와 선택적 Vertex embedding; 이관 없이 `momens-api`에 잔류(`MOM-0976`) | prod gate는 N/A인 offline 평가 도구. client gate는 eval set·retrieval 주소·선택적 ADC | 프로세스 중단으로 rollback, 영속 상태 없음. 출력 보고서만 폐기 가능 |
 
 N006~N008은 신규 runtime으로 옮기지 않는다(`MOM-0976`). N006은 폐기 대상으로 정했으며,
-레거시 CLI 코드 제거와 `retired` 상태 변경은 실제 제거를 확인한 뒤 수행한다. 이 결정은 기존
-DB 데이터 삭제를 포함하지 않는다. N007·N008은 별도 이관·유지 작업 없이 `momens-api`에 남겨
-두되, 새 요구사항이 생기면 기존 CLI를 그대로 옮기지 않고 계약과 소유권부터 재설계해 재구현한다.
+데모 데이터를 DB에 직접 쓰는 기존 CLI를 신규 runtime에 유지할 요구가 없어 폐기한다. 레거시
+CLI 코드 제거와 `retired` 상태 변경은 실제 제거를 확인한 뒤 수행한다. 이 결정은 기존 DB
+데이터 삭제를 포함하지 않는다. N007·N008은 제품 runtime 밖의 개발 검증·평가 도구이고 현재
+신규 시스템에서 실행할 요구가 없어 별도 이관·유지 작업 없이 `momens-api`에 남겨 둔다. 새
+요구사항이 생기면 기존 CLI를 그대로 옮기지 않고 계약과 소유권부터 재설계해 재구현한다.
 현재 CLI를 수동 실행할 때 N007은 개발자의 Vertex ADC·모델 설정과 비용 확인이, N008은
 eval set·retrieval 주소·접근 권한과 선택적 Vertex ADC가 필요하다. 두 CLI 모두 prod 상시
 실행 주체는 없다.
