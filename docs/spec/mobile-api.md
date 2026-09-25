@@ -588,7 +588,7 @@ cancelled를 분모에서 제외하는 기준은 기획이 확정했습니다. �
 
 `priorities`의 원천은 태스크입니다(2026-07-10 기획 확정). `title`은 태스크 제목이고, `task_id`로 태스크 상세로
 이동할 수 있습니다. 정렬은 `priority`가 높은 순(high, medium, low)이고, 같으면 생성이 오래된 순입니다(생성 시각
-오름차순, 생성 시각까지 같으면 id 오름차순으로 순서를 고정합니다). 저장된 값이 레거시 전용인 urgent이면 high와
+오름차순, 생성 시각까지 같으면 id 오름차순으로 순서를 고정합니다). 저장된 값이 web에서 사용하는 urgent이면 high와
 같은 순위로 정렬합니다. 상위 4개까지만 담습니다. 화면의 "현재 우선순위 · N" 헤더 숫자는 배열 길이로 계산하며,
 배열 길이와 항상 같은 값이라 별도 개수 필드를 두지 않습니다. 후보는 진행 중인 todo와 in_progress 상태의
 태스크이고 backlog와 done, cancelled는 제외합니다(2026-07-10 기획 확정).
@@ -726,7 +726,7 @@ id를 기준으로 하기 때문에, 페이지 사이에 시그널이 처리되�
 }
 ```
 
-title, role, priority 모두 필수입니다(2026-07-06 기획 확정, 2026-07-07 역할은 하나만 선택하는 단일 값으로 재확정). role은 pm, design, backend, frontend 중 하나입니다(2026-07-08 기획 확정으로 android, qa는 폐기하고 역할은 4종만 둡니다). priority는 low, medium, high 중 하나입니다. 셋 중 하나라도 비거나 role이 4종 밖이면 COMMON_VALIDATION_FAILED로 응답합니다. 제목은 공백을 포함해 15자로 제한하며, 넘기면 COMMON_VALIDATION_FAILED로 응답합니다(수정 화면과 같은 태스크 공통 규칙). 생성한 태스크는 todo 그룹에서 시작합니다. role은 레거시 tasks에 없는 신규 속성이라 CHECK 제약을 둔 문자열 컬럼으로 저장합니다.
+title, role, priority 모두 필수입니다(2026-07-06 기획 확정, 2026-07-07 역할은 하나만 선택하는 단일 값으로 재확정). role은 pm, design, backend, frontend 중 하나입니다(2026-07-08 기획 확정으로 android, qa는 폐기하고 역할은 4종만 둡니다). priority는 low, medium, high, urgent 중 하나이며, urgent는 그대로 저장하고 응답에서는 high로 표시합니다. 셋 중 하나라도 비어 있거나 허용하지 않는 값이면 COMMON_VALIDATION_FAILED로 응답합니다. 제목은 공백을 포함해 15자로 제한하며, 넘기면 COMMON_VALIDATION_FAILED로 응답합니다(수정 화면과 같은 태스크 공통 규칙). 생성한 태스크는 todo 그룹에서 시작합니다. role은 레거시 tasks에 없는 신규 속성이라 CHECK 제약을 둔 문자열 컬럼으로 저장합니다.
 
 #### Errors
 
