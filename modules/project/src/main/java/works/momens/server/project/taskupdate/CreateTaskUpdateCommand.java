@@ -15,5 +15,5 @@ public record CreateTaskUpdateCommand(
     UUID projectId,
     UUID authorId,
     String body,
-    String kind,
+    TaskUpdateKind kind,
     Map<String, Object> metadata) {}

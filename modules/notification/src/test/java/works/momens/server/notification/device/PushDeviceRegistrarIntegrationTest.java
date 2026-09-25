@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
+import works.momens.server.notification.PushInstallationPlatform;
 
 /**
  * 설치 등록·해제의 소유권 이전, token 이동, 멱등 해제와 활성 token 부분 unique 제약을 실제 PostgreSQL로
@@ -47,7 +48,7 @@ class PushDeviceRegistrarIntegrationTest extends AbstractPostgresIntegrationTest
   @Test
   @DisplayName("신규 등록은 활성 설치를 만든다")
   void registerCreatesActiveInstallation() {
-    registrar.register(USER_ID, FID, TOKEN, ANDROID);
+    registrar.register(USER_ID, FID, TOKEN, PushInstallationPlatform.ANDROID);
     entityManager.flush();
     entityManager.clear();
 
@@ -62,10 +63,10 @@ class PushDeviceRegistrarIntegrationTest extends AbstractPostgresIntegrationTest
   @Test
   @DisplayName("같은 FID 재등록은 token을 갱신하고 다시 활성화한다")
   void reRegisterRefreshesTokenAndReactivates() {
-    registrar.register(USER_ID, FID, TOKEN, ANDROID);
+    registrar.register(USER_ID, FID, TOKEN, PushInstallationPlatform.ANDROID);
     registrar.unregister(USER_ID, FID);
 
-    registrar.register(USER_ID, FID, OTHER_TOKEN, ANDROID);
+    registrar.register(USER_ID, FID, OTHER_TOKEN, PushInstallationPlatform.ANDROID);
     entityManager.flush();
     entityManager.clear();
 
@@ -79,9 +80,9 @@ class PushDeviceRegistrarIntegrationTest extends AbstractPostgresIntegrationTest
   @Test
   @DisplayName("다른 사용자에게 귀속된 FID 등록은 현재 사용자에게 소유권을 이전한다")
   void registerTransfersOwnership() {
-    registrar.register(OTHER_USER_ID, FID, TOKEN, ANDROID);
+    registrar.register(OTHER_USER_ID, FID, TOKEN, PushInstallationPlatform.ANDROID);
 
-    registrar.register(USER_ID, FID, TOKEN, ANDROID);
+    registrar.register(USER_ID, FID, TOKEN, PushInstallationPlatform.ANDROID);
     entityManager.flush();
     entityManager.clear();
 
@@ -93,9 +94,9 @@ class PushDeviceRegistrarIntegrationTest extends AbstractPostgresIntegrationTest
   @Test
   @DisplayName("같은 활성 token이 다른 FID에 연결돼 있으면 이전 연결을 비활성화한다")
   void registerDeactivatesPreviousTokenHolder() {
-    registrar.register(USER_ID, FID, TOKEN, ANDROID);
+    registrar.register(USER_ID, FID, TOKEN, PushInstallationPlatform.ANDROID);
 
-    registrar.register(USER_ID, OTHER_FID, TOKEN, ANDROID);
+    registrar.register(USER_ID, OTHER_FID, TOKEN, PushInstallationPlatform.ANDROID);
     entityManager.flush();
     entityManager.clear();
 
@@ -121,13 +122,14 @@ class PushDeviceRegistrarIntegrationTest extends AbstractPostgresIntegrationTest
           executor.submit(
               () -> {
                 awaitStart(ready, start);
-                registrar.register(USER_ID, firstFid, token, ANDROID);
+                registrar.register(USER_ID, firstFid, token, PushInstallationPlatform.ANDROID);
               });
       Future<?> second =
           executor.submit(
               () -> {
                 awaitStart(ready, start);
-                registrar.register(OTHER_USER_ID, secondFid, token, ANDROID);
+                registrar.register(
+                    OTHER_USER_ID, secondFid, token, PushInstallationPlatform.ANDROID);
               });
 
       assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
@@ -147,25 +149,20 @@ class PushDeviceRegistrarIntegrationTest extends AbstractPostgresIntegrationTest
   }
 
   @Test
-  @DisplayName("platform이 android가 아니면 검증 실패로 거부한다")
-  void registerRejectsNonAndroidPlatform() {
-    assertThatThrownBy(() -> registrar.register(USER_ID, FID, TOKEN, "ios"))
-        .isInstanceOf(BusinessException.class);
-  }
-
-  @Test
   @DisplayName("FID·token 공백은 검증 실패로 거부한다")
   void registerRejectsBlankValues() {
-    assertThatThrownBy(() -> registrar.register(USER_ID, " ", TOKEN, ANDROID))
+    assertThatThrownBy(
+            () -> registrar.register(USER_ID, " ", TOKEN, PushInstallationPlatform.ANDROID))
         .isInstanceOf(BusinessException.class);
-    assertThatThrownBy(() -> registrar.register(USER_ID, FID, " ", ANDROID))
+    assertThatThrownBy(
+            () -> registrar.register(USER_ID, FID, " ", PushInstallationPlatform.ANDROID))
         .isInstanceOf(BusinessException.class);
   }
 
   @Test
   @DisplayName("해제는 자기 소유 활성 설치만 비활성화하고, 없는·비활성 설치는 멱등 처리한다")
   void unregisterDeactivatesOwnInstallationIdempotently() {
-    registrar.register(USER_ID, FID, TOKEN, ANDROID);
+    registrar.register(USER_ID, FID, TOKEN, PushInstallationPlatform.ANDROID);
 
     registrar.unregister(USER_ID, "unknown-fid");
     registrar.unregister(USER_ID, FID);
@@ -181,7 +178,7 @@ class PushDeviceRegistrarIntegrationTest extends AbstractPostgresIntegrationTest
   @Test
   @DisplayName("다른 사용자가 소유한 활성 설치는 해제하지 않는다")
   void unregisterIgnoresOtherUsersInstallation() {
-    registrar.register(OTHER_USER_ID, FID, TOKEN, ANDROID);
+    registrar.register(OTHER_USER_ID, FID, TOKEN, PushInstallationPlatform.ANDROID);
 
     registrar.unregister(USER_ID, FID);
     entityManager.flush();

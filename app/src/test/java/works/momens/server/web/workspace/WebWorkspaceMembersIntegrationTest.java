@@ -170,7 +170,8 @@ class WebWorkspaceMembersIntegrationTest extends AbstractPostgresIntegrationTest
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"role\":\"owner\"}"))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error.code").value("WORKSPACE_INVALID_ROLE"));
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("role"));
   }
 
   @Test

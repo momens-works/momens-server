@@ -26,12 +26,12 @@ import works.momens.server.auth.AccessTokenTestFactory;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.minsu.DraftStatus;
 import works.momens.server.minsu.PreparedTaskDraft;
-import works.momens.server.minsu.Priority;
-import works.momens.server.minsu.Role;
 import works.momens.server.minsu.SignalTaskDraftGenerator;
 import works.momens.server.minsu.SignalTaskDraftInput;
 import works.momens.server.minsu.TaskDraft;
 import works.momens.server.minsu.TaskDraftEnrollmentException;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
@@ -64,7 +64,7 @@ class MobileSignalConvertDraftIntegrationTest extends AbstractPostgresIntegratio
         insertSignal(workspace, project, "decision", "결제 정책 결정 3일째 보류", "합의가 지연됩니다.", "출시 일정에 영향");
     insertEvidence(workspace, signal, 0, "결제 정책", "논의 중단", "출시 지연");
     when(taskDraftGenerator.prepare(any()))
-        .thenReturn(prepared(new TaskDraft("결제 정책 확정하기", Role.BACKEND, Priority.HIGH)));
+        .thenReturn(prepared(new TaskDraft("결제 정책 확정하기", TaskRole.BACKEND, TaskPriority.HIGH)));
     // 동기 경로라 적재하지 않는다. 원장 행이 없으므로 응답도 replay도 ready다(설계 7.1절).
     when(taskDraftGenerator.enroll(any(), any(), any())).thenReturn(DraftStatus.READY);
     String token = "Bearer " + accessTokens.issueAccessToken(jinsu.id());
@@ -121,7 +121,7 @@ class MobileSignalConvertDraftIntegrationTest extends AbstractPostgresIntegratio
     UUID project = insertProject(workspace, jinsu.id(), "convert-draft-fail-project");
     UUID signal = insertSignal(workspace, project, "risk", "결제 실패율이 올라감", "카드 결제 실패", "전환율 하락");
     when(taskDraftGenerator.prepare(any()))
-        .thenReturn(prepared(new TaskDraft("제목", Role.PM, Priority.MEDIUM)));
+        .thenReturn(prepared(new TaskDraft("제목", TaskRole.PM, TaskPriority.MEDIUM)));
     doThrow(new TaskDraftEnrollmentException("원장 적재 실패", new RuntimeException()))
         .when(taskDraftGenerator)
         .enroll(any(), any(), any());

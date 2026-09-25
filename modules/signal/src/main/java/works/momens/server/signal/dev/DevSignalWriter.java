@@ -71,7 +71,7 @@ class DevSignalWriter {
         .param("id", signalId)
         .param("workspaceId", workspaceId)
         .param("projectId", projectId)
-        .param("type", request.type())
+        .param("type", request.type().value())
         .param("title", request.title())
         .param("description", request.description())
         .param("impact", request.impact())

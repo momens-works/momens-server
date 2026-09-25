@@ -9,4 +9,4 @@ import java.util.UUID;
  * 확인합니다.
  */
 public record ChangeMembershipRoleCommand(
-    UUID workspaceId, UUID targetUserId, WorkspaceRole role) {}
+    UUID workspaceId, UUID targetUserId, AssignableWorkspaceRole role) {}

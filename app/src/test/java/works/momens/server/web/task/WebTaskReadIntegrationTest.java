@@ -33,8 +33,9 @@ class WebTaskReadIntegrationTest extends AbstractPostgresIntegrationTest {
   @Autowired private JdbcTemplate jdbcTemplate;
 
   @Test
-  @DisplayName("웹 task write는 레거시 PATCH no-op과 update kind 정규화를 보존한다")
-  void preservesLegacyWriteSemantics() throws Exception {
+  @DisplayName(
+      "웹 태스크 수정 시 제목이 빈 문자열이면 기존 값을 유지하고, canonical하지 않은 status와 kind는 COMMON_VALIDATION_FAILED로 거부합니다")
+  void keepsTitleOnEmptyStringAndRejectsNonCanonicalValues() throws Exception {
     UserProfile caller = userService.findOrCreate("web-task-write@momens.works", "홍길동", null);
     UUID workspaceId = insertWorkspace();
     UUID projectId = insertProject(workspaceId, caller.id());
@@ -45,20 +46,27 @@ class WebTaskReadIntegrationTest extends AbstractPostgresIntegrationTest {
         .perform(
             authorized(patch("/api/tasks/{taskId}", taskId), caller.id())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\":\"\",\"status\":\"\",\"priority\":\"\"}"))
+                .content("{\"title\":\"\"}"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.title").value("태스크"))
-        .andExpect(jsonPath("$.status").value("todo"))
-        .andExpect(jsonPath("$.priority").value("medium"));
+        .andExpect(jsonPath("$.title").value("태스크"));
+
+    mockMvc
+        .perform(
+            authorized(patch("/api/tasks/{taskId}", taskId), caller.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"progress\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("status"));
 
     mockMvc
         .perform(
             authorized(post("/api/tasks/{taskId}/updates", taskId), caller.id())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"body\":\" 내용 \",\"kind\":\" Comment \"}"))
-        .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.body").value("내용"))
-        .andExpect(jsonPath("$.kind").value("comment"));
+                .content("{\"body\":\" 내용 \",\"kind\":\"Comment\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("kind"));
   }
 
   @Test

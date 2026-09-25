@@ -19,13 +19,13 @@ import org.springframework.context.annotation.Import;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.minsu.PreparedTaskDraft;
-import works.momens.server.minsu.Priority;
-import works.momens.server.minsu.Role;
 import works.momens.server.minsu.SignalTaskDraftInput;
 import works.momens.server.minsu.TaskDraft;
 import works.momens.server.minsu.TaskDraftEnrollmentException;
 import works.momens.server.minsu.draft.config.MinsuAsyncProperties;
 import works.momens.server.minsu.draft.json.MinsuJson;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 
 /** convert 트랜잭션의 원장 적재를 실제 PostgreSQL로 검증한다(MOM-0818, 설계 5.3·5.6·8.6절). */
 @DataJpaTest
@@ -46,7 +46,8 @@ class TaskDraftGenerationEnrollerIntegrationTest extends AbstractPostgresIntegra
           List.of(Duration.ofSeconds(10)),
           4);
 
-  private static final TaskDraft BASELINE = new TaskDraft("결제 실패율 대응", Role.BACKEND, Priority.HIGH);
+  private static final TaskDraft BASELINE =
+      new TaskDraft("결제 실패율 대응", TaskRole.BACKEND, TaskPriority.HIGH);
 
   @Autowired private TaskDraftGenerationRepository repository;
 

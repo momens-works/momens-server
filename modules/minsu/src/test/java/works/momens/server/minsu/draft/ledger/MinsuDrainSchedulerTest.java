@@ -19,14 +19,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import works.momens.server.minsu.Priority;
-import works.momens.server.minsu.Role;
 import works.momens.server.minsu.SignalTaskDraftInput;
 import works.momens.server.minsu.TaskDraft;
 import works.momens.server.minsu.draft.config.MinsuConfigStatus;
 import works.momens.server.minsu.draft.generation.AsyncGenerationResult;
 import works.momens.server.minsu.draft.generation.AsyncTaskDraftExecutor;
 import works.momens.server.minsu.draft.generation.GenerationOutcome;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 
 /** drain 주기의 게이트와 짝짓기를 검증한다(MOM-0819, 설계 9.1·11.2절). */
 class MinsuDrainSchedulerTest {
@@ -188,6 +188,7 @@ class MinsuDrainSchedulerTest {
   }
 
   private static AsyncGenerationResult result(GenerationOutcome outcome) {
-    return new AsyncGenerationResult(new TaskDraft("결제 대응", Role.PM, Priority.MEDIUM), outcome);
+    return new AsyncGenerationResult(
+        new TaskDraft("결제 대응", TaskRole.PM, TaskPriority.MEDIUM), outcome);
   }
 }

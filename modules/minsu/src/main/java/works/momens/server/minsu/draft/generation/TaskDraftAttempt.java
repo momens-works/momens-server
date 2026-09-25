@@ -6,8 +6,6 @@ import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.spi.LoggingEventBuilder;
 import org.springframework.stereotype.Component;
-import works.momens.server.minsu.Priority;
-import works.momens.server.minsu.Role;
 import works.momens.server.minsu.SignalTaskDraftInput;
 import works.momens.server.minsu.TaskDraft;
 import works.momens.server.minsu.draft.config.MinsuConfigStatus;
@@ -20,6 +18,8 @@ import works.momens.server.minsu.llm.LlmTimeoutException;
 import works.momens.server.minsu.llm.LlmUseCase;
 import works.momens.server.minsu.llm.ModelSelection;
 import works.momens.server.minsu.llm.ModelSelectionPolicy;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 
 /**
  * 한 번의 생성 시도. 동기 요청 경로와 비동기 실행 경로가 <b>같은</b> 코드를 쓴다.
@@ -63,7 +63,8 @@ class TaskDraftAttempt {
    * draft이므로, 비동기 전환은 가용성의 하한을 내리지 않는다(8.5절).
    */
   static TaskDraft fallbackOf(SignalTaskDraftInput input) {
-    return new TaskDraft(TaskTitleNormalizer.normalize(input.title()), Role.PM, Priority.MEDIUM);
+    return new TaskDraft(
+        TaskTitleNormalizer.normalize(input.title()), TaskRole.PM, TaskPriority.MEDIUM);
   }
 
   Result run(SignalTaskDraftInput input, GenerationMode mode, Duration timeout) {
@@ -117,8 +118,8 @@ class TaskDraftAttempt {
       return new Result(fallback, GenerationOutcome.INVALID_RESPONSE);
     }
 
-    Role role = Role.fromValue(normalizeEnum(generated.role())).orElse(null);
-    Priority priority = Priority.fromValue(normalizeEnum(generated.priority())).orElse(null);
+    TaskRole role = TaskRole.from(normalizeEnum(generated.role())).orElse(null);
+    TaskPriority priority = TaskPriority.from(normalizeEnum(generated.priority())).orElse(null);
     if (role == null || priority == null) {
       return new Result(fallback, GenerationOutcome.INVALID_OUTPUT);
     }

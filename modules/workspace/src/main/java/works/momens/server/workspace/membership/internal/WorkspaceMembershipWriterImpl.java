@@ -85,7 +85,7 @@ class WorkspaceMembershipWriterImpl implements WorkspaceMembershipWriter {
   public void changeRole(ChangeMembershipRoleCommand command) {
     WorkspaceMember member = requireMember(command.workspaceId(), command.targetUserId());
     requireNotOwner(member);
-    member.changeRole(command.role());
+    member.changeRole(command.role().workspaceRole());
   }
 
   @Override

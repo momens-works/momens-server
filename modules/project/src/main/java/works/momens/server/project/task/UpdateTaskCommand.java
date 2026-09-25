@@ -9,15 +9,15 @@ import java.util.UUID;
  * <p>수정 화면이 저장할 때 편집 상태 전체를 보내므로, title, role, priority, status, purpose는 항상 채워진 값으로 넘어옵니다. {@code
  * assigneeId}는 담당자를 지정하면 값이, 비우면 null이 들어옵니다. 화면이 항상 전체를 보내기 때문에 null은 담당자 비우기 하나로만 해석합니다. {@code
  * checklistItems}는 완료기준 최종 목록이고, {@code purpose}는 저장 시 {@code description} 컬럼에 매핑됩니다. role,
- * priority, status 값 검증은 표면(mobile)이 하고, 이 모듈은 저장을 책임집니다.
+ * priority, status는 각 호출 모듈의 요청 DTO에서 enum 타입으로 validation하며, 이 모듈은 저장을 책임집니다.
  */
 public record UpdateTaskCommand(
     UUID taskId,
     String title,
-    String role,
+    TaskRole role,
     UUID assigneeId,
-    String priority,
-    String status,
+    TaskPriority priority,
+    TaskStatus status,
     String purpose,
     List<ChecklistItemEdit> checklistItems) {
 

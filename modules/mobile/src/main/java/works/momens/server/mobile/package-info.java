@@ -8,7 +8,7 @@
  * <ul>
  *   <li>시간 seam — {@link works.momens.server.mobile.MobileClock}. 브리프의 "오늘"이 현재 시각에 의존하므로 통합 테스트가
  *       내부를 넘겨보지 않고 고정 Clock으로 덮어쓸 수 있게 공개한다. 배선은 {@code brief.MobileTimeConfig}가 소유한다.
- *   <li>priority 저장값 해석 — {@link works.momens.server.mobile.MobilePriority}. {@code board}(태스크
+ *   <li>priority 저장값 해석 — {@link works.momens.server.mobile.MobileTaskPriority}. {@code board}(태스크
  *       상세·보드)와 {@code brief}(현재 우선순위 구성) 양쪽이 같은 해석 규칙을 참조해야 해서 어느 한쪽 nested 모듈이 아니라 모듈 root에 둔다.
  * </ul>
  */

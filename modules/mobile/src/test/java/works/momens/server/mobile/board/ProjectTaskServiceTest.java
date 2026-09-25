@@ -32,9 +32,12 @@ import works.momens.server.project.task.BoardTask;
 import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.TaskDetail;
 import works.momens.server.project.task.TaskErrorCode;
+import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskReader;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskScope;
 import works.momens.server.project.task.TaskSnapshot;
+import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.project.task.UpdateTaskCommand;
 import works.momens.server.user.UserProfile;
@@ -105,11 +108,11 @@ class ProjectTaskServiceTest {
     assertThat(groups)
         .extracting(MobileTaskGroup::status)
         .containsExactly(
-            BoardStatus.TODO,
-            BoardStatus.IN_PROGRESS,
-            BoardStatus.DONE,
-            BoardStatus.BACKLOG,
-            BoardStatus.CANCELLED);
+            MobileTaskStatus.TODO,
+            MobileTaskStatus.IN_PROGRESS,
+            MobileTaskStatus.DONE,
+            MobileTaskStatus.BACKLOG,
+            MobileTaskStatus.CANCELLED);
     assertThat(groups.get(0).tasks()).extracting(MobileTaskCard::id).containsExactly(todoId);
     assertThat(groups.get(1).tasks()).extracting(MobileTaskCard::id).containsExactly(inProgressId);
     assertThat(groups.get(2).tasks()).isEmpty();
@@ -158,7 +161,8 @@ class ProjectTaskServiceTest {
     TaskSnapshot created = snapshot(UUID.randomUUID(), "제목", "pm", "high", "todo");
     when(taskWriter.create(any())).thenReturn(created);
 
-    TaskSnapshot result = projectTaskService.createTask(PROJECT_ID, CALLER_ID, "제목", "pm", "high");
+    TaskSnapshot result =
+        projectTaskService.createTask(PROJECT_ID, CALLER_ID, "제목", TaskRole.PM, TaskPriority.HIGH);
 
     ArgumentCaptor<CreateTaskCommand> captor = ArgumentCaptor.forClass(CreateTaskCommand.class);
     org.mockito.Mockito.verify(taskWriter).create(captor.capture());
@@ -166,8 +170,9 @@ class ProjectTaskServiceTest {
     assertThat(command.projectId()).isEqualTo(PROJECT_ID);
     assertThat(command.workspaceId()).isEqualTo(WORKSPACE_ID);
     assertThat(command.title()).isEqualTo("제목");
-    assertThat(command.role()).isEqualTo("pm");
-    assertThat(command.priority()).isEqualTo("high");
+    assertThat(command.status()).isEqualTo(TaskStatus.TODO);
+    assertThat(command.role()).isEqualTo(TaskRole.PM);
+    assertThat(command.priority()).isEqualTo(TaskPriority.HIGH);
     assertThat(result).isSameAs(created);
   }
 
@@ -343,7 +348,15 @@ class ProjectTaskServiceTest {
     assertThatThrownBy(
             () ->
                 projectTaskService.updateTask(
-                    TASK_ID, CALLER_ID, "제목", "pm", null, "medium", "todo", null, List.of()))
+                    TASK_ID,
+                    CALLER_ID,
+                    "제목",
+                    TaskRole.PM,
+                    null,
+                    TaskPriority.MEDIUM,
+                    TaskStatus.TODO,
+                    null,
+                    List.of()))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(TaskErrorCode.TASK_NOT_FOUND);
@@ -358,7 +371,15 @@ class ProjectTaskServiceTest {
     assertThatThrownBy(
             () ->
                 projectTaskService.updateTask(
-                    TASK_ID, CALLER_ID, "제목", "pm", null, "medium", "todo", null, List.of()))
+                    TASK_ID,
+                    CALLER_ID,
+                    "제목",
+                    TaskRole.PM,
+                    null,
+                    TaskPriority.MEDIUM,
+                    TaskStatus.TODO,
+                    null,
+                    List.of()))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(CommonErrorCode.AUTH_FORBIDDEN);
@@ -373,17 +394,25 @@ class ProjectTaskServiceTest {
     List<ChecklistEdit> items = List.of(new ChecklistEdit(null, "A", true));
 
     projectTaskService.updateTask(
-        TASK_ID, CALLER_ID, "제목", "backend", null, "high", "in_progress", "수정한 목적", items);
+        TASK_ID,
+        CALLER_ID,
+        "제목",
+        TaskRole.BACKEND,
+        null,
+        TaskPriority.HIGH,
+        TaskStatus.IN_PROGRESS,
+        "수정한 목적",
+        items);
 
     ArgumentCaptor<UpdateTaskCommand> captor = ArgumentCaptor.forClass(UpdateTaskCommand.class);
     org.mockito.Mockito.verify(taskWriter).update(captor.capture());
     UpdateTaskCommand command = captor.getValue();
     assertThat(command.taskId()).isEqualTo(TASK_ID);
     assertThat(command.title()).isEqualTo("제목");
-    assertThat(command.role()).isEqualTo("backend");
+    assertThat(command.role()).isEqualTo(TaskRole.BACKEND);
     assertThat(command.assigneeId()).isNull();
-    assertThat(command.priority()).isEqualTo("high");
-    assertThat(command.status()).isEqualTo("in_progress");
+    assertThat(command.priority()).isEqualTo(TaskPriority.HIGH);
+    assertThat(command.status()).isEqualTo(TaskStatus.IN_PROGRESS);
     assertThat(command.purpose()).isEqualTo("수정한 목적");
     assertThat(command.checklistItems())
         .containsExactly(new UpdateTaskCommand.ChecklistItemEdit(null, "A", true));

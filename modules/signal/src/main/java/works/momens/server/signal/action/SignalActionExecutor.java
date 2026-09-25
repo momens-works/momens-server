@@ -52,8 +52,8 @@ class SignalActionExecutor {
                 signal.projectId(),
                 signal.workspaceId(),
                 draft.title(),
-                draft.role().value(),
-                draft.priority().value(),
+                draft.role(),
+                draft.priority(),
                 signal.id()));
     // 원장 baseline은 방금 tasks에 쓴 값이어야 한다(8.1절). task 생성 직후에 적재해 두 값이 갈릴 자리를 두지 않는다.
     // 응답의 draft_status는 이 반환값이고 원장을 다시 읽지 않는다(7.3절). 재조회하면 아래 title(방금 쓴
