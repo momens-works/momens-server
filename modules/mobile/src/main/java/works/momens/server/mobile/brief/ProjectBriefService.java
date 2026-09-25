@@ -14,7 +14,7 @@ import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.common.api.CursorPageParams;
 import works.momens.server.mobile.MobileClock;
-import works.momens.server.mobile.MobilePriority;
+import works.momens.server.mobile.MobileTaskPriority;
 import works.momens.server.project.core.ProjectErrorCode;
 import works.momens.server.project.core.ProjectReader;
 import works.momens.server.project.core.ProjectSnapshot;
@@ -36,7 +36,7 @@ import works.momens.server.workspace.membership.WorkspaceMembershipReader;
  *
  * <p>브리프는 오늘의 브리프라 그날 생성된 시그널을 처리 여부와 무관하게 봅니다(MOM-81). 시그널 요약 필터 칩(당일 시그널의 type으로 데이터 기반 구성, 라벨과
  * 정렬), 오늘의 하루 경계({@link BriefDay}), 페이지 기본 크기, 현재 우선순위 구성(후보 상태와 정렬, 상위 4개)은 모바일 조합 규칙이므로 이 서비스와
- * {@link SignalTypeLabel}, {@link MobilePriority}가 소유합니다.
+ * {@link SignalTypeLabel}, {@link MobileTaskPriority}가 소유합니다.
  */
 @Service
 @RequiredArgsConstructor
@@ -72,7 +72,7 @@ class ProjectBriefService {
    * 합니다. PostgreSQL uuid 정렬(바이트 순서)과 같아서 저장소 정렬과 어긋나지 않습니다(signal 커서와 같은 이유).
    */
   private static final Comparator<BoardTask> PRIORITY_ORDER =
-      Comparator.comparing((BoardTask task) -> MobilePriority.fromStored(task.priority()))
+      Comparator.comparing((BoardTask task) -> MobileTaskPriority.fromStored(task.priority()))
           .thenComparing(BoardTask::createdAt)
           .thenComparing(task -> task.id().toString());
 

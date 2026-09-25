@@ -60,7 +60,7 @@ interface WorkspaceInvitationControllerDocs {
       codes = {"INVITATION_INVALID_EMAIL", "INVITATION_EMAIL_SEND_FAILED", "INVITATION_NOT_FOUND"})
   @ApiException(
       value = WorkspaceErrorCode.class,
-      codes = {"WORKSPACE_NOT_FOUND", "WORKSPACE_MEMBER_ALREADY_EXISTS", "WORKSPACE_INVALID_ROLE"})
+      codes = {"WORKSPACE_NOT_FOUND", "WORKSPACE_MEMBER_ALREADY_EXISTS"})
   @ApiException(
       value = UserErrorCode.class,
       codes = {"USER_NOT_FOUND"})
@@ -131,7 +131,6 @@ interface WorkspaceInvitationControllerDocs {
       value = WorkspaceErrorCode.class,
       codes = {
         "WORKSPACE_NOT_FOUND",
-        "WORKSPACE_INVALID_ROLE",
         "WORKSPACE_INVITEE_NOT_FOUND",
         "WORKSPACE_MEMBER_ROLE_CONFLICT"
       })

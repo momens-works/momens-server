@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.servlet.config.annotation.ApiVersionConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import works.momens.server.notification.PushDeviceRegistrar;
+import works.momens.server.notification.PushInstallationPlatform;
 
 /**
  * 컨트롤러가 경로 변수·요청 body·Principal을 notification public API에 그대로 전달하고 204를 내는지, 요청 검증 위반이 400으로 거부되는지
@@ -53,7 +54,7 @@ class PushDeviceControllerTest {
                     """))
         .andExpect(status().isNoContent());
 
-    verify(pushDeviceRegistrar).register(USER_ID, FID, "token-1", "android");
+    verify(pushDeviceRegistrar).register(USER_ID, FID, "token-1", PushInstallationPlatform.ANDROID);
   }
 
   @Test

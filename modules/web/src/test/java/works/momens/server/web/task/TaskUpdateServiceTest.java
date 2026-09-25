@@ -27,6 +27,7 @@ import works.momens.server.project.task.TaskScope;
 import works.momens.server.project.task.TaskSnapshot;
 import works.momens.server.project.taskupdate.CreateTaskUpdateCommand;
 import works.momens.server.project.taskupdate.TaskUpdateDetail;
+import works.momens.server.project.taskupdate.TaskUpdateKind;
 import works.momens.server.project.taskupdate.TaskUpdateReader;
 import works.momens.server.project.taskupdate.TaskUpdateWriter;
 import works.momens.server.web.WorkspaceAccessChecker;
@@ -108,10 +109,11 @@ class TaskUpdateServiceTest {
     Map<String, Object> metadata = Map.of("source", "web");
     CreateTaskUpdateCommand command =
         new CreateTaskUpdateCommand(
-            TASK_ID, WORKSPACE_ID, PROJECT_ID, USER_ID, "내용", "comment", metadata);
+            TASK_ID, WORKSPACE_ID, PROJECT_ID, USER_ID, "내용", TaskUpdateKind.COMMENT, metadata);
     when(taskUpdateWriter.create(command)).thenReturn(update());
 
-    assertThat(service.create(TASK_ID, USER_ID, "내용", "comment", metadata)).isEqualTo(update());
+    assertThat(service.create(TASK_ID, USER_ID, "내용", TaskUpdateKind.COMMENT, metadata))
+        .isEqualTo(update());
     service.delete(TASK_ID, UPDATE_ID, USER_ID);
 
     verify(taskUpdateWriter).create(command);

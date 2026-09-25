@@ -2,6 +2,7 @@ package works.momens.server.mobile.board.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.UUID;
+import works.momens.server.mobile.MobileTaskPriority;
 import works.momens.server.project.task.TaskSnapshot;
 
 /** {@code POST /api/mobile/projects/{projectId}/tasks} 응답. 생성된 태스크를 {@code task} 아래에 담습니다. */
@@ -24,7 +25,7 @@ public record TaskCreateResponse(@Schema(description = "생성된 태스크") Ta
             created.projectId(),
             created.title(),
             created.role(),
-            created.priority(),
+            MobileTaskPriority.fromStored(created.priority()).key(),
             created.status()));
   }
 }

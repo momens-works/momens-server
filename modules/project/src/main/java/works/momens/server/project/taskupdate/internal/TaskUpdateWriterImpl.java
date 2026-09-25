@@ -1,6 +1,5 @@
 package works.momens.server.project.taskupdate.internal;
 
-import java.util.Locale;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,7 +32,7 @@ class TaskUpdateWriterImpl implements TaskUpdateWriter {
             command.taskId(),
             command.authorId(),
             body.trim(),
-            normalizeKind(command.kind()),
+            command.kind(),
             command.metadata());
     taskUpdateRepository.save(update);
     return update.toDetail();
@@ -54,14 +53,5 @@ class TaskUpdateWriterImpl implements TaskUpdateWriter {
 
   private BusinessException taskNotFound() {
     return new BusinessException(TaskErrorCode.TASK_NOT_FOUND);
-  }
-
-  private static String normalizeKind(String value) {
-    String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
-    return switch (normalized) {
-      case "", "comment" -> "comment";
-      case "update" -> "update";
-      default -> throw FieldValidationException.forField("kind");
-    };
   }
 }

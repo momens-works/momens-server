@@ -1,7 +1,6 @@
 package works.momens.server.web.task;
 
 import java.time.LocalDate;
-import java.util.Locale;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,8 +13,10 @@ import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.PatchTaskCommand;
 import works.momens.server.project.task.TaskErrorCode;
 import works.momens.server.project.task.TaskOrigin;
+import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskReader;
 import works.momens.server.project.task.TaskSnapshot;
+import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.web.WorkspaceAccessChecker;
 import works.momens.server.workspace.membership.WorkspaceRole;
@@ -34,9 +35,9 @@ class TaskWriteService {
       UUID userId,
       String title,
       String description,
-      String status,
+      TaskStatus status,
       UUID milestoneId,
-      String priority,
+      TaskPriority priority,
       UUID assigneeId,
       LocalDate dueDate) {
     UUID workspaceId = requireProject(projectId);
@@ -50,9 +51,9 @@ class TaskWriteService {
             workspaceId,
             title,
             description == null || description.isEmpty() ? null : description,
-            normalizeStatus(status, true),
+            status == null ? TaskStatus.BACKLOG : status,
             null,
-            normalizePriority(priority, true),
+            priority,
             milestoneId,
             assigneeId,
             dueDate,
@@ -68,9 +69,9 @@ class TaskWriteService {
       boolean titleSet,
       String description,
       boolean descriptionSet,
-      String status,
+      TaskStatus status,
       boolean statusSet,
-      String priority,
+      TaskPriority priority,
       boolean prioritySet,
       UUID milestoneId,
       boolean milestoneSet,
@@ -89,8 +90,6 @@ class TaskWriteService {
       throw FieldValidationException.forField("priority");
     }
     boolean effectiveTitleSet = titleSet && !title.isEmpty();
-    boolean effectiveStatusSet = statusSet && !status.isEmpty();
-    boolean effectivePrioritySet = prioritySet && !priority.isEmpty();
     return taskWriter.patch(
         new PatchTaskCommand(
             taskId,
@@ -98,10 +97,10 @@ class TaskWriteService {
             effectiveTitleSet,
             description,
             descriptionSet,
-            effectiveStatusSet ? normalizeStatus(status, false) : status,
-            effectiveStatusSet,
-            effectivePrioritySet ? normalizePriority(priority, false) : priority,
-            effectivePrioritySet,
+            status,
+            statusSet,
+            priority,
+            prioritySet,
             milestoneId,
             milestoneSet,
             assigneeId,
@@ -133,29 +132,5 @@ class TaskWriteService {
 
   private void requireMember(UUID workspaceId, UUID userId) {
     workspaceAccessChecker.requireRoleAtLeast(workspaceId, userId, WorkspaceRole.MEMBER);
-  }
-
-  private static String normalizeStatus(String value, boolean allowDefault) {
-    String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
-    if (normalized.isEmpty() && allowDefault) {
-      return "backlog";
-    }
-    return switch (normalized) {
-      case "backlog", "todo", "done", "cancelled" -> normalized;
-      case "in_progress", "progress", "in-progress" -> "in_progress";
-      default -> throw FieldValidationException.forField("status");
-    };
-  }
-
-  private static String normalizePriority(String value, boolean allowDefault) {
-    String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
-    if (normalized.isEmpty() && allowDefault) {
-      return "medium";
-    }
-    return switch (normalized) {
-      case "low", "high", "urgent" -> normalized;
-      case "medium", "med" -> "medium";
-      default -> throw FieldValidationException.forField("priority");
-    };
   }
 }

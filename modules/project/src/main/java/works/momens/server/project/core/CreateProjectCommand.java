@@ -26,7 +26,7 @@ public record CreateProjectCommand(
     String name,
     String description,
     LocalDate targetDate,
-    String healthStatus,
+    ProjectHealthStatus healthStatus,
     Integer progress,
     String summary,
     Integer unresolvedCount,

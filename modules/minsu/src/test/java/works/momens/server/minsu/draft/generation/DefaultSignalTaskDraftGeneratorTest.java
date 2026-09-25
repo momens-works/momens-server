@@ -28,8 +28,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.LoggerFactory;
 import works.momens.server.minsu.PreparedTaskDraft;
-import works.momens.server.minsu.Priority;
-import works.momens.server.minsu.Role;
 import works.momens.server.minsu.SignalTaskDraftInput;
 import works.momens.server.minsu.TaskDraft;
 import works.momens.server.minsu.draft.config.MinsuAsyncProperties;
@@ -44,6 +42,8 @@ import works.momens.server.minsu.llm.LlmTimeoutException;
 import works.momens.server.minsu.llm.MinsuLlmProperties;
 import works.momens.server.minsu.llm.ModelSelection;
 import works.momens.server.minsu.llm.ModelSelectionPolicy;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 
 class DefaultSignalTaskDraftGeneratorTest {
 
@@ -83,7 +83,7 @@ class DefaultSignalTaskDraftGeneratorTest {
 
     TaskDraft result = generator(client, true, true).prepare(input()).draft();
 
-    assertThat(result).isEqualTo(new TaskDraft("권한 흐름 점검", Role.BACKEND, Priority.HIGH));
+    assertThat(result).isEqualTo(new TaskDraft("권한 흐름 점검", TaskRole.BACKEND, TaskPriority.HIGH));
     assertThat(client.calls()).isEqualTo(1);
   }
 
@@ -118,7 +118,8 @@ class DefaultSignalTaskDraftGeneratorTest {
 
     TaskDraft result = generator(client, true, true).prepare(input).draft();
 
-    assertThat(result).isEqualTo(new TaskDraft("123456789012345", Role.DESIGN, Priority.MEDIUM));
+    assertThat(result)
+        .isEqualTo(new TaskDraft("123456789012345", TaskRole.DESIGN, TaskPriority.MEDIUM));
   }
 
   @Test
@@ -266,7 +267,7 @@ class DefaultSignalTaskDraftGeneratorTest {
     PreparedTaskDraft prepared = generator.prepare(input());
     generator.enroll(prepared, UUID.randomUUID(), UUID.randomUUID());
 
-    assertThat(prepared.draft()).isEqualTo(new TaskDraft("점검", Role.PM, Priority.MEDIUM));
+    assertThat(prepared.draft()).isEqualTo(new TaskDraft("점검", TaskRole.PM, TaskPriority.MEDIUM));
     verifyNoInteractions(enroller);
   }
 
@@ -549,7 +550,7 @@ class DefaultSignalTaskDraftGeneratorTest {
   }
 
   private static TaskDraft fallback() {
-    return new TaskDraft("시그널 제목", Role.PM, Priority.MEDIUM);
+    return new TaskDraft("시그널 제목", TaskRole.PM, TaskPriority.MEDIUM);
   }
 
   private static LlmResponse success(String text) {
@@ -568,7 +569,7 @@ class DefaultSignalTaskDraftGeneratorTest {
   private static Stream<Arguments> invalidEnumResponses() {
     return Stream.of(
         Arguments.of("{\"title\":\"점검\",\"role\":\"invalid\",\"priority\":\"high\"}"),
-        Arguments.of("{\"title\":\"점검\",\"role\":\"pm\",\"priority\":\"urgent\"}"),
+        Arguments.of("{\"title\":\"점검\",\"role\":\"pm\",\"priority\":\"critical\"}"),
         Arguments.of("{\"title\":\"점검\",\"role\":\"\",\"priority\":\"medium\"}"),
         Arguments.of("{\"title\":\"점검\",\"role\":\"pm\",\"priority\":\"\"}"));
   }

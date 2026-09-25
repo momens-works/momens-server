@@ -21,6 +21,10 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Immutable;
 import works.momens.server.common.persistence.BaseEntity;
 import works.momens.server.project.task.CreateTaskCommand;
+import works.momens.server.project.task.TaskDraftValues;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
+import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.UpdateTaskCommand;
 
 /**
@@ -119,9 +123,9 @@ class Task extends BaseEntity {
     this.label = label;
     this.title = command.title();
     this.description = command.description();
-    this.status = command.status();
-    this.priority = command.priority() != null ? command.priority() : "medium";
-    this.role = command.role();
+    this.status = command.status().value();
+    this.priority = (command.priority() != null ? command.priority() : TaskPriority.MEDIUM).value();
+    this.role = command.role() != null ? command.role().value() : null;
     this.milestoneId = command.milestoneId();
     this.assigneeId = command.assigneeId();
     this.dueDate = command.dueDate();
@@ -138,9 +142,9 @@ class Task extends BaseEntity {
       boolean titleSet,
       String description,
       boolean descriptionSet,
-      String status,
+      TaskStatus status,
       boolean statusSet,
-      String priority,
+      TaskPriority priority,
       boolean prioritySet,
       UUID milestoneId,
       boolean milestoneSet,
@@ -155,10 +159,10 @@ class Task extends BaseEntity {
       this.description = description;
     }
     if (statusSet) {
-      this.status = status;
+      this.status = status.value();
     }
     if (prioritySet) {
-      this.priority = priority;
+      this.priority = priority.value();
     }
     if (milestoneSet) {
       this.milestoneId = milestoneId;
@@ -181,34 +185,34 @@ class Task extends BaseEntity {
    */
   void update(
       String title,
-      String role,
-      String priority,
-      String status,
+      TaskRole role,
+      TaskPriority priority,
+      TaskStatus status,
       String description,
       UUID assigneeId) {
     this.title = title;
-    this.role = role;
-    this.priority = priority;
-    this.status = status;
+    this.role = role.value();
+    this.priority = priority.value();
+    this.status = status.value();
     this.description = description;
     this.assigneeId = assigneeId;
   }
 
   /** draft 반영이 비교하는 세 필드가 주어진 값과 같은지. 하나라도 다르면 반영하지 않습니다. */
-  boolean matchesDraft(String title, String role, String priority) {
-    return Objects.equals(this.title, title)
-        && Objects.equals(this.role, role)
-        && Objects.equals(this.priority, priority);
+  boolean matchesDraft(TaskDraftValues draft) {
+    return Objects.equals(this.title, draft.title())
+        && Objects.equals(this.role, draft.role().value())
+        && Objects.equals(this.priority, draft.priority().value());
   }
 
   /**
    * AI가 생성한 draft를 반영합니다. {@link #update}와 달리 세 필드만 바꿉니다. status·description·assignee는 사용자와 다른 경로가
    * 소유하는 값이라 생성 결과가 건드리지 않습니다.
    */
-  void applyDraft(String title, String role, String priority) {
-    this.title = title;
-    this.role = role;
-    this.priority = priority;
+  void applyDraft(TaskDraftValues draft) {
+    this.title = draft.title();
+    this.role = draft.role().value();
+    this.priority = draft.priority().value();
   }
 
   /**

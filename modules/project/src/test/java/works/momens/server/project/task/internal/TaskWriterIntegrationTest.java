@@ -27,8 +27,11 @@ import works.momens.server.project.milestone.MilestoneDirectory;
 import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.TaskDetail;
 import works.momens.server.project.task.TaskErrorCode;
+import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskReader;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskScope;
+import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.project.task.UpdateTaskCommand;
 import works.momens.server.project.task.UpdateTaskCommand.ChecklistItemEdit;
@@ -75,10 +78,10 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
             command(
                 fixture.taskId(),
                 "제목 수정",
-                "backend",
+                TaskRole.BACKEND,
                 assigneeId,
-                "high",
-                "in_progress",
+                TaskPriority.HIGH,
+                TaskStatus.IN_PROGRESS,
                 "수정한 목적",
                 List.of()));
 
@@ -109,10 +112,10 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
             command(
                 fixture.taskId(),
                 "제목 수정",
-                "pm",
+                TaskRole.PM,
                 assigneeId,
-                "medium",
-                "todo",
+                TaskPriority.MEDIUM,
+                TaskStatus.TODO,
                 "수정한 목적",
                 List.of()));
 
@@ -125,11 +128,27 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
     Fixture fixture = newTask();
     UUID assigneeId = ProjectSeedSql.insertUser(entityManager, "clear@momens.works");
     taskWriter.update(
-        command(fixture.taskId(), "제목", "pm", assigneeId, "medium", "todo", null, List.of()));
+        command(
+            fixture.taskId(),
+            "제목",
+            TaskRole.PM,
+            assigneeId,
+            TaskPriority.MEDIUM,
+            TaskStatus.TODO,
+            null,
+            List.of()));
 
     TaskDetail cleared =
         taskWriter.update(
-            command(fixture.taskId(), "제목", "pm", null, "medium", "todo", null, List.of()));
+            command(
+                fixture.taskId(),
+                "제목",
+                TaskRole.PM,
+                null,
+                TaskPriority.MEDIUM,
+                TaskStatus.TODO,
+                null,
+                List.of()));
 
     assertThat(cleared.assigneeId()).isNull();
   }
@@ -142,10 +161,10 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
             command(
                 fixture.taskId(),
                 "제목",
-                "pm",
+                TaskRole.PM,
                 null,
-                "medium",
-                "todo",
+                TaskPriority.MEDIUM,
+                TaskStatus.TODO,
                 null,
                 List.of(
                     new ChecklistItemEdit(null, "A", false),
@@ -159,10 +178,10 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
         command(
             fixture.taskId(),
             "제목",
-            "pm",
+            TaskRole.PM,
             null,
-            "medium",
-            "todo",
+            TaskPriority.MEDIUM,
+            TaskStatus.TODO,
             null,
             List.of(
                 new ChecklistItemEdit(idA, "A", false),
@@ -193,10 +212,10 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
                     command(
                         fixture.taskId(),
                         "제목",
-                        "pm",
+                        TaskRole.PM,
                         null,
-                        "medium",
-                        "todo",
+                        TaskPriority.MEDIUM,
+                        TaskStatus.TODO,
                         null,
                         List.of(new ChecklistItemEdit(UUID.randomUUID(), "없는 항목", false)))))
         .isInstanceOf(BusinessException.class)
@@ -212,10 +231,10 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
             command(
                 fixture.taskId(),
                 "제목",
-                "pm",
+                TaskRole.PM,
                 null,
-                "medium",
-                "todo",
+                TaskPriority.MEDIUM,
+                TaskStatus.TODO,
                 null,
                 List.of(new ChecklistItemEdit(null, "A", false))));
     UUID idA = seeded.checklistItems().get(0).id();
@@ -226,10 +245,10 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
                     command(
                         fixture.taskId(),
                         "제목",
-                        "pm",
+                        TaskRole.PM,
                         null,
-                        "medium",
-                        "todo",
+                        TaskPriority.MEDIUM,
+                        TaskStatus.TODO,
                         null,
                         List.of(
                             new ChecklistItemEdit(idA, "A", false),
@@ -247,10 +266,10 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
             command(
                 fixture.taskId(),
                 "제목",
-                "pm",
+                TaskRole.PM,
                 null,
-                "medium",
-                "todo",
+                TaskPriority.MEDIUM,
+                TaskStatus.TODO,
                 null,
                 List.of(new ChecklistItemEdit(null, "완료기준", false))));
     UUID itemId = seeded.checklistItems().get(0).id();
@@ -277,7 +296,14 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
             () ->
                 taskWriter.update(
                     command(
-                        UUID.randomUUID(), "제목", "pm", null, "medium", "todo", null, List.of())))
+                        UUID.randomUUID(),
+                        "제목",
+                        TaskRole.PM,
+                        null,
+                        TaskPriority.MEDIUM,
+                        TaskStatus.TODO,
+                        null,
+                        List.of())))
         .isInstanceOf(BusinessException.class)
         .extracting(exception -> ((BusinessException) exception).getErrorCode())
         .isEqualTo(TaskErrorCode.TASK_NOT_FOUND);
@@ -297,10 +323,10 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
         command(
             fixture.taskId(),
             "제목 수정",
-            "backend",
+            TaskRole.BACKEND,
             null,
-            "high",
-            "in_progress",
+            TaskPriority.HIGH,
+            TaskStatus.IN_PROGRESS,
             "수정한 목적",
             List.of(new ChecklistItemEdit(null, "새 완료기준", false))));
 
@@ -338,7 +364,8 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
         taskRepository
             .saveAndFlush(
                 Task.create(
-                    CreateTaskCommand.manual(projectId, workspaceId, "초기 제목", "pm", "medium"),
+                    CreateTaskCommand.manual(
+                        projectId, workspaceId, "초기 제목", TaskRole.PM, TaskPriority.MEDIUM),
                     null))
             .getId();
     return new Fixture(workspaceId, projectId, taskId);
@@ -347,10 +374,10 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
   private static UpdateTaskCommand command(
       UUID taskId,
       String title,
-      String role,
+      TaskRole role,
       UUID assigneeId,
-      String priority,
-      String status,
+      TaskPriority priority,
+      TaskStatus status,
       String purpose,
       List<ChecklistItemEdit> checklistItems) {
     return new UpdateTaskCommand(

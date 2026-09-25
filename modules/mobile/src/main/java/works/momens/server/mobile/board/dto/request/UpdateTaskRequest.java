@@ -4,10 +4,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.UUID;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
+import works.momens.server.project.task.TaskStatus;
 
 /**
  * 태스크 수정 요청. 요청 형식은 docs/spec/mobile-api.md 태스크 수정 절을 따릅니다.
@@ -24,21 +26,20 @@ public record UpdateTaskRequest(
         @NotNull
         @Size(max = 15)
         String title,
-    @Schema(description = "역할. pm/design/backend/frontend 중 하나", example = "pm")
-        @NotBlank
-        @Pattern(regexp = "pm|design|backend|frontend")
-        String role,
-    @Schema(description = "담당자 식별자. 비우려면 null을 보냅니다.") UUID assigneeId,
-    @Schema(description = "우선순위. low/medium/high", example = "medium")
-        @NotBlank
-        @Pattern(regexp = "low|medium|high")
-        String priority,
     @Schema(
-            description = "상태. backlog/todo/in_progress/done/cancelled 중 하나",
+            description = "역할. pm은 기획과 조율, design은 디자인, backend는 서버, frontend는 웹과 앱 화면 작업을 담당합니다.",
+            example = "pm")
+        @NotNull
+        TaskRole role,
+    @Schema(description = "담당자 식별자. 비우려면 null을 보냅니다.") UUID assigneeId,
+    @Schema(description = "우선순위. urgent도 그대로 저장하며 응답에서는 high로 표시합니다.", example = "medium") @NotNull
+        TaskPriority priority,
+    @Schema(
+            description =
+                "상태. backlog는 아직 일정을 잡지 않은 작업, todo는 할 일, in_progress는 진행 중인 작업, done은 완료한 작업, cancelled는 취소한 작업입니다.",
             example = "in_progress")
-        @NotBlank
-        @Pattern(regexp = "backlog|todo|in_progress|done|cancelled")
-        String status,
+        @NotNull
+        TaskStatus status,
     @Schema(description = "목적. 비우면 빈 문자열이나 null입니다. 최대 300자(공백 포함).") @Size(max = 300)
         String purpose,
     @Schema(description = "완료기준 최종 목록. 0개에서 5개까지 허용합니다.") @Size(max = 5) @Valid

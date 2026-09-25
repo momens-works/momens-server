@@ -34,22 +34,8 @@ public enum WorkspaceRole {
     return Optional.empty();
   }
 
-  /**
-   * 저장 값을 다른 멤버에게 부여할 수 있는 역할로 변환합니다. 정의되지 않은 값이거나 부여할 수 없는 역할이면 빈 {@link Optional}을 반환합니다.
-   *
-   * <p>멤버 역할 변경과 초대에서 동일한 판정 규칙을 사용하므로 이 enum에서 관리합니다.
-   */
-  public static Optional<WorkspaceRole> assignableFrom(String value) {
-    return from(value).filter(WorkspaceRole::isAssignable);
-  }
-
   public String value() {
     return value;
-  }
-
-  /** 다른 멤버에게 부여할 수 있는 역할인지 확인합니다. owner는 워크스페이스를 생성할 때만 정해지므로 별도로 부여할 수 없습니다. */
-  public boolean isAssignable() {
-    return this != OWNER;
   }
 
   /** 현재 역할이 required 이상의 권한인지 확인합니다. 역할 서열은 owner, admin, member 순입니다. */
