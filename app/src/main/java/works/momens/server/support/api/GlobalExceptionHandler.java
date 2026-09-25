@@ -6,13 +6,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.exc.InvalidFormatException;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.common.api.ErrorCode;
@@ -63,12 +66,45 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
       WebRequest request) {
     List<FieldValidationDetails.FieldViolation> fields =
         ex.getBindingResult().getFieldErrors().stream().map(this::toFieldErrorDetail).toList();
+    return validationFailed(fields, headers, status);
+  }
+
+  /**
+   * 요청 본문의 enum 필드에 허용하지 않는 값이 들어오면 {@code COMMON_VALIDATION_FAILED}와 해당 필드 이름을 응답합니다. JSON 형식 오류처럼
+   * 그 밖의 이유로 본문을 읽지 못한 경우에는 기존과 같이 {@code COMMON_BAD_REQUEST}를 응답합니다.
+   */
+  @Override
+  protected ResponseEntity<Object> handleHttpMessageNotReadable(
+      HttpMessageNotReadableException ex,
+      HttpHeaders headers,
+      HttpStatusCode status,
+      WebRequest request) {
+    if (ex.getCause() instanceof InvalidFormatException cause
+        && cause.getTargetType() != null
+        && cause.getTargetType().isEnum()) {
+      FieldValidationDetails.FieldViolation field =
+          new FieldValidationDetails.FieldViolation(
+              jsonFieldName(cause), FieldValidationException.DEFAULT_REASON);
+      return validationFailed(List.of(field), headers, status);
+    }
+    return super.handleHttpMessageNotReadable(ex, headers, status, request);
+  }
+
+  private static ResponseEntity<Object> validationFailed(
+      List<FieldValidationDetails.FieldViolation> fields,
+      HttpHeaders headers,
+      HttpStatusCode status) {
     log.debug("validation failed fields={}", fields.size());
     ErrorCode errorCode = CommonErrorCode.COMMON_VALIDATION_FAILED;
     Object body =
         ErrorResponse.of(
             errorCode.code(), errorCode.defaultMessage(), new FieldValidationDetails(fields));
     return ResponseEntity.status(status).headers(headers).body(body);
+  }
+
+  private static String jsonFieldName(JacksonException ex) {
+    List<JacksonException.Reference> path = ex.getPath();
+    return path.isEmpty() ? null : path.getLast().getPropertyName();
   }
 
   /**
