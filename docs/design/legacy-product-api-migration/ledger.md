@@ -380,7 +380,7 @@ Standard 모드**이며, 모두 `MOM-0848`에서 `traced`됐다.
 N001~N008은 HTTP capability profile만으로 전환 필드를 복원할 수 없어 아래 전용 profile을 사용한다.
 HTTP 인증이 없는 항목도 실행 주체와 자격증명을 적고, prod/client gate가 없으면 이유와 함께 N/A로
 기록한다. `task`는 공통 trace task `MOM-0848`이다. N004는 `MOM-0971`이 레거시 잔류를 확정했고,
-나머지는 별도 구현·결정 작업을 아직 만들지 않았다.
+N006~N008의 처분은 `MOM-0976`에서 정했다.
 
 | Profile | contract·auth/RBAC | legacy trace·schema·test | target·writer/projection/external | prod/client gate | rollback |
 | --- | --- | --- | --- | --- | --- |
@@ -389,9 +389,17 @@ HTTP 인증이 없는 항목도 실행 주체와 자격증명을 적고, prod/cl
 | `N-EMBED` | startup 뒤 즉시 stale row를 drain하고 ticker로 반복. text race guard와 model/dimension 검증을 사용. 최종 사용자 auth는 N/A, Vertex ADC와 runtime DB 권한으로 실행 | `bootstrap/app.go` → `retrieval/embedder.go` → `platform/llm/embeddings.go`; `retrieval_documents.embedding`, `embedding_model`, `text_hash`; `retrieval/embedder_test.go`, `platform/llm/embeddings_test.go` | embedding writer, Vertex AI; target `momens-worker`/retrieval owner 미결 | prod gate는 owner 단일화, model·dimension·ADC·비용·지연·중복 실행 관측. client gate는 N/A | loop를 끄고 lexical 검색으로 후퇴하며 기존 vector는 유지. owner/model 전환 시 stale 판정과 재embedding 가능성을 확인 |
 | `N-SLK` | H013의 Slack signature·retry·3초 ack 계약을 공유하고 app mention을 goroutine에서 answer/post. Slack 서명과 구성된 bot identity가 권한 경계 | `slackbot/handler.go` → `answerAndPost`, `grounded.go`, `action.go` → `minsu/*`; `slackbot/handler_test.go`, `grounded_test.go`, `action_test.go` | Slack API·retrieval·Vertex, action이면 task writer; **신규 runtime으로 이관하지 않는다**(`MOM-0971`). 재구현하면 target은 `minsu` + `project` public API가 되지만, 단일 워크스페이스 바인딩을 걷어내는 재설계가 선행한다 | 잔류 중에는 전환 gate가 적용되지 않는다. 재구현 시 signing secret·bot identity·event URL·timeout·실패 관측과 task projection 준비가 필요하고 Slack event URL이 client gate다 | event URL을 legacy로 되돌리고 신규 유입을 중단. 현재 child goroutine drain 관리가 없으므로 최대 answer/post 시간의 in-flight 유실 허용 여부와 Slack retry를 runbook에 명시 |
 | `N-SRV` | HTTP accept를 goroutine에서 시작하고 SIGINT/SIGTERM 뒤 10초 drain, enrichment → retrieval client → DB 순서로 close. 사용자 auth/RBAC는 각 HTTP entry가 소유 | `cmd/api/main.go` → `bootstrap/app.go`의 `App.Close`; lifecycle 직접 test 없음(`bootstrap/app_test.go`는 조립 설정 일부만 검증) | target `app` Spring lifecycle와 k8s; domain writer 없음, HTTP·gRPC·DB lifecycle | readiness/liveness, ingress, termination grace와 connection drain이 prod/client gate | deploy·routing rollback. 종료 grace 안에 요청과 background 작업이 끝나는지 확인 전 legacy lifecycle retire 금지 |
-| `N-SEED` | deterministic demo fixture를 DB-direct transaction으로 적용. 최종 사용자 auth는 N/A, 실행 운영자가 DB 권한을 소유하며 prod는 명시적 `--allow-production` 없이는 거부 | `cmd/seed-demo/main.go` → `demo/seed.go`; 선택적 `migrations/*.sql`; `demo/seed_test.go` | local/demo DB seed writer; target runtime으로 이관하지 않음 | prod 적용 제외가 기본 gate. 외부 client gate는 N/A, 로컬 운영자 CLI 계약만 존재 | 실패 시 transaction rollback. `--reset`은 deterministic workspace만 재생성 가능하지만 `--truncate` 뒤 자동 복원은 없으므로 DB backup 없이는 실행·retire 판단 금지 |
-| `N-ASK` | 질문을 args/stdin으로 받아 단일 ungrounded 답변을 stdout에 출력. 최종 사용자 auth/RBAC는 N/A, 로컬 운영자의 Vertex ADC가 실행 권한 | `cmd/minsu-ask/main.go` → `slackbot/answerer.go` → `platform/llm/client.go`; 직접 test 없음, answerer test는 `slackbot/answerer_test.go` | DB writer 없음, Vertex AI 호출; target runtime으로 이관하지 않음 | prod/client gate는 N/A인 개발 검증 도구. ADC·model allowlist·비용만 확인 | 프로세스 중단으로 rollback, 영속 상태 없음 |
-| `N-EVAL` | JSON eval set을 retrieval gRPC로 실행해 Recall@nDCG·MRR을 stdout에 출력하며 synthetic owner permission을 사용. 제품 사용자 auth/RBAC는 N/A, 로컬 운영자가 retrieval 접근권한과 선택적 Vertex ADC를 소유 | `cmd/minsu-eval/main.go` → `eval/eval.go`, `metrics.go` → `retrieval/client.go`; `eval/eval_test.go`, `retrieval/client_test.go` | writer 없음, retrieval gRPC와 선택적 Vertex embedding; target 소유 저장소 미결 | prod gate는 N/A인 offline 평가 도구. client gate는 eval set·retrieval 주소·선택적 ADC | 프로세스 중단으로 rollback, 영속 상태 없음. 출력 보고서만 폐기 가능 |
+| `N-SEED` | deterministic demo fixture를 DB-direct transaction으로 적용. 최종 사용자 auth는 N/A, 실행 운영자가 DB 권한을 소유하며 prod는 명시적 `--allow-production` 없이는 거부 | `cmd/seed-demo/main.go` → `demo/seed.go`; 선택적 `migrations/*.sql`; `demo/seed_test.go` | local/demo DB seed writer; 이관 없이 폐기 결정(`MOM-0976`) | 제거 전까지 prod 적용 제외가 기본 gate. 외부 client gate는 N/A, 로컬 운영자 CLI 계약만 존재 | 실패 시 transaction rollback. `--reset`은 deterministic workspace만 재생성 가능하지만 `--truncate` 뒤 자동 복원은 없으므로 DB backup 없이는 실행 금지 |
+| `N-ASK` | 질문을 args/stdin으로 받아 단일 ungrounded 답변을 stdout에 출력. 최종 사용자 auth/RBAC는 N/A, 로컬 운영자의 Vertex ADC가 실행 권한 | `cmd/minsu-ask/main.go` → `slackbot/answerer.go` → `platform/llm/client.go`; 직접 test 없음, answerer test는 `slackbot/answerer_test.go` | DB writer 없음, Vertex AI 호출; 이관 없이 `momens-api`에 잔류(`MOM-0976`) | prod/client gate는 N/A인 개발 검증 도구. ADC·model allowlist·비용만 확인 | 프로세스 중단으로 rollback, 영속 상태 없음 |
+| `N-EVAL` | JSON eval set을 retrieval gRPC로 실행해 Recall@nDCG·MRR을 stdout에 출력하며 synthetic owner permission을 사용. 제품 사용자 auth/RBAC는 N/A, 로컬 운영자가 retrieval 접근권한과 선택적 Vertex ADC를 소유 | `cmd/minsu-eval/main.go` → `eval/eval.go`, `metrics.go` → `retrieval/client.go`; `eval/eval_test.go`, `retrieval/client_test.go` | writer 없음, retrieval gRPC와 선택적 Vertex embedding; 이관 없이 `momens-api`에 잔류(`MOM-0976`) | prod gate는 N/A인 offline 평가 도구. client gate는 eval set·retrieval 주소·선택적 ADC | 프로세스 중단으로 rollback, 영속 상태 없음. 출력 보고서만 폐기 가능 |
+
+N006~N008은 신규 runtime으로 옮기지 않는다(`MOM-0976`). N006은 폐기 대상으로 정했으며,
+레거시 CLI 코드 제거와 `retired` 상태 변경은 실제 제거를 확인한 뒤 수행한다. 이 결정은 기존
+DB 데이터 삭제를 포함하지 않는다. N007·N008은 별도 이관·유지 작업 없이 `momens-api`에 남겨
+두되, 새 요구사항이 생기면 기존 CLI를 그대로 옮기지 않고 계약과 소유권부터 재설계해 재구현한다.
+현재 CLI를 수동 실행할 때 N007은 개발자의 Vertex ADC·모델 설정과 비용 확인이, N008은
+eval set·retrieval 주소·접근 권한과 선택적 Vertex ADC가 필요하다. 두 CLI 모두 prod 상시
+실행 주체는 없다.
 
 | ID | surface | legacy entry point·trace | profile/target | writer·dependency | status·gate |
 | --- | --- | --- | --- | --- | --- |
@@ -400,9 +408,9 @@ HTTP 인증이 없는 항목도 실행 주체와 자격증명을 적고, prod/cl
 | N003 | background loop | `bootstrap.New` goroutine → `retrieval.Embedder.Run` ticker | `N-EMBED` → retrieval/worker 경계 | retrieval document embedding writer, Vertex AI | `traced`; 중복 실행·비용·지연 관측과 owner 결정 필요 |
 | N004 | webhook child runtime | `slackbot.Handler.dispatch` → goroutine `answerAndPost` | `N-SLK`; 신규 runtime으로 이관하지 않음 | Slack API·retrieval·Vertex, action이면 task write | `traced`; **이관 대상이 아니다 — H013과 함께 레거시 잔류**(`MOM-0971`). 사유·재개 조건은 H013 행에 있다 |
 | N005 | server lifecycle | `cmd/api/main.go`의 `ListenAndServe` goroutine, signal drain, `App.Close` | `N-SRV` → `app` | HTTP accept, retrieval client, DB pool lifecycle | `traced`; Spring lifecycle와 k8s probe·termination grace로 대체 |
-| N006 | offline CLI | `cmd/seed-demo` → `demo.Run` | `N-SEED`; 신규 runtime으로 이관하지 않음 | local/demo DB seed, 선택적 migration | `traced`; 유지·대체·폐기 명시 필요, prod guard 보존 |
-| N007 | offline CLI | `cmd/minsu-ask` → ungrounded LLM answer | `N-ASK`; 신규 runtime으로 이관하지 않음 | Vertex AI/ADC | `traced`; 개발 검증 도구로 유지할지 결정 |
-| N008 | offline CLI | `cmd/minsu-eval` → `eval.Run` → retrieval gRPC | `N-EVAL`; 신규 runtime으로 이관하지 않음 | retrieval·선택적 Vertex embedding | `traced`; 별도 eval 도구 소유 저장소 결정 |
+| N006 | offline CLI | `cmd/seed-demo` → `demo.Run` | `N-SEED`; 이관 없이 폐기 | local/demo DB seed, 선택적 migration | `traced`; 폐기 결정(`MOM-0976`). 실제 CLI 제거 전까지 prod guard 유지 |
+| N007 | offline CLI | `cmd/minsu-ask` → ungrounded LLM answer | `N-ASK`; 이관 무기한 보류, `momens-api` 잔류 | Vertex AI/ADC | `traced`; 새 요구가 생기면 재설계·재구현(`MOM-0976`) |
+| N008 | offline CLI | `cmd/minsu-eval` → `eval.Run` → retrieval gRPC | `N-EVAL`; 이관 무기한 보류, `momens-api` 잔류 | retrieval·선택적 Vertex embedding | `traced`; 새 요구가 생기면 재설계·재구현(`MOM-0976`) |
 | N009 | MCP tool | `list_projects` → `mcpserver.listProjects` | `MCP` → `project` | read-only | `traced`; H012와 같은 전환 단위 |
 | N010 | MCP tool | `list_members` → `mcpserver.listMembers` | `MCP` → `workspace` | read-only | `traced`; H012와 같은 전환 단위 |
 | N011 | MCP tool | `list_milestones` → `mcpserver.listMilestones` | `MCP` → `project` | read-only | `traced`; H012와 같은 전환 단위 |
@@ -453,7 +461,8 @@ HTTP 인증이 없는 항목도 실행 주체와 자격증명을 적고, prod/cl
 5. ~~snapshot 합성 endpoint의 합성 로직 소유와 응답 계약~~ — 해소. 표면·합성 모두 `:web`이고
    (`MOM-0850`) 응답 계약은 [웹 snapshot 계약](slice-snapshot.md)이
    잠갔다(`MOM-0856`)
-6. offline CLI 3개의 유지·대체·폐기와 소유 저장소
+6. ~~offline CLI 3개의 유지·대체·폐기와 소유 저장소~~ — 해소. N006은 폐기, N007·N008은
+   `momens-api`에 남겨 이관을 무기한 보류한다(`MOM-0976`). 새 요구가 생기면 재설계·재구현한다
 7. `MOM-0773` task 계약, `MOM-0774` source-ref 관계, `MOM-0845` workspace scope
 8. ~~Product JSON별 실제 웹 사용 여부~~ — 해소. 위 [웹 FE 사용 실태](#웹-fe-사용-실태)에 기록했다
    (`MOM-0856`). [컷오버 문서](cutover.md) 6절은 전환 직후 판정 창을 정했고, 전환기 코드 제거에
@@ -476,8 +485,8 @@ HTTP 인증이 없는 항목도 실행 주체와 자격증명을 적고, prod/cl
    관측 기준과 FE 배포·롤백 절차를 정했다. 실행 절차는 [컷오버 문서](cutover.md)에 있다. Product
    capability별 혼합은 하지 않지만 미이관 OAuth/MCP UI는 legacy base로 격리하며 ADR-0018의 세션
    호환을 유지한다
-6. `[Docs] 레거시 offline CLI disposition 결정`
-   - N006~N008 유지·이동·폐기와 실행 주체 확정
+6. ~~`[Docs] 레거시 offline CLI disposition 결정`~~ — `MOM-0976`에서 N006 폐기와 N007·N008
+   이관 무기한 보류를 정했다. 현재 CLI의 소유 저장소와 수동 실행 요건은 비-HTTP 원장에 기록했다
 
 기존 작업은 새로 만들지 않는다. `MOM-0773`, `MOM-0774`, `MOM-0845`, `MOM-0909`를 해당 gate에서
 참조한다.
