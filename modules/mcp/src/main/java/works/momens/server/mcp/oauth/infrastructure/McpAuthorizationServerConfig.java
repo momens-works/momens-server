@@ -8,11 +8,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.ObjectPostProcessor;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeRequestAuthenticationProvider;
+import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationConsentAuthenticationProvider;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientRegistrationAuthenticationProvider;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
@@ -82,8 +84,21 @@ class McpAuthorizationServerConfig {
             endpoints.resourceUri().toString());
     UnaryOperator<AuthenticationProvider> tokenProvider =
         provider -> new McpTokenAuthenticationProvider(provider, tokens);
-    McpAuthorizationRequestValidator validator =
-        new McpAuthorizationRequestValidator(endpoints.resourceUri().toString());
+    // SAS 7.1 reads the original provider's validator during initialization. Replace the
+    // registered provider after that customization, preserving its pre-validation setup.
+    authorizationServer.withObjectPostProcessor(
+        new ObjectPostProcessor<AuthenticationProvider>() {
+          @Override
+          @SuppressWarnings("unchecked")
+          public <O extends AuthenticationProvider> O postProcess(O provider) {
+            if (provider instanceof OAuth2AuthorizationCodeRequestAuthenticationProvider) {
+              return (O)
+                  new McpAuthorizationRequestProvider(
+                      interactions, clients, endpoints.resourceUri().toString());
+            }
+            return provider;
+          }
+        });
     return http.securityMatcher(
             CLIENT_REGISTRATION_ENDPOINT,
             AUTHORIZATION_ENDPOINT,
@@ -105,14 +120,25 @@ class McpAuthorizationServerConfig {
                         endpoint ->
                             endpoint
                                 .errorResponseHandler(errors)
-                                .authenticationProvider(
-                                    new McpAuthorizationRequestProvider(
-                                        interactions, clients, endpoints.resourceUri().toString()))
                                 .authenticationProviders(
-                                    providers ->
-                                        providers.forEach(
-                                            provider ->
-                                                customizeAuthorization(provider, validator)))
+                                    providers -> {
+                                      providers.removeIf(
+                                          provider ->
+                                              provider
+                                                  instanceof
+                                                  OAuth2AuthorizationConsentAuthenticationProvider);
+                                      providers.forEach(
+                                          provider -> {
+                                            if (provider
+                                                instanceof
+                                                OAuth2AuthorizationCodeRequestAuthenticationProvider
+                                                    authorization) {
+                                              authorization.setAuthenticationValidator(
+                                                  new McpAuthorizationRequestValidator(
+                                                      endpoints.resourceUri().toString()));
+                                            }
+                                          });
+                                    })
                                 .authorizationResponseHandler(
                                     (request, response, authentication) ->
                                         response.sendRedirect(
@@ -153,13 +179,6 @@ class McpAuthorizationServerConfig {
         .oauth2ResourceServer(resourceServer -> resourceServer.bearerTokenResolver(request -> null))
         .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
         .build();
-  }
-
-  private static void customizeAuthorization(
-      AuthenticationProvider provider, McpAuthorizationRequestValidator validator) {
-    if (provider instanceof OAuth2AuthorizationCodeRequestAuthenticationProvider standard) {
-      standard.setAuthenticationValidator(validator);
-    }
   }
 
   private static void customizeRegistration(Object provider, Clock clock) {

@@ -25,7 +25,7 @@ final class McpAuthorizationRequestProvider implements AuthenticationProvider {
     }
     RegisteredClient client = clients.findByClientId(request.getClientId());
     if (client == null) {
-      throw new OAuth2AuthenticationException("invalid_client");
+      throw new OAuth2AuthenticationException("invalid_request");
     }
     new McpAuthorizationRequestValidator(resource)
         .accept(
