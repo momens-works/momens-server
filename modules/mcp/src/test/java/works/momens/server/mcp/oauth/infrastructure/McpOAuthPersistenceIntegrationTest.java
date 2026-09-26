@@ -1,4 +1,4 @@
-package works.momens.server.mcp.internal;
+package works.momens.server.mcp.oauth.infrastructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -47,6 +47,39 @@ class McpOAuthPersistenceIntegrationTest extends AbstractPostgresIntegrationTest
   @Autowired private OAuth2AuthorizationService authorizationService;
   @Autowired private OAuth2AuthorizationConsentService consentService;
   @Autowired private JdbcTemplate jdbcTemplate;
+
+  @Test
+  @DisplayName("토큰 조회와 grant별 폐기 SQL이 의도한 인덱스를 사용할 수 있다")
+  void tokenAndGrantLookupsCanUseIndexes() {
+    jdbcTemplate.execute("SET LOCAL enable_seqscan = off");
+    for (String column :
+        java.util.List.of(
+            "authorization_code_value", "access_token_value", "refresh_token_value")) {
+      String index =
+          switch (column) {
+            case "authorization_code_value" -> "idx_mcp_authorization_code";
+            case "access_token_value" -> "idx_mcp_access_token";
+            case "refresh_token_value" -> "idx_mcp_refresh_token";
+            default -> throw new IllegalArgumentException(column);
+          };
+      assertThat(
+              String.join(
+                  "\n",
+                  jdbcTemplate.queryForList(
+                      "EXPLAIN SELECT * FROM oauth2_authorization WHERE " + column + " = ?",
+                      String.class,
+                      "a".repeat(64))))
+          .contains(index);
+    }
+    assertThat(
+            String.join(
+                "\n",
+                jdbcTemplate.queryForList(
+                    "EXPLAIN SELECT authorization_id FROM mcp_token_families WHERE grant_id = ? ORDER BY authorization_id",
+                    String.class,
+                    java.util.UUID.randomUUID())))
+        .contains("idx_mcp_token_families_grant");
+  }
 
   @Test
   @DisplayName("RegisteredClient와 OAuth2AuthorizationConsent를 저장하고 조회한다")

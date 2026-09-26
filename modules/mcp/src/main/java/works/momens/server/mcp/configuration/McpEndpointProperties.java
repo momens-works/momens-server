@@ -1,4 +1,4 @@
-package works.momens.server.mcp.transport.internal;
+package works.momens.server.mcp.configuration;
 
 import jakarta.validation.constraints.NotNull;
 import java.net.URI;

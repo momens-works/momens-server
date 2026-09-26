@@ -9,8 +9,8 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
+import works.momens.server.mcp.configuration.McpEndpointProperties;
 import works.momens.server.mcp.grant.McpScope;
-import works.momens.server.mcp.transport.internal.McpEndpointProperties;
 
 @RestController
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)

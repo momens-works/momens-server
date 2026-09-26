@@ -1,4 +1,4 @@
-package works.momens.server.mcp.internal;
+package works.momens.server.mcp.oauth.infrastructure;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

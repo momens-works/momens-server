@@ -1,4 +1,4 @@
-package works.momens.server.mcp.internal;
+package works.momens.server.mcp.oauth.infrastructure;
 
 import java.time.Clock;
 import java.time.Duration;

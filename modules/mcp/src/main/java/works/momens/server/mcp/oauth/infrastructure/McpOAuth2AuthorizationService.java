@@ -1,4 +1,4 @@
-package works.momens.server.mcp.internal;
+package works.momens.server.mcp.oauth.infrastructure;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -200,7 +200,7 @@ final class McpOAuth2AuthorizationService extends JdbcOAuth2AuthorizationService
     metadata.put(TOKEN_PERSISTENCE_STATE, PRESENTED_VALUE);
   }
 
-  private static String hash(String value) {
+  static String hash(String value) {
     try {
       return HexFormat.of()
           .formatHex(

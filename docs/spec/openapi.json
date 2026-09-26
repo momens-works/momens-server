@@ -1083,6 +1083,75 @@
           }
         }
       },
+      "McpApproveInteractionRequest" : {
+        "properties" : {
+          "workspace_id" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "workspace_id"
+        ]
+      },
+      "McpInteractionRedirectResponse" : {
+        "properties" : {
+          "redirect_to" : {
+            "type" : "string"
+          }
+        }
+      },
+      "McpInteractionResponse" : {
+        "properties" : {
+          "interaction" : {
+            "$ref" : "#/components/schemas/McpInteractionView"
+          }
+        }
+      },
+      "McpInteractionView" : {
+        "properties" : {
+          "client_name" : {
+            "type" : "string"
+          },
+          "expires_at" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "interaction_id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "redirect_host" : {
+            "type" : "string"
+          },
+          "scopes" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "workspaces" : {
+            "items" : {
+              "$ref" : "#/components/schemas/McpInteractionWorkspace"
+            },
+            "type" : "array"
+          }
+        }
+      },
+      "McpInteractionWorkspace" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "slug" : {
+            "type" : "string"
+          }
+        }
+      },
       "MeResponse" : {
         "description" : "내 프로필 응답. user 객체로 감쌉니다.",
         "properties" : {
@@ -11306,6 +11375,335 @@
         ]
       }
     },
+    "/api/oauth/interactions/{id}" : {
+      "get" : {
+        "operationId" : "getMcpInteraction",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "header",
+            "name" : "API-Version",
+            "schema" : {
+              "default" : "1.0.0",
+              "enum" : [
+                "1"
+              ],
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/McpInteractionResponse"
+                }
+              }
+            },
+            "description" : "동의 요청과 사용자의 워크스페이스 목록"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "example" : {
+                  "error" : "invalid_interaction"
+                }
+              }
+            },
+            "description" : "잘못된 interaction"
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "AUTH_INVALID_TOKEN" : {
+                    "description" : "토큰이 유효하지 않습니다.",
+                    "summary" : "AUTH_INVALID_TOKEN",
+                    "value" : {
+                      "error" : {
+                        "code" : "AUTH_INVALID_TOKEN",
+                        "message" : "토큰이 유효하지 않습니다."
+                      }
+                    }
+                  },
+                  "AUTH_UNAUTHORIZED" : {
+                    "description" : "인증이 필요합니다.",
+                    "summary" : "AUTH_UNAUTHORIZED",
+                    "value" : {
+                      "error" : {
+                        "code" : "AUTH_UNAUTHORIZED",
+                        "message" : "인증이 필요합니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "409" : {
+            "content" : {
+              "*/*" : {
+                "example" : {
+                  "error" : "interaction_decided"
+                }
+              }
+            },
+            "description" : "이미 결정된 요청"
+          },
+          "410" : {
+            "content" : {
+              "*/*" : {
+                "example" : {
+                  "error" : "interaction_expired"
+                }
+              }
+            },
+            "description" : "만료된 요청"
+          }
+        },
+        "summary" : "MCP 동의 요청 조회",
+        "tags" : [
+          "McpInteraction"
+        ]
+      }
+    },
+    "/api/oauth/interactions/{id}/approve" : {
+      "post" : {
+        "operationId" : "approveMcpInteraction",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "header",
+            "name" : "API-Version",
+            "schema" : {
+              "default" : "1.0.0",
+              "enum" : [
+                "1"
+              ],
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "example" : {
+                "workspace_id" : "00000000-0000-4000-8000-000000000001"
+              },
+              "schema" : {
+                "$ref" : "#/components/schemas/McpApproveInteractionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/McpInteractionRedirectResponse"
+                }
+              }
+            },
+            "description" : "authorization code를 포함한 client 복귀 URL"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "example" : {
+                  "error" : "invalid_interaction"
+                }
+              }
+            },
+            "description" : "잘못된 interaction 또는 요청"
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "AUTH_INVALID_TOKEN" : {
+                    "description" : "토큰이 유효하지 않습니다.",
+                    "summary" : "AUTH_INVALID_TOKEN",
+                    "value" : {
+                      "error" : {
+                        "code" : "AUTH_INVALID_TOKEN",
+                        "message" : "토큰이 유효하지 않습니다."
+                      }
+                    }
+                  },
+                  "AUTH_UNAUTHORIZED" : {
+                    "description" : "인증이 필요합니다.",
+                    "summary" : "AUTH_UNAUTHORIZED",
+                    "value" : {
+                      "error" : {
+                        "code" : "AUTH_UNAUTHORIZED",
+                        "message" : "인증이 필요합니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "*/*" : {
+                "example" : {
+                  "error" : "forbidden"
+                }
+              }
+            },
+            "description" : "워크스페이스 멤버가 아님"
+          },
+          "409" : {
+            "content" : {
+              "*/*" : {
+                "example" : {
+                  "error" : "interaction_decided"
+                }
+              }
+            },
+            "description" : "이미 결정된 요청"
+          },
+          "410" : {
+            "content" : {
+              "*/*" : {
+                "example" : {
+                  "error" : "interaction_expired"
+                }
+              }
+            },
+            "description" : "만료된 요청"
+          }
+        },
+        "summary" : "MCP 워크스페이스 접근 승인",
+        "tags" : [
+          "McpInteraction"
+        ]
+      }
+    },
+    "/api/oauth/interactions/{id}/deny" : {
+      "post" : {
+        "operationId" : "denyMcpInteraction",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "header",
+            "name" : "API-Version",
+            "schema" : {
+              "default" : "1.0.0",
+              "enum" : [
+                "1"
+              ],
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/McpInteractionRedirectResponse"
+                }
+              }
+            },
+            "description" : "access_denied를 포함한 client 복귀 URL"
+          },
+          "400" : {
+            "content" : {
+              "*/*" : {
+                "example" : {
+                  "error" : "invalid_interaction"
+                }
+              }
+            },
+            "description" : "잘못된 interaction"
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "AUTH_INVALID_TOKEN" : {
+                    "description" : "토큰이 유효하지 않습니다.",
+                    "summary" : "AUTH_INVALID_TOKEN",
+                    "value" : {
+                      "error" : {
+                        "code" : "AUTH_INVALID_TOKEN",
+                        "message" : "토큰이 유효하지 않습니다."
+                      }
+                    }
+                  },
+                  "AUTH_UNAUTHORIZED" : {
+                    "description" : "인증이 필요합니다.",
+                    "summary" : "AUTH_UNAUTHORIZED",
+                    "value" : {
+                      "error" : {
+                        "code" : "AUTH_UNAUTHORIZED",
+                        "message" : "인증이 필요합니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "409" : {
+            "content" : {
+              "*/*" : {
+                "example" : {
+                  "error" : "interaction_decided"
+                }
+              }
+            },
+            "description" : "이미 결정된 요청"
+          },
+          "410" : {
+            "content" : {
+              "*/*" : {
+                "example" : {
+                  "error" : "interaction_expired"
+                }
+              }
+            },
+            "description" : "만료된 요청"
+          }
+        },
+        "summary" : "MCP 접근 요청 거절",
+        "tags" : [
+          "McpInteraction"
+        ]
+      }
+    },
     "/api/projects/{projectId}/milestones" : {
       "post" : {
         "description" : "프로젝트에 마일스톤을 생성하고 소유자 목록을 포함해 반환합니다. 소유자를 지정하지 않으면 프로젝트 소유자가 적용됩니다.",
@@ -19760,6 +20158,10 @@
     {
       "description" : "dev 데모용 Signal 생성 API. local/dev/test 프로필에서만 존재합니다.",
       "name" : "DevSignal"
+    },
+    {
+      "description" : "MCP 워크스페이스 접근 동의 API",
+      "name" : "McpInteraction"
     },
     {
       "description" : "MCP OAuth metadata API",

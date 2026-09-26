@@ -8,6 +8,7 @@ import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.filter.OncePerRequestFilter;
+import works.momens.server.mcp.configuration.McpEndpointProperties;
 
 @RequiredArgsConstructor
 class McpOriginValidationFilter extends OncePerRequestFilter {
