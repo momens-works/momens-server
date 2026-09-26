@@ -45,6 +45,9 @@
 - `auth` → `user` public API (로그인 시 로그인 수단 기준 조회·생성, 프로필).
 - `mcp` → `workspace` public API (Grant 생성과 MCP 요청의 workspace membership 재검증). `mcp`는
   `auth`·`web`·`mobile`의 내부 구현이나 persistence를 참조하지 않는다.
+  내부에서는 OAuth가 transport의 공개 `McpBearerTokenVerifier` 계약을 구현한다. 요청마다
+  reference token·활성 grant·현재 멤버십을 검증하고 user/client/workspace/grant와 token scope를
+  전달한다(`MOM-0990`). transport는 OAuth 구현에 의존하지 않는다.
 - `workspace`는 RBAC·label을 public API로 제공하고 `project`·`memory`·`source`·`minsu`가 사용한다.
 - `context`는 `entity_relations`를 읽어 연결된 식별자만 돌려준다. 지금은 도메인 모듈에 의존하지 않고,
   식별자로 본문을 채우는 조합은 소비하는 쪽이 한다(`mobile`이 `context`의 링크와 `source`의
