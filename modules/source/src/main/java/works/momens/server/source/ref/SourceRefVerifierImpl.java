@@ -1,9 +1,11 @@
 package works.momens.server.source.ref;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -47,7 +49,7 @@ class SourceRefVerifierImpl implements SourceRefVerifier {
                 "UPDATE source_refs SET verified_by_user_id = :userId, verified_at = :now,"
                     + " updated_at = :now WHERE id = :id AND deleted_at IS NULL")
             .param("userId", userId)
-            .param("now", java.sql.Timestamp.from(Instant.now()))
+            .param("now", Timestamp.from(Instant.now()))
             .param("id", sourceRefId)
             .update();
     if (updated == 0) {
@@ -92,13 +94,13 @@ class SourceRefVerifierImpl implements SourceRefVerifier {
     }
     try {
       return objectMapper.readValue(raw, new TypeReference<Map<String, Object>>() {});
-    } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+    } catch (JsonProcessingException e) {
       return null;
     }
   }
 
   private static Instant instant(ResultSet rs, String column) throws SQLException {
-    java.sql.Timestamp value = rs.getTimestamp(column);
+    Timestamp value = rs.getTimestamp(column);
     return value == null ? null : value.toInstant();
   }
 }

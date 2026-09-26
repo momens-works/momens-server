@@ -19,6 +19,7 @@ import works.momens.server.workspace.email.InvitationEmail;
 import works.momens.server.workspace.email.InvitationEmailSender;
 import works.momens.server.workspace.invitation.CreateInvitationCommand;
 import works.momens.server.workspace.invitation.InvitationErrorCode;
+import works.momens.server.workspace.invitation.InvitationStatus;
 import works.momens.server.workspace.invitation.ResendInvitationCommand;
 import works.momens.server.workspace.invitation.RevokeInvitationCommand;
 import works.momens.server.workspace.invitation.WorkspaceInvitationDetail;
@@ -204,7 +205,7 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
                             new BusinessException(
                                 InvitationErrorCode.INVITATION_NOT_FOUND,
                                 Map.of("invitation_id", invitationId.toString()))));
-    if (invitation.status() == works.momens.server.workspace.invitation.InvitationStatus.ACCEPTED) {
+    if (invitation.status() == InvitationStatus.ACCEPTED) {
       throw alreadyAccepted(invitationId);
     }
     return invitation;

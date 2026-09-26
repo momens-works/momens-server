@@ -265,8 +265,8 @@ class SignalActionServiceImplTest {
                     "pm",
                     null,
                     null,
-                    java.util.List.of(),
-                    java.util.List.of(),
+                    List.of(),
+                    List.of(),
                     null)));
 
     SignalActionResult result = service.convertToTask(SIGNAL_ID, USER_ID);
@@ -410,8 +410,8 @@ class SignalActionServiceImplTest {
                     "pm",
                     null,
                     null,
-                    java.util.List.of(),
-                    java.util.List.of(),
+                    List.of(),
+                    List.of(),
                     null)));
 
     SignalActionResult result = service.convertToTask(SIGNAL_ID, USER_ID);

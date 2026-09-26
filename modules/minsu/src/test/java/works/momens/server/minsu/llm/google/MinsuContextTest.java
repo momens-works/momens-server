@@ -27,6 +27,7 @@ import works.momens.server.minsu.SignalTaskDraftInput;
 import works.momens.server.minsu.TaskDraft;
 import works.momens.server.minsu.draft.ledger.TaskDraftGenerationEnroller;
 import works.momens.server.minsu.llm.MinsuLlmProperties;
+import works.momens.server.minsu.llm.ModelSelection;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
 
@@ -155,7 +156,7 @@ class MinsuContextTest {
     private final AtomicInteger calls = new AtomicInteger();
 
     @Override
-    public GoogleSdkClient create(works.momens.server.minsu.llm.ModelSelection selection) {
+    public GoogleSdkClient create(ModelSelection selection) {
       calls.incrementAndGet();
       throw new IllegalStateException("ADC unavailable");
     }

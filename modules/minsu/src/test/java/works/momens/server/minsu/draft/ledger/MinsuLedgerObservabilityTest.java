@@ -3,8 +3,10 @@ package works.momens.server.minsu.draft.ledger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -101,14 +103,14 @@ class MinsuLedgerObservabilityTest {
                     meterRegistry
                         .get("momens.minsu.ledger.claim.wait.duration")
                         .timer()
-                        .totalTime(java.util.concurrent.TimeUnit.SECONDS))
+                        .totalTime(TimeUnit.SECONDS))
                 .isZero(),
         () ->
             assertThat(
                     meterRegistry
                         .get("momens.minsu.ledger.generation.duration")
                         .timer()
-                        .totalTime(java.util.concurrent.TimeUnit.SECONDS))
+                        .totalTime(TimeUnit.SECONDS))
                 .isZero());
   }
 
@@ -156,7 +158,7 @@ class MinsuLedgerObservabilityTest {
     return summary(reason).count();
   }
 
-  private io.micrometer.core.instrument.DistributionSummary summary(String reason) {
+  private DistributionSummary summary(String reason) {
     return meterRegistry
         .get("momens.minsu.ledger.completion.attempts")
         .tag("completion.reason", reason)

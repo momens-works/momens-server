@@ -12,6 +12,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -57,7 +58,7 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
 
   private static final String SECRET = "state-secret-that-is-long-enough-for-hs256";
   private static final String TOKEN_KEY =
-      java.util.Base64.getEncoder()
+      Base64.getEncoder()
           .encodeToString("0123456789abcdef0123456789abcdef".getBytes(StandardCharsets.UTF_8));
   private static final Instant NOW = Instant.parse("2026-08-21T00:00:00Z");
 

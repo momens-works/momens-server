@@ -5,6 +5,7 @@ import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
+import java.util.Locale;
 import org.springframework.stereotype.Component;
 import works.momens.server.minsu.llm.LlmResponse;
 import works.momens.server.minsu.llm.ModelSelection;
@@ -91,6 +92,6 @@ final class MinsuObservability {
   private static String safeFinishReason(String finishReason) {
     return finishReason == null || finishReason.isBlank()
         ? "none"
-        : finishReason.toLowerCase(java.util.Locale.ROOT);
+        : finishReason.toLowerCase(Locale.ROOT);
   }
 }

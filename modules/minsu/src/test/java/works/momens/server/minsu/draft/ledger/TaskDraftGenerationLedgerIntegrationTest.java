@@ -11,6 +11,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -571,7 +572,7 @@ class TaskDraftGenerationLedgerIntegrationTest extends AbstractPostgresIntegrati
     return taskId;
   }
 
-  private <T> T inTransaction(java.util.function.Supplier<T> action) {
+  private <T> T inTransaction(Supplier<T> action) {
     return new TransactionTemplate(transactionManager).execute(status -> action.get());
   }
 

@@ -9,6 +9,7 @@ import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import works.momens.server.common.api.ApiException;
 import works.momens.server.common.api.ApiExceptions;
@@ -62,7 +63,7 @@ class ApiExceptionDeclarationTest {
   private static List<JavaMethod> declaringMethods() {
     return CLASSES.stream()
         .map(JavaClass::getMethods)
-        .flatMap(java.util.Set::stream)
+        .flatMap(Set::stream)
         .filter(
             method ->
                 method.isAnnotatedWith(ApiException.class)

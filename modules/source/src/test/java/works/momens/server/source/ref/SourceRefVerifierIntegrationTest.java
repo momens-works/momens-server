@@ -3,6 +3,7 @@ package works.momens.server.source.ref;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -121,7 +122,7 @@ class SourceRefVerifierIntegrationTest extends AbstractPostgresIntegrationTest {
         "설명 문구 변경",
         "수집한 원문 전체",
         "{\"thread_ts\": \"1712.34\"}",
-        deletedAt == null ? null : java.sql.Timestamp.from(deletedAt));
+        deletedAt == null ? null : Timestamp.from(deletedAt));
     return id;
   }
 }

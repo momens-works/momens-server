@@ -10,6 +10,7 @@ import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -181,7 +182,7 @@ class JwtTokenServiceTest {
       tokens.values().stream()
           .filter(token -> token.getUserId().equals(userId))
           .filter(token -> token.getClientType() == clientType)
-          .filter(token -> java.util.Objects.equals(token.getDevice(), device))
+          .filter(token -> Objects.equals(token.getDevice(), device))
           .filter(token -> token.isActive(revokedAt))
           .forEach(token -> token.revoke(revokedAt));
     }

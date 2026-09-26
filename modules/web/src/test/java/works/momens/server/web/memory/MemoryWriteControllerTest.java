@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.security.Principal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +44,7 @@ class MemoryWriteControllerTest {
   private static final UUID CANDIDATE_ID = UUID.fromString("30d9e9fe-f43b-4097-a88e-dc19f0a5b025");
   private static final UUID MEMORY_ID = UUID.fromString("9d0a1a51-7f5f-4c6a-9b7a-1c0b4d5e6f70");
   private static final UUID TARGET_ID = UUID.fromString("2f0d3a7c-6a44-4a2f-9b04-5f2a9c7f8d31");
-  private final java.security.Principal principal = USER_ID::toString;
+  private final Principal principal = USER_ID::toString;
 
   @Test
   @DisplayName("확정은 201과 확정 메모리를 레거시 필드 이름으로 응답한다")

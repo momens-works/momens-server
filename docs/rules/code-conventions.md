@@ -15,6 +15,11 @@
   처리합니다.
 - GJF가 자동 처리하므로 따로 신경 쓰지 않아도 되는 것: 와일드카드 import 금지, 모든
   제어문 중괄호, 연산자 공백, 배열 Java식(`String[]`).
+- Java 코드에서 import 가능한 타입은 FQN으로 직접 참조하지 않습니다. 루트 `check`의
+  `verifyNoUnnecessaryFqn`이 모든 모듈의 소스를 검사합니다. `package-info.java`의 패키지
+  애너테이션은 import보다 앞에 있어 FQN이 필요하며, JPQL 생성자·reflection 대상 문자열은
+  Java 타입 참조가 아니므로 검사 대상에서 제외합니다. 새 최상위 패키지의 라이브러리를
+  도입하면 검사 task의 패키지 목록에도 추가합니다.
 
 ### 네이밍
 

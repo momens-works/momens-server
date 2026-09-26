@@ -3,6 +3,7 @@ package works.momens.server.auth.internal.google;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -169,7 +170,7 @@ class GoogleOAuthClientTest {
       return new GoogleServer(server, base + "/token", base + "/userinfo");
     }
 
-    private static com.sun.net.httpserver.HttpHandler jsonHandler(int status, String body) {
+    private static HttpHandler jsonHandler(int status, String body) {
       return exchange -> {
         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().add("Content-Type", "application/json");

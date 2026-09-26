@@ -1,5 +1,6 @@
 package works.momens.server.mobile.board;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -99,11 +100,11 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
         jdbcTemplate.queryForMap(
             "SELECT status, priority, role, label, workspace_id FROM tasks WHERE project_id = ?",
             project);
-    org.assertj.core.api.Assertions.assertThat(row.get("status")).isEqualTo("todo");
-    org.assertj.core.api.Assertions.assertThat(row.get("priority")).isEqualTo("high");
-    org.assertj.core.api.Assertions.assertThat(row.get("role")).isEqualTo("backend");
-    org.assertj.core.api.Assertions.assertThat((String) row.get("label")).startsWith("MOM-");
-    org.assertj.core.api.Assertions.assertThat(row.get("workspace_id")).isEqualTo(workspace);
+    assertThat(row.get("status")).isEqualTo("todo");
+    assertThat(row.get("priority")).isEqualTo("high");
+    assertThat(row.get("role")).isEqualTo("backend");
+    assertThat((String) row.get("label")).startsWith("MOM-");
+    assertThat(row.get("workspace_id")).isEqualTo(workspace);
   }
 
   @Test
