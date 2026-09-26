@@ -1,14 +1,12 @@
 package works.momens.server.web.workspace;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import works.momens.server.common.api.BusinessException;
 import works.momens.server.web.WorkspaceAccessChecker;
-import works.momens.server.workspace.WorkspaceErrorCode;
+import works.momens.server.workspace.membership.AssignableWorkspaceRole;
 import works.momens.server.workspace.membership.ChangeMembershipRoleCommand;
 import works.momens.server.workspace.membership.RemoveMembershipCommand;
 import works.momens.server.workspace.membership.WorkspaceMembershipWriter;
@@ -42,18 +40,12 @@ class WorkspaceMemberService {
     return workspaceMemberListService.list(workspaceId, userId);
   }
 
-  /** 멤버의 역할을 변경합니다. 부여할 수 있는 역할인지는 enum이 판정하며, 판정 결과가 없으면 {@code WORKSPACE_INVALID_ROLE}을 던집니다. */
+  /** 멤버의 role을 변경합니다. 요청 DTO에서 `AssignableWorkspaceRole` 타입으로 값을 받으므로 `owner`는 이 메서드에 전달되지 않습니다. */
   @Transactional
-  public void changeRole(UUID workspaceId, UUID userId, UUID targetUserId, String rawRole) {
+  public void changeRole(
+      UUID workspaceId, UUID userId, UUID targetUserId, AssignableWorkspaceRole role) {
     workspaceAccessChecker.requireWorkspaceExists(workspaceId);
     workspaceAccessChecker.requireRoleAtLeast(workspaceId, userId, WorkspaceRole.ADMIN);
-    WorkspaceRole role =
-        WorkspaceRole.assignableFrom(rawRole)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        WorkspaceErrorCode.WORKSPACE_INVALID_ROLE,
-                        Map.of("role", String.valueOf(rawRole))));
     workspaceMembershipWriter.changeRole(
         new ChangeMembershipRoleCommand(workspaceId, targetUserId, role));
   }

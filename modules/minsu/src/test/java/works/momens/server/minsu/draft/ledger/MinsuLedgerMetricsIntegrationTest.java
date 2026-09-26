@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.lang.ref.Reference;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
@@ -43,21 +44,31 @@ class MinsuLedgerMetricsIntegrationTest extends AbstractPostgresIntegrationTest 
   void preRegistersGaugesBeforeFirstSnapshot() {
     SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
 
-    new MinsuLedgerMetrics(repository, meterRegistry);
+    MinsuLedgerMetrics metrics = new MinsuLedgerMetrics(repository, meterRegistry);
 
     assertAll(
         () ->
-            assertThat(gauge(meterRegistry, "momens.minsu.ledger.generations", "pending")).isZero(),
-        () ->
-            assertThat(gauge(meterRegistry, "momens.minsu.ledger.generations", "processing"))
+            assertThat(gauge(metrics, meterRegistry, "momens.minsu.ledger.generations", "pending"))
                 .isZero(),
         () ->
-            assertThat(gauge(meterRegistry, "momens.minsu.ledger.oldest.unfinished.age")).isZero(),
-        () -> assertThat(gauge(meterRegistry, "momens.minsu.ledger.expired.leases")).isZero(),
+            assertThat(
+                    gauge(metrics, meterRegistry, "momens.minsu.ledger.generations", "processing"))
+                .isZero(),
         () ->
-            assertThat(gauge(meterRegistry, "momens.minsu.ledger.expired.lease.max.age")).isZero(),
+            assertThat(gauge(metrics, meterRegistry, "momens.minsu.ledger.oldest.unfinished.age"))
+                .isZero(),
         () ->
-            assertThat(gauge(meterRegistry, "momens.minsu.ledger.deadline.exceeded.generations"))
+            assertThat(gauge(metrics, meterRegistry, "momens.minsu.ledger.expired.leases"))
+                .isZero(),
+        () ->
+            assertThat(gauge(metrics, meterRegistry, "momens.minsu.ledger.expired.lease.max.age"))
+                .isZero(),
+        () ->
+            assertThat(
+                    gauge(
+                        metrics,
+                        meterRegistry,
+                        "momens.minsu.ledger.deadline.exceeded.generations"))
                 .isZero());
   }
 
@@ -78,14 +89,15 @@ class MinsuLedgerMetricsIntegrationTest extends AbstractPostgresIntegrationTest 
 
     assertAll(
         () ->
-            assertThat(gauge(meterRegistry, "momens.minsu.ledger.generations", "pending"))
+            assertThat(gauge(metrics, meterRegistry, "momens.minsu.ledger.generations", "pending"))
                 .isEqualTo(2),
         () ->
-            assertThat(gauge(meterRegistry, "momens.minsu.ledger.generations", "processing"))
+            assertThat(
+                    gauge(metrics, meterRegistry, "momens.minsu.ledger.generations", "processing"))
                 .isEqualTo(1),
         // 종료된 행은 나이 집계에서도 빠져야 한다. 남아 있으면 테이블이 쌓일수록 age가 계속 커진다.
         () ->
-            assertThat(gauge(meterRegistry, "momens.minsu.ledger.oldest.unfinished.age"))
+            assertThat(gauge(metrics, meterRegistry, "momens.minsu.ledger.oldest.unfinished.age"))
                 .isBetween(115.0, 125.0));
   }
 
@@ -102,13 +114,15 @@ class MinsuLedgerMetricsIntegrationTest extends AbstractPostgresIntegrationTest 
     metrics.refresh();
 
     assertAll(
-        () -> assertThat(gauge(meterRegistry, "momens.minsu.ledger.expired.leases")).isEqualTo(2),
+        () ->
+            assertThat(gauge(metrics, meterRegistry, "momens.minsu.ledger.expired.leases"))
+                .isEqualTo(2),
         // 가장 오래 만료된 쪽(90초) 기준이다. 30초 쪽이 나오면 최대가 아니라 최소를 보고 있다는 뜻이다.
         // 정확히 90이 아닌 이유는 Postgres NOW()가 트랜잭션 시작 시각이어서다. 이 테스트는 삽입과 집계가
         // 한 트랜잭션이라 기준 시각이 삽입보다 이르다. 운영에서는 refresh()마다 트랜잭션이 새로 열려
         // 오차가 밀리초 단위다.
         () ->
-            assertThat(gauge(meterRegistry, "momens.minsu.ledger.expired.lease.max.age"))
+            assertThat(gauge(metrics, meterRegistry, "momens.minsu.ledger.expired.lease.max.age"))
                 .isBetween(85.0, 95.0));
   }
 
@@ -123,7 +137,7 @@ class MinsuLedgerMetricsIntegrationTest extends AbstractPostgresIntegrationTest 
 
     metrics.refresh();
 
-    assertThat(gauge(meterRegistry, "momens.minsu.ledger.deadline.exceeded.generations"))
+    assertThat(gauge(metrics, meterRegistry, "momens.minsu.ledger.deadline.exceeded.generations"))
         .isEqualTo(1);
   }
 
@@ -133,11 +147,11 @@ class MinsuLedgerMetricsIntegrationTest extends AbstractPostgresIntegrationTest 
     SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
     MinsuLedgerMetrics metrics = new MinsuLedgerMetrics(repository, meterRegistry);
     Thread.sleep(50);
-    double beforeRefresh = gauge(meterRegistry, "momens.minsu.ledger.snapshot.age");
+    double beforeRefresh = gauge(metrics, meterRegistry, "momens.minsu.ledger.snapshot.age");
 
     metrics.refresh();
 
-    assertThat(gauge(meterRegistry, "momens.minsu.ledger.snapshot.age"))
+    assertThat(gauge(metrics, meterRegistry, "momens.minsu.ledger.snapshot.age"))
         .isLessThan(beforeRefresh)
         .isNotNegative();
   }
@@ -152,11 +166,11 @@ class MinsuLedgerMetricsIntegrationTest extends AbstractPostgresIntegrationTest 
     SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
     MinsuLedgerMetrics metrics = new MinsuLedgerMetrics(failing, meterRegistry);
     Thread.sleep(30);
-    double beforeFailure = gauge(meterRegistry, "momens.minsu.ledger.snapshot.age");
+    double beforeFailure = gauge(metrics, meterRegistry, "momens.minsu.ledger.snapshot.age");
 
     metrics.refresh();
 
-    assertThat(gauge(meterRegistry, "momens.minsu.ledger.snapshot.age"))
+    assertThat(gauge(metrics, meterRegistry, "momens.minsu.ledger.snapshot.age"))
         .isGreaterThan(beforeFailure);
   }
 
@@ -188,12 +202,21 @@ class MinsuLedgerMetricsIntegrationTest extends AbstractPostgresIntegrationTest 
     assertThat(String.join("\n", plan)).contains("idx_minsu_task_draft_generations_unfinished");
   }
 
-  private double gauge(SimpleMeterRegistry meterRegistry, String name) {
-    return meterRegistry.get(name).gauge().value();
+  // gauge는 관찰 대상 객체를 weak reference로만 참조하므로, 객체가 GC되면 NaN을 반환합니다.
+  // 객체를 지역 변수에 할당해도 마지막 사용 이후에는 GC될 수 있으므로 이것만으로는 충분하지 않습니다.
+  // 따라서 관찰 대상 객체를 인자로 받고, gauge 값을 읽은 직후 reachabilityFence를 호출해
+  // 이 시점까지 객체가 strongly reachable한 상태를 유지합니다. 아래 두 메서드 모두 같은 이유로 구현합니다.
+  private double gauge(MinsuLedgerMetrics metrics, SimpleMeterRegistry meterRegistry, String name) {
+    double value = meterRegistry.get(name).gauge().value();
+    Reference.reachabilityFence(metrics);
+    return value;
   }
 
-  private double gauge(SimpleMeterRegistry meterRegistry, String name, String status) {
-    return meterRegistry.get(name).tag("status", status).gauge().value();
+  private double gauge(
+      MinsuLedgerMetrics metrics, SimpleMeterRegistry meterRegistry, String name, String status) {
+    double value = meterRegistry.get(name).tag("status", status).gauge().value();
+    Reference.reachabilityFence(metrics);
+    return value;
   }
 
   private UUID persist(TaskDraftGeneration.TaskDraftGenerationBuilder builder) {

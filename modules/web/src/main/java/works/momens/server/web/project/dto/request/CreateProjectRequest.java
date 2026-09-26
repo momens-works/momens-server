@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import works.momens.server.project.core.ProjectHealthStatus;
 
 @Schema(description = "웹 프로젝트 생성 요청")
 public record CreateProjectRequest(
@@ -12,10 +13,7 @@ public record CreateProjectRequest(
         String name,
     @Schema(description = "프로젝트 설명") String description,
     @Schema(description = "목표일", format = "date") LocalDate targetDate,
-    @Schema(
-            description = "상태. 생략하면 open이 적용됩니다.",
-            allowableValues = {"on_track", "at_risk", "blocked", "planned", "open"})
-        String healthStatus,
+    @Schema(description = "상태. 생략하면 open이 적용됩니다.") ProjectHealthStatus healthStatus,
     @Schema(description = "진행률. 0 이상 100 이하이며, 생략하면 0이 적용됩니다.") Integer progress,
     @Schema(description = "프로젝트 요약") String summary,
     @Schema(description = "미해결 항목 수. 0 이상이며, 생략하면 0이 적용됩니다.") Integer unresolvedCount,

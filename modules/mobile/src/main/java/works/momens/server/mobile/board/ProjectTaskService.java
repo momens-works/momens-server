@@ -12,15 +12,18 @@ import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.minsu.DraftStatus;
 import works.momens.server.minsu.TaskDraftStatusReader;
-import works.momens.server.mobile.MobilePriority;
+import works.momens.server.mobile.MobileTaskPriority;
 import works.momens.server.project.core.ProjectErrorCode;
 import works.momens.server.project.core.ProjectReader;
 import works.momens.server.project.task.BoardTask;
 import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.TaskDetail;
 import works.momens.server.project.task.TaskErrorCode;
+import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskReader;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskSnapshot;
+import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.project.task.UpdateTaskCommand;
 import works.momens.server.user.UserProfile;
@@ -32,7 +35,7 @@ import works.momens.server.workspace.membership.WorkspaceMembershipReader;
  * 생성 상태) public API를 조합하고 도메인 정책을 소유하지 않습니다.
  *
  * <p>보드 그룹 구성과 상세의 purpose 개명은 모바일 조합 규칙이므로 이 서비스가 소유하고, 저장 priority 해석(urgent를 high로 반환)은 {@link
- * MobilePriority}가 소유합니다.
+ * MobileTaskPriority}가 소유합니다.
  *
  * <p>태스크 관련자료 목록과 개수는 {@link TaskMaterialAssembler}에 위임합니다.
  *
@@ -53,28 +56,26 @@ class ProjectTaskService {
   @Transactional(readOnly = true)
   public List<MobileTaskGroup> getBoard(UUID projectId, UUID userId) {
     UUID workspaceId = requireProjectMember(projectId, userId);
-    List<BoardTask> tasks = taskReader.listTasksByStatus(projectId, BoardStatus.keys());
+    List<BoardTask> tasks = taskReader.listTasksByStatus(projectId, MobileTaskStatus.keys());
     Map<UUID, Integer> materialCounts =
         taskMaterialAssembler.countMaterials(
             workspaceId, tasks.stream().map(BoardTask::id).toList());
-    Map<String, List<MobileTaskCard>> cardsByStatus =
+    Map<MobileTaskStatus, List<MobileTaskCard>> cardsByStatus =
         tasks.stream()
             .collect(
                 Collectors.groupingBy(
-                    BoardTask::status,
+                    task -> MobileTaskStatus.of(storedStatus(task.status())),
                     Collectors.mapping(
                         task -> toCard(task, materialCounts.getOrDefault(task.id(), 0)),
                         Collectors.toList())));
-    return Arrays.stream(BoardStatus.values())
-        .map(
-            status ->
-                new MobileTaskGroup(status, cardsByStatus.getOrDefault(status.key(), List.of())))
+    return Arrays.stream(MobileTaskStatus.values())
+        .map(status -> new MobileTaskGroup(status, cardsByStatus.getOrDefault(status, List.of())))
         .toList();
   }
 
   @Transactional
   public TaskSnapshot createTask(
-      UUID projectId, UUID userId, String title, String role, String priority) {
+      UUID projectId, UUID userId, String title, TaskRole role, TaskPriority priority) {
     UUID workspaceId = requireProjectMember(projectId, userId);
     return taskWriter.create(
         CreateTaskCommand.manual(projectId, workspaceId, title, role, priority));
@@ -110,10 +111,10 @@ class ProjectTaskService {
       UUID taskId,
       UUID userId,
       String title,
-      String role,
+      TaskRole role,
       UUID assigneeId,
-      String priority,
-      String status,
+      TaskPriority priority,
+      TaskStatus status,
       String purpose,
       List<ChecklistEdit> checklistItems) {
     requireTaskMember(taskId, userId);
@@ -161,7 +162,7 @@ class ProjectTaskService {
         detail.status(),
         detail.role(),
         toAssignee(detail.assigneeId()),
-        MobilePriority.fromStored(detail.priority()).key(),
+        MobileTaskPriority.fromStored(detail.priority()).key(),
         detail.description(),
         detail.checklistItems(),
         taskMaterialAssembler.getMaterials(detail.workspaceId(), detail.id()),
@@ -195,12 +196,16 @@ class ProjectTaskService {
     return workspaceId;
   }
 
+  private static TaskStatus storedStatus(String value) {
+    return TaskStatus.from(value).orElseThrow(IllegalStateException::new);
+  }
+
   private static MobileTaskCard toCard(BoardTask task, int materialCount) {
     return new MobileTaskCard(
         task.id(),
         task.title(),
         task.role(),
-        MobilePriority.fromStored(task.priority()).key(),
+        MobileTaskPriority.fromStored(task.priority()).key(),
         materialCount);
   }
 }

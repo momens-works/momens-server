@@ -12,6 +12,7 @@ import java.security.Principal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -23,6 +24,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.servlet.config.annotation.ApiVersionConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskSnapshot;
 
 /**
@@ -48,10 +50,10 @@ class ProjectTaskControllerTest {
         .thenReturn(
             List.of(
                 new MobileTaskGroup(
-                    BoardStatus.TODO,
+                    MobileTaskStatus.TODO,
                     List.of(new MobileTaskCard(taskId, "투두 태스크", "frontend", "low", 2))),
-                new MobileTaskGroup(BoardStatus.IN_PROGRESS, List.of()),
-                new MobileTaskGroup(BoardStatus.DONE, List.of())));
+                new MobileTaskGroup(MobileTaskStatus.IN_PROGRESS, List.of()),
+                new MobileTaskGroup(MobileTaskStatus.DONE, List.of())));
 
     mockMvc
         .perform(
@@ -73,7 +75,8 @@ class ProjectTaskControllerTest {
   @Test
   void createTaskReturnsCreatedTask() throws Exception {
     UUID taskId = UUID.randomUUID();
-    when(projectTaskService.createTask(eq(PROJECT_ID), eq(USER_ID), eq("제목"), any(), eq("medium")))
+    when(projectTaskService.createTask(
+            eq(PROJECT_ID), eq(USER_ID), eq("제목"), any(), eq(TaskPriority.MEDIUM)))
         .thenReturn(
             new TaskSnapshot(
                 taskId,
@@ -103,6 +106,43 @@ class ProjectTaskControllerTest {
         .andExpect(jsonPath("$.task.project_id").value(PROJECT_ID.toString()))
         .andExpect(jsonPath("$.task.status").value("todo"))
         .andExpect(jsonPath("$.task.role").value("pm"));
+  }
+
+  @Test
+  @DisplayName("urgent로 태스크를 생성하면 그대로 저장하고 응답에서는 high로 표시합니다")
+  void createTaskAcceptsUrgentAndRespondsHigh() throws Exception {
+    UUID taskId = UUID.randomUUID();
+    when(projectTaskService.createTask(
+            eq(PROJECT_ID), eq(USER_ID), eq("제목"), any(), eq(TaskPriority.URGENT)))
+        .thenReturn(
+            new TaskSnapshot(
+                taskId,
+                UUID.randomUUID(),
+                PROJECT_ID,
+                null,
+                "MOM-0001",
+                "제목",
+                null,
+                "todo",
+                "urgent",
+                "pm",
+                null,
+                null,
+                Instant.EPOCH,
+                Instant.EPOCH));
+
+    mockMvc
+        .perform(
+            post("/api/mobile/projects/{projectId}/tasks", PROJECT_ID)
+                .principal(principal)
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"제목\",\"role\":\"pm\",\"priority\":\"urgent\"}"))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.task.id").value(taskId.toString()))
+        .andExpect(jsonPath("$.task.project_id").value(PROJECT_ID.toString()))
+        .andExpect(jsonPath("$.task.status").value("todo"))
+        .andExpect(jsonPath("$.task.priority").value("high"));
   }
 
   @Test
@@ -180,7 +220,7 @@ class ProjectTaskControllerTest {
                 .principal(principal)
                 .header("API-Version", "1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\":\"제목\",\"role\":\"pm\",\"priority\":\"urgent\"}"))
+                .content("{\"title\":\"제목\",\"role\":\"pm\",\"priority\":\"critical\"}"))
         .andExpect(status().isBadRequest());
   }
 

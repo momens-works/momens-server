@@ -13,6 +13,7 @@ import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
+import works.momens.server.notification.PushInstallationPlatform;
 import works.momens.server.notification.device.PushInstallationDirectory.InstallationSnapshot;
 
 /** delivery nested 모듈에 여는 설치 원장 계약(활성 android 조회·id 조회·무효 token 비활성화)을 실제 PostgreSQL로 검증합니다. */
@@ -62,9 +63,9 @@ class PushInstallationDirectoryIntegrationTest extends AbstractPostgresIntegrati
   @Test
   @DisplayName("token refresh 후 도착한 이전 token 실패는 갱신된 설치를 비활성화하지 않는다")
   void staleTokenFailureDoesNotDeactivateRefreshedInstallation() {
-    registrar.register(USER_A, "fid-a", "token-a", "android");
+    registrar.register(USER_A, "fid-a", "token-a", PushInstallationPlatform.ANDROID);
     PushInstallation installation = repository.findByFirebaseInstallationId("fid-a").orElseThrow();
-    registrar.register(USER_A, "fid-a", "token-b", "android");
+    registrar.register(USER_A, "fid-a", "token-b", PushInstallationPlatform.ANDROID);
 
     directory.deactivateIfTokenMatches(installation.getId(), "token-a");
     entityManager.clear();

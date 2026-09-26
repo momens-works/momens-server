@@ -51,11 +51,18 @@
             "type" : "string"
           },
           "role" : {
-            "description" : "추가할 멤버에게 부여할 역할입니다. admin과 member만 허용합니다.",
+            "description" : "추가할 멤버에게 부여할 role입니다. owner는 워크스페이스 생성 시에만 지정되므로 부여할 수 없습니다.",
+            "enum" : [
+              "admin",
+              "member"
+            ],
             "example" : "member",
             "type" : "string"
           }
-        }
+        },
+        "required" : [
+          "role"
+        ]
       },
       "AssigneeResponse" : {
         "description" : "담당자",
@@ -385,9 +392,13 @@
           },
           "type" : {
             "description" : "Signal type",
+            "enum" : [
+              "decision",
+              "risk",
+              "question",
+              "change"
+            ],
             "example" : "risk",
-            "minLength" : 1,
-            "pattern" : "decision|risk|question|change",
             "type" : "string"
           }
         },
@@ -531,17 +542,25 @@
         "description" : "일반 태스크 생성 요청",
         "properties" : {
           "priority" : {
-            "description" : "우선순위. low/medium/high",
+            "description" : "우선순위. urgent도 그대로 저장하며 응답에서는 high로 표시합니다.",
+            "enum" : [
+              "low",
+              "medium",
+              "high",
+              "urgent"
+            ],
             "example" : "medium",
-            "minLength" : 1,
-            "pattern" : "low|medium|high",
             "type" : "string"
           },
           "role" : {
-            "description" : "역할. 생성은 pm/design/backend/frontend 중 하나",
+            "description" : "역할. pm은 기획과 조율, design은 디자인, backend는 서버, frontend는 웹과 앱 화면 작업을 담당합니다.",
+            "enum" : [
+              "pm",
+              "design",
+              "backend",
+              "frontend"
+            ],
             "example" : "backend",
-            "minLength" : 1,
-            "pattern" : "pm|design|backend|frontend",
             "type" : "string"
           },
           "title" : {
@@ -601,7 +620,7 @@
             "type" : "string"
           },
           "kind" : {
-            "description" : "업데이트 종류. 생략하거나 빈 값이면 comment입니다.",
+            "description" : "업데이트 kind. 생략하면 comment를 사용합니다.",
             "enum" : [
               "comment",
               "update"
@@ -644,24 +663,21 @@
             "type" : "string"
           },
           "priority" : {
-            "description" : "태스크 우선순위. 생략하거나 빈 값이면 medium입니다.",
+            "description" : "태스크 priority. 생략하면 medium을 사용합니다.",
             "enum" : [
               "low",
               "medium",
-              "med",
               "high",
               "urgent"
             ],
             "type" : "string"
           },
           "status" : {
-            "description" : "태스크 상태. 생략하거나 빈 값이면 backlog입니다.",
+            "description" : "태스크 status. 생략하면 backlog를 사용합니다.",
             "enum" : [
               "backlog",
               "todo",
               "in_progress",
-              "progress",
-              "in-progress",
               "done",
               "cancelled"
             ],
@@ -685,11 +701,18 @@
             "type" : "string"
           },
           "role" : {
-            "description" : "초대 수락 시 부여할 역할입니다. admin과 member만 허용합니다.",
+            "description" : "초대 수락 시 사용자에게 부여할 role입니다. owner는 워크스페이스 생성 시에만 지정되므로 부여할 수 없습니다.",
+            "enum" : [
+              "admin",
+              "member"
+            ],
             "example" : "member",
             "type" : "string"
           }
-        }
+        },
+        "required" : [
+          "role"
+        ]
       },
       "CreateWorkspaceRequest" : {
         "description" : "워크스페이스 생성 요청",
@@ -1336,10 +1359,11 @@
             "type" : "string"
           },
           "platform" : {
-            "description" : "설치 platform. 이번 범위에서는 android만 허용",
+            "description" : "push 알림을 받을 앱이 설치된 기기의 platform입니다.",
+            "enum" : [
+              "android"
+            ],
             "example" : "android",
-            "minLength" : 1,
-            "pattern" : "android",
             "type" : "string"
           }
         },
@@ -1472,6 +1496,13 @@
           "description" : {
             "description" : "카드 헤더 설명",
             "type" : "string"
+          },
+          "next_cursor" : {
+            "description" : "다음 페이지의 cursor입니다. 다음 페이지가 없으면 `null`로 포함됩니다.",
+            "type" : [
+              "string",
+              "null"
+            ]
           },
           "signals" : {
             "description" : "미처리 Signal 목록(생성 시각 내림차순). 없으면 빈 배열입니다.",
@@ -2575,10 +2606,14 @@
             "type" : "array"
           },
           "priority" : {
-            "description" : "우선순위. low/medium/high",
+            "description" : "우선순위. urgent도 그대로 저장하며 응답에서는 high로 표시합니다.",
+            "enum" : [
+              "low",
+              "medium",
+              "high",
+              "urgent"
+            ],
             "example" : "medium",
-            "minLength" : 1,
-            "pattern" : "low|medium|high",
             "type" : "string"
           },
           "purpose" : {
@@ -2588,17 +2623,26 @@
             "type" : "string"
           },
           "role" : {
-            "description" : "역할. pm/design/backend/frontend 중 하나",
+            "description" : "역할. pm은 기획과 조율, design은 디자인, backend는 서버, frontend는 웹과 앱 화면 작업을 담당합니다.",
+            "enum" : [
+              "pm",
+              "design",
+              "backend",
+              "frontend"
+            ],
             "example" : "pm",
-            "minLength" : 1,
-            "pattern" : "pm|design|backend|frontend",
             "type" : "string"
           },
           "status" : {
-            "description" : "상태. backlog/todo/in_progress/done/cancelled 중 하나",
+            "description" : "상태. backlog는 아직 일정을 잡지 않은 작업, todo는 할 일, in_progress는 진행 중인 작업, done은 완료한 작업, cancelled는 취소한 작업입니다.",
+            "enum" : [
+              "backlog",
+              "todo",
+              "in_progress",
+              "done",
+              "cancelled"
+            ],
             "example" : "in_progress",
-            "minLength" : 1,
-            "pattern" : "backlog|todo|in_progress|done|cancelled",
             "type" : "string"
           },
           "title" : {
@@ -2620,33 +2664,53 @@
         "description" : "웹 태스크 수정 요청",
         "properties" : {
           "assignee_id" : {
+            "description" : "담당자 식별자. null이면 담당자를 해제합니다.",
             "format" : "uuid",
             "type" : "string",
             "writeOnly" : true
           },
           "description" : {
+            "description" : "태스크 설명. null이면 설명을 제거합니다.",
             "type" : "string",
             "writeOnly" : true
           },
           "due_date" : {
+            "description" : "마감일. null이면 마감일을 제거합니다.",
             "format" : "date",
             "type" : "string",
             "writeOnly" : true
           },
           "milestone_id" : {
+            "description" : "마일스톤 식별자. null이면 연결을 해제합니다.",
             "format" : "uuid",
             "type" : "string",
             "writeOnly" : true
           },
           "priority" : {
+            "description" : "태스크 priority. 생략하면 기존 값을 유지하며, null은 허용하지 않습니다.",
+            "enum" : [
+              "low",
+              "medium",
+              "high",
+              "urgent"
+            ],
             "type" : "string",
             "writeOnly" : true
           },
           "status" : {
+            "description" : "태스크 status. 생략하면 기존 값을 유지하며, null은 허용하지 않습니다.",
+            "enum" : [
+              "backlog",
+              "todo",
+              "in_progress",
+              "done",
+              "cancelled"
+            ],
             "type" : "string",
             "writeOnly" : true
           },
           "title" : {
+            "description" : "태스크 제목. 빈 문자열은 기존 값을 유지하며 null은 허용하지 않습니다.",
             "type" : "string",
             "writeOnly" : true
           }
@@ -2656,11 +2720,18 @@
         "description" : "워크스페이스 멤버 수정 요청",
         "properties" : {
           "role" : {
-            "description" : "부여할 역할. admin 또는 member만 허용합니다.",
+            "description" : "멤버에게 새로 부여할 role입니다. owner는 워크스페이스 생성 시에만 지정되므로 부여할 수 없습니다.",
+            "enum" : [
+              "admin",
+              "member"
+            ],
             "example" : "admin",
             "type" : "string"
           }
-        }
+        },
+        "required" : [
+          "role"
+        ]
       },
       "UpdateWorkspaceRequest" : {
         "description" : "워크스페이스 수정 요청",
@@ -8974,7 +9045,7 @@
     },
     "/api/mobile/projects/{projectId}/signals" : {
       "get" : {
-        "description" : "프로젝트의 아직 처리되지 않은 시그널을 생성 시각 내림차순(동률 시 id 내림차순)으로 조회합니다. 처리된 시그널을 다시 보는 흐름은 MVP 이후입니다.",
+        "description" : "프로젝트의 처리되지 않은 시그널을 생성 시각 내림차순으로 조회하며, 생성 시각이 같으면 id 내림차순으로 정렬합니다. cursor pagination을 사용하며, 첫 요청은 cursor 없이 보내고 목록 끝에 도달하면 직전 응답의 `next_cursor`를 cursor로 전달해 다음 페이지를 조회합니다. `next_cursor`가 `null`이면 더 조회할 데이터가 없습니다.",
         "operationId" : "mobileListSignals",
         "parameters" : [
           {
@@ -8985,6 +9056,25 @@
             "schema" : {
               "format" : "uuid",
               "type" : "string"
+            }
+          },
+          {
+            "description" : "직전 응답의 `next_cursor`입니다. 없으면 첫 페이지를 조회합니다.",
+            "in" : "query",
+            "name" : "cursor",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          },
+          {
+            "description" : "페이지 크기입니다. 없거나 0이면 기본값 5를 사용합니다. 최대 50까지 요청할 수 있으며, 50을 초과하면 50으로 제한합니다.",
+            "in" : "query",
+            "name" : "limit",
+            "required" : false,
+            "schema" : {
+              "format" : "int32",
+              "type" : "integer"
             }
           },
           {
@@ -9008,7 +9098,7 @@
                 }
               }
             },
-            "description" : "미처리 시그널 목록. 없으면 signals는 빈 배열입니다."
+            "description" : "미처리 시그널 목록의 한 페이지입니다. 조회 결과가 없으면 `signals`는 빈 배열입니다."
           },
           "400" : {
             "content" : {
@@ -17138,16 +17228,6 @@
                         "message" : "초대할 이메일 형식이 올바르지 않습니다."
                       }
                     }
-                  },
-                  "WORKSPACE_INVALID_ROLE" : {
-                    "description" : "부여할 수 없는 역할입니다.",
-                    "summary" : "WORKSPACE_INVALID_ROLE",
-                    "value" : {
-                      "error" : {
-                        "code" : "WORKSPACE_INVALID_ROLE",
-                        "message" : "부여할 수 없는 역할입니다."
-                      }
-                    }
                   }
                 }
               }
@@ -18016,16 +18096,6 @@
                         "message" : "요청 값이 유효하지 않습니다."
                       }
                     }
-                  },
-                  "WORKSPACE_INVALID_ROLE" : {
-                    "description" : "부여할 수 없는 역할입니다.",
-                    "summary" : "WORKSPACE_INVALID_ROLE",
-                    "value" : {
-                      "error" : {
-                        "code" : "WORKSPACE_INVALID_ROLE",
-                        "message" : "부여할 수 없는 역할입니다."
-                      }
-                    }
                   }
                 }
               }
@@ -18840,16 +18910,6 @@
                       "error" : {
                         "code" : "COMMON_VALIDATION_FAILED",
                         "message" : "요청 값이 유효하지 않습니다."
-                      }
-                    }
-                  },
-                  "WORKSPACE_INVALID_ROLE" : {
-                    "description" : "부여할 수 없는 역할입니다.",
-                    "summary" : "WORKSPACE_INVALID_ROLE",
-                    "value" : {
-                      "error" : {
-                        "code" : "WORKSPACE_INVALID_ROLE",
-                        "message" : "부여할 수 없는 역할입니다."
                       }
                     }
                   }

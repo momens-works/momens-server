@@ -22,6 +22,7 @@ import works.momens.server.web.WorkspaceAccessChecker;
 import works.momens.server.workspace.WorkspaceErrorCode;
 import works.momens.server.workspace.core.WorkspaceDetail;
 import works.momens.server.workspace.core.WorkspaceReader;
+import works.momens.server.workspace.membership.AssignableWorkspaceRole;
 import works.momens.server.workspace.membership.ChangeMembershipRoleCommand;
 import works.momens.server.workspace.membership.RemoveMembershipCommand;
 import works.momens.server.workspace.membership.WorkspaceMembershipReader;
@@ -70,46 +71,21 @@ class WorkspaceMemberServiceTest {
   }
 
   @Test
-  @DisplayName("변환한 역할을 workspace 모듈에 그대로 전달한다")
-  void changeRolePassesResolvedRoleToEditor() {
+  @DisplayName("요청받은 role을 workspace 모듈에 그대로 전달합니다")
+  void changeRolePassesRoleToEditor() {
     workspaceExists();
     callerHasRole(WorkspaceRole.ADMIN);
 
-    workspaceMemberService.changeRole(WORKSPACE_ID, CALLER_ID, TARGET_ID, "admin");
+    workspaceMemberService.changeRole(
+        WORKSPACE_ID, CALLER_ID, TARGET_ID, AssignableWorkspaceRole.ADMIN);
 
     ArgumentCaptor<ChangeMembershipRoleCommand> captor =
         ArgumentCaptor.forClass(ChangeMembershipRoleCommand.class);
     verify(workspaceMembershipWriter).changeRole(captor.capture());
     assertThat(captor.getValue())
-        .isEqualTo(new ChangeMembershipRoleCommand(WORKSPACE_ID, TARGET_ID, WorkspaceRole.ADMIN));
-  }
-
-  @Test
-  @DisplayName("owner를 부여하려는 요청은 거부한다")
-  void changeRoleRejectsOwnerValue() {
-    workspaceExists();
-    callerHasRole(WorkspaceRole.OWNER);
-
-    assertThatThrownBy(
-            () -> workspaceMemberService.changeRole(WORKSPACE_ID, CALLER_ID, TARGET_ID, "owner"))
-        .isInstanceOf(BusinessException.class)
-        .extracting(e -> ((BusinessException) e).getErrorCode())
-        .isEqualTo(WorkspaceErrorCode.WORKSPACE_INVALID_ROLE);
-    verifyNoInteractions(workspaceMembershipWriter);
-  }
-
-  @Test
-  @DisplayName("정의되지 않은 역할 값은 거부한다")
-  void changeRoleRejectsUndefinedValue() {
-    workspaceExists();
-    callerHasRole(WorkspaceRole.ADMIN);
-
-    assertThatThrownBy(
-            () ->
-                workspaceMemberService.changeRole(WORKSPACE_ID, CALLER_ID, TARGET_ID, "superadmin"))
-        .isInstanceOf(BusinessException.class)
-        .extracting(e -> ((BusinessException) e).getErrorCode())
-        .isEqualTo(WorkspaceErrorCode.WORKSPACE_INVALID_ROLE);
+        .isEqualTo(
+            new ChangeMembershipRoleCommand(
+                WORKSPACE_ID, TARGET_ID, AssignableWorkspaceRole.ADMIN));
   }
 
   @Test
@@ -119,7 +95,9 @@ class WorkspaceMemberServiceTest {
     callerHasRole(WorkspaceRole.MEMBER);
 
     assertThatThrownBy(
-            () -> workspaceMemberService.changeRole(WORKSPACE_ID, CALLER_ID, TARGET_ID, "admin"))
+            () ->
+                workspaceMemberService.changeRole(
+                    WORKSPACE_ID, CALLER_ID, TARGET_ID, AssignableWorkspaceRole.ADMIN))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(CommonErrorCode.AUTH_FORBIDDEN);

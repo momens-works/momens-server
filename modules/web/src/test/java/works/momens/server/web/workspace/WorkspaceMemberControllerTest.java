@@ -25,6 +25,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.servlet.config.annotation.ApiVersionConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import works.momens.server.workspace.membership.AssignableWorkspaceRole;
 
 /**
  * 컨트롤러가 Principal의 사용자 ID를 조합 서비스에 전달하고, 레거시와 동일한 성공 응답 형식을 반환하는지 검증합니다.
@@ -101,7 +102,8 @@ class WorkspaceMemberControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.message").value("updated"));
 
-    verify(workspaceMemberService).changeRole(WORKSPACE_ID, USER_ID, TARGET_ID, "admin");
+    verify(workspaceMemberService)
+        .changeRole(WORKSPACE_ID, USER_ID, TARGET_ID, AssignableWorkspaceRole.ADMIN);
   }
 
   @Test

@@ -2,6 +2,7 @@ package works.momens.server.mobile.signal;
 
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -30,6 +31,7 @@ import works.momens.server.signal.SignalDetail;
 import works.momens.server.signal.SignalDetailService;
 import works.momens.server.signal.SignalListService;
 import works.momens.server.signal.SignalSummary;
+import works.momens.server.signal.SignalSummaryPage;
 
 /**
  * 컨트롤러가 경로 변수와 Principal을 서비스에 그대로 전달하고 명세(docs/spec/mobile-api.md)의 고정 envelope·snake_case 응답
@@ -54,10 +56,13 @@ class SignalControllerTest {
   @DisplayName("Signal 목록 고정 envelope와 snake_case 항목을 반환하고 project_id는 담지 않는다")
   void listSignalsReturnsFixedEnvelopeWithSnakeCaseSignals() throws Exception {
     UUID signalId = UUID.randomUUID();
-    when(signalListService.listUnprocessed(eq(PROJECT_ID), eq(USER_ID)))
+    when(signalListService.listUnprocessed(eq(PROJECT_ID), eq(USER_ID), isNull(), eq(5)))
         .thenReturn(
-            List.of(
-                new SignalSummary(signalId, "risk", "이탈 가능성 발견", "완료율에 영향을 줄 수 있습니다.", "점검 제안")));
+            new SignalSummaryPage(
+                List.of(
+                    new SignalSummary(
+                        signalId, "risk", "이탈 가능성 발견", "완료율에 영향을 줄 수 있습니다.", "점검 제안")),
+                null));
 
     mockMvc
         .perform(
@@ -80,8 +85,10 @@ class SignalControllerTest {
   @DisplayName("impact와 minsu_suggestion이 null이어도 응답에 포함한다")
   void listSignalsIncludesNullImpactAndMinsuSuggestion() throws Exception {
     UUID signalId = UUID.randomUUID();
-    when(signalListService.listUnprocessed(eq(PROJECT_ID), eq(USER_ID)))
-        .thenReturn(List.of(new SignalSummary(signalId, "decision", "제목", null, null)));
+    when(signalListService.listUnprocessed(eq(PROJECT_ID), eq(USER_ID), isNull(), eq(5)))
+        .thenReturn(
+            new SignalSummaryPage(
+                List.of(new SignalSummary(signalId, "decision", "제목", null, null)), null));
 
     mockMvc
         .perform(
@@ -96,7 +103,8 @@ class SignalControllerTest {
   @Test
   @DisplayName("미처리 Signal이 없으면 빈 배열을 반환한다")
   void listSignalsReturnsEmptyArrayWhenNoneUnprocessed() throws Exception {
-    when(signalListService.listUnprocessed(eq(PROJECT_ID), eq(USER_ID))).thenReturn(List.of());
+    when(signalListService.listUnprocessed(eq(PROJECT_ID), eq(USER_ID), isNull(), eq(5)))
+        .thenReturn(new SignalSummaryPage(List.of(), null));
 
     mockMvc
         .perform(

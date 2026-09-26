@@ -51,12 +51,7 @@ interface WorkspaceMemberControllerDocs {
       content = @Content(schema = @Schema(implementation = WebMessageResponse.class)))
   @ApiException(
       value = WorkspaceErrorCode.class,
-      codes = {
-        "WORKSPACE_NOT_FOUND",
-        "WORKSPACE_INVALID_ROLE",
-        "WORKSPACE_MEMBER_NOT_FOUND",
-        "WORKSPACE_OWNER_PROTECTED"
-      })
+      codes = {"WORKSPACE_NOT_FOUND", "WORKSPACE_MEMBER_NOT_FOUND", "WORKSPACE_OWNER_PROTECTED"})
   @ApiException(CommonErrorCode.class)
   WebMessageResponse update(
       @Parameter(description = "워크스페이스 식별자") UUID workspaceId,

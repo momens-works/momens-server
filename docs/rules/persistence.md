@@ -44,14 +44,16 @@
 
 - 컬럼의 허용 값 집합은 공유 DB의 CHECK 제약을 기준으로 하며, 이 레포지토리의 Flyway 마이그레이션을 통해서만
   변경합니다([ADR-0022](../adr/0022-column-value-set-ownership.md)).
-- 테이블을 관리하는 모듈에는 컬럼별로 해당 값 집합을 표현하는 도메인 enum을 하나만 둡니다. CHECK 제약과 enum의
-  값 집합이 다르면 그 차이를 `CheckConstraintEnumLinks`에 선언합니다. 값 집합을 제한하는 모든 CHECK 제약은 해당
-  목록에 등록해야 하며, 등록되지 않았거나 선언한 차이와 실제 값 집합이 일치하지 않으면
-  `CheckConstraintEnumConsistencyTest`가 실패합니다. 도메인 enum과 동일한 값 집합을 가진 별도의 enum은 이 목록에
-  등록하지 않습니다.
-- mobile과 web 모듈은 값 집합을 별도로 선언하지 않고 도메인 enum을 참조합니다. 표시 순서와 라벨, 레거시 입력
-  별칭은 각 모듈에서 관리합니다. 컬럼별로 도메인 enum을 하나만 두는 원칙과 이 참조 규칙은 테스트로 검출할 수
-  없으므로 리뷰에서 확인합니다.
+- 테이블을 관리하는 모듈에는 컬럼별로 해당 값 집합을 표현하는 도메인 enum을 하나만 둡니다. 다른 컬럼의 값을 복사해
+  보관하는 snapshot 컬럼은 원본 컬럼의 domain enum을 사용합니다. CHECK 제약과 enum의 값 집합이 다르면 그 차이를
+  `CheckConstraintEnumLinks`에 선언합니다. 값 집합을 제한하는 모든 CHECK 제약은 해당 목록에 등록해야 하며, 등록되지
+  않았거나 선언한 차이와 실제 값 집합이 일치하지 않으면 `CheckConstraintEnumConsistencyTest`가 실패합니다. 도메인 enum과
+  동일한 값 집합을 가진 별도의 enum은 이 목록에 등록하지 않습니다.
+- 요청 DTO와 모듈 간 command는 허용 값이 정해진 필드를 도메인 enum 타입으로 받습니다. 도메인보다 좁은 값 집합이 필요한
+  모듈은 도메인 enum을 참조하는 별도 enum을 둡니다. 표시 순서와 라벨은 각 모듈에서 관리합니다. 컬럼별로 도메인 enum을
+  하나만 두는 원칙은 테스트로 검출할 수 없으므로 리뷰에서 확인합니다.
+- 요청으로 값을 받는 컬럼에는 도메인 enum을 둡니다. 그 밖의 컬럼은 해당 코드를 수정할 때 enum을 추가하며, 그전까지는
+  `CheckConstraintEnumLinks`의 enum이 없는 컬럼 목록에 사유와 함께 등록합니다.
 - 값을 추가할 때는 Flyway 마이그레이션, 도메인 enum과 `CheckConstraintEnumLinks`를 같은 PR에서 변경합니다. 값을
   제거할 때는 쓰기 경로에서 해당 값을 먼저 제거하고 기존 데이터를 정리한 뒤 CHECK 제약을 축소합니다.
 

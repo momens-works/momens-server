@@ -9,6 +9,7 @@ import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.project.core.CreateProjectCommand;
 import works.momens.server.project.core.ProjectCreator;
 import works.momens.server.project.core.ProjectDetail;
+import works.momens.server.project.core.ProjectHealthStatus;
 import works.momens.server.workspace.label.LabelAllocator;
 
 /**
@@ -77,13 +78,8 @@ class ProjectCreatorImpl implements ProjectCreator {
         : List.copyOf(requested);
   }
 
-  private static String healthStatusOf(String requested) {
-    if (requested == null || requested.isEmpty()) {
-      return HealthStatus.OPEN.value();
-    }
-    return HealthStatus.from(requested)
-        .orElseThrow(() -> FieldValidationException.forField(FIELD_HEALTH_STATUS))
-        .value();
+  private static String healthStatusOf(ProjectHealthStatus requested) {
+    return (requested == null ? ProjectHealthStatus.OPEN : requested).value();
   }
 
   private static int progressOf(Integer requested) {

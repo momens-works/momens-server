@@ -17,6 +17,7 @@ import works.momens.server.workspace.invitation.InvitationErrorCode;
 import works.momens.server.workspace.invitation.InvitationStatus;
 import works.momens.server.workspace.invitation.WorkspaceInvitationAcceptor;
 import works.momens.server.workspace.membership.AddMembershipCommand;
+import works.momens.server.workspace.membership.AssignableWorkspaceRole;
 import works.momens.server.workspace.membership.WorkspaceMembershipDetail;
 import works.momens.server.workspace.membership.WorkspaceMembershipWriter;
 import works.momens.server.workspace.membership.WorkspaceRole;
@@ -67,7 +68,8 @@ class WorkspaceInvitationAcceptorImpl implements WorkspaceInvitationAcceptor {
     requireAcceptable(invitation, user.email(), now);
 
     WorkspaceRole role =
-        WorkspaceRole.from(invitation.getRole())
+        AssignableWorkspaceRole.from(invitation.getRole())
+            .map(AssignableWorkspaceRole::workspaceRole)
             .orElseThrow(
                 () ->
                     new BusinessException(

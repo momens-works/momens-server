@@ -23,15 +23,15 @@ import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.minsu.DraftStatus;
 import works.momens.server.minsu.PreparedTaskDraft;
-import works.momens.server.minsu.Priority;
-import works.momens.server.minsu.Role;
 import works.momens.server.minsu.SignalTaskDraftGenerator;
 import works.momens.server.minsu.SignalTaskDraftInput;
 import works.momens.server.minsu.TaskDraft;
 import works.momens.server.minsu.TaskDraftEnrollmentException;
 import works.momens.server.minsu.TaskDraftStatusReader;
 import works.momens.server.project.task.TaskDetail;
+import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskReader;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.signal.SignalActionResult;
 import works.momens.server.signal.SignalErrorCode;
 import works.momens.server.signal.SignalReader;
@@ -74,7 +74,7 @@ class SignalActionServiceImplTest {
    * 비동기 비활성 상태의 준비 결과. 이 테스트가 보는 것은 facade의 가드·멱등·경합 정책이고, 적재 여부 판정은 Minsu가 소유하므로 여기서는 의사가 비어 있는
    * 경우만 쓴다.
    */
-  private static PreparedTaskDraft prepared(String title, Role role, Priority priority) {
+  private static PreparedTaskDraft prepared(String title, TaskRole role, TaskPriority priority) {
     return new TestPreparedDraft(new TaskDraft(title, role, priority));
   }
 
@@ -119,8 +119,9 @@ class SignalActionServiceImplTest {
     when(signalActionRepository.findBySignalId(SIGNAL_ID)).thenReturn(Optional.empty());
     when(signalReader.findDraftEvidence(SIGNAL_ID)).thenReturn(List.of());
     when(taskDraftGenerator.prepare(any()))
-        .thenReturn(prepared("결제 정책 확정하기", Role.BACKEND, Priority.HIGH));
-    when(executor.convert(signal, USER_ID, prepared("결제 정책 확정하기", Role.BACKEND, Priority.HIGH)))
+        .thenReturn(prepared("결제 정책 확정하기", TaskRole.BACKEND, TaskPriority.HIGH));
+    when(executor.convert(
+            signal, USER_ID, prepared("결제 정책 확정하기", TaskRole.BACKEND, TaskPriority.HIGH)))
         .thenReturn(
             new SignalActionResult(
                 SIGNAL_ID,
@@ -133,7 +134,8 @@ class SignalActionServiceImplTest {
 
     assertThat(result.created()).isTrue();
     verify(taskDraftGenerator, times(1)).prepare(any());
-    verify(executor).convert(signal, USER_ID, prepared("결제 정책 확정하기", Role.BACKEND, Priority.HIGH));
+    verify(executor)
+        .convert(signal, USER_ID, prepared("결제 정책 확정하기", TaskRole.BACKEND, TaskPriority.HIGH));
   }
 
   @Test
@@ -145,8 +147,9 @@ class SignalActionServiceImplTest {
         .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     when(signalActionRepository.findBySignalId(SIGNAL_ID)).thenReturn(Optional.empty());
     when(signalReader.findDraftEvidence(SIGNAL_ID)).thenReturn(List.of());
-    when(taskDraftGenerator.prepare(any())).thenReturn(prepared("제목", Role.PM, Priority.MEDIUM));
-    when(executor.convert(signal, USER_ID, prepared("제목", Role.PM, Priority.MEDIUM)))
+    when(taskDraftGenerator.prepare(any()))
+        .thenReturn(prepared("제목", TaskRole.PM, TaskPriority.MEDIUM));
+    when(executor.convert(signal, USER_ID, prepared("제목", TaskRole.PM, TaskPriority.MEDIUM)))
         .thenReturn(
             new SignalActionResult(
                 SIGNAL_ID,
@@ -158,7 +161,7 @@ class SignalActionServiceImplTest {
     SignalActionResult result = service.convertToTask(SIGNAL_ID, USER_ID);
 
     assertThat(result.created()).isTrue();
-    verify(executor).convert(signal, USER_ID, prepared("제목", Role.PM, Priority.MEDIUM));
+    verify(executor).convert(signal, USER_ID, prepared("제목", TaskRole.PM, TaskPriority.MEDIUM));
   }
 
   @Test
@@ -173,7 +176,8 @@ class SignalActionServiceImplTest {
             List.of(
                 new SignalReader.DraftEvidence("결제 정책", "논의 중단", "출시 지연"),
                 new SignalReader.DraftEvidence("환불 정책", "합의 없음", "CS 부담")));
-    when(taskDraftGenerator.prepare(any())).thenReturn(prepared("제목", Role.PM, Priority.MEDIUM));
+    when(taskDraftGenerator.prepare(any()))
+        .thenReturn(prepared("제목", TaskRole.PM, TaskPriority.MEDIUM));
     when(executor.convert(any(), any(), any()))
         .thenReturn(new SignalActionResult(SIGNAL_ID, "convert_to_task", true, null));
 
@@ -202,7 +206,8 @@ class SignalActionServiceImplTest {
         .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     when(signalActionRepository.findBySignalId(SIGNAL_ID)).thenReturn(Optional.empty());
     when(signalReader.findDraftEvidence(SIGNAL_ID)).thenReturn(List.of());
-    when(taskDraftGenerator.prepare(any())).thenReturn(prepared("제목", Role.PM, Priority.MEDIUM));
+    when(taskDraftGenerator.prepare(any()))
+        .thenReturn(prepared("제목", TaskRole.PM, TaskPriority.MEDIUM));
     when(executor.convert(any(), any(), any()))
         .thenReturn(new SignalActionResult(SIGNAL_ID, "convert_to_task", true, null));
 
@@ -388,8 +393,9 @@ class SignalActionServiceImplTest {
         .thenReturn(Optional.empty())
         .thenReturn(Optional.of(racedRow));
     when(signalReader.findDraftEvidence(SIGNAL_ID)).thenReturn(List.of());
-    when(taskDraftGenerator.prepare(any())).thenReturn(prepared("제목", Role.PM, Priority.MEDIUM));
-    when(executor.convert(signal, USER_ID, prepared("제목", Role.PM, Priority.MEDIUM)))
+    when(taskDraftGenerator.prepare(any()))
+        .thenReturn(prepared("제목", TaskRole.PM, TaskPriority.MEDIUM));
+    when(executor.convert(signal, USER_ID, prepared("제목", TaskRole.PM, TaskPriority.MEDIUM)))
         .thenThrow(new DataIntegrityViolationException("unique violation"));
     when(taskReader.findDetail(taskId))
         .thenReturn(
@@ -427,7 +433,8 @@ class SignalActionServiceImplTest {
         .thenReturn(Optional.of(WorkspaceRole.MEMBER));
     when(signalActionRepository.findBySignalId(SIGNAL_ID)).thenReturn(Optional.empty());
     when(signalReader.findDraftEvidence(SIGNAL_ID)).thenReturn(List.of());
-    when(taskDraftGenerator.prepare(any())).thenReturn(prepared("제목", Role.PM, Priority.MEDIUM));
+    when(taskDraftGenerator.prepare(any()))
+        .thenReturn(prepared("제목", TaskRole.PM, TaskPriority.MEDIUM));
     when(executor.convert(any(), any(), any()))
         .thenThrow(new TaskDraftEnrollmentException("원장 적재 실패", new RuntimeException()));
 

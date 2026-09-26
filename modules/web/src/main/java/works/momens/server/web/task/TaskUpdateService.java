@@ -13,6 +13,7 @@ import works.momens.server.project.task.TaskScope;
 import works.momens.server.project.task.TaskSnapshot;
 import works.momens.server.project.taskupdate.CreateTaskUpdateCommand;
 import works.momens.server.project.taskupdate.TaskUpdateDetail;
+import works.momens.server.project.taskupdate.TaskUpdateKind;
 import works.momens.server.project.taskupdate.TaskUpdateReader;
 import works.momens.server.project.taskupdate.TaskUpdateWriter;
 import works.momens.server.web.WorkspaceAccessChecker;
@@ -41,7 +42,7 @@ class TaskUpdateService {
 
   @Transactional
   TaskUpdateDetail create(
-      UUID taskId, UUID userId, String body, String kind, Map<String, Object> metadata) {
+      UUID taskId, UUID userId, String body, TaskUpdateKind kind, Map<String, Object> metadata) {
     TaskScope task = requireTaskMember(taskId, userId);
     return taskUpdateWriter.create(
         new CreateTaskUpdateCommand(

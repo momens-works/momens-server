@@ -32,17 +32,25 @@ interface SignalControllerDocs {
       operationId = "mobileListSignals",
       summary = "시그널 목록 조회",
       description =
-          "프로젝트의 아직 처리되지 않은 시그널을 생성 시각 내림차순(동률 시 id 내림차순)으로 조회합니다. 처리된 시그널을 다시 보는 흐름은 MVP 이후입니다.")
+          "프로젝트의 처리되지 않은 시그널을 생성 시각 내림차순으로 조회하며, 생성 시각이 같으면 id 내림차순으로 정렬합니다. "
+              + "cursor pagination을 사용하며, 첫 요청은 cursor 없이 보내고 목록 끝에 도달하면 직전 응답의 `next_cursor`를 cursor로 전달해 다음 페이지를 조회합니다. "
+              + "`next_cursor`가 `null`이면 더 조회할 데이터가 없습니다.")
   @ApiResponse(
       responseCode = "200",
-      description = "미처리 시그널 목록. 없으면 signals는 빈 배열입니다.",
+      description = "미처리 시그널 목록의 한 페이지입니다. 조회 결과가 없으면 `signals`는 빈 배열입니다.",
       content = @Content(schema = @Schema(implementation = SignalListResponse.class)))
   @ApiException(
       value = ProjectErrorCode.class,
       codes = {"PROJECT_NOT_FOUND"})
   @ApiException(CommonErrorCode.class)
   SignalListResponse listSignals(
-      @Parameter(description = "project 식별자") UUID projectId, Principal principal);
+      @Parameter(description = "project 식별자") UUID projectId,
+      @Parameter(description = "직전 응답의 `next_cursor`입니다. 없으면 첫 페이지를 조회합니다.") String cursor,
+      @Parameter(
+              description =
+                  "페이지 크기입니다. 없거나 0이면 기본값 5를 사용합니다. 최대 50까지 요청할 수 있으며, 50을 초과하면 50으로 제한합니다.")
+          Integer limit,
+      Principal principal);
 
   @Operation(
       operationId = "mobileGetSignal",

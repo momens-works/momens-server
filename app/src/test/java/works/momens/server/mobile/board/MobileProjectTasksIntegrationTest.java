@@ -36,7 +36,7 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
   @Autowired private JdbcTemplate jdbcTemplate;
 
   @Test
-  void boardGroupsAllFiveBoardStatusesInOrder() throws Exception {
+  void boardGroupsAllFiveStatusesInOrder() throws Exception {
     UserProfile jinsu = userService.findOrCreate("tasks-it-board@momens.works", "신진수", null);
     UUID workspace = insertWorkspace("tasks-board");
     addMember(workspace, jinsu.id(), "owner");

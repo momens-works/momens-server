@@ -13,6 +13,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import works.momens.server.project.taskupdate.CreateTaskUpdateCommand;
+import works.momens.server.project.taskupdate.TaskUpdateKind;
 
 @ExtendWith(MockitoExtension.class)
 class TaskUpdateWriterImplTest {
@@ -24,11 +25,11 @@ class TaskUpdateWriterImplTest {
   @InjectMocks private TaskUpdateWriterImpl writer;
 
   @Test
-  @DisplayName("태스크 업데이트는 전달받은 소속으로 저장하고 kind를 정규화한다")
-  void createsFromCommandAndNormalizesKind() {
+  @DisplayName("태스크 업데이트는 전달받은 소속과 kind로 저장하고 본문의 앞뒤 공백을 제거합니다")
+  void createsFromCommand() {
     writer.create(
         new CreateTaskUpdateCommand(
-            taskId, workspaceId, projectId, userId, " 내용 ", " Comment ", Map.of()));
+            taskId, workspaceId, projectId, userId, " 내용 ", TaskUpdateKind.COMMENT, Map.of()));
 
     ArgumentCaptor<TaskUpdate> update = ArgumentCaptor.forClass(TaskUpdate.class);
     verify(taskUpdateRepository).save(update.capture());
