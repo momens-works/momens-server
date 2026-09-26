@@ -224,6 +224,13 @@ class McpOAuthFlowIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
+  void malformedPrincipalPreservesStandardAuthError() throws Exception {
+    mvc.perform(get("/api/oauth/interactions/" + UUID.randomUUID()).with(user("not-a-uuid")))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.error.code").value("AUTH_INVALID_TOKEN"));
+  }
+
+  @Test
   void rejectsUnknownInteractionWithLegacyError() throws Exception {
     mvc.perform(approveRequest(UUID.randomUUID().toString()))
         .andExpect(status().isBadRequest())
@@ -426,6 +433,62 @@ class McpOAuthFlowIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
+  void concurrentFirstApprovalsInDifferentWorkspacesBothSucceed() throws Exception {
+    UUID otherWorkspace = UUID.randomUUID();
+    jdbc.update(
+        "INSERT INTO workspaces (id, name, slug) VALUES (?, 'Other workspace', ?)",
+        otherWorkspace,
+        otherWorkspace.toString());
+    when(memberships.roleOf(otherWorkspace, userId)).thenReturn(Optional.of(WorkspaceRole.MEMBER));
+    String firstId = begin();
+    String secondId = begin();
+    try (var executor = Executors.newFixedThreadPool(2);
+        var blocker = jdbc.getDataSource().getConnection()) {
+      blocker.setAutoCommit(false);
+      try (var statement = blocker.createStatement()) {
+        // Hold INSERTs so both requests reach the consent persistence boundary before release.
+        statement.execute("LOCK TABLE oauth2_authorization_consent IN SHARE MODE");
+      }
+      var first = executor.submit(() -> approve(firstId));
+      var second = executor.submit(() -> approve(secondId, otherWorkspace));
+      try {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        int waiting = 0;
+        while (waiting < 2 && System.nanoTime() < deadline) {
+          waiting =
+              jdbc.queryForObject(
+                  "SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() "
+                      + "AND wait_event_type = 'Lock' AND (query LIKE 'INSERT INTO oauth2_authorization_consent%' "
+                      + "OR query LIKE 'SELECT 1 FROM pg_advisory_xact_lock%')",
+                  Integer.class);
+          if (waiting < 2) {
+            Thread.sleep(20);
+          }
+        }
+        assertThat(waiting)
+            .as("Both approvals reached the consent write/serialization boundary")
+            .isEqualTo(2);
+      } finally {
+        blocker.rollback();
+      }
+      exchange(first.get(20, TimeUnit.SECONDS));
+      exchange(second.get(20, TimeUnit.SECONDS));
+      assertThat(
+              jdbc.queryForObject(
+                  "SELECT count(*) FROM mcp_grants WHERE user_id = ? AND revoked_at IS NULL",
+                  Integer.class,
+                  userId))
+          .isEqualTo(2);
+      assertThat(
+              jdbc.queryForObject(
+                  "SELECT count(*) FROM oauth2_authorization_consent WHERE principal_name = ?",
+                  Integer.class,
+                  userId.toString()))
+          .isEqualTo(1);
+    }
+  }
+
+  @Test
   void expiredCodeCannotBeExchanged() throws Exception {
     String code = approve(begin());
     jdbc.update(
@@ -569,15 +632,23 @@ class McpOAuthFlowIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   private MockHttpServletRequestBuilder approveRequest(String id) {
+    return approveRequest(id, workspaceId);
+  }
+
+  private MockHttpServletRequestBuilder approveRequest(String id, UUID approvedWorkspace) {
     return post("/api/oauth/interactions/" + id + "/approve")
         .with(user(userId.toString()))
         .contentType(MediaType.APPLICATION_JSON)
-        .content(mapper.writeValueAsString(Map.of("workspace_id", workspaceId)));
+        .content(mapper.writeValueAsString(Map.of("workspace_id", approvedWorkspace)));
   }
 
   private String approve(String id) throws Exception {
+    return approve(id, workspaceId);
+  }
+
+  private String approve(String id, UUID approvedWorkspace) throws Exception {
     String body =
-        mvc.perform(approveRequest(id))
+        mvc.perform(approveRequest(id, approvedWorkspace))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -634,6 +705,8 @@ class McpOAuthFlowIntegrationTest extends AbstractPostgresIntegrationTest {
     @Bean
     SecurityFilterChain interactionTestChain(HttpSecurity http) throws Exception {
       return http.securityMatcher("/api/oauth/interactions/**")
+          // Test-only substitute for auth's SameSite-cookie policy (ADR-0003).
+          // McpOAuthSecurityIntegrationTest verifies the real authenticated/CORS app chain.
           .csrf(AbstractHttpConfigurer::disable)
           .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
           .build();
