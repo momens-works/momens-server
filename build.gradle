@@ -162,10 +162,11 @@ tasks.register('verifyNoUnnecessaryFqn') {
         def compiler = javax.tools.ToolProvider.systemJavaCompiler
         def fileManager = compiler.getStandardFileManager(null, null, java.nio.charset.StandardCharsets.UTF_8)
         def violations = [] as Set
+        def diagnostics = new javax.tools.DiagnosticCollector<javax.tools.JavaFileObject>()
         try {
             javaSources.files.sort().each { File source ->
                 def task = (com.sun.source.util.JavacTask) compiler.getTask(
-                    null, fileManager, null, ['-proc:none'], null, fileManager.getJavaFileObjects(source))
+                    null, fileManager, diagnostics, ['-proc:none'], null, fileManager.getJavaFileObjects(source))
                 task.parse().each { unit ->
                     def positions = com.sun.source.util.Trees.instance(task).sourcePositions
                     new com.sun.source.util.TreeScanner<Void, Void>() {
@@ -192,6 +193,12 @@ tasks.register('verifyNoUnnecessaryFqn') {
             }
         } finally {
             fileManager.close()
+        }
+
+        def parseErrors = diagnostics.diagnostics.findAll { it.kind == javax.tools.Diagnostic.Kind.ERROR }
+        if (!parseErrors.isEmpty()) {
+            throw new GradleException(
+                "Java 소스를 파싱하지 못했습니다.\n- " + parseErrors.join('\n- '))
         }
 
         if (!violations.isEmpty()) {
