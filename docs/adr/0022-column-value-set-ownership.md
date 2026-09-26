@@ -16,7 +16,7 @@ DB 컬럼의 허용 값 집합이 여러 위치에 중복 정의되어 있습니
 
 셋째, `ddl-auto=validate`는 CHECK 제약을 검증하지 않습니다. 따라서 DB 제약과 코드가 일치하지 않아도 애플리케이션 기동 시점에는 문제가 드러나지 않습니다.
 
-CHECK 제약과 enum의 값 집합이 의도적으로 다른 경우도 있습니다. `workspace_invitations.role`의 CHECK 제약은 `owner`를 허용하지 않지만, `WorkspaceRole`에는 `owner`가 포함되어 있습니다. 초대를 통해 `owner` 역할을 부여할 수 없다는 규칙은 `isAssignable()`로 표현합니다. 따라서 값 집합 관리 규칙은 이러한 의도적인 차이까지 설명할 수 있어야 합니다.
+CHECK 제약과 enum의 값 집합이 의도적으로 다른 경우도 있습니다. `workspace_invitations.role`의 CHECK 제약은 `owner`를 허용하지 않지만, `WorkspaceRole`에는 `owner`가 포함되어 있습니다. 초대를 통해 `owner` 역할을 부여할 수 없다는 규칙은 `MOM-0949`에서 부여 가능한 역할만 정의하는 `AssignableWorkspaceRole`로 옮겼습니다. 따라서 값 집합 관리 규칙은 이러한 의도적인 차이까지 설명할 수 있어야 합니다.
 
 ## 결정
 
@@ -24,7 +24,7 @@ CHECK 제약과 enum의 값 집합이 의도적으로 다른 경우도 있습니
 
 허용 값 집합에는 `NULL`을 포함하지 않습니다. 컬럼의 `NULL` 허용 여부는 컬럼 정의에서 별도로 정합니다. PostgreSQL의 CHECK 제약은 검사 결과가 `NULL`이면 제약 위반으로 처리하지 않고 통과시킵니다.
 
-도메인 enum은 컬럼을 기준으로 관리합니다. 테이블을 관리하는 모듈에는 컬럼별로 해당 값 집합을 표현하는 도메인 enum을 하나만 둡니다. 여러 컬럼이 같은 값 집합을 사용하더라도 CHECK 제약은 컬럼마다 적용되므로 각 컬럼에 대응하는 도메인 enum을 별도로 둡니다. 도메인 enum은 해당 개념에서 사용할 수 있는 값과 각 값에 적용되는 비즈니스 규칙을 관리합니다.
+도메인 enum은 컬럼을 기준으로 관리합니다. 테이블을 관리하는 모듈에는 컬럼별로 해당 값 집합을 표현하는 도메인 enum을 하나만 둡니다. 여러 컬럼이 같은 값 집합을 사용하더라도 CHECK 제약은 컬럼마다 적용되므로 각 컬럼에 대응하는 도메인 enum을 별도로 둡니다. 도메인 enum은 해당 개념에서 사용할 수 있는 값과 각 값에 적용되는 비즈니스 규칙을 관리합니다. 하지만 다른 컬럼의 값을 복사해 보관하는 snapshot 컬럼은 원본 컬럼의 domain enum을 사용합니다. 예를 들어 `minsu_task_draft_generations.baseline_priority`와 `baseline_role`은 `tasks` 값의 snapshot이므로 각각 `TaskPriority`와 `TaskRole`을 사용합니다.
 
 **표시 순서와 라벨, 저장된 값의 해석 방식은 mobile과 web 모듈에서 관리합니다.** 이러한 정보는 화면 설계에 따라 변경되므로 허용 값 집합과 변경 사유가 다릅니다.
 
