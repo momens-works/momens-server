@@ -6,6 +6,7 @@ import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
@@ -62,6 +63,22 @@ public class OpenApiConfig {
   public OperationCustomizer swaggerOperationCustomizer() {
     return new SwaggerOperationCustomizer(
         new ApiExceptionFinder(), new ApiExceptionResolver(), new SwaggerErrorExampleGenerator());
+  }
+
+  @Bean
+  public OpenApiCustomizer apiVersionDefaultCustomizer() {
+    // Spring MVC는 기본 버전 1을 1.0.0으로 정규화하지만, 헤더의 정본 표기는 1이다.
+    return openApi ->
+        openApi.getPaths().values().stream()
+            .flatMap(path -> path.readOperations().stream())
+            .map(operation -> operation.getParameters())
+            .filter(parameters -> parameters != null)
+            .flatMap(List::stream)
+            .filter(
+                parameter ->
+                    "API-Version".equals(parameter.getName()) && "header".equals(parameter.getIn()))
+            .map(Parameter::getSchema)
+            .forEach(schema -> schema.setDefault("1"));
   }
 
   /**

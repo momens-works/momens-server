@@ -3231,7 +3231,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -3260,7 +3260,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -3289,7 +3289,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -3566,7 +3566,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -3803,7 +3803,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -4050,7 +4050,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -4079,7 +4079,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -4318,7 +4318,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -4584,7 +4584,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -4884,7 +4884,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -5329,7 +5329,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -5563,7 +5563,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -5818,7 +5818,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -6044,7 +6044,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -6281,7 +6281,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -6546,7 +6546,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -6810,7 +6810,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -7084,7 +7084,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -7338,7 +7338,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -7622,7 +7622,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -7877,7 +7877,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -8123,7 +8123,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -8398,7 +8398,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -8653,7 +8653,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -8899,7 +8899,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -9145,7 +9145,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -9389,7 +9389,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -9645,7 +9645,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -9891,7 +9891,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -10157,7 +10157,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -10413,7 +10413,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -10667,7 +10667,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -10936,7 +10936,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -11212,7 +11212,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -11468,7 +11468,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -11712,7 +11712,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -11976,7 +11976,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -12102,7 +12102,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -12348,7 +12348,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -12592,7 +12592,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -12836,7 +12836,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -13092,7 +13092,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -13348,7 +13348,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -13612,7 +13612,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -13878,7 +13878,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -14144,7 +14144,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -14400,7 +14400,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -14644,7 +14644,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -14910,7 +14910,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -15146,7 +15146,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -15370,7 +15370,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -15645,7 +15645,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -15881,7 +15881,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -16125,7 +16125,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -16411,7 +16411,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -16655,7 +16655,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -16981,7 +16981,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -17277,7 +17277,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -17543,7 +17543,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -17829,7 +17829,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -18085,7 +18085,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -18369,7 +18369,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -18655,7 +18655,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -18911,7 +18911,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -19157,7 +19157,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
@@ -19412,7 +19412,7 @@
             "in" : "header",
             "name" : "API-Version",
             "schema" : {
-              "default" : "1.0.0",
+              "default" : "1",
               "enum" : [
                 "1"
               ],
