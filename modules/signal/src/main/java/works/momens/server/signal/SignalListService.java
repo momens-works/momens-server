@@ -2,14 +2,23 @@ package works.momens.server.signal;
 
 import java.time.Instant;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 /** 프로젝트 범위의 Signal 목록 조회 공개 API. 모든 메서드가 요청자의 workspace 멤버십을 검사합니다. */
 public interface SignalListService {
 
-  List<SignalSummary> listUnprocessed(UUID projectId, UUID userId);
+  /**
+   * 처리되지 않은 Signal을 cursor pagination으로 조회합니다.
+   *
+   * <p>태스크로 전환하거나 dismiss한 Signal과 soft delete된 Signal은 제외합니다. 생성 시각 내림차순으로 정렬하며, 생성 시각이 같으면 id
+   * 내림차순으로 정렬합니다.
+   *
+   * @param cursor 이전 페이지의 {@link SignalSummaryPage#nextCursor()}. {@code null}이면 첫 페이지이며, 형식이 잘못된
+   *     경우 {@code COMMON_VALIDATION_FAILED}로 실패합니다.
+   * @param limit 페이지 크기. 1 이상이어야 하며, 상한을 초과하면 상한으로 제한해 조회합니다.
+   */
+  SignalSummaryPage listUnprocessed(UUID projectId, UUID userId, String cursor, int limit);
 
   /**
    * 생성 시각이 {@code [createdFrom, createdToExclusive)} 범위인 Signal을 커서 페이지로 조회합니다. 브리프의 당일 집계용이라 처리

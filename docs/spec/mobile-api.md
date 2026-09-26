@@ -274,9 +274,11 @@ Refresh token을 폐기합니다.
 MVP에서는 아직 처리되지 않은 시그널만 반환합니다. `convert-to-task` 또는 `dismiss`로 처리된 시그널을
 다시 보는 inbox/필터 흐름은 MVP 이후로 둡니다.
 
-정렬은 최신 Signal이 먼저 오도록 생성 시각 내림차순을 기본으로 합니다. 생성 시각이 같으면 id
-내림차순으로 순서를 고정합니다. 수십 건 이상 누적될 때의 pagination/cursor 계약은 MVP 이후 확장으로
-둡니다.
+정렬은 최신 Signal이 먼저 오도록 생성 시각 내림차순을 기본으로 합니다. 생성 시각이 같으면 id 내림차순으로 순서를 고정합니다.
+
+시그널 탭은 무한 스크롤로 목록을 이어서 보여 주고, 서버는 cursor pagination으로 한 페이지씩 반환합니다. 첫 요청은 `cursor` 없이 보내고, 목록 끝에 도달하면 직전 응답의 `next_cursor`를 `cursor`로 전달해 다음 페이지를 조회합니다. `next_cursor`가 `null`이면 더 조회할 데이터가 없습니다. 기본 페이지 크기는 한 화면에 카드가 약 3개 보이는 것을 고려해 5로 정했고(2026-09-26), 최대 페이지 크기 50은 서버 보호를 위한 상한입니다. `limit`과 `cursor`의 해석 규칙은 브리프 시그널 요약과 동일합니다.
+
+형식이 잘못된 `cursor`와 음수 `limit`은 `COMMON_VALIDATION_FAILED`(400)로 응답합니다.
 
 카드의 `Needs action`, `Needs review`, `Needs decision` 라벨은 응답의 `type`에서 앱이 파생합니다. 서버가
 별도 처리 상태 필드를 내려주지 않습니다.
@@ -288,6 +290,13 @@ Signal과 함께 생산하고, worker가 준비되지 않은 MVP 환경에서는
 
 응답 항목에서는 `project_id`를 생략하지만 Signal backing의 `project_id`는 유지합니다. 서버가 경로의 프로젝트로
 목록을 필터링하고, 원탭 전환 시 task를 어느 프로젝트에 만들지 결정하는 내부 귀속 정보이기 때문입니다.
+
+#### Query
+
+| 이름       | 필수  | 설명                                                                                                  |
+| -------- | --- | --------------------------------------------------------------------------------------------------- |
+| `cursor` | 아니오 | 이전 응답의 `next_cursor`. 없으면 첫 페이지를 조회합니다.                                                             |
+| `limit`  | 아니오 | 페이지 크기. 없거나 0이면 기본값 5를 사용하고, 상한은 50입니다. 50을 초과하면 50으로 제한하며, 음수이면 `COMMON_VALIDATION_FAILED`로 응답합니다. |
 
 #### Response 200
 
@@ -303,7 +312,8 @@ Signal과 함께 생산하고, worker가 준비되지 않은 MVP 환경에서는
       "impact": "MVP 완료율과 온보딩 품질에 영향을 줄 수 있습니다.",
       "minsu_suggestion": "내용이 들어갈 공간입니다"
     }
-  ]
+  ],
+  "next_cursor": "MjAyNi0wOS0yNlQwMTowMDowMFp8NmYzZDhhNjEtNGRlNy00YzAxLTlkMmItMTZmZGYxODJlOWEx"
 }
 ```
 
@@ -312,6 +322,7 @@ Signal과 함께 생산하고, worker가 준비되지 않은 MVP 환경에서는
 - `AUTH_UNAUTHORIZED`
 - `AUTH_INVALID_TOKEN`
 - `PROJECT_NOT_FOUND`
+- `COMMON_VALIDATION_FAILED`
 - `AUTH_FORBIDDEN`
 
 ### GET /api/mobile/signals/{signalId}
