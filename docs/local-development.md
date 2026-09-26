@@ -314,3 +314,8 @@ diff만 출력합니다.
 신규 서버 부팅에 필요한 환경변수는 `scripts/legacy-diff/harness.conf`에 더미 값으로 둡니다.
 기본값 없는 설정이 새로 생기면 부팅이 그 설정을 지목하며 실패하므로, 이 파일에 한 줄을
 추가하면 됩니다.
+
+## MCP OAuth 동의 화면
+
+`MOMENS_MCP_CONSENT_URI`에 로컬 FE의 `/oauth/authorize` 절대 주소를 지정합니다.
+미설정 시 authorize는 `server_error`를 반환합니다.

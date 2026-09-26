@@ -45,6 +45,8 @@ server:
 
 momens:
   mcp:
+    oauth:
+      consent-uri: ${MOMENS_MCP_CONSENT_URI:}
     # MCP client가 외부에서 보는 resource 정본입니다(ADR-0023). Host 헤더로 조립하지 않습니다.
     resource-uri: ${MOMENS_MCP_RESOURCE_URI:https://api.momens.works/api/mcp}
     # Origin 헤더가 있는 요청은 resource origin과 이 목록만 허용합니다. 네이티브 MCP client는

@@ -40,7 +40,6 @@ import works.momens.server.workspace.membership.WorkspaceRole;
 @Import({
   JpaAuditingConfig.class,
   McpGrantConfig.class,
-  NoopMcpTokenFamilyRevoker.class,
   McpGrantIntegrationTest.McpTimeConfig.class
 })
 @DisplayName("MCP Grant 영속성 통합 테스트")

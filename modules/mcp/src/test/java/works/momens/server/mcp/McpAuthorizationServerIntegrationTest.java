@@ -38,6 +38,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.mcp.grant.McpScope;
+import works.momens.server.workspace.core.WorkspaceReader;
 import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 @SpringBootTest(properties = "momens.mcp.resource-uri=https://api.momens.works/api/mcp")
@@ -55,6 +56,7 @@ class McpAuthorizationServerIntegrationTest extends AbstractPostgresIntegrationT
   @Autowired private RegisteredClientRepository registeredClientRepository;
 
   @MockitoBean private WorkspaceMembershipReader workspaceMembershipReader;
+  @MockitoBean private WorkspaceReader workspaceReader;
 
   @Test
   @DisplayName("public PKCE client를 secret 없이 등록하고 reference token 설정으로 저장한다")

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import works.momens.server.mcp.configuration.McpEndpointProperties;
 
 class McpOriginValidationFilterTest {
 

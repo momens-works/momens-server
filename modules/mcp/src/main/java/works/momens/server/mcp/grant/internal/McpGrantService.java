@@ -33,6 +33,36 @@ class McpGrantService implements McpGrantWriter, McpGrantReader {
   public McpGrantDetail create(CreateMcpGrantCommand command) {
     validate(command);
     requireWorkspaceMember(command.userId(), command.workspaceId());
+    lockSubject(command);
+    return createValidated(command);
+  }
+
+  @Override
+  @Transactional
+  public McpGrantDetail replace(CreateMcpGrantCommand command) {
+    validate(command);
+    requireWorkspaceMember(command.userId(), command.workspaceId());
+    lockSubject(command);
+    mcpGrantRepository
+        .findByUserIdAndClientIdAndWorkspaceIdAndRevokedAtIsNull(
+            command.userId(), command.clientId(), command.workspaceId())
+        .ifPresent(
+            grant -> {
+              Instant now = clock.instant();
+              grant.revoke(now);
+              tokenFamilyRevoker.revokeByGrantId(grant.getId(), now);
+              // Release the partial unique key before Hibernate inserts the replacement.
+              mcpGrantRepository.flush();
+            });
+    return createValidated(command);
+  }
+
+  private void lockSubject(CreateMcpGrantCommand command) {
+    mcpGrantRepository.lockSubject(
+        command.userId() + ":" + command.clientId() + ":" + command.workspaceId());
+  }
+
+  private McpGrantDetail createValidated(CreateMcpGrantCommand command) {
     if (mcpGrantRepository.existsByUserIdAndClientIdAndWorkspaceIdAndRevokedAtIsNull(
         command.userId(), command.clientId(), command.workspaceId())) {
       throw new BusinessException(

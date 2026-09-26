@@ -8,5 +8,8 @@ public interface McpGrantWriter {
 
   McpGrantDetail create(CreateMcpGrantCommand command);
 
+  /** Reapproval atomically revokes an active grant and its tokens, then starts a new lifecycle. */
+  McpGrantDetail replace(CreateMcpGrantCommand command);
+
   void revoke(UUID grantId, Instant revokedAt);
 }
