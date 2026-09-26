@@ -49,7 +49,9 @@ class McpTransportControllerTest {
   private static final McpAuthenticationContext AUTHENTICATION_CONTEXT =
       new McpAuthenticationContext(
           UUID.fromString("00000000-0000-0000-0000-000000000001"),
-          "user-1",
+          UUID.fromString("00000000-0000-0000-0000-000000000002"),
+          "client-1",
+          UUID.fromString("00000000-0000-0000-0000-000000000003"),
           Set.of("mcp:projects:read"));
 
   @Autowired private MockMvc mockMvc;

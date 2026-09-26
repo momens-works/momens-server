@@ -17,6 +17,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import tools.jackson.databind.ObjectMapper;
 import works.momens.server.auth.AccessTokenTestFactory;
@@ -134,6 +135,9 @@ class McpOAuthSecurityIntegrationTest extends AbstractPostgresIntegrationTest {
             .getContentAsString();
     String token = mapper.readTree(pair).get("access_token").stringValue();
     assertThat(mapper.readTree(pair).get("refresh_token").stringValue()).isNotBlank();
+    mvc.perform(mcpRequest(token)).andExpect(status().isOk());
+    mvc.perform(mcpRequest(cookie.getValue())).andExpect(status().isUnauthorized());
+    mvc.perform(mcpRequest(null).cookie(cookie)).andExpect(status().isUnauthorized());
     mvc.perform(get("/api/me").header("Authorization", "Bearer " + token))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.error.code").value("AUTH_INVALID_TOKEN"));
@@ -143,6 +147,23 @@ class McpOAuthSecurityIntegrationTest extends AbstractPostgresIntegrationTest {
                 .param("client_id", clientId)
                 .param("token", token))
         .andExpect(status().isOk());
+    mvc.perform(mcpRequest(token)).andExpect(status().isUnauthorized());
     mvc.perform(get("/api/me").cookie(cookie)).andExpect(status().isOk());
+  }
+
+  private MockHttpServletRequestBuilder mcpRequest(String token) {
+    MockHttpServletRequestBuilder request =
+        post("/api/mcp")
+            .header("MCP-Protocol-Version", "2026-07-28")
+            .header("Mcp-Method", "tools/list")
+            .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_EVENT_STREAM)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(
+                """
+            {"jsonrpc":"2.0","id":1,"method":"tools/list","params":{"_meta":{
+              "io.modelcontextprotocol/protocolVersion":"2026-07-28",
+              "io.modelcontextprotocol/clientCapabilities":{}}}}
+            """);
+    return token == null ? request : request.header("Authorization", "Bearer " + token);
   }
 }

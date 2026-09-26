@@ -26,9 +26,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -47,6 +50,8 @@ import tools.jackson.databind.ObjectMapper;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.mcp.grant.McpGrantWriter;
+import works.momens.server.mcp.transport.McpAuthenticationContext;
+import works.momens.server.mcp.transport.McpBearerTokenVerifier;
 import works.momens.server.workspace.core.WorkspaceReader;
 import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 import works.momens.server.workspace.membership.WorkspaceRole;
@@ -67,6 +72,7 @@ class McpOAuthFlowIntegrationTest extends AbstractPostgresIntegrationTest {
   @Autowired ObjectMapper mapper;
   @Autowired JdbcTemplate jdbc;
   @Autowired McpGrantWriter grants;
+  @Autowired McpBearerTokenVerifier tokenVerifier;
   @MockitoBean WorkspaceMembershipReader memberships;
   @MockitoBean WorkspaceReader workspaces;
   UUID userId;
@@ -216,11 +222,113 @@ class McpOAuthFlowIntegrationTest extends AbstractPostgresIntegrationTest {
   @Test
   void grantRevocationUsesTheRealFamilyAdapter() throws Exception {
     JsonNode pair = exchange(approve(begin()));
+    String access = pair.get("access_token").stringValue();
+    mvc.perform(mcpRequest(access, "tools/list")).andExpect(status().isOk());
     UUID grantId =
         jdbc.queryForObject("SELECT id FROM mcp_grants WHERE user_id = ?", UUID.class, userId);
     grants.revoke(grantId, null);
+    mvc.perform(mcpRequest(access, "tools/list")).andExpect(status().isUnauthorized());
     mvc.perform(refreshRequest(pair.get("refresh_token").stringValue()))
         .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @ExtendWith(OutputCaptureExtension.class)
+  void referenceTokensAuthenticateTransportAndRotationRejectsThePreviousAccessToken(
+      CapturedOutput output) throws Exception {
+    String code = approve(begin());
+    JsonNode pair = exchange(code);
+    String access = pair.get("access_token").stringValue();
+    McpAuthenticationContext context = tokenVerifier.verify(access).orElseThrow();
+    assertThat(context.userId()).isEqualTo(userId);
+    assertThat(context.workspaceId()).isEqualTo(workspaceId);
+    assertThat(context.clientId()).isEqualTo(clientId);
+    assertThat(context.scopes()).containsExactly("mcp:projects:read");
+    mvc.perform(mcpRequest(access, "server/discover"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.result.supportedVersions[0]").value("2026-07-28"));
+    mvc.perform(mcpRequest(access, "tools/list"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.result.tools").isEmpty());
+    String digest =
+        jdbc.queryForObject(
+            "SELECT access_token_value FROM oauth2_authorization WHERE principal_name = ?",
+            String.class,
+            userId.toString());
+    for (String rejected : List.of(code, pair.get("refresh_token").stringValue(), digest)) {
+      mvc.perform(mcpRequest(rejected, "tools/list"))
+          .andExpect(status().isUnauthorized())
+          .andExpect(
+              header()
+                  .string("WWW-Authenticate", containsString("oauth-protected-resource/api/mcp")));
+    }
+    JsonNode rotated = refresh(pair.get("refresh_token").stringValue());
+    mvc.perform(mcpRequest(access, "tools/list")).andExpect(status().isUnauthorized());
+    String nextAccess = rotated.get("access_token").stringValue();
+    mvc.perform(mcpRequest(nextAccess, "tools/list")).andExpect(status().isOk());
+    mvc.perform(refreshRequest(pair.get("refresh_token").stringValue()))
+        .andExpect(status().isBadRequest());
+    mvc.perform(mcpRequest(nextAccess, "tools/list")).andExpect(status().isUnauthorized());
+    assertThat(output.getAll())
+        .doesNotContain(
+            code,
+            access,
+            nextAccess,
+            pair.get("refresh_token").stringValue(),
+            rotated.get("refresh_token").stringValue());
+  }
+
+  @Test
+  void transportRejectsExpiredTokensAndRemovedMembershipWithoutCaching() throws Exception {
+    String access = exchange(approve(begin())).get("access_token").stringValue();
+    mvc.perform(mcpRequest(access, "tools/list")).andExpect(status().isOk());
+    when(memberships.roleOf(workspaceId, userId)).thenReturn(Optional.empty());
+    mvc.perform(mcpRequest(access, "tools/list")).andExpect(status().isUnauthorized());
+    when(memberships.roleOf(workspaceId, userId)).thenReturn(Optional.of(WorkspaceRole.MEMBER));
+    jdbc.update(
+        "UPDATE oauth2_authorization SET access_token_issued_at = now() - interval '1 hour', access_token_expires_at = now() - interval '1 second' WHERE principal_name = ?",
+        userId.toString());
+    mvc.perform(mcpRequest(access, "tools/list")).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void transportRejectsAnActiveTokenWhenTheGrantOrFamilyIsRevokedIndependently() throws Exception {
+    String access = exchange(approve(begin())).get("access_token").stringValue();
+    mvc.perform(mcpRequest(access, "tools/list")).andExpect(status().isOk());
+    jdbc.update("UPDATE mcp_grants SET revoked_at = now() WHERE user_id = ?", userId);
+    mvc.perform(mcpRequest(access, "tools/list")).andExpect(status().isUnauthorized());
+    String nextAccess = exchange(approve(begin())).get("access_token").stringValue();
+    mvc.perform(mcpRequest(nextAccess, "tools/list")).andExpect(status().isOk());
+    jdbc.update(
+        "UPDATE mcp_token_families SET revoked_at = now() WHERE grant_id IN (SELECT id FROM mcp_grants WHERE user_id = ?)",
+        userId);
+    mvc.perform(mcpRequest(nextAccess, "tools/list")).andExpect(status().isUnauthorized());
+  }
+
+  private MockHttpServletRequestBuilder mcpRequest(String access, String method) {
+    return post("/api/mcp")
+        .header("Authorization", "Bearer " + access)
+        .header("MCP-Protocol-Version", "2026-07-28")
+        .header("Mcp-Method", method)
+        .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_EVENT_STREAM)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(
+            mapper.writeValueAsString(
+                Map.of(
+                    "jsonrpc",
+                    "2.0",
+                    "id",
+                    1,
+                    "method",
+                    method,
+                    "params",
+                    Map.of(
+                        "_meta",
+                        Map.of(
+                            "io.modelcontextprotocol/protocolVersion",
+                            "2026-07-28",
+                            "io.modelcontextprotocol/clientCapabilities",
+                            Map.of())))));
   }
 
   @Test

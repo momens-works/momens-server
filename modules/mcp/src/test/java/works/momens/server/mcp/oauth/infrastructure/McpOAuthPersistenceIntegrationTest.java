@@ -1,19 +1,24 @@
 package works.momens.server.mcp.oauth.infrastructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
@@ -47,6 +52,51 @@ class McpOAuthPersistenceIntegrationTest extends AbstractPostgresIntegrationTest
   @Autowired private OAuth2AuthorizationService authorizationService;
   @Autowired private OAuth2AuthorizationConsentService consentService;
   @Autowired private JdbcTemplate jdbcTemplate;
+
+  @Test
+  @DisplayName("access token 발급 전 authorization은 토큰 타임스탬프 없이 저장할 수 있다")
+  void persistsAuthorizationBeforeAccessTokenIssuance() {
+    RegisteredClient client = registeredClient();
+    registeredClientRepository.save(client);
+    OAuth2Authorization authorization =
+        OAuth2Authorization.withRegisteredClient(client)
+            .principalName("user-1")
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .token(new OAuth2AuthorizationCode("authorization-code", ISSUED_AT, EXPIRES_AT))
+            .build();
+
+    authorizationService.save(authorization);
+
+    OAuth2Authorization persisted = authorizationService.findById(authorization.getId());
+    assertThat(persisted).isNotNull();
+    assertThat(persisted.getAccessToken()).isNull();
+    assertThat(persisted.getToken(OAuth2AuthorizationCode.class)).isNotNull();
+  }
+
+  @ParameterizedTest
+  @CsvSource({"false, true", "true, false", "false, false"})
+  @DisplayName("DB는 access token이 있으면 발급·만료 시간 누락을 거부한다")
+  void rejectsAccessTokenWithMissingTimestamps(boolean hasIssuedAt, boolean hasExpiresAt) {
+    RegisteredClient client = registeredClient();
+    registeredClientRepository.save(client);
+    OAuth2Authorization authorization =
+        OAuth2Authorization.withRegisteredClient(client)
+            .principalName("user-1")
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .build();
+    authorizationService.save(authorization);
+
+    assertThatThrownBy(
+            () ->
+                jdbcTemplate.update(
+                    "UPDATE oauth2_authorization SET access_token_value = ?, access_token_issued_at = ?, access_token_expires_at = ? WHERE id = ?",
+                    sha256("access-token"),
+                    hasIssuedAt ? Timestamp.from(ISSUED_AT) : null,
+                    hasExpiresAt ? Timestamp.from(EXPIRES_AT) : null,
+                    authorization.getId()))
+        .isInstanceOf(DataIntegrityViolationException.class)
+        .hasMessageContaining("chk_mcp_access_token_timestamps");
+  }
 
   @Test
   @DisplayName("토큰 조회와 grant별 폐기 SQL이 의도한 인덱스를 사용할 수 있다")
