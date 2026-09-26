@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.Clock;
@@ -41,7 +42,11 @@ import works.momens.server.mcp.grant.McpScope;
 import works.momens.server.workspace.core.WorkspaceReader;
 import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
-@SpringBootTest(properties = "momens.mcp.resource-uri=https://api.momens.works/api/mcp")
+@SpringBootTest(
+    properties = {
+      "momens.mcp.resource-uri=https://api.momens.works/api/mcp",
+      "momens.mcp.oauth.consent-uri="
+    })
 @AutoConfigureMockMvc
 @DisplayName("MCP OAuth discovery·client 등록 통합 테스트")
 class McpAuthorizationServerIntegrationTest extends AbstractPostgresIntegrationTest {
@@ -57,6 +62,31 @@ class McpAuthorizationServerIntegrationTest extends AbstractPostgresIntegrationT
 
   @MockitoBean private WorkspaceMembershipReader workspaceMembershipReader;
   @MockitoBean private WorkspaceReader workspaceReader;
+
+  @Test
+  @DisplayName("동의 화면 설정이 없으면 authorize의 server_error를 보존한다")
+  void missingConsentUriReturnsServerError() throws Exception {
+    String registrationBody =
+        mockMvc
+            .perform(post(REGISTER).contentType(MediaType.APPLICATION_JSON).content(registration()))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String clientId = objectMapper.readTree(registrationBody).get("client_id").stringValue();
+    mockMvc
+        .perform(
+            get("/api/oauth2/authorize")
+                .queryParam("response_type", "code")
+                .queryParam("client_id", clientId)
+                .queryParam("redirect_uri", "http://localhost:3000/callback")
+                .queryParam("code_challenge_method", "S256")
+                .queryParam("code_challenge", "a".repeat(43))
+                .queryParam("resource", "https://api.momens.works/api/mcp")
+                .queryParam("state", "s1"))
+        .andExpect(status().isFound())
+        .andExpect(redirectedUrl("http://localhost:3000/callback?error=server_error&state=s1"));
+  }
 
   @Test
   @DisplayName("public PKCE client를 secret 없이 등록하고 reference token 설정으로 저장한다")

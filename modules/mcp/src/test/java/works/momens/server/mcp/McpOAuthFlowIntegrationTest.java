@@ -251,7 +251,18 @@ class McpOAuthFlowIntegrationTest extends AbstractPostgresIntegrationTest {
     mvc.perform(authorizeRequest(Map.of("redirect_uri", "https://evil.example/callback")))
         .andExpect(status().isBadRequest());
     mvc.perform(authorizeRequest(Map.of("client_id", "unknown")))
-        .andExpect(status().isBadRequest());
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error").value("invalid_request"));
+  }
+
+  @Test
+  void preservesSpecificAuthorizationErrors() throws Exception {
+    mvc.perform(authorizeRequest(Map.of("resource", "https://wrong.example/api/mcp")))
+        .andExpect(status().isFound())
+        .andExpect(header().string("Location", containsString("error=invalid_target")));
+    mvc.perform(authorizeRequest(Map.of("scope", "unknown:scope")))
+        .andExpect(status().isFound())
+        .andExpect(header().string("Location", containsString("error=invalid_scope")));
   }
 
   @Test
