@@ -152,7 +152,7 @@ class McpOAuthSecurityIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   private MockHttpServletRequestBuilder mcpRequest(String token) {
-    var request =
+    MockHttpServletRequestBuilder request =
         post("/api/mcp")
             .header("MCP-Protocol-Version", "2026-07-28")
             .header("Mcp-Method", "tools/list")

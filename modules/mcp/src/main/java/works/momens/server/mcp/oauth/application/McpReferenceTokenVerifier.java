@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
@@ -45,7 +46,7 @@ public class McpReferenceTokenVerifier implements McpBearerTokenVerifier {
     if (authorization == null || authorization.getAccessToken() == null) {
       return Optional.empty();
     }
-    var access = authorization.getAccessToken();
+    OAuth2Authorization.Token<OAuth2AccessToken> access = authorization.getAccessToken();
     Instant now = clock.instant();
     if (access.isInvalidated()
         || !now.isBefore(access.getToken().getExpiresAt())

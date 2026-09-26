@@ -50,6 +50,7 @@ import tools.jackson.databind.ObjectMapper;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.mcp.grant.McpGrantWriter;
+import works.momens.server.mcp.transport.McpAuthenticationContext;
 import works.momens.server.mcp.transport.McpBearerTokenVerifier;
 import works.momens.server.workspace.core.WorkspaceReader;
 import works.momens.server.workspace.membership.WorkspaceMembershipReader;
@@ -238,7 +239,7 @@ class McpOAuthFlowIntegrationTest extends AbstractPostgresIntegrationTest {
     String code = approve(begin());
     JsonNode pair = exchange(code);
     String access = pair.get("access_token").stringValue();
-    var context = tokenVerifier.verify(access).orElseThrow();
+    McpAuthenticationContext context = tokenVerifier.verify(access).orElseThrow();
     assertThat(context.userId()).isEqualTo(userId);
     assertThat(context.workspaceId()).isEqualTo(workspaceId);
     assertThat(context.clientId()).isEqualTo(clientId);

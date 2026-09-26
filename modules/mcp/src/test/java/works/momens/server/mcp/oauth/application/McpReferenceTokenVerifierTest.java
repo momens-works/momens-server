@@ -33,6 +33,7 @@ import works.momens.server.mcp.configuration.McpEndpointProperties;
 import works.momens.server.mcp.grant.McpGrantDetail;
 import works.momens.server.mcp.grant.McpGrantReader;
 import works.momens.server.mcp.grant.McpScope;
+import works.momens.server.mcp.transport.McpAuthenticationContext;
 import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 import works.momens.server.workspace.membership.WorkspaceRole;
 
@@ -78,7 +79,7 @@ class McpReferenceTokenVerifierTest {
     stubGrant(userId, "public-client", List.of(READ, McpScope.TASKS_WRITE.value()));
     when(clients.findById(client.getId())).thenReturn(client);
     when(memberships.roleOf(workspaceId, userId)).thenReturn(Optional.of(WorkspaceRole.MEMBER));
-    var context = verifier.verify(RAW).orElseThrow();
+    McpAuthenticationContext context = verifier.verify(RAW).orElseThrow();
     assertThat(context.grantId()).isEqualTo(grantId);
     assertThat(context.userId()).isEqualTo(userId);
     assertThat(context.clientId()).isEqualTo(client.getClientId());
