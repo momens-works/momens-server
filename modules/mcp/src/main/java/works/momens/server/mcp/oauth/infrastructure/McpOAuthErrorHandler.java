@@ -33,9 +33,13 @@ final class McpOAuthErrorHandler implements AuthenticationFailureHandler {
       String clientId = singleParameter(request, "client_id");
       String redirect = singleParameter(request, "redirect_uri");
       RegisteredClient client = clientId == null ? null : clients.findByClientId(clientId);
-      if (client != null && redirect != null && client.getRedirectUris().contains(redirect)) {
+      String registeredRedirect =
+          client == null || redirect == null
+              ? null
+              : client.getRedirectUris().stream().filter(redirect::equals).findFirst().orElse(null);
+      if (registeredRedirect != null) {
         UriComponentsBuilder builder =
-            UriComponentsBuilder.fromUriString(redirect).replaceQueryParam("error", code);
+            UriComponentsBuilder.fromUriString(registeredRedirect).replaceQueryParam("error", code);
         String state = singleParameter(request, "state");
         if (state != null) {
           builder.replaceQueryParam("state", UriUtils.encode(state, StandardCharsets.UTF_8));

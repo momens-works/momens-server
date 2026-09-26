@@ -23,6 +23,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.common.api.CurrentUser;
+import works.momens.server.common.api.ErrorResponse;
 import works.momens.server.mcp.oauth.application.McpInteractionException;
 import works.momens.server.mcp.oauth.application.McpInteractionService;
 
@@ -110,13 +111,16 @@ class McpInteractionController implements McpInteractionControllerDocs {
   }
 
   @ExceptionHandler(BusinessException.class)
-  ResponseEntity<Map<String, String>> grantError(BusinessException exception) {
+  ResponseEntity<?> grantError(BusinessException exception) {
     if (exception.getErrorCode() == CommonErrorCode.AUTH_FORBIDDEN) {
       return ResponseEntity.status(403).body(Map.of("error", "forbidden"));
     }
     if (exception.getErrorCode() == CommonErrorCode.COMMON_VALIDATION_FAILED) {
       return ResponseEntity.badRequest().body(Map.of("error", "invalid_interaction"));
     }
-    throw exception;
+    // Rethrowing here does not select the global ControllerAdvice a second time.
+    var code = exception.getErrorCode();
+    return ResponseEntity.status(code.status())
+        .body(ErrorResponse.of(code.code(), exception.getMessage(), exception.getDetails()));
   }
 }

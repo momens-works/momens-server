@@ -88,9 +88,23 @@ class McpOAuthSecurityIntegrationTest extends AbstractPostgresIntegrationTest {
     mvc.perform(get(path).cookie(cookie))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.interaction.workspaces[0].id").value(workspaceId.toString()));
+    // Production uses the existing SameSite-cookie policy and CORS filter, without a CSRF token.
+    for (String origin : List.of("https://evil.example", "https://untrusted.momens.works")) {
+      mvc.perform(
+              post(path + "/approve")
+                  .cookie(cookie)
+                  .header("Origin", origin)
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content(mapper.writeValueAsString(Map.of("workspace_id", workspaceId))))
+          .andExpect(status().isForbidden());
+      mvc.perform(post(path + "/deny").cookie(cookie).header("Origin", origin))
+          .andExpect(status().isForbidden());
+    }
+    mvc.perform(get(path).cookie(cookie)).andExpect(status().isOk());
     String approval =
         mvc.perform(
                 post(path + "/approve")
+                    .header("Origin", "http://localhost:3000")
                     .cookie(cookie)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(mapper.writeValueAsString(Map.of("workspace_id", workspaceId))))
