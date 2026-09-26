@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
+import works.momens.server.common.api.CursorPageParams;
 import works.momens.server.mobile.MobileClock;
 import works.momens.server.mobile.MobilePriority;
 import works.momens.server.project.core.ProjectErrorCode;
@@ -146,9 +147,10 @@ class ProjectBriefService {
             : List.of(filterKey);
     // 커서가 있으면 첫 페이지에서 정한 기준일을 그대로 쓰고, 없으면(직접 첫 페이지 조회) 오늘로 앵커를 잡는다.
     // 이렇게 하면 페이지네이션 도중 자정을 넘겨도 창이 밀리지 않는다.
-    boolean hasCursor = cursor != null && !cursor.isBlank();
-    BriefSignalCursor position = hasCursor ? BriefSignalCursor.decode(cursor) : null;
-    LocalDate anchor = hasCursor ? position.anchor() : BriefDay.today(mobileClock.clock());
+    CursorPageParams params = CursorPageParams.resolve(cursor, limit, SIGNAL_SUMMARY_PAGE_SIZE);
+    BriefSignalCursor position =
+        params.cursor() == null ? null : BriefSignalCursor.decode(params.cursor());
+    LocalDate anchor = position == null ? BriefDay.today(mobileClock.clock()) : position.anchor();
     BriefDay.Range window = BriefDay.rangeOf(anchor);
     SignalSummaryPage page =
         signalListService.listByCreatedRange(
@@ -157,26 +159,14 @@ class ProjectBriefService {
             types,
             window.from(),
             window.toExclusive(),
-            hasCursor ? position.signalCursor() : null,
-            resolvePageSize(limit));
+            position == null ? null : position.signalCursor(),
+            params.pageSize());
     return new MobileBriefSignalPage(toItems(page.items()), nextCursor(anchor, page));
   }
 
   /** signal 커서를 기준일 앵커와 함께 감싼다. 다음 페이지가 없으면 null이다. */
   private static String nextCursor(LocalDate anchor, SignalSummaryPage page) {
     return page.nextCursor() == null ? null : BriefSignalCursor.encode(anchor, page.nextCursor());
-  }
-
-  private static int resolvePageSize(Integer limit) {
-    // limit이 없거나 0이면 더보기 기본 페이지 크기를 사용합니다. 음수만 잘못된 요청으로 처리합니다(AIP-158).
-    if (limit == null || limit == 0) {
-      return SIGNAL_SUMMARY_PAGE_SIZE;
-    }
-    if (limit < 0) {
-      throw new BusinessException(
-          CommonErrorCode.COMMON_VALIDATION_FAILED, Map.of("limit", limit.toString()));
-    }
-    return limit;
   }
 
   private static List<MobileBrief.FilterCount> toFilterCounts(Map<String, Long> countsByType) {
