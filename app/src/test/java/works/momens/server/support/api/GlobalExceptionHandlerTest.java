@@ -131,6 +131,19 @@ class GlobalExceptionHandlerTest {
   }
 
   @Test
+  @DisplayName("enum 필드에 숫자를 보내면 COMMON_VALIDATION_FAILED와 해당 필드 이름을 응답한다")
+  void rendersValidationFailureForNumericEnumValue() throws Exception {
+    mockMvc
+        .perform(
+            post("/test/enum")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"test_level\":0}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @Test
   @DisplayName("잘못된 JSON은 COMMON_BAD_REQUEST로 매핑된다")
   void rendersBadRequestForMalformedJson() throws Exception {
     mockMvc
