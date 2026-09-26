@@ -1,5 +1,6 @@
 package works.momens.server.web.workspace;
 
+import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +41,7 @@ class WorkspaceMemberController implements WorkspaceMemberControllerDocs {
   public WebMessageResponse update(
       @PathVariable UUID workspaceId,
       @PathVariable UUID userId,
-      @RequestBody UpdateWorkspaceMemberRequest request,
+      @Valid @RequestBody UpdateWorkspaceMemberRequest request,
       Principal principal) {
     workspaceMemberService.changeRole(
         workspaceId, CurrentUser.id(principal), userId, request.role());

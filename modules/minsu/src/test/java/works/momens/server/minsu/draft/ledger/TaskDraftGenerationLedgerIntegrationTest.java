@@ -26,8 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
-import works.momens.server.minsu.Priority;
-import works.momens.server.minsu.Role;
 import works.momens.server.minsu.SignalTaskDraftInput;
 import works.momens.server.minsu.TaskDraft;
 import works.momens.server.minsu.draft.config.MinsuAsyncProperties;
@@ -37,6 +35,8 @@ import works.momens.server.minsu.draft.json.MinsuJson;
 import works.momens.server.project.task.ApplyTaskDraftCommand;
 import works.momens.server.project.task.TaskDraftApplyResult;
 import works.momens.server.project.task.TaskDraftValues;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 
 /**
  * claim·재시도·결과 기록을 실제 PostgreSQL로 검증한다(MOM-0819, 설계 7.1·8.2·8.5절).
@@ -217,10 +217,10 @@ class TaskDraftGenerationLedgerIntegrationTest extends AbstractPostgresIntegrati
         () -> assertThat(command.taskId()).isEqualTo(taskId),
         () ->
             assertThat(command.baseline())
-                .isEqualTo(new TaskDraftValues("결제 실패율 대응", "backend", "medium")),
+                .isEqualTo(new TaskDraftValues("결제 실패율 대응", TaskRole.BACKEND, TaskPriority.MEDIUM)),
         () ->
             assertThat(command.draft())
-                .isEqualTo(new TaskDraftValues("결제 실패율 대응", "backend", "high")));
+                .isEqualTo(new TaskDraftValues("결제 실패율 대응", TaskRole.BACKEND, TaskPriority.HIGH)));
   }
 
   @Test
@@ -260,7 +260,7 @@ class TaskDraftGenerationLedgerIntegrationTest extends AbstractPostgresIntegrati
     ledger.record(
         claim,
         new AsyncGenerationResult(
-            new TaskDraft("결제 실패율 대응", Role.BACKEND, Priority.MEDIUM),
+            new TaskDraft("결제 실패율 대응", TaskRole.BACKEND, TaskPriority.MEDIUM),
             GenerationOutcome.GENERATED_TITLE_FALLBACK));
 
     TaskDraftGeneration generation = reload(taskId);
@@ -458,7 +458,7 @@ class TaskDraftGenerationLedgerIntegrationTest extends AbstractPostgresIntegrati
 
   private AsyncGenerationResult result(GenerationOutcome outcome) {
     return new AsyncGenerationResult(
-        new TaskDraft("결제 실패율 대응", Role.BACKEND, Priority.HIGH), outcome);
+        new TaskDraft("결제 실패율 대응", TaskRole.BACKEND, TaskPriority.HIGH), outcome);
   }
 
   private TaskDraftGeneration reload(UUID taskId) {

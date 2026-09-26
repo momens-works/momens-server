@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import works.momens.server.common.persistence.BaseEntity;
+import works.momens.server.project.core.ProjectHealthStatus;
 
 /**
  * 프로젝트.
@@ -114,7 +115,7 @@ class Project extends BaseEntity {
     this.targetDate = targetDate;
     this.summary = summary;
     this.label = label;
-    this.healthStatus = healthStatus != null ? healthStatus : "open";
+    this.healthStatus = healthStatus != null ? healthStatus : ProjectHealthStatus.OPEN.value();
     this.progress = progress;
     this.unresolvedCount = unresolvedCount;
     this.vocSignalCount = vocSignalCount;

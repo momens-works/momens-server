@@ -194,6 +194,7 @@ prod gate로 별도 추적한다.
 - 경로: `GET /api/mobile/projects/{projectId}/signals`
 - 신호 목록은 프로젝트 스코프를 기준으로 한다.
 - MVP 목록은 아직 처리되지 않은 Signal만 반환한다.
+- 목록은 cursor pagination으로 한 페이지씩 반환합니다. 기본 페이지 크기는 5이고 상한은 50입니다(MOM-0963).
 - 처리된 Signal(`convert-to-task` 또는 `dismiss`)을 다시 조회하거나 필터링하는 흐름은 MVP에서 제공하지 않는다.
 - 목록 응답은 신호 카드 렌더링에 필요한 정보를 포함해야 한다.
 - 목록 응답은 type, title, impact, Minsu suggestion을 표현할 수 있어야 한다.

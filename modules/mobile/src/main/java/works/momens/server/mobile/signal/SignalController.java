@@ -9,8 +9,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import works.momens.server.common.api.CurrentUser;
+import works.momens.server.common.api.CursorPageParams;
 import works.momens.server.mobile.signal.dto.response.ConvertToTaskResponse;
 import works.momens.server.mobile.signal.dto.response.DismissResponse;
 import works.momens.server.mobile.signal.dto.response.SignalDetailResponse;
@@ -31,15 +33,28 @@ import works.momens.server.signal.SignalListService;
 @RequestMapping("/api/mobile")
 class SignalController implements SignalControllerDocs {
 
+  /**
+   * 시그널 목록의 기본 페이지 크기입니다.
+   *
+   * <p>화면별 기본 페이지 크기를 정하는 UX 설정이며, 페이지 크기 상한은 signal 모듈에서 정합니다.
+   */
+  private static final int SIGNAL_LIST_PAGE_SIZE = 5;
+
   private final SignalListService signalListService;
   private final SignalDetailService signalDetailService;
   private final SignalActionService signalActionService;
 
   @Override
   @GetMapping(path = "/projects/{projectId}/signals", version = "1")
-  public SignalListResponse listSignals(@PathVariable UUID projectId, Principal principal) {
+  public SignalListResponse listSignals(
+      @PathVariable UUID projectId,
+      @RequestParam(name = "cursor", required = false) String cursor,
+      @RequestParam(name = "limit", required = false) Integer limit,
+      Principal principal) {
+    CursorPageParams params = CursorPageParams.resolve(cursor, limit, SIGNAL_LIST_PAGE_SIZE);
     return SignalListResponse.from(
-        signalListService.listUnprocessed(projectId, CurrentUser.id(principal)));
+        signalListService.listUnprocessed(
+            projectId, CurrentUser.id(principal), params.cursor(), params.pageSize()));
   }
 
   @Override

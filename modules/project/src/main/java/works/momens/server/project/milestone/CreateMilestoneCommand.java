@@ -21,7 +21,7 @@ public record CreateMilestoneCommand(
     String name,
     String description,
     LocalDate targetDate,
-    String healthStatus,
+    MilestoneHealthStatus healthStatus,
     Integer progress,
     String summary,
     Instant lastContextAt,

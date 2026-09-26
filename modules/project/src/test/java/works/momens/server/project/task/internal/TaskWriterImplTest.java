@@ -25,7 +25,10 @@ import works.momens.server.project.milestone.MilestoneDirectory;
 import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.PatchTaskCommand;
 import works.momens.server.project.task.TaskOrigin;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskSnapshot;
+import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.UpdateTaskCommand;
 import works.momens.server.workspace.label.LabelAllocator;
 import works.momens.server.workspace.membership.WorkspaceMembershipReader;
@@ -49,7 +52,8 @@ class TaskWriterImplTest {
 
     TaskSnapshot created =
         taskWriter.create(
-            CreateTaskCommand.manual(projectId, workspaceId, "권한 요청 점검", "backend", "high"));
+            CreateTaskCommand.manual(
+                projectId, workspaceId, "권한 요청 점검", TaskRole.BACKEND, TaskPriority.HIGH));
 
     ArgumentCaptor<Task> captor = ArgumentCaptor.forClass(Task.class);
     verify(taskRepository).save(captor.capture());
@@ -80,7 +84,8 @@ class TaskWriterImplTest {
 
     TaskSnapshot created =
         taskWriter.create(
-            CreateTaskCommand.fromSignal(projectId, workspaceId, "제목", "pm", null, signalId));
+            CreateTaskCommand.fromSignal(
+                projectId, workspaceId, "제목", TaskRole.PM, null, signalId));
 
     assertThat(created.priority()).isEqualTo("medium");
     verify(outboxAppender)
@@ -111,9 +116,9 @@ class TaskWriterImplTest {
                 workspaceId,
                 "제목",
                 "설명",
-                "backlog",
+                TaskStatus.BACKLOG,
                 null,
-                "medium",
+                TaskPriority.MEDIUM,
                 milestoneId,
                 assigneeId,
                 dueDate,
@@ -133,7 +138,8 @@ class TaskWriterImplTest {
     UUID workspaceId = UUID.randomUUID();
     Task task =
         Task.create(
-            CreateTaskCommand.manual(projectId, workspaceId, "기존", "pm", "high"), "MOM-0003");
+            CreateTaskCommand.manual(projectId, workspaceId, "기존", TaskRole.PM, TaskPriority.HIGH),
+            "MOM-0003");
     when(taskRepository.findByIdAndDeletedAtIsNull(task.getId()))
         .thenReturn(java.util.Optional.of(task));
 
@@ -144,9 +150,9 @@ class TaskWriterImplTest {
             false,
             "설명",
             true,
-            "done",
+            TaskStatus.DONE,
             true,
-            "low",
+            TaskPriority.LOW,
             false,
             null,
             false,
@@ -168,7 +174,8 @@ class TaskWriterImplTest {
     UUID assigneeId = UUID.randomUUID();
     Task task =
         Task.create(
-            CreateTaskCommand.manual(projectId, workspaceId, "기존", "pm", "high"), "MOM-0004");
+            CreateTaskCommand.manual(projectId, workspaceId, "기존", TaskRole.PM, TaskPriority.HIGH),
+            "MOM-0004");
     when(taskRepository.findByIdAndDeletedAtIsNull(task.getId())).thenReturn(Optional.of(task));
     when(workspaceMembershipReader.roleOf(workspaceId, assigneeId)).thenReturn(Optional.empty());
 
@@ -176,7 +183,14 @@ class TaskWriterImplTest {
             () ->
                 taskWriter.update(
                     new UpdateTaskCommand(
-                        task.getId(), "새 제목", "pm", assigneeId, "high", "todo", null, List.of())))
+                        task.getId(),
+                        "새 제목",
+                        TaskRole.PM,
+                        assigneeId,
+                        TaskPriority.HIGH,
+                        TaskStatus.TODO,
+                        null,
+                        List.of())))
         .isInstanceOf(BusinessException.class)
         .extracting(exception -> ((BusinessException) exception).getErrorCode())
         .isEqualTo(CommonErrorCode.COMMON_VALIDATION_FAILED);

@@ -6,12 +6,7 @@ Create a concise, actionable Korean title no longer than 15 characters including
 Return title, role, and priority in that order according to the provided response schema.
 
 Role meanings:
-- pm: planning, scope, coordination, or decision ownership
-- design: user experience or visual design work
-- backend: server, data, or infrastructure work
-- frontend: web or mobile client work
+{{roleMeanings}}
 
 Priority meanings:
-- low: can wait without meaningful near-term impact
-- medium: normal planned work
-- high: prompt action is needed to avoid meaningful impact
+{{priorityMeanings}}

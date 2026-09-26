@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.Map;
@@ -104,6 +105,45 @@ class GlobalExceptionHandlerTest {
   }
 
   @Test
+  @DisplayName("enum 필드에 허용하지 않는 값을 보내면 COMMON_VALIDATION_FAILED와 필드 이름을 응답합니다")
+  void rendersValidationFailureForUnknownEnumValue() throws Exception {
+    mockMvc
+        .perform(
+            post("/test/enum")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"test_level\":\"unknown\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @Test
+  @DisplayName("enum 필드에 빈 문자열을 보내도 COMMON_VALIDATION_FAILED와 필드 이름을 응답합니다")
+  void rendersValidationFailureForEmptyEnumValue() throws Exception {
+    mockMvc
+        .perform(
+            post("/test/enum")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"test_level\":\"\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @Test
+  @DisplayName("enum 필드에 숫자를 보내면 COMMON_VALIDATION_FAILED와 해당 필드 이름을 응답한다")
+  void rendersValidationFailureForNumericEnumValue() throws Exception {
+    mockMvc
+        .perform(
+            post("/test/enum")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"test_level\":0}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @Test
   @DisplayName("잘못된 JSON은 COMMON_BAD_REQUEST로 매핑된다")
   void rendersBadRequestForMalformedJson() throws Exception {
     mockMvc
@@ -187,6 +227,9 @@ class GlobalExceptionHandlerTest {
     @PostMapping("/test/validate-acronym")
     void validateAcronym(@Valid @RequestBody AcronymRequest request) {}
 
+    @PostMapping("/test/enum")
+    void enumBody(@RequestBody EnumRequest request) {}
+
     @GetMapping("/test/field-validation")
     void fieldValidation() {
       throw FieldValidationException.forField(
@@ -209,6 +252,23 @@ class GlobalExceptionHandlerTest {
     record TestRequest(@NotBlank String displayName) {}
 
     record AcronymRequest(@NotBlank String userIDToken) {}
+
+    record EnumRequest(TestLevel testLevel) {}
+
+    enum TestLevel {
+      LOW("low");
+
+      private final String value;
+
+      TestLevel(String value) {
+        this.value = value;
+      }
+
+      @JsonValue
+      String value() {
+        return value;
+      }
+    }
   }
 
   @RequiredArgsConstructor

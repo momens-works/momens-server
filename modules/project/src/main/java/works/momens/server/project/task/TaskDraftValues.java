@@ -10,6 +10,7 @@ package works.momens.server.project.task;
  * 쪽에만 더하면 그 필드는 baseline 검사를 거치지 않은 채 덮어써지고, 전부-아니면-전무(설계 8.1절)가 그 필드에서만 조용히 깨집니다. 반영 대상을 넓히려면 비교
  * 대상도 함께 넓혀야 합니다.
  *
- * <p>{@code role}과 {@code priority}는 {@code tasks}가 저장하는 문자열 값 그대로입니다. 허용값은 DB CHECK 제약이 지킵니다.
+ * <p>`role`과 `priority`는 저장할 값을 도메인 enum으로 받습니다. minsu 모듈에서 사용하는 값은 이 record를 생성하는 쪽에서 도메인 enum으로
+ * 변환합니다.
  */
-public record TaskDraftValues(String title, String role, String priority) {}
+public record TaskDraftValues(String title, TaskRole role, TaskPriority priority) {}

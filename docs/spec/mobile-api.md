@@ -274,9 +274,11 @@ Refresh token을 폐기합니다.
 MVP에서는 아직 처리되지 않은 시그널만 반환합니다. `convert-to-task` 또는 `dismiss`로 처리된 시그널을
 다시 보는 inbox/필터 흐름은 MVP 이후로 둡니다.
 
-정렬은 최신 Signal이 먼저 오도록 생성 시각 내림차순을 기본으로 합니다. 생성 시각이 같으면 id
-내림차순으로 순서를 고정합니다. 수십 건 이상 누적될 때의 pagination/cursor 계약은 MVP 이후 확장으로
-둡니다.
+정렬은 최신 Signal이 먼저 오도록 생성 시각 내림차순을 기본으로 합니다. 생성 시각이 같으면 id 내림차순으로 순서를 고정합니다.
+
+시그널 탭은 무한 스크롤로 목록을 이어서 보여 주고, 서버는 cursor pagination으로 한 페이지씩 반환합니다. 첫 요청은 `cursor` 없이 보내고, 목록 끝에 도달하면 직전 응답의 `next_cursor`를 `cursor`로 전달해 다음 페이지를 조회합니다. `next_cursor`가 `null`이면 더 조회할 데이터가 없습니다. 기본 페이지 크기는 한 화면에 카드가 약 3개 보이는 것을 고려해 5로 정했고(2026-09-26), 최대 페이지 크기 50은 서버 보호를 위한 상한입니다. `limit`과 `cursor`의 해석 규칙은 브리프 시그널 요약과 동일합니다.
+
+형식이 잘못된 `cursor`와 음수 `limit`은 `COMMON_VALIDATION_FAILED`(400)로 응답합니다.
 
 카드의 `Needs action`, `Needs review`, `Needs decision` 라벨은 응답의 `type`에서 앱이 파생합니다. 서버가
 별도 처리 상태 필드를 내려주지 않습니다.
@@ -288,6 +290,13 @@ Signal과 함께 생산하고, worker가 준비되지 않은 MVP 환경에서는
 
 응답 항목에서는 `project_id`를 생략하지만 Signal backing의 `project_id`는 유지합니다. 서버가 경로의 프로젝트로
 목록을 필터링하고, 원탭 전환 시 task를 어느 프로젝트에 만들지 결정하는 내부 귀속 정보이기 때문입니다.
+
+#### Query
+
+| 이름       | 필수  | 설명                                                                                                  |
+| -------- | --- | --------------------------------------------------------------------------------------------------- |
+| `cursor` | 아니오 | 이전 응답의 `next_cursor`. 없으면 첫 페이지를 조회합니다.                                                             |
+| `limit`  | 아니오 | 페이지 크기. 없거나 0이면 기본값 5를 사용하고, 상한은 50입니다. 50을 초과하면 50으로 제한하며, 음수이면 `COMMON_VALIDATION_FAILED`로 응답합니다. |
 
 #### Response 200
 
@@ -303,7 +312,8 @@ Signal과 함께 생산하고, worker가 준비되지 않은 MVP 환경에서는
       "impact": "MVP 완료율과 온보딩 품질에 영향을 줄 수 있습니다.",
       "minsu_suggestion": "내용이 들어갈 공간입니다"
     }
-  ]
+  ],
+  "next_cursor": "MjAyNi0wOS0yNlQwMTowMDowMFp8NmYzZDhhNjEtNGRlNy00YzAxLTlkMmItMTZmZGYxODJlOWEx"
 }
 ```
 
@@ -312,6 +322,7 @@ Signal과 함께 생산하고, worker가 준비되지 않은 MVP 환경에서는
 - `AUTH_UNAUTHORIZED`
 - `AUTH_INVALID_TOKEN`
 - `PROJECT_NOT_FOUND`
+- `COMMON_VALIDATION_FAILED`
 - `AUTH_FORBIDDEN`
 
 ### GET /api/mobile/signals/{signalId}
@@ -588,7 +599,7 @@ cancelled를 분모에서 제외하는 기준은 기획이 확정했습니다. �
 
 `priorities`의 원천은 태스크입니다(2026-07-10 기획 확정). `title`은 태스크 제목이고, `task_id`로 태스크 상세로
 이동할 수 있습니다. 정렬은 `priority`가 높은 순(high, medium, low)이고, 같으면 생성이 오래된 순입니다(생성 시각
-오름차순, 생성 시각까지 같으면 id 오름차순으로 순서를 고정합니다). 저장된 값이 레거시 전용인 urgent이면 high와
+오름차순, 생성 시각까지 같으면 id 오름차순으로 순서를 고정합니다). 저장된 값이 web에서 사용하는 urgent이면 high와
 같은 순위로 정렬합니다. 상위 4개까지만 담습니다. 화면의 "현재 우선순위 · N" 헤더 숫자는 배열 길이로 계산하며,
 배열 길이와 항상 같은 값이라 별도 개수 필드를 두지 않습니다. 후보는 진행 중인 todo와 in_progress 상태의
 태스크이고 backlog와 done, cancelled는 제외합니다(2026-07-10 기획 확정).
@@ -726,7 +737,7 @@ id를 기준으로 하기 때문에, 페이지 사이에 시그널이 처리되�
 }
 ```
 
-title, role, priority 모두 필수입니다(2026-07-06 기획 확정, 2026-07-07 역할은 하나만 선택하는 단일 값으로 재확정). role은 pm, design, backend, frontend 중 하나입니다(2026-07-08 기획 확정으로 android, qa는 폐기하고 역할은 4종만 둡니다). priority는 low, medium, high 중 하나입니다. 셋 중 하나라도 비거나 role이 4종 밖이면 COMMON_VALIDATION_FAILED로 응답합니다. 제목은 공백을 포함해 15자로 제한하며, 넘기면 COMMON_VALIDATION_FAILED로 응답합니다(수정 화면과 같은 태스크 공통 규칙). 생성한 태스크는 todo 그룹에서 시작합니다. role은 레거시 tasks에 없는 신규 속성이라 CHECK 제약을 둔 문자열 컬럼으로 저장합니다.
+title, role, priority 모두 필수입니다(2026-07-06 기획 확정, 2026-07-07 역할은 하나만 선택하는 단일 값으로 재확정). role은 pm, design, backend, frontend 중 하나입니다(2026-07-08 기획 확정으로 android, qa는 폐기하고 역할은 4종만 둡니다). priority는 low, medium, high, urgent 중 하나이며, urgent는 그대로 저장하고 응답에서는 high로 표시합니다. 셋 중 하나라도 비어 있거나 허용하지 않는 값이면 COMMON_VALIDATION_FAILED로 응답합니다. 제목은 공백을 포함해 15자로 제한하며, 넘기면 COMMON_VALIDATION_FAILED로 응답합니다(수정 화면과 같은 태스크 공통 규칙). 생성한 태스크는 todo 그룹에서 시작합니다. role은 레거시 tasks에 없는 신규 속성이라 CHECK 제약을 둔 문자열 컬럼으로 저장합니다.
 
 #### Errors
 

@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.notification.PushDeviceRegistrar;
+import works.momens.server.notification.PushInstallationPlatform;
 
 /**
  * push 설치 등록·해제 구현.
@@ -23,7 +24,6 @@ import works.momens.server.notification.PushDeviceRegistrar;
 @RequiredArgsConstructor
 class PushDeviceRegistrarImpl implements PushDeviceRegistrar {
 
-  private static final String PLATFORM_ANDROID = "android";
   private static final String REGISTRATION_LOCK_NAME = "notification.push_installations";
 
   private final PushInstallationRepository pushInstallationRepository;
@@ -32,12 +32,12 @@ class PushDeviceRegistrarImpl implements PushDeviceRegistrar {
   @Override
   @Transactional
   public void register(
-      UUID userId, String firebaseInstallationId, String fcmRegistrationToken, String platform) {
+      UUID userId,
+      String firebaseInstallationId,
+      String fcmRegistrationToken,
+      PushInstallationPlatform platform) {
     requireNotBlank(firebaseInstallationId);
     requireNotBlank(fcmRegistrationToken);
-    if (!PLATFORM_ANDROID.equals(platform)) {
-      throw new BusinessException(CommonErrorCode.COMMON_VALIDATION_FAILED);
-    }
     lockRegistrationLedger();
     try {
       registerLocked(userId, firebaseInstallationId, fcmRegistrationToken, platform);
@@ -50,7 +50,10 @@ class PushDeviceRegistrarImpl implements PushDeviceRegistrar {
   }
 
   private void registerLocked(
-      UUID userId, String firebaseInstallationId, String fcmRegistrationToken, String platform) {
+      UUID userId,
+      String firebaseInstallationId,
+      String fcmRegistrationToken,
+      PushInstallationPlatform platform) {
     // 같은 token이 다른 FID에 활성으로 연결돼 있으면 token이 새 설치로 이동한 것이므로 이전 연결을 먼저 닫는다.
     // Hibernate는 flush 시 INSERT를 UPDATE보다 먼저 실행하므로, 비활성화를 명시적으로 flush해
     // 활성 token 부분 unique 제약이 새 행 INSERT 시점에 깨지지 않게 한다.
@@ -75,7 +78,7 @@ class PushDeviceRegistrarImpl implements PushDeviceRegistrar {
                         .firebaseInstallationId(firebaseInstallationId)
                         .userId(userId)
                         .fcmRegistrationToken(fcmRegistrationToken)
-                        .platform(platform)
+                        .platform(platform.value())
                         .build()));
   }
 

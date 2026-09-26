@@ -1,5 +1,6 @@
 package works.momens.server.web.workspace;
 
+import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -43,7 +44,7 @@ class WorkspaceInvitationController implements WorkspaceInvitationControllerDocs
   @ResponseStatus(HttpStatus.CREATED)
   public WorkspaceInvitationResponse create(
       @PathVariable UUID workspaceId,
-      @RequestBody CreateWorkspaceInvitationRequest request,
+      @Valid @RequestBody CreateWorkspaceInvitationRequest request,
       Principal principal) {
     return WorkspaceInvitationResponse.from(
         workspaceInvitationService.create(
@@ -70,7 +71,7 @@ class WorkspaceInvitationController implements WorkspaceInvitationControllerDocs
   @PostMapping(path = "/invite", version = "1")
   public WebMessageResponse invite(
       @PathVariable UUID workspaceId,
-      @RequestBody AddWorkspaceMemberRequest request,
+      @Valid @RequestBody AddWorkspaceMemberRequest request,
       Principal principal) {
     workspaceInvitationService.addMember(
         workspaceId, CurrentUser.id(principal), request.email(), request.role());

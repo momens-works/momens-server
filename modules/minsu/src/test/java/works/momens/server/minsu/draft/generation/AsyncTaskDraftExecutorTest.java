@@ -13,11 +13,11 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import works.momens.server.minsu.Priority;
-import works.momens.server.minsu.Role;
 import works.momens.server.minsu.SignalTaskDraftInput;
 import works.momens.server.minsu.TaskDraft;
 import works.momens.server.minsu.draft.config.MinsuAsyncProperties;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 
 /**
  * 시도 전체를 감싸는 wall-clock 상한과 포화 동작을 검증한다(MOM-0819, 설계 9.1절).
@@ -52,7 +52,7 @@ class AsyncTaskDraftExecutorTest {
             invocation -> {
               SignalTaskDraftInput input = invocation.getArgument(0);
               return new TaskDraftAttempt.Result(
-                  new TaskDraft(input.title(), Role.PM, Priority.MEDIUM),
+                  new TaskDraft(input.title(), TaskRole.PM, TaskPriority.MEDIUM),
                   GenerationOutcome.GENERATED);
             });
 
@@ -187,7 +187,7 @@ class AsyncTaskDraftExecutorTest {
       }
     }
     return new TaskDraftAttempt.Result(
-        new TaskDraft("늦게 도착", Role.PM, Priority.MEDIUM), GenerationOutcome.GENERATED);
+        new TaskDraft("늦게 도착", TaskRole.PM, TaskPriority.MEDIUM), GenerationOutcome.GENERATED);
   }
 
   private static SignalTaskDraftInput input(String title) {

@@ -6,8 +6,8 @@ import java.util.UUID;
 /**
  * 태스크 생성 입력.
  *
- * <p>{@code workspaceId}는 호출하는 표면이 권한 검사 단계에서 이미 확정한 값을 넘깁니다. status·priority 별칭 같은 입력 정규화는 표면이
- * 끝내고, 이 모듈은 참조 유효성 검사와 저장 및 라벨 발급을 책임집니다.
+ * <p>{@code workspaceId}는 호출 모듈에서 권한 검사 과정에 확정한 값을 전달합니다. 요청 값은 각 호출 모듈의 요청 DTO에서 enum 타입으로
+ * validation하며, 이 모듈은 참조 유효성 검증과 저장, 라벨 발급을 책임집니다.
  *
  * <p>{@code origin}은 사람이 직접 만든 태스크({@link TaskOrigin#MANUAL})와 Signal을 수용해 만든 태스크({@link
  * TaskOrigin#SIGNAL})를 구분합니다(CO-6). {@code SIGNAL}은 {@code originSignalId}가 반드시 있어야 하고, {@code
@@ -18,9 +18,9 @@ public record CreateTaskCommand(
     UUID workspaceId,
     String title,
     String description,
-    String status,
-    String role,
-    String priority,
+    TaskStatus status,
+    TaskRole role,
+    TaskPriority priority,
     UUID milestoneId,
     UUID assigneeId,
     LocalDate dueDate,
@@ -28,7 +28,7 @@ public record CreateTaskCommand(
     UUID originSignalId) {
 
   public CreateTaskCommand {
-    if (status == null || status.isBlank()) {
+    if (status == null) {
       throw new IllegalArgumentException("status는 필수입니다.");
     }
     if (origin == null) {
@@ -44,13 +44,13 @@ public record CreateTaskCommand(
   }
 
   public static CreateTaskCommand manual(
-      UUID projectId, UUID workspaceId, String title, String role, String priority) {
+      UUID projectId, UUID workspaceId, String title, TaskRole role, TaskPriority priority) {
     return new CreateTaskCommand(
         projectId,
         workspaceId,
         title,
         null,
-        "todo",
+        TaskStatus.TODO,
         role,
         priority,
         null,
@@ -61,13 +61,18 @@ public record CreateTaskCommand(
   }
 
   public static CreateTaskCommand fromSignal(
-      UUID projectId, UUID workspaceId, String title, String role, String priority, UUID signalId) {
+      UUID projectId,
+      UUID workspaceId,
+      String title,
+      TaskRole role,
+      TaskPriority priority,
+      UUID signalId) {
     return new CreateTaskCommand(
         projectId,
         workspaceId,
         title,
         null,
-        "todo",
+        TaskStatus.TODO,
         role,
         priority,
         null,

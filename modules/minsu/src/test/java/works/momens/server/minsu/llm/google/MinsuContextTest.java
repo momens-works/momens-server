@@ -22,13 +22,13 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Primary;
-import works.momens.server.minsu.Priority;
-import works.momens.server.minsu.Role;
 import works.momens.server.minsu.SignalTaskDraftGenerator;
 import works.momens.server.minsu.SignalTaskDraftInput;
 import works.momens.server.minsu.TaskDraft;
 import works.momens.server.minsu.draft.ledger.TaskDraftGenerationEnroller;
 import works.momens.server.minsu.llm.MinsuLlmProperties;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 
 class MinsuContextTest {
 
@@ -55,7 +55,8 @@ class MinsuContextTest {
                       .prepare(new SignalTaskDraftInput("시그널 제목", "risk", "설명", null, List.of()))
                       .draft();
 
-              assertThat(draft).isEqualTo(new TaskDraft("시그널 제목", Role.PM, Priority.MEDIUM));
+              assertThat(draft)
+                  .isEqualTo(new TaskDraft("시그널 제목", TaskRole.PM, TaskPriority.MEDIUM));
               assertThat(context.getBean(FailingGoogleClientFactory.class).calls).hasValue(1);
               assertThat(context.getBean(MinsuLlmProperties.class).timeout())
                   .isEqualTo(Duration.ofSeconds(8));

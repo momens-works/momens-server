@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 
 class MinsuLlmTestFixtureTest {
 
@@ -14,7 +16,7 @@ class MinsuLlmTestFixtureTest {
   @Test
   void serializesSpecialCharactersInTitle() throws Exception {
     String title = "따옴표 \" 역슬래시 \\ 줄바꿈\n제목";
-    fixture.respondWith(new TaskDraft(title, Role.BACKEND, Priority.HIGH));
+    fixture.respondWith(new TaskDraft(title, TaskRole.BACKEND, TaskPriority.HIGH));
 
     JsonNode response = objectMapper.readTree(fixture.generate().text());
 

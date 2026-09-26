@@ -24,6 +24,7 @@ import works.momens.server.project.ProjectSeedSql;
 import works.momens.server.project.core.CreateProjectCommand;
 import works.momens.server.project.core.ProjectCreator;
 import works.momens.server.project.core.ProjectDetail;
+import works.momens.server.project.core.ProjectHealthStatus;
 import works.momens.server.workspace.label.LabelAllocator;
 import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
@@ -67,7 +68,7 @@ class ProjectCreatorIntegrationTest extends AbstractPostgresIntegrationTest {
                 "1차 스프린트",
                 "",
                 LocalDate.of(2026, 9, 30),
-                "at_risk",
+                ProjectHealthStatus.AT_RISK,
                 42,
                 "이번 스프린트 요약",
                 3,

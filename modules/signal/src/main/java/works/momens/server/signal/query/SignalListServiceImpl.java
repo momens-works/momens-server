@@ -44,11 +44,11 @@ class SignalListServiceImpl implements SignalListService {
 
   @Override
   @Transactional(readOnly = true)
-  public List<SignalSummary> listUnprocessed(UUID projectId, UUID userId) {
+  public SignalSummaryPage listUnprocessed(UUID projectId, UUID userId, String cursor, int limit) {
     requireMember(projectId, userId);
-    return signalRepository.findUnprocessedByProjectId(projectId).stream()
-        .map(SignalListServiceImpl::toSummary)
-        .toList();
+    int pageSize = resolvePageSize(limit);
+    Cursor position = Cursor.decode(cursor);
+    return page(signalRepository.findUnprocessedByProjectId(projectId), null, position, pageSize);
   }
 
   @Override

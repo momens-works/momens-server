@@ -1,13 +1,10 @@
 package works.momens.server.web.workspace;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import works.momens.server.common.api.BusinessException;
 import works.momens.server.web.WorkspaceAccessChecker;
-import works.momens.server.workspace.WorkspaceErrorCode;
 import works.momens.server.workspace.invitation.CreateInvitationCommand;
 import works.momens.server.workspace.invitation.ResendInvitationCommand;
 import works.momens.server.workspace.invitation.RevokeInvitationCommand;
@@ -15,6 +12,7 @@ import works.momens.server.workspace.invitation.WorkspaceInvitationDetail;
 import works.momens.server.workspace.invitation.WorkspaceInvitationReader;
 import works.momens.server.workspace.invitation.WorkspaceInvitationWriter;
 import works.momens.server.workspace.membership.AddMembershipByEmailCommand;
+import works.momens.server.workspace.membership.AssignableWorkspaceRole;
 import works.momens.server.workspace.membership.WorkspaceMembershipWriter;
 import works.momens.server.workspace.membership.WorkspaceRole;
 
@@ -41,10 +39,11 @@ class WorkspaceInvitationService {
     return workspaceInvitationReader.listByWorkspaceId(workspaceId);
   }
 
-  WorkspaceInvitationDetail create(UUID workspaceId, UUID userId, String email, String rawRole) {
+  WorkspaceInvitationDetail create(
+      UUID workspaceId, UUID userId, String email, AssignableWorkspaceRole role) {
     requireAdmin(workspaceId, userId);
     return workspaceInvitationWriter.create(
-        new CreateInvitationCommand(workspaceId, userId, email, assignableRole(rawRole)));
+        new CreateInvitationCommand(workspaceId, userId, email, role));
   }
 
   WorkspaceInvitationDetail resend(UUID workspaceId, UUID userId, UUID invitationId) {
@@ -58,23 +57,13 @@ class WorkspaceInvitationService {
     return workspaceInvitationWriter.revoke(new RevokeInvitationCommand(workspaceId, invitationId));
   }
 
-  void addMember(UUID workspaceId, UUID userId, String email, String rawRole) {
+  void addMember(UUID workspaceId, UUID userId, String email, AssignableWorkspaceRole role) {
     requireAdmin(workspaceId, userId);
-    workspaceMembershipWriter.addByEmail(
-        new AddMembershipByEmailCommand(workspaceId, email, assignableRole(rawRole)));
+    workspaceMembershipWriter.addByEmail(new AddMembershipByEmailCommand(workspaceId, email, role));
   }
 
   private void requireAdmin(UUID workspaceId, UUID userId) {
     workspaceAccessChecker.requireWorkspaceExists(workspaceId);
     workspaceAccessChecker.requireRoleAtLeast(workspaceId, userId, WorkspaceRole.ADMIN);
-  }
-
-  private static WorkspaceRole assignableRole(String rawRole) {
-    return WorkspaceRole.assignableFrom(rawRole)
-        .orElseThrow(
-            () ->
-                new BusinessException(
-                    WorkspaceErrorCode.WORKSPACE_INVALID_ROLE,
-                    Map.of("role", String.valueOf(rawRole))));
   }
 }

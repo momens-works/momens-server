@@ -21,6 +21,8 @@ import works.momens.server.project.task.ApplyTaskDraftCommand;
 import works.momens.server.project.task.TaskDraftApplier;
 import works.momens.server.project.task.TaskDraftApplyResult;
 import works.momens.server.project.task.TaskDraftValues;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 
 /**
  * claim과 결과 기록 트랜잭션(docs/design/minsu-async-task-draft-design.md 7.1·8.2·8.5절).
@@ -208,10 +210,10 @@ class TaskDraftGenerationLedger {
     TaskDraftValues baseline =
         new TaskDraftValues(
             generation.getBaselineTitle(),
-            generation.getBaselineRole(),
-            generation.getBaselinePriority());
-    TaskDraftValues generated =
-        new TaskDraftValues(draft.title(), draft.role().value(), draft.priority().value());
+            TaskRole.from(generation.getBaselineRole()).orElseThrow(IllegalStateException::new),
+            TaskPriority.from(generation.getBaselinePriority())
+                .orElseThrow(IllegalStateException::new));
+    TaskDraftValues generated = new TaskDraftValues(draft.title(), draft.role(), draft.priority());
     TaskDraftApplyResult applied =
         taskDraftApplier.apply(
             new ApplyTaskDraftCommand(generation.getTaskId(), baseline, generated));
