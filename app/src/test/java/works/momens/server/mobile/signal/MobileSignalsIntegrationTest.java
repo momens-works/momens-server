@@ -1,11 +1,13 @@
 package works.momens.server.mobile.signal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.jayway.jsonpath.JsonPath;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -59,6 +61,43 @@ class MobileSignalsIntegrationTest extends AbstractPostgresIntegrationTest {
         .andExpect(jsonPath("$.signals[0].type").value("risk"))
         .andExpect(jsonPath("$.signals[0].impact").value("완료율에 영향"))
         .andExpect(jsonPath("$.signals[0].minsu_suggestion").value("점검 제안"));
+  }
+
+  @Test
+  @DisplayName("query parameter 없이 조회하면 기본 크기인 5건과 next_cursor를 반환하고, 해당 cursor로 나머지 시그널을 이어서 조회한다")
+  void pagesUnprocessedSignalsByDefaultSizeAndCursor() throws Exception {
+    UserProfile jinsu = userService.findOrCreate("signals-it-page-jinsu@momens.works", "신진수", null);
+    UUID workspace = insertWorkspace("signals-page");
+    addMember(workspace, jinsu.id(), "owner");
+    UUID project = insertProject(workspace, jinsu.id(), "signals-page-project");
+    for (int i = 1; i <= 6; i++) {
+      insertSignal(workspace, project, "risk", "cursor pagination 확인용 미처리 시그널 " + i, null, null);
+    }
+    String token = accessTokens.issueAccessToken(jinsu.id());
+
+    String firstPageBody =
+        mockMvc
+            .perform(
+                get("/api/mobile/projects/{projectId}/signals", project)
+                    .header("Authorization", "Bearer " + token)
+                    .header("API-Version", "1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.signals.length()").value(5))
+            .andExpect(jsonPath("$.next_cursor").isNotEmpty())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String nextCursor = JsonPath.read(firstPageBody, "$.next_cursor");
+
+    mockMvc
+        .perform(
+            get("/api/mobile/projects/{projectId}/signals", project)
+                .param("cursor", nextCursor)
+                .header("Authorization", "Bearer " + token)
+                .header("API-Version", "1"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.signals.length()").value(1))
+        .andExpect(jsonPath("$.next_cursor", nullValue()));
   }
 
   @Test

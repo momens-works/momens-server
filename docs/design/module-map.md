@@ -445,7 +445,7 @@ MOM-0887에서 다른 표면과 같은 형태로 맞췄다.
 - Signal 목록/상세 및 action의 도메인 정책과 영속성을 소유하고 public API(`SignalListService`·
   `SignalDetailService`·`SignalActionService`)로 노출한다. HTTP 표면(`/api/mobile/*` 컨트롤러)은
   `mobile`이 소유하고 이 public API에 위임한다(MOM-0799).
-- 시그널 탭의 미처리 목록 조회(`listUnprocessed`)와, 브리프가 쓰는 당일 생성 범위의 커서 페이지
+- 시그널 탭의 미처리 목록을 cursor pagination으로 조회하는 `listUnprocessed`와, 브리프가 쓰는 당일 생성 범위의 커서 페이지
   조회(`listByCreatedRange`), 타입별 개수 집계(`countByCreatedRange`)를 `SignalListService`가
   소유한다. 당일 범위 조회는 처리 여부와 무관하게 담고 소프트 삭제는 제외한다(MOM-81). 정렬
   기준과 커서 규칙도 이 모듈이 정하고, 어떤 type을 노출할지와 하루 경계는 호출하는 표면이 정한다.

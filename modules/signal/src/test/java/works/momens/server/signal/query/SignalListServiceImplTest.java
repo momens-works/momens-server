@@ -57,7 +57,7 @@ class SignalListServiceImplTest extends AbstractPostgresIntegrationTest {
   void throwsProjectNotFoundWhenProjectMissing() {
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> signalListService.listUnprocessed(PROJECT_ID, CALLER_ID))
+    assertThatThrownBy(() -> signalListService.listUnprocessed(PROJECT_ID, CALLER_ID, null, 5))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(ProjectErrorCode.PROJECT_NOT_FOUND);
@@ -69,28 +69,53 @@ class SignalListServiceImplTest extends AbstractPostgresIntegrationTest {
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.of(WORKSPACE_ID));
     when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> signalListService.listUnprocessed(PROJECT_ID, CALLER_ID))
+    assertThatThrownBy(() -> signalListService.listUnprocessed(PROJECT_ID, CALLER_ID, null, 5))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(CommonErrorCode.AUTH_FORBIDDEN);
   }
 
   @Test
-  @DisplayName("멤버에게 미처리 Signal만 요약으로 반환한다")
-  void returnsUnprocessedSummariesForMember() {
-    when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.of(WORKSPACE_ID));
-    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
-        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
-    UUID unprocessed =
-        insertSignal("risk", "이탈 가능성", "완료율에 영향", "점검 제안", Instant.parse("2026-07-01T00:00:00Z"));
+  @DisplayName("처리되지 않은 Signal을 cursor pagination으로 최신순 조회하고, 처리된 Signal은 제외한다")
+  void pagesUnprocessedSignalsByCursor() {
+    allowMember();
+    UUID oldest =
+        insertSignal(
+            "risk",
+            "두 번째 페이지의 가장 오래된 미처리 시그널",
+            "요약 필드 매핑 확인용 영향",
+            "요약 필드 매핑 확인용 Minsu 제안",
+            Instant.parse("2026-07-01T00:00:00Z"));
+    UUID middle =
+        insertSignal(
+            "change", "첫 번째 페이지의 두 번째 미처리 시그널", null, null, Instant.parse("2026-07-02T00:00:00Z"));
     UUID processed =
-        insertSignal("decision", "처리됨", null, null, Instant.parse("2026-07-02T00:00:00Z"));
+        insertSignal(
+            "decision", "삭제되어 목록에서 제외되는 시그널", null, null, Instant.parse("2026-07-03T00:00:00Z"));
     insertAction(processed);
+    UUID newest =
+        insertSignal(
+            "question",
+            "첫 번째 페이지의 첫 번째 미처리 시그널",
+            null,
+            null,
+            Instant.parse("2026-07-04T00:00:00Z"));
 
-    List<SignalSummary> signals = signalListService.listUnprocessed(PROJECT_ID, CALLER_ID);
+    SignalSummaryPage first = signalListService.listUnprocessed(PROJECT_ID, CALLER_ID, null, 2);
+    assertThat(first.items()).extracting(SignalSummary::id).containsExactly(newest, middle);
+    assertThat(first.nextCursor()).isNotNull();
 
-    assertThat(signals)
-        .containsExactly(new SignalSummary(unprocessed, "risk", "이탈 가능성", "완료율에 영향", "점검 제안"));
+    SignalSummaryPage second =
+        signalListService.listUnprocessed(PROJECT_ID, CALLER_ID, first.nextCursor(), 2);
+    assertThat(second.items())
+        .containsExactly(
+            new SignalSummary(
+                oldest,
+                "risk",
+                "두 번째 페이지의 가장 오래된 미처리 시그널",
+                "요약 필드 매핑 확인용 영향",
+                "요약 필드 매핑 확인용 Minsu 제안"));
+    assertThat(second.nextCursor()).isNull();
   }
 
   @Test
