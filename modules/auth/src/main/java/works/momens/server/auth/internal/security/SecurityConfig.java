@@ -58,7 +58,8 @@ class SecurityConfig {
     "/api/auth/logout",
     "/api/auth/web/refresh",
     "/api/auth/web/logout",
-    "/api/source-connections/oauth/callback"
+    "/api/source-connections/oauth/callback",
+    "/api/mobile/app-update"
   };
 
   /**

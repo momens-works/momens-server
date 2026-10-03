@@ -64,7 +64,8 @@ class OpenApiSecuritySchemeTest extends AbstractPostgresIntegrationTest {
   void exemptsPublicAuthEndpointsFromSecurity() throws Exception {
     JsonNode paths = apiDocs().path("paths");
 
-    // 공개 엔드포인트는 모바일 3개(POST)와 웹 4개(로그인과 콜백은 GET, 세션 갱신과 로그아웃은 POST)다.
+    // 공개 엔드포인트는 모바일 인증 3개(POST), 웹 인증 4개(로그인과 콜백은 GET, 세션 갱신과 로그아웃은 POST), 모바일 앱 업데이트 확인
+    // 1개(GET)입니다.
     Map<String, String> publicEndpoints =
         Map.of(
             "/api/auth/google/token", "post",
@@ -73,7 +74,8 @@ class OpenApiSecuritySchemeTest extends AbstractPostgresIntegrationTest {
             "/api/auth/google/login", "get",
             "/api/auth/google/callback", "get",
             "/api/auth/web/refresh", "post",
-            "/api/auth/web/logout", "post");
+            "/api/auth/web/logout", "post",
+            "/api/mobile/app-update", "get");
 
     for (Map.Entry<String, String> endpoint : publicEndpoints.entrySet()) {
       JsonNode security = paths.path(endpoint.getKey()).path(endpoint.getValue()).path("security");

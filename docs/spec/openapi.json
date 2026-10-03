@@ -64,6 +64,15 @@
           "role"
         ]
       },
+      "AppUpdateResponse" : {
+        "description" : "모바일 앱 업데이트 필요 여부 응답",
+        "properties" : {
+          "update_required" : {
+            "description" : "앱 버전이 해당 플랫폼의 최소 지원 버전보다 낮아 업데이트가 필요하면 true입니다.",
+            "type" : "boolean"
+          }
+        }
+      },
       "AssigneeResponse" : {
         "description" : "담당자",
         "properties" : {
@@ -8098,6 +8107,256 @@
         "summary" : "메모리 후보 거절",
         "tags" : [
           "Web"
+        ]
+      }
+    },
+    "/api/mobile/app-update" : {
+      "get" : {
+        "description" : "앱의 플랫폼과 버전을 받아 해당 플랫폼의 최소 지원 버전보다 낮은지 판정합니다. 인증 없이 호출할 수 있습니다. 업데이트하지 않은 앱도 계속 호출하는 엔드포인트이므로 경로와 요청, 응답 형식은 변경하지 않습니다. 이후 필요한 정보는 optional 필드를 추가하는 방식으로 확장합니다.",
+        "operationId" : "mobileCheckAppUpdate",
+        "parameters" : [
+          {
+            "description" : "앱이 실행되는 플랫폼입니다.",
+            "in" : "query",
+            "name" : "platform",
+            "required" : true,
+            "schema" : {
+              "enum" : [
+                "android",
+                "ios"
+              ],
+              "type" : "string"
+            }
+          },
+          {
+            "description" : "앱 버전입니다. 점으로 구분된 숫자를 1개부터 3개까지 허용합니다.",
+            "example" : "1.0.0",
+            "in" : "query",
+            "name" : "app_version",
+            "required" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "header",
+            "name" : "API-Version",
+            "schema" : {
+              "default" : "1",
+              "enum" : [
+                "1"
+              ],
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AppUpdateResponse"
+                }
+              }
+            },
+            "description" : "판정 성공. 앱 버전이 해당 플랫폼의 최소 지원 버전보다 낮으면 update_required는 true입니다."
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "COMMON_BAD_REQUEST" : {
+                    "description" : "요청 형식이 올바르지 않습니다.",
+                    "summary" : "COMMON_BAD_REQUEST",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_BAD_REQUEST",
+                        "message" : "요청 형식이 올바르지 않습니다."
+                      }
+                    }
+                  },
+                  "COMMON_VALIDATION_FAILED" : {
+                    "description" : "요청 값이 유효하지 않습니다.",
+                    "summary" : "COMMON_VALIDATION_FAILED",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_VALIDATION_FAILED",
+                        "message" : "요청 값이 유효하지 않습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Bad Request"
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "AUTH_INVALID_TOKEN" : {
+                    "description" : "토큰이 유효하지 않습니다.",
+                    "summary" : "AUTH_INVALID_TOKEN",
+                    "value" : {
+                      "error" : {
+                        "code" : "AUTH_INVALID_TOKEN",
+                        "message" : "토큰이 유효하지 않습니다."
+                      }
+                    }
+                  },
+                  "AUTH_UNAUTHORIZED" : {
+                    "description" : "인증이 필요합니다.",
+                    "summary" : "AUTH_UNAUTHORIZED",
+                    "value" : {
+                      "error" : {
+                        "code" : "AUTH_UNAUTHORIZED",
+                        "message" : "인증이 필요합니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Unauthorized"
+          },
+          "403" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "AUTH_FORBIDDEN" : {
+                    "description" : "권한이 없습니다.",
+                    "summary" : "AUTH_FORBIDDEN",
+                    "value" : {
+                      "error" : {
+                        "code" : "AUTH_FORBIDDEN",
+                        "message" : "권한이 없습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Forbidden"
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "COMMON_NOT_FOUND" : {
+                    "description" : "요청한 리소스를 찾을 수 없습니다.",
+                    "summary" : "COMMON_NOT_FOUND",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_NOT_FOUND",
+                        "message" : "요청한 리소스를 찾을 수 없습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Not Found"
+          },
+          "405" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "COMMON_METHOD_NOT_ALLOWED" : {
+                    "description" : "허용되지 않은 HTTP 메서드입니다.",
+                    "summary" : "COMMON_METHOD_NOT_ALLOWED",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_METHOD_NOT_ALLOWED",
+                        "message" : "허용되지 않은 HTTP 메서드입니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Method Not Allowed"
+          },
+          "409" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "COMMON_CONFLICT" : {
+                    "description" : "요청이 현재 상태와 충돌합니다.",
+                    "summary" : "COMMON_CONFLICT",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONFLICT",
+                        "message" : "요청이 현재 상태와 충돌합니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Conflict"
+          },
+          "415" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "COMMON_UNSUPPORTED_MEDIA_TYPE" : {
+                    "description" : "지원하지 않는 미디어 타입입니다.",
+                    "summary" : "COMMON_UNSUPPORTED_MEDIA_TYPE",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_UNSUPPORTED_MEDIA_TYPE",
+                        "message" : "지원하지 않는 미디어 타입입니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Unsupported Media Type"
+          },
+          "500" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "COMMON_INTERNAL_SERVER_ERROR" : {
+                    "description" : "서버 내부 오류가 발생했습니다.",
+                    "summary" : "COMMON_INTERNAL_SERVER_ERROR",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_INTERNAL_SERVER_ERROR",
+                        "message" : "서버 내부 오류가 발생했습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Internal Server Error"
+          },
+          "502" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "COMMON_BAD_GATEWAY" : {
+                    "description" : "외부 서비스 호출에 실패했습니다.",
+                    "summary" : "COMMON_BAD_GATEWAY",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_BAD_GATEWAY",
+                        "message" : "외부 서비스 호출에 실패했습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Bad Gateway"
+          }
+        },
+        "security" : [ ],
+        "summary" : "모바일 앱 업데이트 필요 여부 확인",
+        "tags" : [
+          "Mobile"
         ]
       }
     },

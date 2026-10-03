@@ -135,6 +135,13 @@ momens:
       redirect:
         success-uri: ${MOMENS_AUTH_WEB_SUCCESS_REDIRECT_URI}
         failure-uri: ${MOMENS_AUTH_WEB_FAILURE_REDIRECT_URI}
+  mobile:
+    # 플랫폼별 최소 지원 버전(MOM-1012). 이 버전보다 낮은 앱은 GET /api/mobile/app-update에서 업데이트가 필요하다는 응답을 받습니다.
+    # 하위 호환성을 유지할 수 없는 서버 변경이 필요한 경우 같은 PR에서 이 값을 올립니다.
+    app-update:
+      minimum-versions:
+        android: 1.0.0
+        ios: 1.0.0
   workspace:
     invitation:
       email:

@@ -98,6 +98,18 @@ class SecurityIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
+  void appUpdateIsPermitAllWithoutToken() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/mobile/app-update")
+                .header(API_VERSION_HEADER, API_VERSION)
+                .param("platform", "android")
+                .param("app_version", "1.0.0"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.update_required").value(false));
+  }
+
+  @Test
   void authEndpointsArePermitAllAndHandledOutsideResourceServer() throws Exception {
     mockMvc
         .perform(

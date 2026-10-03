@@ -55,6 +55,7 @@
 - `mobile`은 `user`, `project`, `workspace`, `signal`, `context`, `source`, `notification`, `minsu`,
   `auth`의 public API만 조합한다(bootstrap, 멤버 조회, 브리프, 태스크 관련자료, push 설치 등록·해제,
   태스크 상세의 draft 생성 상태, 인증). 도메인 정책을 소유하지 않는다.
+- `mobile`의 `appupdate`는 다른 모듈을 조합하지 않고 모바일 앱의 최소 지원 버전 정책을 직접 소유합니다. 제품 도메인이 아니라 이미 배포된 모바일 앱과의 호환성을 관리하는 정책이며 영속성이 필요하지 않으므로 `mobile` 모듈에 둡니다(MOM-1012).
 - `web`은 `mobile`과 같은 자리의 표면 모듈이고 **같은 소유 원칙**을 따른다. 웹 클라이언트가 호출하는
   HTTP 표면은 **도메인 스코프가 분명해도** `web`이 소유한다. 여러 capability를 조합하는 endpoint만
   표면이 갖는 것이 아니다.
@@ -410,7 +411,7 @@ dispatch`(`PushDispatcher`: 수신 설치별 발송 기록 enqueue와 발송 패
   모듈에 두고 해당 도메인의 public API에 위임한다.
 
 내부는 화면(entry point) 단위로 논리 분리한다(MOM-0799). `bootstrap`·`roster`·`board`·`brief`·
-`signal`·`pushdevice`는 각각 Spring Modulith nested 논리 모듈이고, `workspace`의 하위 도메인
+`signal`·`pushdevice`·`appupdate`는 각각 Spring Modulith nested 논리 모듈이고, `workspace`의 하위 도메인
 분리(MOM-70, MOM-0894)나 `signal`의 nested 분리(MOM-65)나 `project`의 하위 도메인 분리(MOM-71·MOM-0887)와 달리 aggregate가 아니라 화면 단위
 조합 슬라이스다. 다른 모듈에 공개할
 계약이 없으므로 각 nested 패키지는 Controller·Docs·조합 서비스·DTO를 한곳에 모은다. 조합 서비스처럼
@@ -434,6 +435,7 @@ dispatch`(`PushDispatcher`: 수신 설치별 발송 기록 enqueue와 발송 패
 - `auth` — `POST /api/auth/google/token`, `/api/auth/refresh`, `/api/auth/logout`. 인증 로직과 토큰
   정책을 소유하는 `auth`의 public API(`MobileAuthService`)에 위임만 하는 얇은 표면이라 조합 서비스가
   없다(MOM-0852).
+- `appupdate`: `GET /api/mobile/app-update`. 플랫폼별 최소 지원 버전 설정과 업데이트 필요 여부를 판정하는 `AppUpdatePolicy`를 이 패키지가 직접 소유하므로 다른 모듈의 public API에 위임하지 않습니다. 로그인 전에 호출하는 공개 경로이므로 `auth`의 `SecurityConfig.PUBLIC_PATHS`에 등록합니다.
 
 ### web
 
