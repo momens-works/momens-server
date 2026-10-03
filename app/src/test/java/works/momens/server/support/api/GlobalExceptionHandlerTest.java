@@ -11,7 +11,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.annotation.JsonValue;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -144,6 +146,74 @@ class GlobalExceptionHandlerTest {
   }
 
   @Test
+  @DisplayName("쿼리 파라미터의 enum은 @JsonValue 값으로 받습니다")
+  void bindsEnumQueryParameterByJsonValue() throws Exception {
+    mockMvc.perform(get("/test/enum-query").param("test_level", "low")).andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("쿼리 파라미터의 enum에 허용하지 않는 값을 보내면 COMMON_VALIDATION_FAILED와 파라미터 이름을 응답합니다")
+  void rendersValidationFailureForUnknownEnumValueInQuery() throws Exception {
+    mockMvc
+        .perform(get("/test/enum-query").param("test_level", "unknown"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @Test
+  @DisplayName("쿼리 파라미터의 enum에 숫자 문자열을 보내면 COMMON_VALIDATION_FAILED와 파라미터 이름을 응답합니다")
+  void rendersValidationFailureForNumericEnumValueInQuery() throws Exception {
+    mockMvc
+        .perform(get("/test/enum-query").param("test_level", "0"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @Test
+  @DisplayName(
+      "Optional로 선언한 enum 쿼리 파라미터에 허용하지 않는 값을 보내면 COMMON_VALIDATION_FAILED와 파라미터 이름을 응답합니다")
+  void rendersValidationFailureForUnknownValueInOptionalEnumQuery() throws Exception {
+    mockMvc
+        .perform(get("/test/enum-query/optional").param("test_level", "unknown"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @Test
+  @DisplayName(
+      "List로 선언한 enum 쿼리 파라미터에 허용하지 않는 값이 하나라도 있으면 COMMON_VALIDATION_FAILED와 파라미터 이름을 응답합니다")
+  void rendersValidationFailureForUnknownValueInEnumListQuery() throws Exception {
+    mockMvc
+        .perform(get("/test/enum-query/list").param("test_level", "low", "unknown"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @Test
+  @DisplayName("배열로 선언한 enum 쿼리 파라미터에 허용하지 않는 값을 보내면 COMMON_VALIDATION_FAILED와 파라미터 이름을 응답합니다")
+  void rendersValidationFailureForUnknownValueInEnumArrayQuery() throws Exception {
+    mockMvc
+        .perform(get("/test/enum-query/array").param("test_level", "unknown"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @Test
+  @DisplayName("필수 쿼리 파라미터가 누락되면 COMMON_VALIDATION_FAILED와 파라미터 이름을 응답합니다")
+  void rendersValidationFailureForMissingRequiredQueryParameter() throws Exception {
+    mockMvc
+        .perform(get("/test/enum-query"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @Test
   @DisplayName("잘못된 JSON은 COMMON_BAD_REQUEST로 매핑된다")
   void rendersBadRequestForMalformedJson() throws Exception {
     mockMvc
@@ -235,6 +305,18 @@ class GlobalExceptionHandlerTest {
       throw FieldValidationException.forField(
           "owner_user_ids", "must contain only workspace members");
     }
+
+    @GetMapping("/test/enum-query")
+    void enumQuery(@RequestParam(name = "test_level") TestLevel testLevel) {}
+
+    @GetMapping("/test/enum-query/optional")
+    void optionalEnumQuery(@RequestParam(name = "test_level") Optional<TestLevel> testLevel) {}
+
+    @GetMapping("/test/enum-query/list")
+    void enumListQuery(@RequestParam(name = "test_level") List<TestLevel> testLevels) {}
+
+    @GetMapping("/test/enum-query/array")
+    void enumArrayQuery(@RequestParam(name = "test_level") TestLevel[] testLevels) {}
 
     @GetMapping("/test/typed")
     void typed(@RequestParam int value) {}

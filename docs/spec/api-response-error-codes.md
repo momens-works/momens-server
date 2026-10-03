@@ -175,6 +175,8 @@ Bean Validation과 `FieldValidationException`을 통한 필드 단위 검증 실
 }
 ```
 
+쿼리 파라미터의 검증 실패도 같은 형식으로 응답합니다. enum 타입 쿼리 파라미터의 변환에 실패하거나 필수 쿼리 파라미터가 누락되면 `field`에 해당 쿼리 파라미터 이름을 담아 `COMMON_VALIDATION_FAILED`로 응답합니다. enum을 `Optional`, 배열, 컬렉션으로 선언한 쿼리 파라미터도 원소 변환에 실패하면 같은 형식으로 응답합니다. 그 밖의 쿼리 파라미터 타입 변환 실패와 경로 변수 변환 실패는 `COMMON_BAD_REQUEST`로 응답합니다.
+
 ## 권한 details
 
 권한이 부족해 `AUTH_FORBIDDEN`을 반환할 때는 `details.required_role`에 요청을 처리하는 데 필요한 최소 역할을 포함합니다.

@@ -60,6 +60,7 @@
 ### 검증
 
 - 요청 DTO에는 validation annotation을 사용합니다.
+- 허용 값이 정해진 쿼리 파라미터는 도메인 enum 타입으로 받습니다. 여러 값이나 선택 값은 enum의 `List`, 배열, `Optional`로 받습니다. `common`의 `JacksonEnumConverter`가 요청 body와 동일한 Jackson 규칙으로 변환하므로, 요청 body의 enum 필드에 적용하는 원칙([ADR-0022](../adr/0022-column-value-set-ownership.md))을 쿼리 파라미터에도 적용합니다. 형식만 정해진 문자열은 `String`으로 받고 컨트롤러에서 변환합니다.
 
 ### 트랜잭션
 

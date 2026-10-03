@@ -21,6 +21,8 @@ dependencies {
 
     // 공유 에러 응답(ErrorResponse)의 @JsonInclude. spring-web 없이 애너테이션만 사용합니다.
     implementation 'com.fasterxml.jackson.core:jackson-annotations'
+    // 쿼리 파라미터의 enum 값을 요청 body와 동일한 Jackson 설정으로 변환하는 JacksonEnumConverter에서 사용합니다.
+    implementation 'tools.jackson.core:jackson-databind'
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
