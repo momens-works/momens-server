@@ -24,7 +24,7 @@ import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
 /**
- * 문서(/v3/api-docs)와 실제 응답의 계약 대조 테스트.
+ * 문서(/api/v3/api-docs)와 실제 응답의 계약 대조 테스트.
  *
  * <p>{@code OpenApiRequestExampleTest}는 문서 쪽 스키마만 검사하므로, 문서는 snake_case인데 실제 응답이 camelCase로 어긋나는
  * 드리프트는 잡지 못한다. 여기서는 대표 엔드포인트({@code /api/me})의 실제 request/response를 서버가 내보낸 스펙과
@@ -137,14 +137,14 @@ class OpenApiActualResponseContractTest extends AbstractPostgresIntegrationTest 
         .doesNotContain("user");
   }
 
-  /** 서버가 실제로 내보내는 스펙과 대조해야 하므로, 고정 파일이 아니라 /v3/api-docs에서 스펙을 가져온다. */
+  /** 서버가 실제로 내보내는 스펙과 대조해야 하므로, 고정 파일이 아니라 /api/v3/api-docs에서 스펙을 가져온다. */
   private OpenApiInteractionValidator validatorFromLiveSpec() throws Exception {
     return OpenApiInteractionValidator.createForInlineApiSpecification(fetchApiDocs()).build();
   }
 
   private String fetchApiDocs() throws Exception {
     return mockMvc
-        .perform(get("/v3/api-docs"))
+        .perform(get("/api/v3/api-docs"))
         .andExpect(status().isOk())
         .andReturn()
         .getResponse()

@@ -108,7 +108,7 @@ class OpenApiSnapshotTest extends AbstractPostgresIntegrationTest {
 
   private String fetchApiDocs() throws Exception {
     return mockMvc
-        .perform(get("/v3/api-docs"))
+        .perform(get("/api/v3/api-docs"))
         .andExpect(status().isOk())
         .andReturn()
         .getResponse()

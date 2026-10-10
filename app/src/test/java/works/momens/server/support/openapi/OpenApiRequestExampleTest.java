@@ -31,7 +31,7 @@ class OpenApiRequestExampleTest extends AbstractPostgresIntegrationTest {
   void requestSchemaDoesNotCarrySpuriousNullDefault() throws Exception {
     String body =
         mockMvc
-            .perform(get("/v3/api-docs"))
+            .perform(get("/api/v3/api-docs"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -59,7 +59,7 @@ class OpenApiRequestExampleTest extends AbstractPostgresIntegrationTest {
   void apiVersionDefaultMatchesSupportedVersionOnEveryOperation() throws Exception {
     String body =
         mockMvc
-            .perform(get("/v3/api-docs"))
+            .perform(get("/api/v3/api-docs"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -101,7 +101,7 @@ class OpenApiRequestExampleTest extends AbstractPostgresIntegrationTest {
   void devSignalCreateCarriesRequestExample() throws Exception {
     String body =
         mockMvc
-            .perform(get("/v3/api-docs"))
+            .perform(get("/api/v3/api-docs"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -150,7 +150,7 @@ class OpenApiRequestExampleTest extends AbstractPostgresIntegrationTest {
   void allSchemaPropertyKeysAreSnakeCase() throws Exception {
     String body =
         mockMvc
-            .perform(get("/v3/api-docs"))
+            .perform(get("/api/v3/api-docs"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()

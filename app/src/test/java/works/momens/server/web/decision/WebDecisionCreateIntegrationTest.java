@@ -325,7 +325,7 @@ class WebDecisionCreateIntegrationTest extends AbstractPostgresIntegrationTest {
   @DisplayName("기본값과 선택 필드의 실제 요청·응답이 OpenAPI 명세와 일치한다")
   void openApiAcceptsActualDefaultAndOptionalFieldContracts() throws Exception {
     String spec =
-        mvc.perform(get("/v3/api-docs"))
+        mvc.perform(get("/api/v3/api-docs"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()

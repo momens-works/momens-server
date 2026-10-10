@@ -15,7 +15,7 @@ import tools.jackson.databind.ObjectMapper;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 
 /**
- * OpenApiConfig가 선언한 Bearer 스킴이 {@code /v3/api-docs}에 실제로 들어가는지 검증한다. springdoc 버전에 따라 개별
+ * OpenApiConfig가 선언한 Bearer 스킴이 {@code /api/v3/api-docs}에 실제로 들어가는지 검증한다. springdoc 버전에 따라 개별
  * operation에서 {@code @SecurityRequirements}(빈 값)로 전역 요구를 지우는 동작이 달라질 수 있어(MOM-83 설계 검토), 생성된 문서로 직접
  * 확인한다.
  */
@@ -28,7 +28,7 @@ class OpenApiSecuritySchemeTest extends AbstractPostgresIntegrationTest {
   private JsonNode apiDocs() throws Exception {
     String body =
         mockMvc
-            .perform(get("/v3/api-docs"))
+            .perform(get("/api/v3/api-docs"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()

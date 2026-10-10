@@ -48,9 +48,6 @@ class SecurityConfig {
 
   private static final String[] PUBLIC_PATHS = {
     "/actuator/health/**",
-    "/v3/api-docs/**",
-    "/swagger-ui/**",
-    "/swagger-ui.html",
     "/api/auth/google/token",
     "/api/auth/google/login",
     "/api/auth/google/callback",
