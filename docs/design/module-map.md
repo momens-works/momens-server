@@ -154,6 +154,7 @@
 - Google OAuth login/callback, 외부 신원 검증
 - JWT 발급/검증
 - SecurityFilterChain, 인증 필터, 공개/보호 엔드포인트 분리
+- `SpringDocSecurityConfig`에서 springdoc 문서 경로 전용 `SecurityFilterChain` 두 개를 관리합니다. OpenAPI 문서와 Swagger UI의 등록 조건을 각각 적용해 문서 제공이 비활성화된 환경에는 해당 공개 설정도 등록되지 않도록 합니다.
 - logout
 - dev 전용 토큰 발급 엔드포인트(`POST /api/dev/auth/token`, MOM-90). dev 계열 프로필(`@DevOnly`)에서만 등록되고 공유 시크릿 헤더와 테스트 사용자 allowlist로 제한한다. prod에는 존재하지 않는다. 클라이언트 표면이 아니라 테스트 도구라 표면 모듈로 옮기지 않고 `auth.dev`에 둔다(MOM-0852).
 - 웹·모바일 인증 public API(`WebAuthSession`, `MobileAuthService`). 클라이언트가 호출하는 HTTP 표면은 `web`·`mobile`이 소유하고(MOM-0852), 이 모듈은 인증 로직과 토큰·쿠키·리다이렉트 정책을 소유한다.

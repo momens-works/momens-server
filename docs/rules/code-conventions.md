@@ -86,6 +86,8 @@
 - 보호 체인이 `anyRequest().authenticated()`라 **새 엔드포인트는 기본으로 보호**됩니다. 인증된 요청만 컨트롤러에 도달합니다.
 - 공개로 열어야 하는 경로는 auth의 `SecurityConfig.PUBLIC_PATHS`에 추가합니다(= auth 소유). 도메인 모듈에서 보안 설정을
   만들지 않습니다.
+- `PUBLIC_PATHS`에는 항상 등록되는 공개 경로만 선언합니다. 환경에 따라 등록 여부가 달라지는 공개 경로는 해당 등록 조건을
+  적용한 전용 `SecurityFilterChain`에서 관리합니다.
 
 ### 401 · 403
 

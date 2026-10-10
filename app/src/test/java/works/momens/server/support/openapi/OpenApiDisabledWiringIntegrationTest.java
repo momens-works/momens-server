@@ -29,4 +29,11 @@ class OpenApiDisabledWiringIntegrationTest extends AbstractPostgresIntegrationTe
     assertThat(context.containsBean("swaggerOperationCustomizer")).isFalse();
     assertThat(context.containsBean("nullableAsTypeCustomizer")).isFalse();
   }
+
+  @Test
+  @DisplayName("springdoc을 비활성화하면 문서 경로 전용 SecurityFilterChain 두 개도 등록되지 않습니다.")
+  void dropsSpringDocSecurityChainsWhenApiDocsDisabled() {
+    assertThat(context.containsBean("apiDocsSecurityFilterChain")).isFalse();
+    assertThat(context.containsBean("swaggerUiSecurityFilterChain")).isFalse();
+  }
 }

@@ -206,9 +206,9 @@ management:
 
 springdoc:
   api-docs:
-    path: /v3/api-docs
+    path: /api/v3/api-docs
   swagger-ui:
-    path: /swagger-ui.html
+    path: /api/swagger-ui.html
 
 # 공통 baseline 로그 레벨. 프로필이 누락해도 안전한 기본값을 보장합니다.
 # 프로필별 상세 레벨/포맷은 application-<profile>.yml 에서 override 합니다.

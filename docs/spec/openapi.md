@@ -43,7 +43,7 @@ Swagger의 Authorize 입력창에는 토큰 값만 넣습니다. `Bearer ` 접�
 schema에 의도하지 않은 `default: null`이 생길 수 있습니다.
 
 - springdoc 또는 Swagger 의존성을 올릴 때 세 구성요소의 런타임 버전을 함께 확인합니다.
-- `/v3/api-docs`가 OpenAPI 3.1을 유지하고 request object schema에 의도하지 않은 `default`가 없는지
+- `/api/v3/api-docs`가 OpenAPI 3.1을 유지하고 request object schema에 의도하지 않은 `default`가 없는지
   통합 테스트로 검증합니다.
 - 문서 생성 문제를 숨기기 위해 OpenAPI 3.0으로 낮추거나 직렬화된 JSON을 후처리하지 않습니다.
 
@@ -196,7 +196,7 @@ springdoc이 Spring MVC API versioning 설정과 handler의 `version` mapping을
 
 ## 스냅샷 고정
 
-`/v3/api-docs`에서 생성한 OpenAPI 문서를 `docs/spec/openapi.json`에 저장하고 커밋합니다. 스냅샷은 서버 코드에서 생성한 OpenAPI 문서의 커밋본입니다. `test` 프로필로 생성하므로 운영 환경에 등록되지 않는 dev 전용 엔드포인트도 포함됩니다.
+`/api/v3/api-docs`에서 생성한 OpenAPI 문서를 `docs/spec/openapi.json`에 저장하고 커밋합니다. 스냅샷은 서버 코드에서 생성한 OpenAPI 문서의 커밋본입니다. `test` 프로필로 생성하므로 운영 환경에 등록되지 않는 dev 전용 엔드포인트도 포함됩니다.
 
 `OpenApiSnapshotTest`가 커밋본과 실제 문서를 대조하고 다르면 실패합니다. CI는 `test`를 돌리므로
 스냅샷을 갱신하지 않으면 계약 변경이 머지되지 않습니다.
@@ -236,7 +236,7 @@ tag를 하나 추가하면 배열 전체가 재정렬되어 무관한 churn diff
 
 첫째, 계약 변경이 PR의 변경 파일 목록과 diff에 남습니다. 리뷰어는 diff를 보고 변경 사항이 기존 클라이언트와 호환되는지 판단할 수 있습니다. `.gitattributes`에서 스냅샷을 생성 파일로 지정했기 때문에 GitHub에서는 diff가 접힌 상태로 표시됩니다. 내용을 확인할 때는 diff를 펼쳐야 합니다.
 
-둘째, 서버를 실행하지 않아도 `git show`로 원하는 시점의 계약을 확인할 수 있습니다. prod 환경에서는 `/v3/api-docs`를 제공하지 않으며, dev 환경의 문서는 develop에 배포된 시점의 계약만 보여 줍니다. prod 계약은 `main` 브랜치의 스냅샷에서 확인합니다. 계약 변경 알림 워크플로는 PR의 base와 head에서 스냅샷을 읽어 비교합니다.
+둘째, 서버를 실행하지 않아도 `git show`로 원하는 시점의 계약을 확인할 수 있습니다. prod 환경에서는 `/api/v3/api-docs`를 제공하지 않으며, dev 환경의 문서는 develop에 배포된 시점의 계약만 보여 줍니다. prod 계약은 `main` 브랜치의 스냅샷에서 확인합니다. 계약 변경 알림 워크플로는 PR의 base와 head에서 스냅샷을 읽어 비교합니다.
 
 ### 사용처
 

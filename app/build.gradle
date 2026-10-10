@@ -71,7 +71,7 @@ dependencies {
     testImplementation testFixtures(project(':auth'))
     // Minsu 통합테스트가 llm nested module을 직접 참조하지 않고 provider 응답을 제어합니다.
     testImplementation testFixtures(project(':minsu'))
-    // 실제 request/response를 /v3/api-docs 스펙과 대조하는 계약 검증(문서-응답 드리프트 방지).
+    // 실제 request/response를 /api/v3/api-docs 스펙과 대조하는 계약 검증(문서-응답 드리프트 방지).
     testImplementation libs.openapi.request.validator.mockmvc
     // push 기능 활성화를 검증하는 통합 테스트에서 FirebaseMessaging을 mock으로 대체하기 위해 필요합니다.
     testImplementation libs.firebase.admin
