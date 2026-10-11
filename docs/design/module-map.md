@@ -223,8 +223,8 @@ repository를 직접 참조하지 않는다.
 내부는 하위 도메인별 named interface로 논리적으로 분리했습니다(MOM-70, MOM-0894).
 
 - 공개 계약은 `core`(워크스페이스와 slug), `membership`(멤버십과 권한), `invitation`(초대),
-  `label`(라벨 발급) 4개 패키지에 두고, 구현은 각 하위 도메인의 `internal` 패키지에 둡니다. 모듈
-  루트에는 세 하위 도메인이 공통으로 사용하는 상수인 `WorkspaceErrorCode`만 남깁니다. 초대 이메일
+  `label`(라벨 발급) 4개 패키지에 두고, 구현은 각 하위 도메인의 `internal` 패키지에 둡니다. 에러
+  코드는 각 하위 도메인에서 관리하며, 모듈 루트에는 타입을 선언하지 않습니다(MOM-0959). 초대 이메일
   발송을 담당하는 `email`은 외부에 공개할 계약이 없으므로 nested 모듈로 유지합니다.
 - Modulith는 named interface로 분리한 하위 도메인 간 의존 방향을 검증하지 못하므로
   `WorkspaceSubDomainBoundaryTests`에서 이를 고정합니다. 허용되는 의존 방향은 `core`에서
