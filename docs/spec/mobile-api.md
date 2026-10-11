@@ -629,11 +629,11 @@ id를 기준으로 하기 때문에, 페이지 사이에 시그널이 처리되�
 ```json
 {
   "title": "프로젝트 태스크",
-  "description": "업무를 한눈에 확인하고 상세 내용을 확인하세요.",
+  "description": "태스크를 한눈에 확인하고 상세 내용을 확인하세요.",
   "groups": [
     {
       "group_key": "todo",
-      "label": "투두",
+      "label": "Todo",
       "count": 2,
       "tasks": [
         {
@@ -645,10 +645,10 @@ id를 기준으로 하기 때문에, 페이지 사이에 시그널이 처리되�
         }
       ]
     },
-    { "group_key": "in_progress", "label": "진행중", "count": 2, "tasks": [] },
-    { "group_key": "done", "label": "완료", "count": 2, "tasks": [] },
-    { "group_key": "backlog", "label": "백로그", "count": 0, "tasks": [] },
-    { "group_key": "cancelled", "label": "취소", "count": 0, "tasks": [] }
+    { "group_key": "in_progress", "label": "In Progress", "count": 2, "tasks": [] },
+    { "group_key": "done", "label": "Done", "count": 2, "tasks": [] },
+    { "group_key": "backlog", "label": "Backlog", "count": 0, "tasks": [] },
+    { "group_key": "cancelled", "label": "Cancelled", "count": 0, "tasks": [] }
   ]
 }
 ```

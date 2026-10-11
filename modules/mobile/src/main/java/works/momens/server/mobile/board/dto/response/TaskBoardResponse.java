@@ -28,12 +28,12 @@ public record TaskBoardResponse(
         List<GroupResponse> groups) {
 
   private static final String BOARD_TITLE = "프로젝트 태스크";
-  private static final String BOARD_DESCRIPTION = "업무를 한눈에 확인하고 상세 내용을 확인하세요.";
+  private static final String BOARD_DESCRIPTION = "태스크를 한눈에 확인하고 상세 내용을 확인하세요.";
 
   @Schema(description = "상태 그룹")
   public record GroupResponse(
       @Schema(description = "그룹 키", example = "todo") String groupKey,
-      @Schema(description = "그룹 라벨", example = "투두") String label,
+      @Schema(description = "그룹 라벨", example = "Todo") String label,
       @Schema(description = "그룹 태스크 수") int count,
       @Schema(description = "그룹 태스크 목록") List<TaskCardResponse> tasks) {}
 
