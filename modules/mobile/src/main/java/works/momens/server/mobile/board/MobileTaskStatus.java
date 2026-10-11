@@ -7,18 +7,18 @@ import works.momens.server.project.task.TaskStatus;
 /**
  * 모바일 보드에서 태스크를 status별로 구분하는 그룹입니다. 각 그룹은 하나의 `TaskStatus`에 대응합니다.
  *
- * <p>enum 선언 순서가 보드 그룹의 노출 순서입니다. 사용자가 자주 확인하는 상태를 앞에 배치해 투두, 진행중, 완료, 백로그, 취소 순으로 노출합니다(2026-07-08
- * 화면설계서 task_001).
+ * <p>enum 선언 순서가 보드 그룹의 노출 순서입니다. 사용자가 자주 확인하는 상태를 앞에 배치해 Todo, In Progress, Done, Backlog,
+ * Cancelled 순으로 노출합니다(2026-07-08 화면설계서 task_001).
  *
  * <p>수정 화면은 상태 5종을 모두 편집할 수 있으며, backlog나 cancelled로 변경한 태스크도 보드에 계속 표시되어야 하므로 보드 역시 상태 5종을 모두
  * 포함합니다(MOM-75).
  */
 public enum MobileTaskStatus {
-  TODO(TaskStatus.TODO, "투두"),
-  IN_PROGRESS(TaskStatus.IN_PROGRESS, "진행중"),
-  DONE(TaskStatus.DONE, "완료"),
-  BACKLOG(TaskStatus.BACKLOG, "백로그"),
-  CANCELLED(TaskStatus.CANCELLED, "취소");
+  TODO(TaskStatus.TODO, "Todo"),
+  IN_PROGRESS(TaskStatus.IN_PROGRESS, "In Progress"),
+  DONE(TaskStatus.DONE, "Done"),
+  BACKLOG(TaskStatus.BACKLOG, "Backlog"),
+  CANCELLED(TaskStatus.CANCELLED, "Cancelled");
 
   private final TaskStatus taskStatus;
   private final String label;

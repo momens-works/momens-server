@@ -1075,7 +1075,7 @@
           },
           "label" : {
             "description" : "그룹 라벨",
-            "example" : "투두",
+            "example" : "Todo",
             "type" : "string"
           },
           "tasks" : {

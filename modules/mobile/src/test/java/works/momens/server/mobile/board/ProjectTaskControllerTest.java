@@ -64,7 +64,7 @@ class ProjectTaskControllerTest {
         .andExpect(jsonPath("$.title").value("프로젝트 태스크"))
         .andExpect(jsonPath("$.groups.length()").value(3))
         .andExpect(jsonPath("$.groups[0].group_key").value("todo"))
-        .andExpect(jsonPath("$.groups[0].label").value("투두"))
+        .andExpect(jsonPath("$.groups[0].label").value("Todo"))
         .andExpect(jsonPath("$.groups[0].count").value(1))
         .andExpect(jsonPath("$.groups[0].tasks[0].id").value(taskId.toString()))
         .andExpect(jsonPath("$.groups[0].tasks[0].role").value("frontend"))
