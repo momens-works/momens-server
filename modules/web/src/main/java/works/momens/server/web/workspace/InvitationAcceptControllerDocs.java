@@ -11,8 +11,9 @@ import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.user.UserErrorCode;
 import works.momens.server.web.workspace.dto.request.AcceptInvitationRequest;
 import works.momens.server.web.workspace.dto.response.AcceptInvitationResponse;
-import works.momens.server.workspace.WorkspaceErrorCode;
+import works.momens.server.workspace.core.WorkspaceErrorCode;
 import works.momens.server.workspace.invitation.InvitationErrorCode;
+import works.momens.server.workspace.membership.MembershipErrorCode;
 
 /**
  * {@code /api/invitations/accept} 엔드포인트의 OpenAPI 문서입니다. Swagger 애너테이션을 컨트롤러 구현과 분리합니다({@code
@@ -44,8 +45,11 @@ interface InvitationAcceptControllerDocs {
         "INVITATION_EMAIL_MISMATCH"
       })
   @ApiException(
+      value = MembershipErrorCode.class,
+      codes = {"WORKSPACE_INVALID_ROLE", "WORKSPACE_MEMBER_ALREADY_EXISTS"})
+  @ApiException(
       value = WorkspaceErrorCode.class,
-      codes = {"WORKSPACE_INVALID_ROLE", "WORKSPACE_MEMBER_ALREADY_EXISTS", "WORKSPACE_NOT_FOUND"})
+      codes = {"WORKSPACE_NOT_FOUND"})
   @ApiException(
       value = UserErrorCode.class,
       codes = {"USER_NOT_FOUND"})

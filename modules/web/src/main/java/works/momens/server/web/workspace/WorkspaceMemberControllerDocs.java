@@ -13,7 +13,8 @@ import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.web.dto.response.WebMessageResponse;
 import works.momens.server.web.workspace.dto.request.UpdateWorkspaceMemberRequest;
 import works.momens.server.web.workspace.dto.response.WorkspaceMembersResponse;
-import works.momens.server.workspace.WorkspaceErrorCode;
+import works.momens.server.workspace.core.WorkspaceErrorCode;
+import works.momens.server.workspace.membership.MembershipErrorCode;
 
 /**
  * {@code /api/workspaces/{workspaceId}/members} endpoint의 OpenAPI 문서. Swagger 애너테이션을 컨트롤러 구현과 분리합니다
@@ -51,7 +52,10 @@ interface WorkspaceMemberControllerDocs {
       content = @Content(schema = @Schema(implementation = WebMessageResponse.class)))
   @ApiException(
       value = WorkspaceErrorCode.class,
-      codes = {"WORKSPACE_NOT_FOUND", "WORKSPACE_MEMBER_NOT_FOUND", "WORKSPACE_OWNER_PROTECTED"})
+      codes = {"WORKSPACE_NOT_FOUND"})
+  @ApiException(
+      value = MembershipErrorCode.class,
+      codes = {"WORKSPACE_MEMBER_NOT_FOUND", "WORKSPACE_OWNER_PROTECTED"})
   @ApiException(CommonErrorCode.class)
   WebMessageResponse update(
       @Parameter(description = "워크스페이스 식별자") UUID workspaceId,
@@ -69,8 +73,10 @@ interface WorkspaceMemberControllerDocs {
       content = @Content(schema = @Schema(implementation = WebMessageResponse.class)))
   @ApiException(
       value = WorkspaceErrorCode.class,
+      codes = {"WORKSPACE_NOT_FOUND"})
+  @ApiException(
+      value = MembershipErrorCode.class,
       codes = {
-        "WORKSPACE_NOT_FOUND",
         "WORKSPACE_MEMBER_NOT_FOUND",
         "WORKSPACE_OWNER_PROTECTED",
         "WORKSPACE_SELF_REMOVAL_NOT_ALLOWED"

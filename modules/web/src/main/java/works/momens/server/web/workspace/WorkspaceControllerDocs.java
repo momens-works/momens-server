@@ -16,7 +16,7 @@ import works.momens.server.web.workspace.dto.response.WorkspaceListResponse;
 import works.momens.server.web.workspace.dto.response.WorkspaceResponse;
 import works.momens.server.web.workspace.dto.response.WorkspaceSlugAvailabilityResponse;
 import works.momens.server.web.workspace.dto.response.WorkspaceSnapshotResponse;
-import works.momens.server.workspace.WorkspaceErrorCode;
+import works.momens.server.workspace.core.WorkspaceErrorCode;
 
 /**
  * {@code /api/workspaces} OpenAPI 문서. Swagger 애너테이션을 컨트롤러 구현과 분리합니다(docs/spec/openapi.md).

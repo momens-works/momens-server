@@ -13,7 +13,7 @@ import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.source.SourceErrorCode;
 import works.momens.server.web.source.dto.response.SourceConnectionsResponse;
 import works.momens.server.web.source.dto.response.SourceInstallResponse;
-import works.momens.server.workspace.WorkspaceErrorCode;
+import works.momens.server.workspace.core.WorkspaceErrorCode;
 
 /**
  * {@code /api/workspaces/{workspaceId}/source-connections} endpoint의 OpenAPI 문서입니다. Swagger 애너테이션은

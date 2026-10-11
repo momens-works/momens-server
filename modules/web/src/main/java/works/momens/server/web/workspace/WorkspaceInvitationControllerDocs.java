@@ -16,8 +16,9 @@ import works.momens.server.web.workspace.dto.request.AddWorkspaceMemberRequest;
 import works.momens.server.web.workspace.dto.request.CreateWorkspaceInvitationRequest;
 import works.momens.server.web.workspace.dto.response.WorkspaceInvitationResponse;
 import works.momens.server.web.workspace.dto.response.WorkspaceInvitationsResponse;
-import works.momens.server.workspace.WorkspaceErrorCode;
+import works.momens.server.workspace.core.WorkspaceErrorCode;
 import works.momens.server.workspace.invitation.InvitationErrorCode;
+import works.momens.server.workspace.membership.MembershipErrorCode;
 
 /**
  * {@code /api/workspaces/{workspaceId}} 하위에 있는 초대 엔드포인트의 OpenAPI 문서입니다. Swagger 애너테이션을 컨트롤러 구현과
@@ -60,7 +61,10 @@ interface WorkspaceInvitationControllerDocs {
       codes = {"INVITATION_INVALID_EMAIL", "INVITATION_EMAIL_SEND_FAILED", "INVITATION_NOT_FOUND"})
   @ApiException(
       value = WorkspaceErrorCode.class,
-      codes = {"WORKSPACE_NOT_FOUND", "WORKSPACE_MEMBER_ALREADY_EXISTS"})
+      codes = {"WORKSPACE_NOT_FOUND"})
+  @ApiException(
+      value = MembershipErrorCode.class,
+      codes = {"WORKSPACE_MEMBER_ALREADY_EXISTS"})
   @ApiException(
       value = UserErrorCode.class,
       codes = {"USER_NOT_FOUND"})
@@ -129,11 +133,10 @@ interface WorkspaceInvitationControllerDocs {
       content = @Content(schema = @Schema(implementation = WebMessageResponse.class)))
   @ApiException(
       value = WorkspaceErrorCode.class,
-      codes = {
-        "WORKSPACE_NOT_FOUND",
-        "WORKSPACE_INVITEE_NOT_FOUND",
-        "WORKSPACE_MEMBER_ROLE_CONFLICT"
-      })
+      codes = {"WORKSPACE_NOT_FOUND"})
+  @ApiException(
+      value = MembershipErrorCode.class,
+      codes = {"WORKSPACE_INVITEE_NOT_FOUND", "WORKSPACE_MEMBER_ROLE_CONFLICT"})
   @ApiException(CommonErrorCode.class)
   WebMessageResponse invite(
       @Parameter(description = "워크스페이스 식별자") UUID workspaceId,

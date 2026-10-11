@@ -11,8 +11,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
-import works.momens.server.workspace.WorkspaceErrorCode;
 import works.momens.server.workspace.core.WorkspaceDetail;
+import works.momens.server.workspace.core.WorkspaceErrorCode;
 import works.momens.server.workspace.core.WorkspaceReader;
 import works.momens.server.workspace.email.EmailSendFailedException;
 import works.momens.server.workspace.email.InvitationEmail;
@@ -24,6 +24,7 @@ import works.momens.server.workspace.invitation.ResendInvitationCommand;
 import works.momens.server.workspace.invitation.RevokeInvitationCommand;
 import works.momens.server.workspace.invitation.WorkspaceInvitationDetail;
 import works.momens.server.workspace.invitation.WorkspaceInvitationWriter;
+import works.momens.server.workspace.membership.MembershipErrorCode;
 import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 /**
@@ -189,7 +190,7 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
             .anyMatch(profile -> normalizeEmail(profile.email()).equals(normalizedEmail));
     if (alreadyMember) {
       throw new BusinessException(
-          WorkspaceErrorCode.WORKSPACE_MEMBER_ALREADY_EXISTS, Map.of("email", normalizedEmail));
+          MembershipErrorCode.WORKSPACE_MEMBER_ALREADY_EXISTS, Map.of("email", normalizedEmail));
     }
   }
 

@@ -8,8 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
-import works.momens.server.workspace.WorkspaceErrorCode;
 import works.momens.server.workspace.core.WorkspaceDetail;
+import works.momens.server.workspace.core.WorkspaceErrorCode;
 import works.momens.server.workspace.core.WorkspaceReader;
 import works.momens.server.workspace.invitation.AcceptInvitationCommand;
 import works.momens.server.workspace.invitation.AcceptedInvitation;
@@ -18,6 +18,7 @@ import works.momens.server.workspace.invitation.InvitationStatus;
 import works.momens.server.workspace.invitation.WorkspaceInvitationAcceptor;
 import works.momens.server.workspace.membership.AddMembershipCommand;
 import works.momens.server.workspace.membership.AssignableWorkspaceRole;
+import works.momens.server.workspace.membership.MembershipErrorCode;
 import works.momens.server.workspace.membership.WorkspaceMembershipDetail;
 import works.momens.server.workspace.membership.WorkspaceMembershipWriter;
 import works.momens.server.workspace.membership.WorkspaceRole;
@@ -73,7 +74,7 @@ class WorkspaceInvitationAcceptorImpl implements WorkspaceInvitationAcceptor {
             .orElseThrow(
                 () ->
                     new BusinessException(
-                        WorkspaceErrorCode.WORKSPACE_INVALID_ROLE,
+                        MembershipErrorCode.WORKSPACE_INVALID_ROLE,
                         Map.of("role", invitation.getRole())));
     invitation.markAccepted(now);
     repository.flush();
@@ -84,7 +85,7 @@ class WorkspaceInvitationAcceptorImpl implements WorkspaceInvitationAcceptor {
             .orElseThrow(
                 () ->
                     new BusinessException(
-                        WorkspaceErrorCode.WORKSPACE_MEMBER_ALREADY_EXISTS,
+                        MembershipErrorCode.WORKSPACE_MEMBER_ALREADY_EXISTS,
                         Map.of("user_id", user.id().toString())));
 
     WorkspaceDetail workspace =

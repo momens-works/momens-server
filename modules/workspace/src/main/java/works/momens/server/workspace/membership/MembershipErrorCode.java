@@ -1,20 +1,11 @@
-package works.momens.server.workspace;
+package works.momens.server.workspace.membership;
 
 import lombok.RequiredArgsConstructor;
 import works.momens.server.common.api.ErrorCode;
 
-/**
- * workspace 도메인 에러 코드.
- *
- * <p>공통 코드를 재사용하지 않고 도메인 의미가 드러나는 코드를 모듈이 소유합니다(docs/spec/api-response-error-codes.md). {@link
- * WorkspaceReader}는 Optional만 반환하므로, 이 코드를 던질지는 호출하는 쪽이 결정합니다.
- */
+/** 멤버십의 존재 여부와 역할 판정 규칙에서 발생하는 에러 코드입니다. */
 @RequiredArgsConstructor
-public enum WorkspaceErrorCode implements ErrorCode {
-  WORKSPACE_NOT_FOUND(404, "워크스페이스를 찾을 수 없습니다."),
-  WORKSPACE_INVALID_SLUG(400, "사용할 수 없는 slug 형식입니다."),
-  WORKSPACE_RESERVED_SLUG(400, "예약어로 지정된 slug입니다."),
-  WORKSPACE_SLUG_ALREADY_EXISTS(409, "이미 사용 중인 slug입니다."),
+public enum MembershipErrorCode implements ErrorCode {
   WORKSPACE_MEMBER_NOT_FOUND(404, "워크스페이스 멤버를 찾을 수 없습니다."),
   WORKSPACE_INVALID_ROLE(400, "부여할 수 없는 역할입니다."),
   WORKSPACE_OWNER_PROTECTED(409, "owner 멤버는 변경하거나 제거할 수 없습니다."),

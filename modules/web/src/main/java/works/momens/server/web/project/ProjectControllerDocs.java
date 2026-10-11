@@ -12,7 +12,7 @@ import works.momens.server.common.api.ApiException;
 import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.web.project.dto.request.CreateProjectRequest;
 import works.momens.server.web.project.dto.response.WebProjectResponse;
-import works.momens.server.workspace.WorkspaceErrorCode;
+import works.momens.server.workspace.core.WorkspaceErrorCode;
 
 /**
  * {@code /api/workspaces/{workspaceId}/projects} 엔드포인트의 OpenAPI 문서입니다. Swagger 애너테이션을 컨트롤러 구현과

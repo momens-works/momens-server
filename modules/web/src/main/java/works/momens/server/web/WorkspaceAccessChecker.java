@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
-import works.momens.server.workspace.WorkspaceErrorCode;
+import works.momens.server.workspace.core.WorkspaceErrorCode;
 import works.momens.server.workspace.core.WorkspaceReader;
 import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 import works.momens.server.workspace.membership.WorkspaceRole;
