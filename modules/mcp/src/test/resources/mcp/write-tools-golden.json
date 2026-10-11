@@ -65,7 +65,7 @@
   },
   {
     "name": "create_task",
-    "description": "Create a task in a project, optionally assigned to a milestone. Mirrors creating a Linear issue.",
+    "description": "Create a task in a project, optionally assigned to a milestone.",
     "inputSchema": {
       "type": "object",
       "properties": {
