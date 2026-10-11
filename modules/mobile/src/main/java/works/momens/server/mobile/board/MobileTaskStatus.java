@@ -10,6 +10,8 @@ import works.momens.server.project.task.TaskStatus;
  * <p>enum 선언 순서가 보드 그룹의 노출 순서입니다. 사용자가 자주 확인하는 상태를 앞에 배치해 Todo, In Progress, Done, Backlog,
  * Cancelled 순으로 노출합니다(2026-07-08 화면설계서 task_001).
  *
+ * <p>상태 표시명은 제품 용어 통일 결정(MOM-1039)을 따릅니다.
+ *
  * <p>수정 화면은 상태 5종을 모두 편집할 수 있으며, backlog나 cancelled로 변경한 태스크도 보드에 계속 표시되어야 하므로 보드 역시 상태 5종을 모두
  * 포함합니다(MOM-75).
  */
