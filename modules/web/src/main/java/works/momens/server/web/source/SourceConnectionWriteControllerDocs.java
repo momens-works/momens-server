@@ -15,7 +15,7 @@ import works.momens.server.source.SourceErrorCode;
 import works.momens.server.web.dto.response.WebMessageResponse;
 import works.momens.server.web.source.dto.request.ConfigureFigmaRequest;
 import works.momens.server.web.source.dto.response.SourceConnectionResponse;
-import works.momens.server.workspace.WorkspaceErrorCode;
+import works.momens.server.workspace.core.WorkspaceErrorCode;
 
 @Tag(name = "Web", description = "웹 진입 API")
 interface SourceConnectionWriteControllerDocs {

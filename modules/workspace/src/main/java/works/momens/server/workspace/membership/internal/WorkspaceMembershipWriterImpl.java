@@ -10,10 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
-import works.momens.server.workspace.WorkspaceErrorCode;
 import works.momens.server.workspace.membership.AddMembershipByEmailCommand;
 import works.momens.server.workspace.membership.AddMembershipCommand;
 import works.momens.server.workspace.membership.ChangeMembershipRoleCommand;
+import works.momens.server.workspace.membership.MembershipErrorCode;
 import works.momens.server.workspace.membership.RemoveMembershipCommand;
 import works.momens.server.workspace.membership.WorkspaceMembershipDetail;
 import works.momens.server.workspace.membership.WorkspaceMembershipWriter;
@@ -44,7 +44,7 @@ class WorkspaceMembershipWriterImpl implements WorkspaceMembershipWriter {
             .orElseThrow(
                 () ->
                     new BusinessException(
-                        WorkspaceErrorCode.WORKSPACE_INVITEE_NOT_FOUND,
+                        MembershipErrorCode.WORKSPACE_INVITEE_NOT_FOUND,
                         Map.of("email", String.valueOf(command.email()))));
     Optional<WorkspaceMember> existing =
         workspaceMemberRepository.findByWorkspaceIdAndUserId(command.workspaceId(), invitee.id());
@@ -53,7 +53,7 @@ class WorkspaceMembershipWriterImpl implements WorkspaceMembershipWriter {
         return;
       }
       throw new BusinessException(
-          WorkspaceErrorCode.WORKSPACE_MEMBER_ROLE_CONFLICT,
+          MembershipErrorCode.WORKSPACE_MEMBER_ROLE_CONFLICT,
           Map.of("user_id", invitee.id().toString()));
     }
     workspaceMemberRepository.insertIfAbsent(
@@ -93,7 +93,7 @@ class WorkspaceMembershipWriterImpl implements WorkspaceMembershipWriter {
   public void remove(RemoveMembershipCommand command) {
     if (command.userId().equals(command.targetUserId())) {
       throw new BusinessException(
-          WorkspaceErrorCode.WORKSPACE_SELF_REMOVAL_NOT_ALLOWED,
+          MembershipErrorCode.WORKSPACE_SELF_REMOVAL_NOT_ALLOWED,
           Map.of("user_id", command.targetUserId().toString()));
     }
     WorkspaceMember member = requireMember(command.workspaceId(), command.targetUserId());
@@ -107,14 +107,14 @@ class WorkspaceMembershipWriterImpl implements WorkspaceMembershipWriter {
         .orElseThrow(
             () ->
                 new BusinessException(
-                    WorkspaceErrorCode.WORKSPACE_MEMBER_NOT_FOUND,
+                    MembershipErrorCode.WORKSPACE_MEMBER_NOT_FOUND,
                     Map.of("workspace_id", workspaceId.toString(), "user_id", userId.toString())));
   }
 
   private void requireNotOwner(WorkspaceMember member) {
     if (WorkspaceRole.OWNER.value().equals(member.getRole())) {
       throw new BusinessException(
-          WorkspaceErrorCode.WORKSPACE_OWNER_PROTECTED,
+          MembershipErrorCode.WORKSPACE_OWNER_PROTECTED,
           Map.of("user_id", member.getUserId().toString()));
     }
   }

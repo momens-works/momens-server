@@ -16,11 +16,11 @@ import org.springframework.context.annotation.Import;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
-import works.momens.server.workspace.WorkspaceErrorCode;
 import works.momens.server.workspace.WorkspaceSeedSql;
 import works.momens.server.workspace.core.UpdateWorkspaceCommand;
 import works.momens.server.workspace.core.WorkspaceDetail;
 import works.momens.server.workspace.core.WorkspaceEditor;
+import works.momens.server.workspace.core.WorkspaceErrorCode;
 
 /**
  * 워크스페이스 수정이 레거시 {@code workspace.Update}와 동일하게 동작하는지 실제 PostgreSQL을 사용해 검증합니다.
