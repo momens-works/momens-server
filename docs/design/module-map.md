@@ -432,8 +432,9 @@ dispatch`(`PushDispatcher`: 수신 설치별 발송 기록 enqueue와 발송 패
   않으며, 진행률 계산 규칙은 project Gradle 모듈 안의 task 경계에서 관리한다(MOM-0800·MOM-0887).
 - `GET /api/mobile/tasks/{taskId}`: project의 태스크 상세(`TaskReader.findDetail`)와 workspace
   멤버십(태스크가 속한 workspace 기준), user 프로필(담당자 이름)을 조합한다. purpose 개명
-  (도메인 description), priority 매핑, 빈 값 고정(open_questions는 빈 배열, next_action은 null)은
-  조합 규칙이라 이 모듈이 소유한다(MOM-63). 관련 자료는 context의 링크와 source의 원본을 조합해
+  (도메인 description)과 priority 매핑은 이 모듈이 소유하는 조합 규칙이다(MOM-63).
+  `open_questions`와 `next_action`은 project가 읽은 저장값을 그대로 전달하며, 값이 없을 때만
+  각각 빈 배열과 null을 반환한다. 관련 자료는 context의 링크와 source의 원본을 조합해
   채우고, 연결이 없으면 빈 배열이다(MOM-0779). 수정 계열은 MOM-75가 같은 `/tasks/*` 표면에
   추가한다. `draft_status`는 minsu의 `TaskDraftStatusReader`로 읽으며, **원장을 task보다 먼저
   읽는 순서가 계약이다**(MOM-0822, 비동기 생성 설계 7.3절). 역순이면 이전 title과 `ready`가 함께
