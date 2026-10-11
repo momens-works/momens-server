@@ -80,10 +80,10 @@ Signal type에 따라 앱이 다음처럼 화면 라벨을 정합니다. 이 라
 | --- | --- |
 | `source` | `slack`, `github`, `figma`, `notion`, `file` |
 
-`source`는 관련자료 원본의 출처입니다. Signal 근거의 `evidence.source`와 같은 source_ref의 출처이므로 값 집합도
+`source`는 관련 자료 원본의 출처입니다. Signal 근거의 `evidence.source`와 같은 source_ref의 출처이므로 값 집합도
 동일합니다. 화면에 표시하는 출처 라벨과 아이콘은 앱이 `source`에서 생성합니다.
 
-관련자료 화면은 figma, slack, github, file을 표시합니다. 다만 서버는 source_ref의 출처를 그대로 반환하므로, 앱은
+관련 자료 화면은 figma, slack, github, file을 표시합니다. 다만 서버는 source_ref의 출처를 그대로 반환하므로, 앱은
 목록에 없는 값이 오더라도 화면이 깨지지 않도록 처리합니다.
 
 ## 인증
@@ -406,9 +406,9 @@ backing에 저장하지 않습니다.
 }
 ```
 
-#### Response 200 (이미 처리된 신호 재요청)
+#### Response 200 (이미 처리된 시그널 재요청)
 
-같은 신호에 같은 액션을 재요청하면 새 task를 만들지 않고 기존 결과를 그대로 반환합니다(멱등).
+같은 시그널에 같은 액션을 재요청하면 새 task를 만들지 않고 기존 결과를 그대로 반환합니다(멱등).
 
 ```json
 {
@@ -445,9 +445,9 @@ backing에 저장하지 않습니다.
 }
 ```
 
-#### Response 200 (이미 같은 액션으로 처리된 신호 재요청)
+#### Response 200 (이미 같은 액션으로 처리된 시그널 재요청)
 
-같은 신호에 dismiss를 재요청하면 같은 결과를 멱등하게 반환합니다.
+같은 시그널에 dismiss를 재요청하면 같은 결과를 멱등하게 반환합니다.
 
 ```json
 {
@@ -540,7 +540,7 @@ Asia/Seoul 기준이라, `created_at`(UTC 저장)을 KST 하루로 잘라 그 �
 민수가 새 type을 만들면 칩이 자동으로 늘어납니다. `label`은 `type`의 첫 글자만 대문자로 바꾼 값입니다(위 Signal
 카테고리 표시 표와 같음). type 칩 순서는 `label` 글자수가 적은 것부터이고 글자수가 같으면 `label` 알파벳순입니다.
 
-`signal_summary.summary`는 시그널 요약 헤더 아래 문단(해당 프로젝트 이슈와 진행상황 요약)입니다. 그날 신호를 한
+`signal_summary.summary`는 시그널 요약 헤더 아래 문단(해당 프로젝트 이슈와 진행상황 요약)입니다. 그날 시그널을 한
 문단으로 요약한 민수 산출물이고 `signal_digests`에서 읽습니다. 민수가 아직 만들지 않았으면 `null`입니다. 민수가
 구현되기 전에는 같은 backing 계약을 따르는 fixture가 채웁니다(ADR-0011, ADR-0012).
 
@@ -739,10 +739,10 @@ title, role, priority 모두 필수입니다(2026-07-06 기획 확정, 2026-07-0
 convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다시 조회해 종료를 확인합니다.
 `convert-to-task`를 거치지 않은 태스크는 항상 `ready`입니다.
 
-다만 이 조회는 담당자·관련자료를 함께 구성하는 무거운 경로라 짧은 간격의 폴링에는 적합하지 않습니다.
+다만 이 조회는 담당자·관련 자료를 함께 구성하는 무거운 경로라 짧은 간격의 폴링에는 적합하지 않습니다.
 폴링 부담이 문제가 되면 경량 상태 조회 엔드포인트나 재조회 간격 힌트를 후속으로 검토합니다.
 
-`materials[].source_url`은 관련자료에서 원본 문서로 이동할 때 사용합니다.
+`materials[].source_url`은 관련 자료에서 원본 문서로 이동할 때 사용합니다.
 
 `materials`는 `entity_relations`(task ↔ source_ref)에서 연결을 찾고 `source_refs`에서 원본을 조회해 구성합니다.
 연결된 자료가 없으면 `[]`이고, `material_count`는 `0`입니다.
@@ -753,7 +753,7 @@ convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다�
 `source_url`은 `null`로 반환합니다. 표시 순서는 연결이 생성된 시각의 내림차순입니다.
 
 `open_questions`와 `next_action`은 민수 산출물입니다. `open_questions[]`는 `task_open_questions`에서, `next_action`은
-`tasks.next_action`에서 읽습니다. 민수가 만든 질문이 없으면 `[]`이고, 다음행동을 아직 만들지 않았으면 `null`입니다.
+`tasks.next_action`에서 읽습니다. 민수가 만든 질문이 없으면 `[]`이고, 다음 액션을 아직 만들지 않았으면 `null`입니다.
 `open_questions[].id`는 저장된 질문 행의 식별자입니다. 표시 순서는 생산자가 준 순서이고, 순서 값이 겹치면 `id` 순으로
 고정합니다.
 
@@ -762,7 +762,7 @@ convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다�
 따르는 fixture가 채웁니다(ADR-0011). 태스크 수정 API는 두 값을 요청에 받지 않고 그대로 유지합니다.
 
 담당자가 지정되지 않았으면 `assignee`는 `null`, 목적을 아직 작성하지 않았으면 `purpose`는 `null`입니다. 웹에서 만든 태스크는 역할이 없어 `role`도 `null`입니다. 태스크 생성 시점에 민수가 담당자를 판단해 지정하는데, 판단에 걸리는 시간 동안에는 담당자가 없어 `assignee`가 `null`로 내려가고, 이후 지정되면 조회에 자동으로 반영됩니다. `assignee.avatar_url`은 담당자의 구글 계정 프로필 이미지이고, 없으면 `null`입니다.
-완료기준이 없으면 `checklist`는 `completed_count` 0, `total_count` 0, `items` 빈 배열입니다(2026-07-07 확정).
+완료 기준이 없으면 `checklist`는 `completed_count` 0, `total_count` 0, `items` 빈 배열입니다(2026-07-07 확정).
 `status`는 저장된 5종(backlog, todo, in_progress, done, cancelled)을 그대로 반환하고(상세 상태 칩이 5종 노출),
 `priority`는 보드와 같이 저장된 urgent를 high로 반환합니다. `purpose`는 레거시 `tasks.description`에 매핑됩니다.
 
@@ -782,16 +782,16 @@ convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다�
   "purpose": "이번 범위에서 확인해야 할 화면 흐름을 정리합니다.",
   "checklist_items": [
     { "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "title": "어쩌구어쩌구 반영", "completed": true },
-    { "title": "새 완료기준", "completed": false }
+    { "title": "새 완료 기준", "completed": false }
   ]
 }
 ```
 
-담당자를 비우려면 `assignee_id`를 `null`로 보냅니다. `status`는 backlog, todo, in_progress, done, cancelled 다섯 값 중 하나입니다. `checklist_items`는 완료기준 최종 목록이고, `id`가 있으면 기존 항목의 제목과 완료 상태(`completed`)를 함께 갱신하고, `id`가 없으면 새 항목으로 만들며, 목록에서 빠진 기존 항목은 삭제합니다. `checklist_items[].id`는 선택 필드입니다. 기존 항목은 상세 조회에서 받은 `id`를 그대로 보내고, 새 항목은 `id`를 생략합니다. `completed`를 생략하면 `false`로 처리합니다. `id`가 있는데 기존 항목에 없으면 잘못된 요청으로 보고 `TASK_CHECKLIST_ITEM_NOT_FOUND`로 응답하고, 같은 `id`가 목록에 두 번 오면 `COMMON_VALIDATION_FAILED`로 응답합니다. 완료기준은 0개에서 5개까지 허용하고, 5개를 넘기면 `COMMON_VALIDATION_FAILED`로 응답합니다. 글자 수는 공백을 포함해 태스크 제목 15자, 목적 300자, 완료기준 항목 50자로 제한하며, 넘기면 `COMMON_VALIDATION_FAILED`로 응답합니다. 상세 화면의 즉시 토글은 아래 별도 엔드포인트로 유지합니다. 같은 태스크를 두 요청이 거의 동시에 저장하면, 마지막에 저장한 요청이 먼저 저장된 내용을 덮어씁니다. 동시 수정 충돌을 막는 낙관적 잠금은 지금 두지 않습니다.
+담당자를 비우려면 `assignee_id`를 `null`로 보냅니다. `status`는 backlog, todo, in_progress, done, cancelled 다섯 값 중 하나입니다. `checklist_items`는 완료 기준 최종 목록이고, `id`가 있으면 기존 항목의 제목과 완료 상태(`completed`)를 함께 갱신하고, `id`가 없으면 새 항목으로 만들며, 목록에서 빠진 기존 항목은 삭제합니다. `checklist_items[].id`는 선택 필드입니다. 기존 항목은 상세 조회에서 받은 `id`를 그대로 보내고, 새 항목은 `id`를 생략합니다. `completed`를 생략하면 `false`로 처리합니다. `id`가 있는데 기존 항목에 없으면 잘못된 요청으로 보고 `TASK_CHECKLIST_ITEM_NOT_FOUND`로 응답하고, 같은 `id`가 목록에 두 번 오면 `COMMON_VALIDATION_FAILED`로 응답합니다. 완료 기준은 0개에서 5개까지 허용하고, 5개를 넘기면 `COMMON_VALIDATION_FAILED`로 응답합니다. 글자 수는 공백을 포함해 태스크 제목 15자, 목적 300자, 완료 기준 항목 50자로 제한하며, 넘기면 `COMMON_VALIDATION_FAILED`로 응답합니다. 상세 화면의 즉시 토글은 아래 별도 엔드포인트로 유지합니다. 같은 태스크를 두 요청이 거의 동시에 저장하면, 마지막에 저장한 요청이 먼저 저장된 내용을 덮어씁니다. 동시 수정 충돌을 막는 낙관적 잠금은 지금 두지 않습니다.
 
 #### Response 204
 
-저장만 하고 본문은 반환하지 않습니다. 쓰기와 읽기의 역할을 분리하기 위해서입니다. 저장 후 필요한 최신 상태는 태스크 상세 조회(`GET /api/mobile/tasks/{taskId}`)로 다시 읽습니다. 새로 추가한 완료기준의 서버 id도 이 조회에서 확인합니다.
+저장만 하고 본문은 반환하지 않습니다. 쓰기와 읽기의 역할을 분리하기 위해서입니다. 저장 후 필요한 최신 상태는 태스크 상세 조회(`GET /api/mobile/tasks/{taskId}`)로 다시 읽습니다. 새로 추가한 완료 기준의 서버 id도 이 조회에서 확인합니다.
 
 ### PATCH /api/mobile/tasks/{taskId}/checklist-items/{itemId}
 

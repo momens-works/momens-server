@@ -42,7 +42,7 @@ public record UpdateTaskRequest(
         TaskStatus status,
     @Schema(description = "목적. 비우면 빈 문자열이나 null입니다. 최대 300자(공백 포함).") @Size(max = 300)
         String purpose,
-    @Schema(description = "완료기준 최종 목록. 0개에서 5개까지 허용합니다.") @Size(max = 5) @Valid
+    @Schema(description = "완료 기준 최종 목록. 0개에서 5개까지 허용합니다.") @Size(max = 5) @Valid
         List<ChecklistItemRequest> checklistItems) {
 
   public UpdateTaskRequest {
@@ -51,7 +51,7 @@ public record UpdateTaskRequest(
   }
 
   /** 완료기준 한 항목. id가 있으면 기존 항목, 없으면 새 항목이고, completed는 수정 화면이 저장한 완료 상태입니다. */
-  @Schema(description = "완료기준 항목")
+  @Schema(description = "완료 기준 항목")
   public record ChecklistItemRequest(
       @Schema(description = "항목 식별자. 새 항목이면 생략합니다.") UUID id,
       @Schema(description = "항목 제목. 최대 50자(공백 포함).", example = "회원가입 에러 메시지 반영")

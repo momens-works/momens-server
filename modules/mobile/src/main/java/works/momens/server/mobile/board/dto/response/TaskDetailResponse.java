@@ -33,10 +33,10 @@ public record TaskDetailResponse(
     @Schema(description = "담당자. 미지정이면 null") AssigneeResponse assignee,
     @Schema(description = "우선순위. low/medium/high", example = "medium") String priority,
     @Schema(description = "목적. 작성 전이면 null") String purpose,
-    @Schema(description = "완료기준") ChecklistResponse checklist,
-    @Schema(description = "관련자료 목록. 연결된 자료가 없으면 빈 배열") List<MaterialResponse> materials,
-    @Schema(description = "열린질문 목록. 민수가 만든 질문이 없으면 빈 배열") List<OpenQuestionResponse> openQuestions,
-    @Schema(description = "다음행동. 민수가 아직 만들지 않았으면 null", nullable = true) String nextAction,
+    @Schema(description = "완료 기준") ChecklistResponse checklist,
+    @Schema(description = "관련 자료 목록. 연결된 자료가 없으면 빈 배열") List<MaterialResponse> materials,
+    @Schema(description = "열린 질문 목록. 민수가 만든 질문이 없으면 빈 배열") List<OpenQuestionResponse> openQuestions,
+    @Schema(description = "다음 액션. 민수가 아직 만들지 않았으면 null", nullable = true) String nextAction,
     @Schema(
             description =
                 "AI가 제목을 더 손볼 것이 남았는지. generating이면 나중에 다시 조회해야 합니다."
@@ -52,19 +52,19 @@ public record TaskDetailResponse(
       @Schema(description = "이름") String name,
       @Schema(description = "구글 계정 프로필 이미지. 없으면 null") String avatarUrl) {}
 
-  @Schema(description = "완료기준")
+  @Schema(description = "완료 기준")
   public record ChecklistResponse(
       @Schema(description = "완료된 항목 수") int completedCount,
       @Schema(description = "전체 항목 수") int totalCount,
       @Schema(description = "항목 목록(저장 순서)") List<ChecklistItemResponse> items) {}
 
-  @Schema(description = "완료기준 항목")
+  @Schema(description = "완료 기준 항목")
   public record ChecklistItemResponse(
       @Schema(description = "항목 식별자") UUID id,
       @Schema(description = "항목 제목") String title,
       @Schema(description = "완료 여부") boolean completed) {}
 
-  @Schema(description = "관련자료")
+  @Schema(description = "관련 자료")
   public record MaterialResponse(
       @Schema(description = "자료 식별자(source_ref id)") UUID id,
       @Schema(description = "제목", nullable = true) String title,
@@ -77,7 +77,7 @@ public record TaskDetailResponse(
       @Schema(description = "원본이 생성된 시각", nullable = true) Instant occurredAt,
       @Schema(description = "원본 문서 링크", nullable = true) String sourceUrl) {}
 
-  @Schema(description = "열린질문")
+  @Schema(description = "열린 질문")
   public record OpenQuestionResponse(
       @Schema(description = "질문 식별자") UUID id, @Schema(description = "질문 본문") String body) {}
 

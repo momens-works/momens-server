@@ -11,20 +11,20 @@
 ## 배경
 
 Momens Mobile은 기존 웹 기능을 축소 이식하는 앱이 아니다. 모바일 MVP의 중심은 Project Owner가
-프로젝트에 영향을 줄 수 있는 중요한 신호를 확인하고, 근거를 검토한 뒤, 실행 가능한 액션으로
+프로젝트에 영향을 줄 수 있는 중요한 시그널을 확인하고, 근거를 검토한 뒤, 실행 가능한 액션으로
 닫는 경험이다.
 
 모바일 MVP는 다음 3개 탭을 중심으로 한다.
 
-- 신호
+- 시그널
 - 브리프
 - 프로젝트
 
 ## 목표
 
-- Project Owner가 오늘 확인해야 할 신호를 모바일에서 파악할 수 있어야 한다.
-- Project Owner가 신호의 근거와 민수 제안을 확인할 수 있어야 한다.
-- Project Owner가 신호를 태스크 등록으로 처리할 수 있어야 한다.
+- Project Owner가 오늘 확인해야 할 시그널을 모바일에서 파악할 수 있어야 한다.
+- Project Owner가 시그널의 근거와 민수 제안을 확인할 수 있어야 한다.
+- Project Owner가 시그널을 태스크 등록으로 처리할 수 있어야 한다.
 - 처리 결과는 Signal의 프로젝트 단위 처리 이력과 프로젝트 맥락에 반영되어야 한다.
 - Project Owner가 프로젝트 태스크를 생성하고, 상세를 확인하고, 체크리스트를 토글하고, 기본 정보를
   수정할 수 있어야 한다.
@@ -48,7 +48,7 @@ Momens Mobile은 기존 웹 기능을 축소 이식하는 앱이 아니다. 모�
 - Signal record-decision 액션
 - Signal resolve 액션
 - Signal snooze 액션
-- 관련자료 상세 전용 API
+- 관련 자료 상세 전용 API
 - task 생성, Signal 삭제(dismiss), task 상태 변경 push notification
 - worker 내부 재시도/DLQ 저장 방식 상세설계
 - DB 컬럼, index, FK, Java public API, 패키지 구조 등 구현 상세설계
@@ -57,11 +57,11 @@ Momens Mobile은 기존 웹 기능을 축소 이식하는 앱이 아니다. 모�
 
 | 용어 | 의미 |
 | --- | --- |
-| Signal / 신호 | 프로젝트 목표, 일정, 범위, 품질, 의사결정, 실행 흐름에 영향을 줄 수 있어 사람이 검토해야 하는 변화 |
+| Signal / 시그널 | 프로젝트 목표, 일정, 범위, 품질, 의사결정, 실행 흐름에 영향을 줄 수 있어 사람이 검토해야 하는 변화 |
 | Signal 표시 라벨 | 화면에서 Signal type을 묶어 보여주는 라벨. `risk`/`change`는 `Needs action`, `decision`은 `Needs review`, `question`은 `Needs decision`으로 표현한다. 처리 상태나 목록 필터가 아니다 |
-| Evidence / 근거 | 신호 판단을 뒷받침하는 출처 기반 정보 |
+| Evidence / 근거 | 시그널 판단을 뒷받침하는 출처 기반 정보 |
 | Task draft | 민수가 태스크 등록 시점에 생성하는 사용자 확정 액션용 초안. 최종 task가 아니다 |
-| Minsu suggestion | 신호를 바탕으로 민수가 제안하는 다음 행동 |
+| Minsu suggestion | 시그널을 바탕으로 민수가 제안하는 다음 액션 |
 | Brief / 브리프 | 프로젝트 상태와 최근 맥락을 짧게 요약한 화면 단위 |
 | Task / 태스크 | 담당자와 상태를 가지고 진행되는 실행 항목 |
 | Decision / 결정 | 근거와 함께 보존되는 프로젝트 선택 |
@@ -136,10 +136,10 @@ api-server는 retrieval 서버를 직접 호출하지 않는다.
 | 권한 없음 | 403 | `AUTH_FORBIDDEN` |
 | 요청 값 검증 실패 | 400 | `COMMON_VALIDATION_FAILED` |
 | 프로젝트 없음 | 404 | `PROJECT_NOT_FOUND` |
-| 신호 없음 | 404 | `SIGNAL_NOT_FOUND` |
+| 시그널 없음 | 404 | `SIGNAL_NOT_FOUND` |
 | 태스크 없음 | 404 | `TASK_NOT_FOUND` |
 | 태스크 체크리스트 항목 없음 | 404 | `TASK_CHECKLIST_ITEM_NOT_FOUND` |
-| 현재 상태에서 수행할 수 없는 신호 액션 | 409 | `SIGNAL_INVALID_STATE` |
+| 현재 상태에서 수행할 수 없는 시그널 액션 | 409 | `SIGNAL_INVALID_STATE` |
 
 Notion 문서에 남아 있는 `AUTH_UNAUTHENTICATED`, `COMMON_VALIDATION` 표기는 이 저장소 기준과
 맞지 않으므로 사용하지 않는다.
@@ -151,7 +151,7 @@ MVP 이후 단계(웹/레거시 이관)의 이관 후보로 둔다.
 
 | 우선순위 | 의미 |
 | --- | --- |
-| MVP | 모바일 MVP의 핵심 사용자 경험에 직접 연결되는 기능. 신호 확인, 근거 확인, 태스크 전환, 브리프, 태스크 흐름을 포함한다. |
+| MVP | 모바일 MVP의 핵심 사용자 경험에 직접 연결되는 기능. 시그널 확인, 근거 확인, 태스크 전환, 브리프, 태스크 흐름을 포함한다. |
 | 필수 | 모바일 MVP를 실제 앱에서 사용하기 위해 반드시 필요한 API/계약/인증/에러 처리. 모바일 API 전체와 계약 안정화를 포함한다. |
 | 선택 | 모바일 MVP 이후 단계의 이관 후보. 기존 웹 API 전체 이관, 레거시 기능 확장, 레거시 서버 폐기 준비는 여기에 둔다. |
 
@@ -187,16 +187,16 @@ prod gate로 별도 추적한다.
 - 접근 가능한 project가 없으면 `200`으로 기본 project id는 `null`, project 목록은 빈 배열을
   반환하고, 빈 화면 처리는 앱이 담당한다(2026-07-04 가결정, 기획 확인 후 확정).
 
-### R-READ-001. 신호 목록 조회
+### R-READ-001. 시그널 목록 조회
 
-서버는 프로젝트 단위 신호 목록을 조회할 수 있어야 한다.
+서버는 프로젝트 단위 시그널 목록을 조회할 수 있어야 한다.
 
 - 경로: `GET /api/mobile/projects/{projectId}/signals`
-- 신호 목록은 프로젝트 스코프를 기준으로 한다.
+- 시그널 목록은 프로젝트 스코프를 기준으로 한다.
 - MVP 목록은 아직 처리되지 않은 Signal만 반환한다.
 - 목록은 cursor pagination으로 한 페이지씩 반환합니다. 기본 페이지 크기는 5이고 상한은 50입니다(MOM-0963).
 - 처리된 Signal(`convert-to-task` 또는 `dismiss`)을 다시 조회하거나 필터링하는 흐름은 MVP에서 제공하지 않는다.
-- 목록 응답은 신호 카드 렌더링에 필요한 정보를 포함해야 한다.
+- 목록 응답은 시그널 카드 렌더링에 필요한 정보를 포함해야 한다.
 - 목록 응답은 type, title, impact, Minsu suggestion을 표현할 수 있어야 한다.
 - project는 요청 경로로 고정되므로 Signal 항목마다 project id를 반복하지 않는다.
 - Signal backing의 project id는 목록 필터와 convert-to-task의 task 귀속에 필요하므로 서버 내부에는 유지한다.
@@ -205,9 +205,9 @@ prod gate로 별도 추적한다.
 - Minsu suggestion은 민수 산출물이며, 민수(서버 내 모듈로 구현 예정)가 구현되기 전에는 목으로 처리한다.
 - 화면의 `Needs action`, `Needs review`, `Needs decision` 라벨은 Signal type에서 파생한다.
 
-### R-READ-002. 신호 상세 조회
+### R-READ-002. 시그널 상세 조회
 
-서버는 신호 1건의 상세를 조회할 수 있어야 한다.
+서버는 시그널 1건의 상세를 조회할 수 있어야 한다.
 
 - 경로: `GET /api/mobile/signals/{signalId}`
 - 상세 응답은 type, title, Signal 전체의 impact, 근거 목록, Minsu suggestion을 표현할 수 있어야 한다.
@@ -225,7 +225,7 @@ prod gate로 별도 추적한다.
 서버는 프로젝트 브리프를 조회할 수 있어야 한다.
 
 - 경로: `GET /api/mobile/projects/{projectId}/brief`
-- 브리프는 프로젝트 상태와 최근 맥락을 짧게 요약해 보여주는 탭이다(홈 탭은 신호).
+- 브리프는 프로젝트 상태와 최근 맥락을 짧게 요약해 보여주는 탭이다(홈 탭은 시그널).
 - 응답은 프로젝트 스냅샷, 시그널 요약 문단(`signal_summary.summary`), signal summary
   filter/dropdown, 우선순위를 표현할 수 있어야 한다. (2026-07-10 화면설계서 기준으로 종전
   "리뷰 요약"을 시그널 요약 문단으로 정리했다.)
@@ -243,17 +243,17 @@ prod gate로 별도 추적한다.
 
 - 경로: `GET /api/mobile/projects/{projectId}/tasks`
 - 응답은 태스크를 `todo`, `in_progress`, `done` 그룹으로 표현할 수 있어야 한다.
-- 태스크 카드에는 제목, role, priority, 관련자료 개수를 표현할 수 있어야 한다.
+- 태스크 카드에는 제목, role, priority, 관련 자료 개수를 표현할 수 있어야 한다.
 
 ### R-READ-005. 태스크 상세 조회
 
 서버는 태스크 상세를 조회할 수 있어야 한다.
 
 - 경로: `GET /api/mobile/tasks/{taskId}`
-- 응답은 태스크 기본 정보, role, 담당자, 우선순위, 목적, 체크리스트, 관련자료 축약본, 열린 질문,
+- 응답은 태스크 기본 정보, role, 담당자, 우선순위, 목적, 체크리스트, 관련 자료 축약본, 열린 질문,
   다음 액션을 표현할 수 있어야 한다.
-- 관련자료 bottom sheet는 태스크 상세 응답의 관련자료 축약본으로 구성할 수 있어야 한다.
-- 원본 문서 이동은 관련자료의 `source_url`을 사용한다.
+- 관련 자료 bottom sheet는 태스크 상세 응답의 관련 자료 축약본으로 구성할 수 있어야 한다.
+- 원본 문서 이동은 관련 자료의 `source_url`을 사용한다.
 - 기존 데이터에서 합성할 수 없는 값은 MVP 응답 정책에 따라 빈 값으로 표현할 수 있어야 한다.
 
 ### R-READ-006. 프로젝트 멤버 조회
@@ -266,9 +266,9 @@ prod gate로 별도 추적한다.
 
 ## 모바일 액션 요구사항
 
-### R-ACTION-001. 신호를 태스크로 전환
+### R-ACTION-001. 시그널을 태스크로 전환
 
-서버는 신호를 태스크로 전환할 수 있어야 한다.
+서버는 시그널을 태스크로 전환할 수 있어야 한다.
 
 - 경로: `POST /api/mobile/signals/{signalId}/actions/convert-to-task`
 - 요청 body를 받지 않는 원탭 action이다.
@@ -282,11 +282,11 @@ prod gate로 별도 추적한다.
 - 서버는 Signal이 처리되었음을 기록하고, 이후 MVP Signal 목록에서 제외해야 한다.
 - 서버는 projection 처리를 위한 outbox 이벤트를 발행해야 한다.
 - task 생성, Signal 처리 이력 반영, outbox 이벤트 발행은 사용자 관점에서 일관되게 처리되어야 한다.
-- 같은 신호에 대한 같은 액션 재시도는 중복 task를 만들지 않아야 한다.
-- 이미 처리된 신호에 같은 액션을 재요청하면 `200`으로 기존 task 결과를 멱등하게 반환해야 한다.
-- 이미 다른 action으로 처리된 신호에 요청하면 `SIGNAL_INVALID_STATE`(409)를 반환한다.
+- 같은 시그널에 대한 같은 액션 재시도는 중복 task를 만들지 않아야 한다.
+- 이미 처리된 시그널에 같은 액션을 재요청하면 `200`으로 기존 task 결과를 멱등하게 반환해야 한다.
+- 이미 다른 action으로 처리된 시그널에 요청하면 `SIGNAL_INVALID_STATE`(409)를 반환한다.
 
-### R-ACTION-002. 신호 삭제(dismiss)
+### R-ACTION-002. 시그널 삭제(dismiss)
 
 서버는 사용자가 제안된 Signal을 MVP 흐름에서 수용하지 않겠다고 표시할 수 있어야 한다.
 
@@ -295,8 +295,8 @@ prod gate로 별도 추적한다.
 - 서버는 Signal이 처리되었음을 기록하고, 이후 MVP Signal 목록에서 제외해야 한다.
 - dismiss는 물리 삭제가 아니며 Signal 자체가 잘못됐다고 확정하는 것도 아니다. 현재 사용자가 이 Signal을
   task로 전환하지 않고 MVP 목록에서 삭제 처리하는 액션이다.
-- 같은 신호에 대한 같은 dismiss 재시도는 멱등하게 `200`으로 처리한다.
-- 이미 다른 action으로 처리된 신호에 요청하면 `SIGNAL_INVALID_STATE`(409)를 반환한다.
+- 같은 시그널에 대한 같은 dismiss 재시도는 멱등하게 `200`으로 처리한다.
+- 이미 다른 action으로 처리된 시그널에 요청하면 `SIGNAL_INVALID_STATE`(409)를 반환한다.
 - 삭제 처리한 Signal을 다시 보는 inbox 흐름은 MVP 이후 요구사항이다.
 
 ### R-ACTION-003. 일반 태스크 생성
@@ -314,10 +314,10 @@ prod gate로 별도 추적한다.
 서버는 태스크 상세 상단 연필 아이콘에서 태스크를 수정할 수 있어야 한다.
 
 - 경로: `PATCH /api/mobile/tasks/{taskId}`
-- MVP 수정 범위는 제목, role, 담당자, 우선순위, 목적, 완료기준이다.
+- MVP 수정 범위는 제목, role, 담당자, 우선순위, 목적, 완료 기준이다.
 - 보내지 않은 필드는 변경하지 않아야 한다.
 - 담당자 제거는 `assignee_id: null`로 표현한다.
-- 완료기준 수정은 기존 항목 제목 수정, 새 항목 추가, 기존 항목 삭제를 처리할 수 있어야 한다.
+- 완료 기준 수정은 기존 항목 제목 수정, 새 항목 추가, 기존 항목 삭제를 처리할 수 있어야 한다.
 
 ### R-ACTION-005. 태스크 체크리스트 토글
 
