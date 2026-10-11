@@ -230,7 +230,7 @@
         }
       },
       "ChecklistItemRequest" : {
-        "description" : "완료기준 항목",
+        "description" : "완료 기준 항목",
         "properties" : {
           "completed" : {
             "description" : "완료 여부. 없으면 false입니다.",
@@ -255,7 +255,7 @@
         ]
       },
       "ChecklistItemResponse" : {
-        "description" : "완료기준 항목",
+        "description" : "완료 기준 항목",
         "properties" : {
           "completed" : {
             "description" : "완료 여부",
@@ -273,7 +273,7 @@
         }
       },
       "ChecklistResponse" : {
-        "description" : "완료기준",
+        "description" : "완료 기준",
         "properties" : {
           "completed_count" : {
             "description" : "완료된 항목 수",
@@ -295,7 +295,7 @@
         }
       },
       "ChecklistToggleResponse" : {
-        "description" : "완료기준 완료 상태 변경 응답",
+        "description" : "완료 기준 완료 상태 변경 응답",
         "properties" : {
           "checklist" : {
             "$ref" : "#/components/schemas/ChecklistResponse"
@@ -665,7 +665,7 @@
             "type" : "integer"
           },
           "voc_signal_count" : {
-            "description" : "VOC 신호 수. 0 이상이며, 생략하면 0이 적용됩니다.",
+            "description" : "VOC 시그널 수. 0 이상이며, 생략하면 0이 적용됩니다.",
             "format" : "int32",
             "type" : "integer"
           }
@@ -1176,7 +1176,7 @@
         ]
       },
       "MaterialResponse" : {
-        "description" : "관련자료",
+        "description" : "관련 자료",
         "properties" : {
           "id" : {
             "description" : "자료 식별자(source_ref id)",
@@ -1461,7 +1461,7 @@
         ]
       },
       "OpenQuestionResponse" : {
-        "description" : "열린질문",
+        "description" : "열린 질문",
         "properties" : {
           "body" : {
             "description" : "질문 본문",
@@ -2575,21 +2575,21 @@
             "type" : "string"
           },
           "materials" : {
-            "description" : "관련자료 목록. 연결된 자료가 없으면 빈 배열",
+            "description" : "관련 자료 목록. 연결된 자료가 없으면 빈 배열",
             "items" : {
               "$ref" : "#/components/schemas/MaterialResponse"
             },
             "type" : "array"
           },
           "next_action" : {
-            "description" : "다음행동. 민수가 아직 만들지 않았으면 null",
+            "description" : "다음 액션. 민수가 아직 만들지 않았으면 null",
             "type" : [
               "string",
               "null"
             ]
           },
           "open_questions" : {
-            "description" : "열린질문 목록. 민수가 만든 질문이 없으면 빈 배열",
+            "description" : "열린 질문 목록. 민수가 만든 질문이 없으면 빈 배열",
             "items" : {
               "$ref" : "#/components/schemas/OpenQuestionResponse"
             },
@@ -2675,7 +2675,7 @@
         }
       },
       "ToggleChecklistItemRequest" : {
-        "description" : "완료기준 완료 상태 변경 요청",
+        "description" : "완료 기준 완료 상태 변경 요청",
         "properties" : {
           "completed" : {
             "description" : "완료 여부",
@@ -2803,7 +2803,7 @@
             "type" : "string"
           },
           "checklist_items" : {
-            "description" : "완료기준 최종 목록. 0개에서 5개까지 허용합니다.",
+            "description" : "완료 기준 최종 목록. 0개에서 5개까지 허용합니다.",
             "items" : {
               "$ref" : "#/components/schemas/ChecklistItemRequest"
             },
@@ -11574,7 +11574,7 @@
     },
     "/api/mobile/tasks/{taskId}" : {
       "get" : {
-        "description" : "태스크 상세 화면에 필요한 정보를 조회합니다. materials는 태스크에 연결된 관련자료이고 연결이 없으면 빈 배열입니다. open_questions, next_action은 backing source가 생기기 전까지 각각 빈 배열, null입니다.",
+        "description" : "태스크 상세 화면에 필요한 정보를 조회합니다. materials는 태스크에 연결된 관련 자료이고 연결이 없으면 빈 배열입니다. open_questions, next_action은 backing source가 생기기 전까지 각각 빈 배열, null입니다.",
         "operationId" : "mobileGetTask",
         "parameters" : [
           {
@@ -11828,7 +11828,7 @@
         ]
       },
       "patch" : {
-        "description" : "수정 화면이 저장한 편집 상태 전체로 태스크를 갱신합니다. 제목, 역할, 담당자, 우선순위, 상태, 목적, 완료기준을 한 번에 저장합니다. 담당자를 비우려면 assignee_id를 null로 보내고, 완료기준은 최종 목록으로 전체 교체하며 0개에서 5개까지 허용합니다. 저장만 하고 본문은 반환하지 않으므로, 저장 후 최신 상태는 태스크 상세 조회로 다시 읽습니다.",
+        "description" : "수정 화면이 저장한 편집 상태 전체로 태스크를 갱신합니다. 제목, 역할, 담당자, 우선순위, 상태, 목적, 완료 기준을 한 번에 저장합니다. 담당자를 비우려면 assignee_id를 null로 보내고, 완료 기준은 최종 목록으로 전체 교체하며 0개에서 5개까지 허용합니다. 저장만 하고 본문은 반환하지 않으므로, 저장 후 최신 상태는 태스크 상세 조회로 다시 읽습니다.",
         "operationId" : "mobileUpdateTask",
         "parameters" : [
           {
@@ -12087,7 +12087,7 @@
     },
     "/api/mobile/tasks/{taskId}/checklist-items/{itemId}" : {
       "patch" : {
-        "description" : "완료기준 항목 하나의 완료 상태를 변경합니다. 변경한 항목과 함께 태스크 전체 완료 수, 전체 수를 반환합니다.",
+        "description" : "완료 기준 항목 하나의 완료 상태를 변경합니다. 변경한 항목과 함께 태스크 전체 완료 수, 전체 수를 반환합니다.",
         "operationId" : "mobileToggleChecklistItem",
         "parameters" : [
           {
@@ -12101,7 +12101,7 @@
             }
           },
           {
-            "description" : "완료기준 항목 식별자",
+            "description" : "완료 기준 항목 식별자",
             "in" : "path",
             "name" : "itemId",
             "required" : true,
@@ -12365,7 +12365,7 @@
             "description" : "Bad Gateway"
           }
         },
-        "summary" : "완료기준 완료 상태 변경",
+        "summary" : "완료 기준 완료 상태 변경",
         "tags" : [
           "Mobile"
         ]

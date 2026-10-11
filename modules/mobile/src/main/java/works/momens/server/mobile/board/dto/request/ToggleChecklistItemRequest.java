@@ -8,6 +8,6 @@ import jakarta.validation.constraints.NotNull;
  *
  * <p>완료 상태를 그대로 지정하는 값이라 항상 채워야 합니다.
  */
-@Schema(description = "완료기준 완료 상태 변경 요청")
+@Schema(description = "완료 기준 완료 상태 변경 요청")
 public record ToggleChecklistItemRequest(
     @Schema(description = "완료 여부", example = "true") @NotNull Boolean completed) {}

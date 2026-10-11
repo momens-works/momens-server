@@ -51,9 +51,9 @@
 - `workspace`는 RBAC·label을 public API로 제공하고 `project`·`memory`·`source`·`minsu`가 사용한다.
 - `context`는 `entity_relations`를 읽어 연결된 식별자만 돌려준다. 지금은 도메인 모듈에 의존하지 않고,
   식별자로 본문을 채우는 조합은 소비하는 쪽이 한다(`mobile`이 `context`의 링크와 `source`의
-  source_ref 조회를 엮어 태스크 관련자료를 만든다).
+  source_ref 조회를 엮어 태스크 관련 자료를 만든다).
 - `mobile`은 `user`, `project`, `workspace`, `signal`, `context`, `source`, `notification`, `minsu`,
-  `auth`의 public API만 조합한다(bootstrap, 멤버 조회, 브리프, 태스크 관련자료, push 설치 등록·해제,
+  `auth`의 public API만 조합한다(bootstrap, 멤버 조회, 브리프, 태스크 관련 자료, push 설치 등록·해제,
   태스크 상세의 draft 생성 상태, 인증). 도메인 정책을 소유하지 않는다.
 - `mobile`의 `appupdate`는 다른 모듈을 조합하지 않고 모바일 앱의 최소 지원 버전 정책을 직접 소유합니다. 제품 도메인이 아니라 이미 배포된 모바일 앱과의 호환성을 관리하는 정책이며 영속성이 필요하지 않으므로 `mobile` 모듈에 둡니다(MOM-1012).
 - `web`은 `mobile`과 같은 자리의 표면 모듈이고 **같은 소유 원칙**을 따른다. 웹 클라이언트가 호출하는
@@ -272,10 +272,10 @@ projection도 함께 발생한다. 모델 언어와 변경 이유가 분리될 �
   생성이 쓰는 컬럼)로 시작했고, 상세(MOM-63)가 읽는 레거시 컬럼(description, assignee_id)을
   더했다. 모바일이 안 쓰는 레거시 컬럼(milestone_id, due_date)은 웹 이관에서 추가한다. role은
   레거시 tasks에 없는 신규 속성이지만 태스크당 하나만 선택하는 단일 값이라(MOM-76, 2026-07-07
-  확정) priority와 같은 방식으로 CHECK 제약을 둔 문자열 컬럼에 저장한다. 완료기준은 레거시에
+  확정) priority와 같은 방식으로 CHECK 제약을 둔 문자열 컬럼에 저장한다. 완료 기준은 레거시에
   없는 신규 테이블 `task_checklist_items`이고, Task aggregate 내부 자식이라 별도 repository
-  없이 Task를 통해서만 접근한다(prod 공유 스키마 반영은 컷오버 때 조율). 민수 산출물인 열린질문
-  (`task_open_questions`)과 다음행동(`tasks.next_action`)도 이 모듈이 소유하지만, 완료기준과 달리
+  없이 Task를 통해서만 접근한다(prod 공유 스키마 반영은 컷오버 때 조율). 민수 산출물인 열린 질문
+  (`task_open_questions`)과 다음 액션(`tasks.next_action`)도 이 모듈이 소유하지만, 완료 기준과 달리
   이 서버에 쓰기 경로가 없어 읽기 전용으로 매핑한다(MOM-0788). 민수 구현 전에는 같은 backing
   계약을 따르는 fixture가 채운다(ADR-0011). 모바일 보드·상세 조회 public API는
   `TaskReader`(listTasksByStatus, findDetail)와 `BoardTask`, `TaskDetail`이고, 어떤 상태를
@@ -433,7 +433,7 @@ dispatch`(`PushDispatcher`: 수신 설치별 발송 기록 enqueue와 발송 패
 - `GET /api/mobile/tasks/{taskId}`: project의 태스크 상세(`TaskReader.findDetail`)와 workspace
   멤버십(태스크가 속한 workspace 기준), user 프로필(담당자 이름)을 조합한다. purpose 개명
   (도메인 description), priority 매핑, 빈 값 고정(open_questions는 빈 배열, next_action은 null)은
-  조합 규칙이라 이 모듈이 소유한다(MOM-63). 관련자료는 context의 링크와 source의 원본을 조합해
+  조합 규칙이라 이 모듈이 소유한다(MOM-63). 관련 자료는 context의 링크와 source의 원본을 조합해
   채우고, 연결이 없으면 빈 배열이다(MOM-0779). 수정 계열은 MOM-75가 같은 `/tasks/*` 표면에
   추가한다. `draft_status`는 minsu의 `TaskDraftStatusReader`로 읽으며, **원장을 task보다 먼저
   읽는 순서가 계약이다**(MOM-0822, 비동기 생성 설계 7.3절). 역순이면 이전 title과 `ready`가 함께
@@ -463,7 +463,7 @@ dispatch`(`PushDispatcher`: 수신 설치별 발송 기록 enqueue와 발송 패
 - `bootstrap` — `GET /api/mobile/bootstrap`.
 - `roster` — `GET /api/mobile/projects/{projectId}/members`. `workspace`의 멤버십, `user`의 프로필
   결합과 헷갈리지 않도록 `members`가 아닌 `roster`로 이름 붙였다.
-- `board` — 태스크 보드·생성(`/api/mobile/projects/{projectId}/tasks`)과 태스크 상세·수정·완료기준
+- `board` — 태스크 보드·생성(`/api/mobile/projects/{projectId}/tasks`)과 태스크 상세·수정·완료 기준
   토글(`/api/mobile/tasks/{taskId}` 계열). `project`가 Task aggregate를 소유하는 `task` 하위 경계와
   이름이 겹치지 않도록 화면 이름을 따 `board`로 붙였다. priority 저장값 해석(`MobileTaskPriority`)은
   `brief`와 공유해 모듈 root에 둔다.
@@ -497,7 +497,7 @@ MOM-0887에서 다른 표면과 같은 형태로 맞췄다.
 - `signal_evidence`: Signal과 `source_refs`의 근거 연결 및 근거별 `대상`·`변화`·`영향`을 읽어 모바일
   상세 응답을 조립한다. 의미 값은 worker 또는 같은 backing 계약의 fixture가 생산한다(ADR-0011).
 - `signal_actions`: 사용자의 `convert-to-task`, `dismiss` 처리 기록과 멱등성을 소유한다.
-- `signal_digests`: 브리프의 시그널 요약 문단을 읽는다. 그날 신호 전체를 한 문단으로 요약한 민수
+- `signal_digests`: 브리프의 시그널 요약 문단을 읽는다. 그날 시그널 전체를 한 문단으로 요약한 민수
   산출물이라 서버는 쓰지 않고, 민수 구현 전에는 fixture가 채운다(ADR-0011). 조회 public API는
   `SignalDigestReader`이고 브리프가 시그널을 거르는 생성 시각 범위를 그대로 받는다. 문단과 그
   문단이 설명하는 시그널이 같은 기준으로 걸러져 어긋날 수 없다(ADR-0012). 시그널 한 건을 뜻하는
