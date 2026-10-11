@@ -433,8 +433,9 @@ production 코드 분기 대신 worker와 같은 backing 계약의 fixture를 �
   [Signal push 데모 설계](signal-push-demo-design.md)의 설치 등록·해제 절을 따른다.
 - 태스크 상세 확장 필드의 빈 값 정책은 이 문서의 「합성/파생 필드 응답 정책」과
   [모바일 API 명세](../spec/mobile-api.md)의 태스크 상세 절을 따른다.
-- Signal 처리 이력, Signal·evidence·Outbox의 상세 저장 구조는
-  [Signal action loop 설계](signal-action-loop-design.md)와 [모듈 맵](module-map.md)에서 관리한다.
+- Signal 처리 이력과 Signal·evidence의 현행 저장 구조는 [모듈 맵의 signal 절](module-map.md#signal),
+  Outbox의 현행 저장 구조와 이벤트별 멱등키는 [모듈 맵의 outbox 절](module-map.md#outbox)을 따른다.
+  [Signal action loop 설계](signal-action-loop-design.md)는 초기 결정 배경을 참고하는 문서다.
 - worker outbox 소비 상태, 재시도, DLQ 설계는 worker 소관이며, 이 서버 요구사항 문서에서 결정하지 않는다.
 
 ## 보류 항목

@@ -249,9 +249,9 @@ projection도 함께 발생한다. 모델 언어와 변경 이유가 분리될 �
 
 모듈은 모바일 read 기반(MOM-59)으로 시작했다. 현재 사실:
 
-- `projects` 테이블은 레거시 초기 형상에 모바일 스냅샷 컬럼(target_date, progress, summary)을
-  더한 범위만 만들었다. 제외한 레거시 컬럼(health_status, 카운트 컬럼, metadata, label)과
-  `project_owners`는 웹 이관(MOM-35 계열)에서 추가한다.
+- `Project`는 모바일 스냅샷 컬럼(target_date, progress, summary)과 웹 이관에서 추가한
+  레거시 컬럼(health_status, unresolved_count, voc_signal_count, last_context_at, metadata, label)을
+  매핑한다. 프로젝트 소유자는 `project_owners`의 `ProjectOwner`로 매핑한다.
 - project core의 조회 public API는 `ProjectReader`(workspaceIdOf, findSnapshot, listByWorkspaceIds)와
   `ProjectSnapshot`이다. projectId가 속한 workspace를 찾는 책임은 project core가 소유한다.
 - 진행률 계산은 task 하위 경계의 `TaskProgressReader`가 담당한다(`progressOf`, MOM-0800·MOM-0887).
@@ -270,7 +270,7 @@ projection도 함께 발생한다. 모델 언어와 변경 이유가 분리될 �
   (MOM-0779의 `material_count`와 같은 유형).
 - 태스크 도메인은 MOM-62에서 시작했다. `tasks` 테이블은 레거시와 호환되는 범위(모바일 보드와
   생성이 쓰는 컬럼)로 시작했고, 상세(MOM-63)가 읽는 레거시 컬럼(description, assignee_id)을
-  더했다. 모바일이 안 쓰는 레거시 컬럼(milestone_id, due_date)은 웹 이관에서 추가한다. role은
+  더했다. 웹 이관에서 추가한 레거시 컬럼(milestone_id, due_date)도 현재 매핑한다. role은
   레거시 tasks에 없는 신규 속성이지만 태스크당 하나만 선택하는 단일 값이라(MOM-76, 2026-07-07
   확정) priority와 같은 방식으로 CHECK 제약을 둔 문자열 컬럼에 저장한다. 완료 기준은 레거시에
   없는 신규 테이블 `task_checklist_items`이고, Task aggregate 내부 자식이라 별도 repository
