@@ -242,7 +242,8 @@ prod gate로 별도 추적한다.
 서버는 프로젝트 태스크 목록을 상태별로 조회할 수 있어야 한다.
 
 - 경로: `GET /api/mobile/projects/{projectId}/tasks`
-- 응답은 태스크를 `todo`, `in_progress`, `done` 그룹으로 표현할 수 있어야 한다.
+- 응답은 `todo`, `in_progress`, `done`, `backlog`, `cancelled` 다섯 그룹을 이 순서로 포함한다.
+- 태스크가 없는 그룹도 빈 배열로 포함하며, 각 그룹의 `count`는 `tasks` 배열 길이와 같다.
 - 태스크 카드에는 제목, role, priority, 관련 자료 개수를 표현할 수 있어야 한다.
 
 ### R-READ-005. 태스크 상세 조회
@@ -314,9 +315,12 @@ prod gate로 별도 추적한다.
 서버는 태스크 상세 상단 연필 아이콘에서 태스크를 수정할 수 있어야 한다.
 
 - 경로: `PATCH /api/mobile/tasks/{taskId}`
-- MVP 수정 범위는 제목, role, 담당자, 우선순위, 목적, 완료 기준이다.
-- 보내지 않은 필드는 변경하지 않아야 한다.
-- 담당자 제거는 `assignee_id: null`로 표현한다.
+- 수정 화면의 편집 가능한 필드 전체(제목, role, 담당자, 우선순위, status, 목적, 완료 기준)를 저장한다.
+- `title`, `role`, `priority`, `status`는 필수이며, 생략하면 `400 COMMON_VALIDATION_FAILED`로 응답한다.
+- `assignee_id`와 `purpose`를 생략하거나 null로 보내면 기존 값을 지운다. `purpose`는 빈 문자열도 허용한다.
+- `checklist_items`를 생략하거나 null로 보내면 빈 목록으로 처리해 기존 완료 기준을 모두 삭제한다.
+- 서버가 관리하는 `materials`, `open_questions`, `next_action`은 수정 요청에 포함하지 않으며 유지한다.
+- 요청·응답 예시는 [모바일 API 명세](../spec/mobile-api.md)의 태스크 수정 절을 따른다.
 - 완료 기준 수정은 기존 항목 제목 수정, 새 항목 추가, 기존 항목 삭제를 처리할 수 있어야 한다.
 
 ### R-ACTION-005. 태스크 체크리스트 토글
@@ -416,26 +420,30 @@ production 코드 분기 대신 worker와 같은 backing 계약의 fixture를 �
 
 ## 권한 요구사항
 
-- 모든 모바일 기능 API는 인증된 사용자만 접근할 수 있어야 한다.
+- 모바일 기능 API는 인증된 사용자만 접근할 수 있어야 한다. 단, 로그인 전에 호출하는
+  `GET /api/mobile/app-update`는 인증 없이 접근할 수 있는 공개 API다.
 - 프로젝트 리소스 접근은 프로젝트 또는 워크스페이스 멤버십/RBAC 기준으로 제한되어야 한다.
 - 인증/인가 실패 응답은 이 저장소의 Standard 에러 응답 규격을 따라야 한다.
 - 프로젝트 단위 role(`bootstrap`의 `projects[].role`, 멤버 조회 응답)은 별도 project 멤버 테이블 없이
   소속 workspace 멤버십 role로 매핑한다.
 
+## 별도 문서에서 관리하는 계약
+
+- FCM 디바이스 토큰 등록·해제 계약과 토큰 갱신·중복·폐기 정책은
+  [Signal push 데모 설계](signal-push-demo-design.md)의 설치 등록·해제 절을 따른다.
+- 태스크 상세 확장 필드의 빈 값 정책은 이 문서의 「합성/파생 필드 응답 정책」과
+  [모바일 API 명세](../spec/mobile-api.md)의 태스크 상세 절을 따른다.
+- Signal 처리 이력, Signal·evidence·Outbox의 상세 저장 구조는
+  [Signal action loop 설계](signal-action-loop-design.md)와 [모듈 맵](module-map.md)에서 관리한다.
+- worker outbox 소비 상태, 재시도, DLQ 설계는 worker 소관이며, 이 서버 요구사항 문서에서 결정하지 않는다.
+
 ## 보류 항목
 
-다음 항목은 요구사항 명세 단계에서 확정하지 않는다.
+다음 제품 요구사항은 별도 결정이 필요하다.
 
 - `Keep Watching` 액션의 사용자 플로우와 API 포함 여부
 - `record-decision`, `resolve`, `snooze`의 후속 모바일 사용자 플로우와 API 포함 여부
-- Signal 처리 이력의 내부 저장 구조
-- Signal 저장 테이블의 상세 스키마(이 문서는 제품/API 요구사항만 다루며, DB 상세 스키마는 별도 설계 산출물에서 관리한다)
-- Signal evidence 저장 테이블의 상세 스키마(이 문서는 제품/API 요구사항만 다루며, DB 상세 스키마는 별도 설계 산출물에서 관리한다)
-- Outbox 테이블의 상세 스키마(이 문서는 제품/API 요구사항만 다루며, DB 상세 스키마는 별도 설계 산출물에서 관리한다)
-- worker outbox 소비 상태, 재시도, DLQ 설계
-- FCM 디바이스 토큰 등록/해제 API 계약(경로, 요청 body, 토큰 회전/중복/폐기 정책)
 - Minsu suggestion 목 문구의 구체 값과 suggestion 생성 경계(task draft 경계는 ADR-0014에서 확정)
-- 태스크 상세 확장 필드가 비어 있을 때의 구체 응답 값 정책
 - bootstrap의 project 0개 응답 정책의 확정(R-READ-000의 2026-07-04 가결정안으로 구현했고, 기획
   확인 후 확정한다. 기본 project 선정 규칙은 2026-07-04에 기획이 임의 1개로 확인해 줬다)
 - 모바일 화면 재현용 테스트 데이터 세트

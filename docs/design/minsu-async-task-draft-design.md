@@ -664,7 +664,7 @@ CAS 조건에는 `deleted_at IS NULL`도 포함한다. 이 서버에는 아직 t
 
 미탐은 드물지 않다. `UpdateTaskCommand`는 "수정 화면이 저장할 때 편집 상태 전체를 보내므로
 title, role, priority, status, purpose는 항상 채워진 값으로 넘어온다". 즉 사용자가 purpose나
-완료기준만 고쳐 저장해도 title/role/priority는 fallback 값 그대로 다시 쓰이고, 그 뒤 도착한
+완료 기준만 고쳐 저장해도 title/role/priority는 fallback 값 그대로 다시 쓰이고, 그 뒤 도착한
 AI 결과가 title을 덮는다.
 
 그래도 미탐을 허용한다. 이 경우 사용자는 title을 건드리지 않았으므로 편집 의도가 사라지지
