@@ -43,13 +43,20 @@ Gradle 논리 경로는 `:user`, `:auth`처럼 평면으로 유지합니다.
 
 ## 모듈 경계
 
-- 모듈은 기본적으로 비즈니스 capability 기준으로 나눕니다.
-- 기술 계층(controller, service, repository 등)은 모듈 경계가 될 수 없습니다.
+모듈 경계는 다음 세 가지 기준에 따라 결정합니다([ADR-0025](../adr/0025-module-boundary-criteria.md)).
+
+1. **개념의 응집도:** 모듈은 응집된 개념을 기준으로 나누고, 이름은 팀에서 사용하는 도메인 용어로 정합니다. 각 모듈은 다른 모듈과 독립적으로 이해할 수 있어야 합니다. 그렇지 않다면 도메인 모델을 재검토해 개념을 분리하거나 누락된 개념을 찾아야 합니다.
+2. **Generic 영역의 분리:** 제품의 핵심 도메인에 속하지 않는 Generic 영역은 비즈니스 모듈과 분리해 공유 기반에 배치하고, 목적이 드러나는 인터페이스로 공개합니다. 공개 타입의 이름에는 특정 비즈니스 도메인이나 구현 수단에 종속된 용어를 사용하지 않습니다.
+3. **상태 소유 여부:** 공유 기반의 위치는 상태 소유 여부를 기준으로 정합니다. 자체 테이블과 aggregate를 소유하면 `modules/` 아래의 독립 모듈로 구성하고, 상태를 소유하지 않으면서 외부 연동이나 계산 기능을 제공하면 `common`에 배치합니다.
+
+이 기준을 적용할 때 다음 원칙과 예외를 함께 고려합니다.
+
 - bounded context는 모델과 언어의 의미가 달라질 때 보조 기준으로 사용합니다.
-- workflow는 1차 모듈 경계로 삼지 않습니다. 필요하면 각 capability의 public API만 조합하는
-  얇은 orchestration module로 두며, orchestration module은 도메인 정책을 소유하지 않습니다.
+- workflow는 필요하면 각 모듈의 public API만 조합하는 얇은 orchestration module로 두며, orchestration module은 도메인 정책을 소유하지 않습니다.
+- 기술 계층(controller, service, repository 등)은 모듈 경계가 될 수 없습니다.
 - 모듈별로 담당 영역을 나누지 않습니다. 모듈의 책임과 경계는 [모듈 맵](../design/module-map.md)에서,
   변경 영향을 검토할 때 필요한 의존 관계는 각 모듈의 `build.gradle`에서 확인합니다.
+- 클라이언트별 컨트롤러 모듈(`web`, `mobile`, `mcp`), orchestration module(`onboarding`), 실행 및 조립 모듈(`app`)에는 첫 번째 기준을 적용하지 않습니다. 이 모듈들은 도메인 모델을 소유하지 않기 때문입니다. HTTP 엔드포인트는 각 클라이언트별 모듈이 소유합니다.
 
 ## 모듈 내부 구조
 

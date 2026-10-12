@@ -6,7 +6,7 @@
 
 | # | 제목 | 상태 |
 | --- | --- | --- |
-| [0001](0001-modular-monolith-rules.md) | 모듈러 모놀리스 아키텍처 룰 | Accepted |
+| [0001](0001-modular-monolith-rules.md) | 모듈러 모놀리스 아키텍처 룰 | Accepted (결정 1의 모듈 경계 기준 중 비즈니스 capability 항목은 [0025](0025-module-boundary-criteria.md)로 개정) |
 | [0002](0002-gradle-multi-module-boundaries.md) | Gradle 멀티모듈을 물리 모듈 경계로 사용 | Accepted |
 | [0003](0003-auth-session-transport-model.md) | 인증 세션·전송 모델: 모바일/웹 하이브리드 | Accepted |
 | [0004](0004-token-issuance-verification-stack.md) | 토큰 발급·검증 스택: Resource Server + JOSE | Accepted |
@@ -30,3 +30,4 @@
 | [0022](0022-column-value-set-ownership.md) | 컬럼 허용 값의 관리 기준과 도메인 enum의 역할 | Accepted |
 | [0023](0023-mcp-oauth-migration-boundary-and-cutover.md) | MCP OAuth 인가 서버 모듈 경계와 재연결 전환 | Accepted (grant 관리 HTTP 표면은 [0024](0024-mcp-grant-web-surface.md)로 대체) |
 | [0024](0024-mcp-grant-web-surface.md) | MCP grant 관리의 웹 HTTP 표면 분리 | Accepted |
+| [0025](0025-module-boundary-criteria.md) | 모듈 경계를 정하는 기준 | Proposed |
