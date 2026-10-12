@@ -2,8 +2,7 @@
  * Notification 모듈 공개 API.
  *
  * <p>모듈 root package는 Spring Modulith 공개 표면이다(docs/rules/architecture.md). Signal 발생 push
- * notification의 소비·발송과 push 설치(FID/FCM token) lifecycle을 이 모듈이 소유한다
- * (docs/design/signal-push-demo-design.md, ADR-0009).
+ * notification의 소비·발송과 push 설치(FID/FCM token) lifecycle을 이 모듈이 소유한다 (ADR-0009).
  *
  * <ul>
  *   <li>설치 등록·해제 API — {@link works.momens.server.notification.PushDeviceRegistrar}. HTTP 표면({@code
@@ -16,6 +15,6 @@
  * {@code fcm}(외부 Firebase adapter). nested 간 협력은 {@code consume → dispatch}({@code
  * PushDispatcher}), {@code consume·dispatch → device}({@code PushInstallationDirectory}), {@code
  * dispatch → fcm}({@code FcmClient}) 단방향 계약으로만 한다. consumer와 발송기는 다른 모듈에 공개할 계약이 없고, outbox
- * 조회·Signal·Project hydrate·수신자 결정은 각 모듈의 public API를 사용한다(11.1절 의존 방향).
+ * 조회·Signal·Project hydrate·수신자 결정은 각 모듈의 public API를 사용한다.
  */
 package works.momens.server.notification;

@@ -29,7 +29,7 @@ final class MinsuObservability {
     }
   }
 
-  /** {@code mode}는 동기 요청 경로와 비동기 실행 경로를 나눠 보기 위한 tag다(설계 9.3절). 값이 둘뿐이라 카디널리티가 늘지 않는다. */
+  /** {@code mode}는 동기 요청 경로와 비동기 실행 경로를 나눠 보기 위한 tag다. 값이 둘뿐이라 카디널리티가 늘지 않는다. */
   Observation startProvider(ModelSelection selection, String promptVersion, GenerationMode mode) {
     return Observation.start(OBSERVATION_NAME, observationRegistry)
         .lowCardinalityKeyValue("provider", selection.provider())

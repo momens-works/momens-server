@@ -5,16 +5,13 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * 반영 창이 닫힌 미종료 원장을 닫는 주기(docs/design/minsu-async-task-draft-design.md 11.1절).
- *
- * <p>설계 11.1절이 "남은 행을 즉시 닫는 절차는 지표를 깨끗하게 유지하기 위한 것이며 구현 티켓에서 명령이나 쿼리로 구체화한다"고 남긴 항목이다.
+ * 반영 창이 닫힌 미종료 원장을 닫는 주기.
  *
  * <p><b>{@link MinsuDrainScheduler}와 달리 drain 축에 걸지 않는다.</b> 축을 끈 뒤 남은 {@code pending}이 cutoff를 지나는
  * 것이 바로 이 절차가 필요한 상황이라, 같은 조건을 걸면 정작 그때 돌지 않는다. 축이 켜져 있어도 scheduler가 밀리면 같은 일이 생긴다.
  *
  * <p>주기가 1분인 것은 이 값이 <b>지표의 정확도 상한</b>일 뿐이기 때문이다. cutoff를 지난 행이 gauge에 잡혀 있는 시간이 최대 그만큼이고, 사용자가 보는
- * 것에는 영향이 없다. 읽기 투영은 원장이 아니라 {@code read_deadline_at} 비교로 판정하므로 이 주기와 무관하게 {@code ready}를
- * 돌려준다(8.6절).
+ * 것에는 영향이 없다. 읽기 투영은 원장이 아니라 {@code read_deadline_at} 비교로 판정하므로 이 주기와 무관하게 {@code ready}를 돌려준다.
  */
 @Slf4j
 @Component

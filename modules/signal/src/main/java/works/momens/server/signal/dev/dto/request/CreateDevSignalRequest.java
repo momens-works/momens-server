@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.util.List;
 import works.momens.server.signal.SignalType;
 
-/** dev 데모용 Signal 생성 요청(docs/design/signal-push-demo-design.md 5.2·5.3절). */
+/** dev 데모용 Signal 생성 요청. */
 @Schema(description = "dev 데모용 Signal 생성 요청")
 public record CreateDevSignalRequest(
     @Schema(description = "Signal type", example = "risk") @NotNull SignalType type,

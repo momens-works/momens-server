@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import works.momens.server.minsu.draft.config.MinsuAsyncProperties.Execution;
 
 /**
- * 9.1절 부등식 {@code attempt 상한 < lease < apply_cutoff_at < read_deadline_at}을 부팅에서 강제하는지 검증한다.
+ * timeout 부등식 {@code attempt 상한 < lease < apply_cutoff_at < read_deadline_at}을 부팅에서 강제하는지 검증한다.
  *
  * <p>이 값들이 어긋났을 때의 실패는 조용하다. attempt 상한이 lease보다 길면 정상 실행 중 중복 호출이 생기고, lease가 apply cutoff보다 길면
  * 회수된 작업이 반영 창을 이미 지난 뒤에 재시도된다. 둘 다 관측에서 뒤늦게 드러나므로 부팅에서 막는다.
@@ -45,7 +45,7 @@ class MinsuAsyncPropertiesTest {
   @DisplayName("SDK timeout이 wall-clock 상한보다 크면 부팅에 실패한다")
   void rejectsProviderTimeoutLongerThanAttemptTimeout() {
     // 이 순서가 뒤집히면 상한이 먼저 터져 호출을 버리는데, 버려진 호출은 취소되지 않고 슬롯을 계속
-    // 점유한다(9.1절 포화).
+    // 점유한다.
     assertThatThrownBy(() -> execution(40, 30, 60))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("provider-timeout");
@@ -75,7 +75,7 @@ class MinsuAsyncPropertiesTest {
   void rejectsTimeoutOutsideSdkRange() {
     // 1ms 미만은 밀리초 변환에서 0이 되고, 상한 초과는 int 변환이 실행 시점에 터진다. 후자는
     // PROVIDER_ERROR로 분류돼 무효한 설정으로 claim과 재시도를 반복하는데, 이는 "설정이 무효하면
-    // claim하지 않는다"는 11.2절과 어긋난다.
+    // claim하지 않는다"는 규칙과 어긋난다.
     Duration overflow = Duration.ofMillis(Integer.MAX_VALUE).plusMillis(1);
     assertThatThrownBy(
             () ->

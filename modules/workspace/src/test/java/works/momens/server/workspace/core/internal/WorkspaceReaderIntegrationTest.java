@@ -27,7 +27,7 @@ import works.momens.server.workspace.membership.WorkspaceMembershipReader;
  * {@code WorkspaceReader} 공개 API를 검증합니다.
  *
  * <p>실제 PostgreSQL(Testcontainers) 환경에서 생성 시각 내림차순 정렬, ID 필터링, {@code description}이 {@code null}인
- * 경우의 동작을 검증합니다 ({@code docs/design/legacy-product-api-migration/slice-workspace-read.md} 4.3절).
+ * 경우의 동작을 검증합니다.
  *
  * <p>멤버십 조회는 다른 하위 도메인의 공개 API이므로 {@code @MockitoBean}으로 대체합니다. 실제 멤버십에 따라 목록이 필터링되는지는 애플리케이션 레벨 통합
  * 테스트인 {@code WebWorkspacesIntegrationTest}에서 검증합니다.

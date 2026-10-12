@@ -7,7 +7,7 @@
 #
 # 스키마 구간은 없다. prod 스키마 주도권이 이 서버로 넘어오면서(ADR-0019) 마이그레이션의
 # `-- prod-schema:` 헤더와 그것을 검사하던 릴리스 게이트를 폐지했다. 잘못된 마이그레이션은
-# 이제 배포 시점에 Flyway가 막는다. 폐지 경위는 docs/design/prod-schema-ownership-transfer.md 6절.
+# 이제 배포 시점에 Flyway가 막는다. 폐지 결정은 docs/adr/0019-prod-schema-ownership-transfer.md.
 #
 # 사용법:
 #   prod-readiness-ledger.sh --check          prod 필수 설정 선언을 검사한다

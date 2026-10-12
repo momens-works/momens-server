@@ -25,7 +25,7 @@ import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskStatus;
 
 /**
- * 조건부 draft 반영 public API 검증(MOM-0820, 설계 8.1절).
+ * 조건부 draft 반영 public API 검증(MOM-0820).
  *
  * <p>실제 PostgreSQL에서 baseline 일치 시 반영, 세 필드 중 하나라도 다를 때의 전부-아니면-전무, 소프트 삭제된 task 처리, 반영이 건드리지 않는
  * 필드를 확인합니다.
@@ -82,7 +82,7 @@ class TaskDraftApplierIntegrationTest extends AbstractPostgresIntegrationTest {
   @DisplayName("세 필드 중 하나라도 baseline과 다르면 draft 전체를 반영하지 않는다")
   void mismatchOnAnyFieldDiscardsTheWholeDraft() {
     // priority 하나만 달라진 경우다. 필드별로 나눠 일치하는 것만 반영하면 사용자가 판단한 priority를
-    // 전제로 쓰이지 않은 AI title이 함께 남아 draft가 사람과 모델의 혼합물이 된다(8.1절).
+    // 전제로 쓰이지 않은 AI title이 함께 남아 draft가 사람과 모델의 혼합물이 된다.
     UUID taskId = newTask();
     reload(taskId).update("초기 제목", TaskRole.PM, TaskPriority.HIGH, TaskStatus.TODO, "초기 목적", null);
     entityManager.flush();
@@ -102,7 +102,7 @@ class TaskDraftApplierIntegrationTest extends AbstractPostgresIntegrationTest {
   @DisplayName("소프트 삭제된 task에는 반영하지 않는다")
   void doesNotApplyToSoftDeletedTask() {
     // prod는 레거시 momens-api와 DB를 공유하므로 삭제가 레거시 쪽에서 일어날 수 있다. 세 필드만 비교하면
-    // 삭제된 행에 결과를 쓰고 성공으로 집계된다(8.1절).
+    // 삭제된 행에 결과를 쓰고 성공으로 집계된다.
     UUID taskId = newTask();
     softDelete(taskId);
 

@@ -320,7 +320,7 @@ class SignalActionServiceImplTest {
 
     assertThat(result.task().draftStatus()).isEqualTo(DraftStatus.GENERATING);
     // 역순이면 이전 title을 읽은 뒤 생성이 끝나 "이전 title + ready"가 나가고, 앱은 재조회를 멈춘 채
-    // 그 title에 영구히 갇힌다(설계 7.3절).
+    // 그 title에 영구히 갇힌다.
     InOrder order = inOrder(taskDraftStatusReader, taskReader);
     order.verify(taskDraftStatusReader).statusOf(taskId);
     order.verify(taskReader).findDetail(taskId);
@@ -426,7 +426,7 @@ class SignalActionServiceImplTest {
   @DisplayName("원장 적재 실패는 경합 흡수 경로로 삼키지 않고 그대로 전파한다")
   void propagatesLedgerEnrollmentFailureInsteadOfReplaying() {
     // 적재 실패는 트랜잭션 전체가 롤백돼 signal_actions도 남지 않는 신규 처리 실패이고, 커밋됐는데
-    // 응답만 유실된 replay와 장애 성격이 다르다(5.3절). 둘을 같은 경로로 흡수하면 분석이 어긋난다.
+    // 응답만 유실된 replay와 장애 성격이 다르다. 둘을 같은 경로로 흡수하면 분석이 어긋난다.
     SignalReader.Snapshot signal = snapshot();
     when(signalReader.findLive(SIGNAL_ID)).thenReturn(Optional.of(signal));
     when(workspaceMembershipReader.roleOf(WORKSPACE_ID, USER_ID))

@@ -3,7 +3,7 @@ package works.momens.server.notification;
 import java.util.UUID;
 
 /**
- * push 설치(FID/FCM token) 등록·해제 public API(docs/design/signal-push-demo-design.md 8절).
+ * push 설치(FID/FCM token) 등록·해제 public API.
  *
  * <p>Firebase Installation ID(FID)가 앱 설치본의 canonical identity이고, FCM registration token은 FID의 현재 전송
  * 주소다. 한 FID는 한 시점에 한 활성 사용자에게만 귀속된다.

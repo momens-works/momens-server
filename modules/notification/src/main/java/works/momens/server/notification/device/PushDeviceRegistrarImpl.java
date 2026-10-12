@@ -16,8 +16,8 @@ import works.momens.server.notification.PushInstallationPlatform;
 /**
  * push 설치 등록·해제 구현.
  *
- * <p>소유권 이전과 token 이동은 이전 연결 비활성화와 같은 트랜잭션에서 처리해 활성 token 부분 unique 제약 위반 없이 반영한다
- * (docs/design/signal-push-demo-design.md 8.4절). token 값은 로그에 남기지 않는다.
+ * <p>소유권 이전과 token 이동은 이전 연결 비활성화와 같은 트랜잭션에서 처리해 활성 token 부분 unique 제약 위반 없이 반영한다 . token 값은 로그에
+ * 남기지 않는다.
  */
 @Slf4j
 @Service

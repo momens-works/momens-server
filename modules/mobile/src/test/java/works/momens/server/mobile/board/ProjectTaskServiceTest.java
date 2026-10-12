@@ -207,7 +207,7 @@ class ProjectTaskServiceTest {
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(CommonErrorCode.AUTH_FORBIDDEN);
-    // 원장 조회는 deadline으로 닫는 경로에서 counter를 올린다(비동기 생성 설계 9.3절). 권한 없는
+    // 원장 조회는 deadline으로 닫는 경로에서 counter를 올린다. 권한 없는
     // 호출자가 경보 대상 지표를 건드리지 못하도록 권한 확인이 앞선다.
     verify(taskDraftStatusReader, never()).statusOf(any());
   }
@@ -224,7 +224,7 @@ class ProjectTaskServiceTest {
     MobileTaskDetailView view = projectTaskService.getTaskDetail(TASK_ID, CALLER_ID);
 
     assertThat(view.draftStatus()).isEqualTo(DraftStatus.GENERATING);
-    // 순서가 계약이다(설계 7.3절). 역순이면 이전 title과 ready가 함께 나가는 창이 열리고, 그때 앱은
+    // 순서가 계약이다. 역순이면 이전 title과 ready가 함께 나가는 창이 열리고, 그때 앱은
     // 재조회를 멈춰 갱신을 영구히 놓친다.
     InOrder order = inOrder(taskDraftStatusReader, taskReader);
     order.verify(taskDraftStatusReader).statusOf(TASK_ID);
@@ -233,7 +233,7 @@ class ProjectTaskServiceTest {
 
   @Test
   void getTaskDetailReturnsReadyWhenTaskHasNoLedgerRow() {
-    // 비동기 도입 이전·비활성·Signal을 거치지 않은 task가 여기 해당한다(설계 7.1절).
+    // 비동기 도입 이전·비활성·Signal을 거치지 않은 task가 여기 해당한다.
     when(taskDraftStatusReader.statusOf(TASK_ID)).thenReturn(DraftStatus.READY);
     when(taskReader.findScope(TASK_ID))
         .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));

@@ -20,7 +20,7 @@ import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
 
 /**
- * 시도 전체를 감싸는 wall-clock 상한과 포화 동작을 검증한다(MOM-0819, 설계 9.1절).
+ * 시도 전체를 감싸는 wall-clock 상한과 포화 동작을 검증한다(MOM-0819).
  *
  * <p>핵심은 <b>interrupt를 무시하는 호출</b>이다. SDK나 ADC 호출이 interrupt에 응답하지 않으면 {@code cancel(true)}는 효과가 없고
  * underlying thread는 계속 점유된다. 상한이 하는 일은 호출을 취소하는 것이 아니라 <b>호출자를 대기에서 푸는 것</b>이고, 그래야 원장에 결과를 남겨
@@ -72,9 +72,9 @@ class AsyncTaskDraftExecutorTest {
     List<AsyncGenerationResult> results = executor.executeAll(List.of(input("멈춘 호출")));
 
     assertThat(results).hasSize(1);
-    // 원장은 이를 retryable로 보고 백오프 뒤 다시 집는다(9.2절).
+    // 원장은 이를 retryable로 보고 백오프 뒤 다시 집는다.
     assertThat(results.getFirst().outcome()).isEqualTo(GenerationOutcome.TIMEOUT);
-    // 고정 fallback은 그대로 유효하다. 실패해도 tasks가 갖는 draft의 품질 하한은 내려가지 않는다(8.5절).
+    // 고정 fallback은 그대로 유효하다. 실패해도 tasks가 갖는 draft의 품질 하한은 내려가지 않는다.
     assertThat(results.getFirst().draft().title()).isEqualTo("멈춘 호출");
     assertThat(Duration.ofNanos(System.nanoTime() - startedAt))
         .isLessThan(ATTEMPT_TIMEOUT.multipliedBy(4));
@@ -90,7 +90,7 @@ class AsyncTaskDraftExecutorTest {
     executor.executeAll(List.of(input("하나"), input("둘")));
 
     // 상한이 지나 호출자는 풀려났지만 interrupt를 무시하는 호출은 여전히 스레드를 잡고 있다. 설계가
-    // 수용한 포화가 이 상태다(9.1절). 슬롯이 0이면 다음 주기는 아무것도 claim하지 않으므로, 실행하지도
+    // 수용한 포화가 이 상태다. 슬롯이 0이면 다음 주기는 아무것도 claim하지 않으므로, 실행하지도
     // 못할 작업이 시도 횟수만 소모하는 일은 생기지 않는다.
     assertThat(executor.availableSlots()).isZero();
 

@@ -32,7 +32,7 @@ class MomensServerApplicationTests extends AbstractPostgresIntegrationTest {
   void contextLoadsWithMinsuDisabledByDefault() {
     assertThat(signalTaskDraftGenerator).isNotNull();
     assertThat(environment.getProperty("momens.minsu.task-draft.enabled", Boolean.class)).isFalse();
-    // 비동기 생성의 나머지 두 축도 기본 비활성이다(MOM-0817, 설계 11.2절).
+    // 비동기 생성의 나머지 두 축도 기본 비활성이다(MOM-0817).
     assertThat(environment.getProperty("momens.minsu.task-draft.async.enroll", Boolean.class))
         .isFalse();
     assertThat(environment.getProperty("momens.minsu.task-draft.async.drain", Boolean.class))

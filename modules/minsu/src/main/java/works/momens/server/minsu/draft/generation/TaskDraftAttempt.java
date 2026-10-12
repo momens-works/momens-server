@@ -28,7 +28,7 @@ import works.momens.server.project.task.TaskRole;
  * 차이는 설정 축을 켜고 끌 때마다 나타난다. 다르게 두는 것은 timeout과 관측 tag뿐이다({@link GenerationMode}).
  *
  * <p>실패를 예외로 올리지 않고 {@link Result}로 돌려주는 것도 공유의 조건이다. 동기 호출자는 항상 유효한 draft가 필요하고 비동기 호출자는 재시도 판정이
- * 필요한데, 둘을 동시에 만족시키는 형태가 draft와 outcome을 함께 돌려주는 것이다(9.2절).
+ * 필요한데, 둘을 동시에 만족시키는 형태가 draft와 outcome을 함께 돌려주는 것이다.
  */
 @Slf4j
 @Component
@@ -59,8 +59,8 @@ class TaskDraftAttempt {
   /**
    * convert 시점 입력만으로 정해지는 고정 draft.
    *
-   * <p>비동기 경로에서는 이 값이 그대로 {@code tasks}에 쓰이고 원장의 반영 baseline이 된다(8.1절). 어떤 경로로 끝나든 사용자가 보는 것은 최소한 이
-   * draft이므로, 비동기 전환은 가용성의 하한을 내리지 않는다(8.5절).
+   * <p>비동기 경로에서는 이 값이 그대로 {@code tasks}에 쓰이고 원장의 반영 baseline이 된다. 어떤 경로로 끝나든 사용자가 보는 것은 최소한 이
+   * draft이므로, 비동기 전환은 가용성의 하한을 내리지 않는다.
    */
   static TaskDraft fallbackOf(SignalTaskDraftInput input) {
     return new TaskDraft(

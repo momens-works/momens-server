@@ -124,7 +124,7 @@ class SignalActionServiceImpl implements SignalActionService {
               "processed_action", existing.getActionType()));
     }
     if (requestedActionType == SignalActionType.CONVERT_TO_TASK) {
-      // 원장을 task보다 먼저 읽는다(7.3절). 역순이면 fallback title을 읽은 뒤 scheduler가 끝나는 창에서
+      // 원장을 task보다 먼저 읽는다. 역순이면 fallback title을 읽은 뒤 scheduler가 끝나는 창에서
       // "fallback title + ready"가 나오고, 앱은 재조회를 멈춘 채 그 title에 영구히 갇힌다.
       DraftStatus draftStatus = taskDraftStatusReader.statusOf(existing.getResultTaskId());
       TaskDetail detail =

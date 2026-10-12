@@ -112,7 +112,7 @@ class TaskControllerTest {
         .andExpect(jsonPath("$.open_questions[0].id").value(QUESTION_ID.toString()))
         .andExpect(jsonPath("$.open_questions[0].body").value("권한 거부 시 대체 흐름을 둘지 검토 필요"))
         .andExpect(jsonPath("$.next_action").value("권한 거부 흐름을 PM과 확정한 뒤 화면 카피를 수정하세요."))
-        // 원장이 아직 열려 있으면 앱은 이 값을 보고 재조회한다(설계 7.2절).
+        // 원장이 아직 열려 있으면 앱은 이 값을 보고 재조회한다.
         .andExpect(jsonPath("$.draft_status").value("generating"));
   }
 

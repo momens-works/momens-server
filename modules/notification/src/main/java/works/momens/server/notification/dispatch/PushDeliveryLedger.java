@@ -17,11 +17,10 @@ import works.momens.server.notification.device.PushInstallationDirectory.Install
 import works.momens.server.notification.fcm.FcmClient.FcmSendResult;
 
 /**
- * delivery 클레임·결과 기록 트랜잭션(docs/design/signal-push-demo-design.md 10.3절).
+ * delivery 클레임·결과 기록 트랜잭션.
  *
  * <p>클레임 트랜잭션 안에서 시도 횟수와 처리 lease를 먼저 commit하고, FCM 호출은 트랜잭션 밖({@link PushSender})에서 수행한다. 일시 실패
- * 결과를 기록할 때 lease를 실제 재시도 백오프로 교체한다. 서버가 전송 전에 종료되면 lease 만료 후 재시도되며 이는 at-least-once 특성 안에
- * 있다(10.4절).
+ * 결과를 기록할 때 lease를 실제 재시도 백오프로 교체한다. 서버가 전송 전에 종료되면 lease 만료 후 재시도되며 이는 at-least-once 특성 안에 있다.
  */
 @Slf4j
 @Component
@@ -43,7 +42,7 @@ class PushDeliveryLedger {
 
   /**
    * 재시도 시각이 지난 pending delivery를 클레임한다. 전송 직전 installation이 활성이고 소유 사용자가 대상 사용자와 같은지 다시 확인해, FID가
-   * 다른 사용자에게 이전됐으면 cancelled 처리로 계정 간 오발송을 막는다(10.2절).
+   * 다른 사용자에게 이전됐으면 cancelled 처리로 계정 간 오발송을 막는다.
    */
   @Transactional
   public List<ClaimedPushDelivery> claimDue(int limit) {
@@ -103,7 +102,7 @@ class PushDeliveryLedger {
     return renewed;
   }
 
-  /** token별 전송 결과를 기록한다. 무효 token은 재시도하지 않고 설치를 비활성화한다(10.3절). */
+  /** token별 전송 결과를 기록한다. 무효 token은 재시도하지 않고 설치를 비활성화한다. */
   @Transactional
   public void record(List<ClaimedPushDelivery> claims, List<FcmSendResult> results) {
     Instant recordedAt = pushDeliveryRepository.currentDatabaseTime();

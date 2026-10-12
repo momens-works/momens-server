@@ -16,7 +16,7 @@ import works.momens.server.mobile.board.MobileTaskDetailView;
  * 없으면 빈 배열이고, 다음행동을 아직 만들지 않았으면 null입니다.
  *
  * <p>{@code draft_status}는 이 태스크의 제목을 AI가 더 손볼 것이 남았는지를 알립니다(MOM-0822). 앱이 결과를 확인하는 경로는 convert 응답과
- * 이 상세 둘뿐이고, 보드·목록에는 노출하지 않습니다(설계 7.2절).
+ * 이 상세 둘뿐이고, 보드·목록에는 노출하지 않습니다.
  */
 @Schema(description = "작업 상세 응답")
 public record TaskDetailResponse(

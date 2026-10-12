@@ -7,7 +7,7 @@ import java.util.UUID;
  * project 모듈의 마일스톤 조회 public API.
  *
  * <p>마일스톤은 {@code project_id}만 갖고 워크스페이스를 직접 알지 못하므로, 조회가 project를 거쳐 올라갑니다. 그래서 별도 모듈이 아니라 project
- * 모듈이 소유합니다(웹 snapshot 계약 5절).
+ * 모듈이 소유합니다(MOM-0856).
  *
  * <p>소프트 삭제된 마일스톤은 없는 것으로 취급하며, 소속 project가 소프트 삭제된 마일스톤도 마찬가지입니다.
  *

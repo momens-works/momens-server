@@ -12,7 +12,7 @@ import works.momens.server.minsu.draft.generation.AsyncGenerationResult;
 import works.momens.server.minsu.draft.generation.AsyncTaskDraftExecutor;
 
 /**
- * 생성 원장 drain(docs/design/minsu-async-task-draft-design.md 8.5·11.2·11.3절).
+ * 생성 원장 drain.
  *
  * <p>drain 축이 꺼져 있으면 이 빈이 등록되지 않아 폴링 자체가 없다. 스케줄링 인프라는 조립 모듈 {@code app}이 항상 켜므로(MOM-0816) 이
  * scheduler는 {@code notification}의 push 설정과 무관하게 자신의 설정 축만으로 동작 여부가 정해진다.
@@ -66,7 +66,7 @@ class MinsuDrainScheduler {
       // 정상으로 보인다.
       lastSuccessNanos = System.nanoTime();
     } catch (RuntimeException e) {
-      // claim은 커밋됐고 결과 기록만 실패했을 수 있다. 그 원장은 lease 만료 후 회수된다(8.5절).
+      // claim은 커밋됐고 결과 기록만 실패했을 수 있다. 그 원장은 lease 만료 후 회수된다.
       log.error("Minsu draft drain 주기 실패", e);
     }
   }
@@ -77,14 +77,14 @@ class MinsuDrainScheduler {
 
   private void runPass() {
     if (!configStatus.enabled() || !configStatus.valid()) {
-      // provider가 비활성이거나 설정이 무효면 claim하지 않는다(11.2절). 원장은 pending 그대로 두고
+      // provider가 비활성이거나 설정이 무효면 claim하지 않는다. 원장은 pending 그대로 두고
       // completion_reason을 기록하지 않는다. 설정을 고치면 그대로 이어서 처리할 수 있는 작업을 종료로
       // 기록하면 되살릴 방법이 없기 때문이다. 그 전에 read_deadline_at이 지나면 읽기 투영이 닫는다.
       return;
     }
     int slots = executor.availableSlots();
     if (slots == 0) {
-      // 멈춘 호출이 슬롯을 모두 점유한 상태다(9.1절 포화). 여기서 claim하면 실행되지 못한 작업이 시도
+      // 멈춘 호출이 슬롯을 모두 점유한 상태다. 여기서 claim하면 실행되지 못한 작업이 시도
       // 횟수만 소모한다.
       return;
     }

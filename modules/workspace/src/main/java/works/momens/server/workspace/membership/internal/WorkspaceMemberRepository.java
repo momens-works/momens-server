@@ -14,7 +14,7 @@ interface WorkspaceMemberRepository extends JpaRepository<WorkspaceMember, Works
   Optional<WorkspaceMember> findByWorkspaceIdAndUserId(UUID workspaceId, UUID userId);
 
   /**
-   * 웹 snapshot 계약 문서 4.4절에서 확정한 {@code created_at ASC, user_id ASC} 순서로 멤버십을 조회합니다.
+   * MOM-0856에서 확정한 {@code created_at ASC, user_id ASC} 순서로 멤버십을 조회합니다.
    *
    * <p>사용자 식별자 비교를 SQL에서 처리하는 이유는 Java의 {@link java.util.UUID} 비교가 상위 64비트를 부호 있는 값으로 다뤄
    * PostgreSQL의 {@code uuid} 정렬과 다른 결과를 낼 수 있기 때문입니다. 멤버십 목록을 조회하는 두 public API가 해당 메서드를 함께 사용해 동일한

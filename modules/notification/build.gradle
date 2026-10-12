@@ -12,7 +12,7 @@ dependencies {
 
     // 공유 영속성 베이스(BaseEntity)와 공유 에러 계약(BusinessException).
     implementation project(':common')
-    // signal.created consumer 의존 방향(docs/design/signal-push-demo-design.md 11.1절).
+    // signal.created consumer 의존 방향.
     // outbox: consumer 조회 public API. signal: Signal hydrate. project: 프로젝트명 조회.
     // workspace: 수신자(멤버십) 결정.
     implementation project(':outbox')
@@ -25,7 +25,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-annotations'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     // FCM 발송에 사용합니다. Spring Boot BOM 관리 대상이 아니므로 버전 카탈로그에서 버전을
-    // 고정합니다. 인증은 ADC를 사용합니다(12절).
+    // 고정합니다. 인증은 ADC를 사용합니다.
     implementation libs.firebase.admin
 
     compileOnly 'org.projectlombok:lombok'

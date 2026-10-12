@@ -35,7 +35,7 @@ final class DefaultGoogleSdkClient implements GoogleSdkClient {
             .responseMimeType("application/json")
             .responseSchema(responseSchema(request.responseFields()))
             .systemInstruction(Content.fromParts(Part.fromText(request.systemInstruction())))
-            // 요청별 timeout(9.1절). client는 하나를 캐시해 재사용하므로 client-level 값으로는 동기와
+            // 요청별 timeout. client는 하나를 캐시해 재사용하므로 client-level 값으로는 동기와
             // 비동기가 다른 값을 가질 수 없다. apiVersion·retryOptions까지 포함해 통째로 넘기는 것은
             // 요청 옵션과 client 옵션의 병합 방식에 기대지 않기 위해서다.
             .httpOptions(DefaultGoogleClientFactory.httpOptions(timeout))

@@ -23,7 +23,7 @@ import works.momens.server.minsu.draft.config.MinsuAsyncProperties;
 import works.momens.server.minsu.draft.config.MinsuAsyncProperties.Execution;
 
 /**
- * 비동기 경로의 실행기(docs/design/minsu-async-task-draft-design.md 9.1절).
+ * 비동기 경로의 실행기.
  *
  * <p>SDK timeout만으로는 부족하다. {@code HttpOptions.timeout}은 OkHttp {@code Call} 구간에만 걸리고 ADC 탐색·client
  * 생성·token refresh는 그 밖이라, 전단에서 멈춘 호출은 아무도 기다리지 않는 비동기에서 그대로 남는다. 그래서 <b>시도 전체를 감싸는 wall-clock
@@ -49,7 +49,7 @@ public class AsyncTaskDraftExecutor implements DisposableBean {
   private final ThreadPoolExecutor pool;
 
   /**
-   * 상한을 넘겼는데도 아직 반환하지 않은 시도 수(9.1절의 포화).
+   * 상한을 넘겼는데도 아직 반환하지 않은 시도 수.
    *
    * <p>{@link #availableSlots()}가 {@code activeCount} 기반이라 이 값이 곧 <b>영구히 잃은 슬롯 수</b>다. 동시성 설정에 도달하면
    * claim이 완전히 멈춘다. 시도 횟수 분포만 보면 이 상태가 재시도처럼 보이므로 둘을 같이 봐야 한다.
@@ -90,7 +90,7 @@ public class AsyncTaskDraftExecutor implements DisposableBean {
   /**
    * 시도를 병렬로 실행하고 입력과 같은 순서로 결과를 돌려준다. 호출자는 {@link #availableSlots()} 이하만 넘겨야 한다.
    *
-   * <p>상한을 넘긴 시도는 {@code TIMEOUT}으로 판정한다. 원장은 이를 retryable로 보고 백오프 뒤 다시 집는다(9.2절).
+   * <p>상한을 넘긴 시도는 {@code TIMEOUT}으로 판정한다. 원장은 이를 retryable로 보고 백오프 뒤 다시 집는다.
    */
   public List<AsyncGenerationResult> executeAll(List<SignalTaskDraftInput> inputs) {
     Execution execution = asyncProperties.execution();
@@ -146,7 +146,7 @@ public class AsyncTaskDraftExecutor implements DisposableBean {
           "Minsu 비동기 시도가 wall-clock 상한을 넘겨 결과를 버립니다 durationMs={}", elapsedMillis(startedAtNanos));
       return timedOut(input);
     } catch (InterruptedException e) {
-      // 종료 중이다. 원장은 processing으로 남고 lease 만료 후 다음 인스턴스가 회수한다(8.5절).
+      // 종료 중이다. 원장은 processing으로 남고 lease 만료 후 다음 인스턴스가 회수한다.
       Thread.currentThread().interrupt();
       future.cancel(true);
       markHungIfUnsettled(settled);

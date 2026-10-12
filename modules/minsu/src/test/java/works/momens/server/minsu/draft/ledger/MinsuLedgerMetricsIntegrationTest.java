@@ -23,7 +23,7 @@ import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 
 /**
- * 원장 운영 지표를 실제 PostgreSQL로 검증한다(MOM-0821, 설계 9.3절).
+ * 원장 운영 지표를 실제 PostgreSQL로 검증한다(MOM-0821).
  *
  * <p>집계가 SQL에 있으므로 실제 DB로 봐야 의미가 있다. {@code FILTER} 절과 {@code NOW()} 비교, 미종료로 스캔을 좁히는 WHERE가 모두 여기서
  * 확정된다.

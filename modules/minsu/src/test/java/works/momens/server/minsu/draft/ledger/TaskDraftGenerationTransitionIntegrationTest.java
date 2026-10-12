@@ -17,7 +17,7 @@ import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 
 /**
- * 엔티티 전이가 마이그레이션의 CHECK를 만족하는지 실제 PostgreSQL로 검증한다(MOM-0819, 설계 7.1절).
+ * 엔티티 전이가 마이그레이션의 CHECK를 만족하는지 실제 PostgreSQL로 검증한다(MOM-0819).
  *
  * <p>MOM-0817의 제약 테스트는 native update로 불변식을 <b>위반</b>시켜 DB가 막는지 봤다. 여기서는 반대 방향으로, 코드가 실제로 수행하는 전이가 그
  * 제약을 <b>통과</b>하는지 본다. 두 방향이 모두 있어야 제약이 과하게 좁은 경우와 넓은 경우를 다 잡는다.
@@ -49,7 +49,7 @@ class TaskDraftGenerationTransitionIntegrationTest extends AbstractPostgresInteg
 
     assertAll(
         () -> assertThat(generation.getStatus()).isEqualTo("processing"),
-        // 시도 횟수는 claim 시점에 오른다(7.1절). 결과 기록 시점에 올리면 claim 후 죽은 시도가 세지
+        // 시도 횟수는 claim 시점에 오른다. 결과 기록 시점에 올리면 claim 후 죽은 시도가 세지
         // 않아 상한에 영원히 도달하지 못한다.
         () -> assertThat(generation.getAttemptCount()).isEqualTo(1),
         () -> assertThat(generation.getClaimToken()).isEqualTo(token),
@@ -138,7 +138,7 @@ class TaskDraftGenerationTransitionIntegrationTest extends AbstractPostgresInteg
     assertAll(
         () -> assertThat(generation.isPastApplyCutoff(cutoff.minusMillis(1))).isFalse(),
         // 경계 자체는 지난 것으로 본다. 읽기 투영보다 margin만큼 이른 시각이므로 여기서 멈춰야
-        // ready + fallback title 인터리빙이 열리지 않는다(8.6절).
+        // ready + fallback title 인터리빙이 열리지 않는다.
         () -> assertThat(generation.isPastApplyCutoff(cutoff)).isTrue(),
         () -> assertThat(generation.isPastApplyCutoff(cutoff.plusMillis(1))).isTrue());
   }

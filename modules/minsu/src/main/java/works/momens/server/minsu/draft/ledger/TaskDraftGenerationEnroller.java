@@ -12,7 +12,7 @@ import works.momens.server.minsu.draft.config.MinsuAsyncProperties;
 import works.momens.server.minsu.draft.json.MinsuJson;
 
 /**
- * 생성 원장 적재(docs/design/minsu-async-task-draft-design.md 5.3절).
+ * 생성 원장 적재.
  *
  * <p>호출자(convert)의 쓰기 트랜잭션 안에서 실행된다. 원장 insert는 {@code tasks}·{@code signal_actions}와 <b>같은</b>
  * 트랜잭션이어야 하고, 별도 경계를 만들면 롤백이 갈려 fail-closed가 깨진다. 활성 트랜잭션 요구는 공개 진입점인 {@link
@@ -44,11 +44,10 @@ public class TaskDraftGenerationEnroller {
   }
 
   /**
-   * {@code pending} 원장을 적재한다. baseline은 준비 결과가 들고 있는 draft이고, 호출자가 그것을 {@code tasks}에 썼다는 것이
-   * 계약이다(8.1절).
+   * {@code pending} 원장을 적재한다. baseline은 준비 결과가 들고 있는 draft이고, 호출자가 그것을 {@code tasks}에 썼다는 것이 계약이다.
    *
    * <p>{@code saveAndFlush}로 즉시 flush하는 이유는 실패를 <b>이 호출 안에서</b> 잡기 위해서다. 지연 flush에 맡기면 제약 위반이 커밋
-   * 시점에 터져 호출자의 다른 제약 위반과 구분되지 않는다(5.3절이 구분하라고 한 두 실패 경로).
+   * 시점에 터져 호출자의 다른 제약 위반과 구분되지 않는다.
    */
   public void enroll(PreparedTaskDraft prepared, UUID taskId, UUID workspaceId) {
     if (!(prepared instanceof LedgerBoundDraft bound)) {

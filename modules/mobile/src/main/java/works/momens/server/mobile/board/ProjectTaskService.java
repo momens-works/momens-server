@@ -82,15 +82,15 @@ class ProjectTaskService {
   }
 
   /**
-   * 태스크 상세를 조합한다. <b>원장 상태를 task보다 먼저 읽는다</b>(설계 7.3절). 순서를 뒤집으면 fallback title을 읽은 뒤 생성이 끝나는 창에서
-   * "이전 title + {@code ready}"가 나가고, 앱은 재조회를 멈춰 갱신을 영구히 놓친다. 반대 순서에서 나올 수 있는 "새 title + {@code
-   * generating}"은 앱이 한 번 더 조회할 뿐이라 안전하다.
+   * 태스크 상세를 조합한다. <b>원장 상태를 task보다 먼저 읽는다</b>. 순서를 뒤집으면 fallback title을 읽은 뒤 생성이 끝나는 창에서 "이전 title
+   * + {@code ready}"가 나가고, 앱은 재조회를 멈춰 갱신을 영구히 놓친다. 반대 순서에서 나올 수 있는 "새 title + {@code generating}"은
+   * 앱이 한 번 더 조회할 뿐이라 안전하다.
    *
    * <p>이 성질은 {@code READ COMMITTED}에서 두 SELECT가 각자 snapshot을 뜨는 데 기댄다. 격리 수준을 올리거나 두 값을 한 번에 뜨도록
    * 최적화하면 순서만으로는 정합성이 유지되지 않는다.
    *
-   * <p>권한은 상세가 아니라 {@code workspaceIdOf}로 먼저 확인한다. 원장 조회가 deadline으로 닫는 경로에서 counter를 올리므로(비동기 생성
-   * 설계 9.3절), 권한 없는 호출자가 경보 대상 지표를 건드리게 두지 않기 위해서다. 그 조회는 title을 읽지 않아 위 순서 계약과 무관하다.
+   * <p>권한은 상세가 아니라 {@code workspaceIdOf}로 먼저 확인한다. 원장 조회가 deadline으로 닫는 경로에서 counter를 올리므로, 권한 없는
+   * 호출자가 경보 대상 지표를 건드리게 두지 않기 위해서다. 그 조회는 title을 읽지 않아 위 순서 계약과 무관하다.
    */
   @Transactional(readOnly = true)
   public MobileTaskDetailView getTaskDetail(UUID taskId, UUID userId) {

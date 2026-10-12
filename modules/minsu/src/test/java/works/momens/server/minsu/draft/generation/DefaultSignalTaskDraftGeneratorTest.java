@@ -214,7 +214,7 @@ class DefaultSignalTaskDraftGeneratorTest {
 
   @Test
   void doesNotCallProviderWhenAsyncEnrollIsEnabled() {
-    // 이 설계의 목적 자체다(5.5절). 비동기 활성인데 요청 경로에서 provider를 부르면 8초 예산이 그대로 남는다.
+    // 이 설계의 목적 자체다. 비동기 활성인데 요청 경로에서 provider를 부르면 8초 예산이 그대로 남는다.
     SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
     CapturingClient client = responding(success("{}"));
 
@@ -225,7 +225,7 @@ class DefaultSignalTaskDraftGeneratorTest {
     assertAll(
         () -> assertThat(client.calls()).isZero(),
         () -> assertThat(prepared.draft()).isEqualTo(fallback()),
-        // 적재기가 draft와 입력 snapshot을 함께 봉인한다. baseline은 여기서 정해진다(8.1절).
+        // 적재기가 draft와 입력 snapshot을 함께 봉인한다. baseline은 여기서 정해진다.
         () -> verify(enroller).bind(fallback(), input()),
         () ->
             assertThat(
@@ -254,7 +254,7 @@ class DefaultSignalTaskDraftGeneratorTest {
     PreparedTaskDraft prepared = generator.prepare(input());
     generator.enroll(prepared, taskId, workspaceId);
 
-    // 준비 결과를 손대지 않고 그대로 넘긴다. baseline은 그 안에 이미 봉인돼 있다(8.1절).
+    // 준비 결과를 손대지 않고 그대로 넘긴다. baseline은 그 안에 이미 봉인돼 있다.
     verify(enroller).enroll(prepared, taskId, workspaceId);
   }
 
@@ -273,7 +273,7 @@ class DefaultSignalTaskDraftGeneratorTest {
 
   @Test
   void doesNotEnrollWhenProviderIsDisabledEvenIfEnrollIsOn() {
-    // 11.2절의 파생 규칙. 생성할 수단이 없는데 원장만 쌓이면 deadline까지 generating으로 남았다 닫힐 뿐이다.
+    // 생성할 수단이 없는데 원장만 쌓이면 deadline까지 generating으로 남았다 닫힐 뿐이다.
     CapturingClient client = responding(success("{}"));
 
     PreparedTaskDraft prepared =
@@ -331,7 +331,7 @@ class DefaultSignalTaskDraftGeneratorTest {
                     "provider=google",
                     "model=gemini-3.5-flash-lite",
                     "prompt.version=signal-task-draft-v1",
-                    // 동기 요청 경로와 비동기 실행 경로를 나눠 보기 위한 tag(9.3절).
+                    // 동기 요청 경로와 비동기 실행 경로를 나눠 보기 위한 tag.
                     "mode=sync",
                     "outcome=generated",
                     "fallback.reason=none",

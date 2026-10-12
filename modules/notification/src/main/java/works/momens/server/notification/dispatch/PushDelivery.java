@@ -15,7 +15,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
- * 기기별 push 발송 상태(docs/design/signal-push-demo-design.md 10.2절).
+ * 기기별 push 발송 상태.
  *
  * <p>{@code (outbox_event_id, installation_id)} 복합 PK가 동일 event의 기기별 중복 materialization을 막으므로 공유
  * 베이스 엔티티(UUID PK)를 상속하지 않는다. 행 생성은 native {@code ON CONFLICT DO NOTHING} insert가 담당하고, JPA는 클레임·상태
@@ -72,7 +72,7 @@ public class PushDelivery {
     return attemptCount >= MAX_ATTEMPTS;
   }
 
-  /** 전송 시도를 클레임한다. 시도 횟수와 claim token, 처리 lease 만료 시각을 기록한다(10.3절). */
+  /** 전송 시도를 클레임한다. 시도 횟수와 claim token, 처리 lease 만료 시각을 기록한다. */
   void claimAttempt(UUID claimToken, Instant leaseUntil) {
     this.attemptCount++;
     this.claimToken = claimToken;
@@ -106,7 +106,7 @@ public class PushDelivery {
     this.failureCategory = failureCategory;
   }
 
-  /** 계정 간 오발송 방지 등 전송 대상에서 제외한다(10.2절). */
+  /** 계정 간 오발송 방지 등 전송 대상에서 제외한다. */
   void cancel(String failureCategory) {
     this.status = DeliveryStatus.CANCELLED.value();
     this.claimToken = null;

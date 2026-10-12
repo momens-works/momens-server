@@ -33,12 +33,11 @@ import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
 /**
- * dev Signal 생성 API부터 FCM 발송 직전(adapter 경계)까지의 수직 흐름 통합 테스트(docs/design/signal-push-demo-design.md
- * 1절의 데모 완료 흐름).
+ * dev Signal 생성 API부터 FCM 발송 직전(adapter 경계)까지의 수직 흐름 통합 테스트.
  *
  * <p>실토큰과 실제 PostgreSQL로 기기 등록 → dev Signal 생성(원자 저장) → consumer materialization → 발송 패스까지 끝까지
- * 확인합니다. 외부 FCM만 기록형 fake로 대체하고, push 문구·data payload 계약(7절)과 중복 소비 방지를 검증합니다. 폴링 스케줄러는 test 프로필에서
- * 꺼져 있어 consumer·발송기를 직접 호출합니다.
+ * 확인합니다. 외부 FCM만 기록형 fake로 대체하고, push 문구·data payload 계약과 중복 소비 방지를 검증합니다. 폴링 스케줄러는 test 프로필에서 꺼져
+ * 있어 consumer·발송기를 직접 호출합니다.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -133,7 +132,7 @@ class SignalPushEndToEndIntegrationTest extends AbstractPostgresIntegrationTest 
                 .get("id")
                 .asText());
 
-    // Signal·evidence·source_refs·outbox가 한 트랜잭션으로 저장됐다(5.5절).
+    // Signal·evidence·source_refs·outbox가 한 트랜잭션으로 저장됐다.
     assertThat(countBy("signals", "id", signalId)).isEqualTo(1);
     assertThat(countBy("signal_evidence", "signal_id", signalId)).isEqualTo(1);
     Long outboxEventId =
@@ -163,7 +162,7 @@ class SignalPushEndToEndIntegrationTest extends AbstractPostgresIntegrationTest 
     materializer.materialize();
     pushDispatcher.runSendPass();
 
-    // workspace 구성원 중 활성 기기를 등록한 2명에게만, 계약된 문구·data payload로 발송된다(7·9절).
+    // workspace 구성원 중 활성 기기를 등록한 2명에게만, 계약된 문구·data payload로 발송된다.
     assertThat(recordingFcmClient.sentTokens())
         .containsExactlyInAnyOrder("token-owner", "token-member");
     PushMessage message = recordingFcmClient.lastMessage();

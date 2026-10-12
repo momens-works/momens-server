@@ -24,8 +24,8 @@ import works.momens.server.signal.SignalReader;
  * insert + outbox_events insert(signal.dismissed)}를 한 트랜잭션에 커밋한다(CO-6). facade({@link
  * SignalActionServiceImpl})와 빈을 분리해 self-invocation 없이 {@code @Transactional} 프록시가 걸리게 한다.
  *
- * <p>비동기 생성이 활성이면 여기에 Minsu 생성 원장 적재가 더해진다(MOM-0818, 설계 5.3절). 같은 트랜잭션이므로 롤백되면 원장도 함께 사라지고,
- * scheduler는 커밋된 행만 본다. 반대로 적재가 실패하면 convert 전체가 실패한다(fail-closed).
+ * <p>비동기 생성이 활성이면 여기에 Minsu 생성 원장 적재가 더해진다(MOM-0818). 같은 트랜잭션이므로 롤백되면 원장도 함께 사라지고, scheduler는 커밋된
+ * 행만 본다. 반대로 적재가 실패하면 convert 전체가 실패한다(fail-closed).
  */
 @Component
 @RequiredArgsConstructor
@@ -55,8 +55,8 @@ class SignalActionExecutor {
                 draft.role(),
                 draft.priority(),
                 signal.id()));
-    // 원장 baseline은 방금 tasks에 쓴 값이어야 한다(8.1절). task 생성 직후에 적재해 두 값이 갈릴 자리를 두지 않는다.
-    // 응답의 draft_status는 이 반환값이고 원장을 다시 읽지 않는다(7.3절). 재조회하면 아래 title(방금 쓴
+    // 원장 baseline은 방금 tasks에 쓴 값이어야 한다. task 생성 직후에 적재해 두 값이 갈릴 자리를 두지 않는다.
+    // 응답의 draft_status는 이 반환값이고 원장을 다시 읽지 않는다. 재조회하면 아래 title(방금 쓴
     // fallback)과 짝이 맞지 않는 ready가 나올 수 있다.
     DraftStatus draftStatus =
         taskDraftGenerator.enroll(prepared, created.id(), created.workspaceId());

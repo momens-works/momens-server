@@ -40,10 +40,10 @@ import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
 
 /**
- * claim·재시도·결과 기록을 실제 PostgreSQL로 검증한다(MOM-0819, 설계 7.1·8.2·8.5절).
+ * claim·재시도·결과 기록을 실제 PostgreSQL로 검증한다(MOM-0819).
  *
  * <p>{@code notification}의 {@code PushDeliveryLedgerIntegrationTest}와 같은 형태다. 다른 점은 minsu가 lease와
- * {@code next_attempt_at}을 별도 컬럼으로 갖는다는 것이라(7.1절), lease 만료 회수와 백오프 대기가 각각 다른 컬럼을 되돌려 재현된다.
+ * {@code next_attempt_at}을 별도 컬럼으로 갖는다는 것이라, lease 만료 회수와 백오프 대기가 각각 다른 컬럼을 되돌려 재현된다.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -131,7 +131,7 @@ class TaskDraftGenerationLedgerIntegrationTest extends AbstractPostgresIntegrati
 
     SignalTaskDraftInput input = ledger.claimDue(10).getFirst().input();
 
-    // 실행 시점에 Signal을 다시 읽지 않으므로(5.6절) 원장에 적재된 값이 그대로 프롬프트 재료가 된다.
+    // 실행 시점에 Signal을 다시 읽지 않으므로 원장에 적재된 값이 그대로 프롬프트 재료가 된다.
     assertAll(
         () -> assertThat(input.title()).isEqualTo("결제 실패율이 올라감"),
         () -> assertThat(input.type()).isEqualTo("risk"),
@@ -167,7 +167,7 @@ class TaskDraftGenerationLedgerIntegrationTest extends AbstractPostgresIntegrati
     expireLease(stalled);
     // 회수를 기다리는 동안에도 사용자 convert는 계속 들어온다. 신규를 먼저 보면 매 주기 pending이
     // 슬롯을 모두 채우는 사이 만료 행이 한 번도 집히지 않고, 그대로 apply_cutoff_at을 지나면 두
-    // 쿼리 모두에서 빠져 영영 회수되지 않는다(8.5절의 복구 보장이 부하에 따라 깨진다).
+    // 쿼리 모두에서 빠져 영영 회수되지 않는다.
     persistPending();
     persistPending();
 
@@ -210,7 +210,7 @@ class TaskDraftGenerationLedgerIntegrationTest extends AbstractPostgresIntegrati
 
     ledger.record(claim, result(GenerationOutcome.GENERATED));
 
-    // 반영 규칙을 다시 계산하지 않고 적재 시점에 복사한 값을 그대로 쓴다(6절). 재계산하면 fallback 규칙이
+    // 반영 규칙을 다시 계산하지 않고 적재 시점에 복사한 값을 그대로 쓴다. 재계산하면 fallback 규칙이
     // 바뀌는 순간 진행 중이던 작업 전부가 user_edited로 오분류된다.
     ApplyTaskDraftCommand command = applier.commands().getFirst();
     assertAll(
@@ -254,7 +254,7 @@ class TaskDraftGenerationLedgerIntegrationTest extends AbstractPostgresIntegrati
   void unchangedDraftCompletesAsGeneratedWithoutEvent() {
     // GENERATED_TITLE_FALLBACK은 성공 outcome이면서 title을 convert 시점 고정 fallback과 같은 규칙으로
     // 만든다. role·priority까지 겹치면 세 값이 정확히 일치하고, 그때 tasks는 반영해도 그대로다. 이 경우까지
-    // 발행하면 worker가 바뀐 것 없는 projection을 다시 hydrate한다(5.4절).
+    // 발행하면 worker가 바뀐 것 없는 projection을 다시 hydrate한다.
     UUID taskId = persistPending();
     ClaimedGeneration claim = ledger.claimDue(10).getFirst();
 
@@ -283,7 +283,7 @@ class TaskDraftGenerationLedgerIntegrationTest extends AbstractPostgresIntegrati
 
     assertAll(
         () -> assertThat(reload(taskId).getCompletionReason()).isEqualTo("user_edited"),
-        // tasks가 그대로이므로 projection도 바뀔 것이 없다(5.4절).
+        // tasks가 그대로이므로 projection도 바뀔 것이 없다.
         () -> assertThat(outbox.appended()).isEmpty());
   }
 
@@ -313,7 +313,7 @@ class TaskDraftGenerationLedgerIntegrationTest extends AbstractPostgresIntegrati
       assertThatThrownBy(() -> ledger.record(claim, result(GenerationOutcome.GENERATED)))
           .isInstanceOf(IllegalStateException.class);
 
-      // 종료가 커밋되면 안 된다. processing으로 남아야 lease 만료 후 회수돼 다시 시도된다(8.3·8.5절).
+      // 종료가 커밋되면 안 된다. processing으로 남아야 lease 만료 후 회수돼 다시 시도된다.
       TaskDraftGeneration generation = repository.findByTaskId(taskId).orElseThrow();
       assertAll(
           () -> assertThat(generation.getStatus()).isEqualTo("processing"),
@@ -337,7 +337,7 @@ class TaskDraftGenerationLedgerIntegrationTest extends AbstractPostgresIntegrati
     assertAll(
         () -> assertThat(generation.getStatus()).isEqualTo("pending"),
         () -> assertThat(generation.getNextAttemptAt()).isEqualTo(databaseNow.plus(FIRST_BACKOFF)),
-        // 되돌릴 때 이전 소유권을 함께 정리한다(7.1절).
+        // 되돌릴 때 이전 소유권을 함께 정리한다.
         () -> assertThat(generation.getClaimToken()).isNull(),
         () -> assertThat(generation.getLeaseExpiresAt()).isNull());
   }
@@ -394,7 +394,7 @@ class TaskDraftGenerationLedgerIntegrationTest extends AbstractPostgresIntegrati
   void resultAfterApplyCutoffIsNotApplied() {
     UUID taskId = persistPending();
     ClaimedGeneration claim = ledger.claimDue(10).getFirst();
-    // 실행 도중 반영 창이 닫힌 상황. 읽기 투영이 이미 ready로 알렸을 수 있어 반영하면 안 된다(8.6절).
+    // 실행 도중 반영 창이 닫힌 상황. 읽기 투영이 이미 ready로 알렸을 수 있어 반영하면 안 된다.
     passApplyCutoff(taskId);
 
     ledger.record(claim, result(GenerationOutcome.GENERATED));
@@ -473,7 +473,7 @@ class TaskDraftGenerationLedgerIntegrationTest extends AbstractPostgresIntegrati
   void closesAbandonedPending() {
     // 두 claim 쿼리가 apply_cutoff_at > NOW()를 요구하므로 이 행은 영영 집히지 않는다. 닫아 주는
     // 경로가 없으면 미종료로 영구히 남아 상태 gauge가 현재 적체와 버려진 행을 구분하지 못하고,
-    // 부분 인덱스의 "미종료 집합은 유계" 전제도 깨진다(11.1절).
+    // 부분 인덱스의 "미종료 집합은 유계" 전제도 깨진다.
     UUID taskId = persistPending();
     passApplyCutoff(taskId);
 
@@ -548,7 +548,7 @@ class TaskDraftGenerationLedgerIntegrationTest extends AbstractPostgresIntegrati
     UUID taskId = UUID.randomUUID();
     // 기준을 DB 시계로 잡는다. PostgreSQL의 NOW()는 문장 시각이 아니라 트랜잭션 시작 시각이므로, 테스트
     // 트랜잭션 안에서 애플리케이션 시계로 적재하면 next_attempt_at이 NOW()보다 뒤가 되어 claim 대상에서
-    // 빠진다. 이 성질은 8.6절이 반영 CAS의 한계로 지적한 것과 같은 것이다.
+    // 빠진다. 반영 CAS도 같은 DB 시계의 한계를 갖는다.
     Instant enrolledAt = repository.currentDatabaseTime();
     Instant readDeadline = enrolledAt.plus(10, ChronoUnit.MINUTES);
     repository.save(

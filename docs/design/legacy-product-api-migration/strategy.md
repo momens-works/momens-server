@@ -12,10 +12,6 @@
 개별 기능의 상세 설계나 일정표가 아니라, 어떤 단위로 조사·구현·검증·전환하고 언제 이관이 끝났다고
 판단할지를 정한다.
 
-현재 모바일 MVP 요구사항 문서는 웹 API 이관을 로드맵 단계 C, 레거시 종료를 단계 D로만 구분한다.
-그 구분은 범위를 설명하지만 실제 이관 단위, 레거시 웹 트래픽 컷오버, writer 소유권, projection,
-롤백 조건을 정하지 않는다. 이 문서는 그 실행 규칙을 보완한다.
-
 관련 상시 규칙과 결정은 [아키텍처](../../rules/architecture.md), [영속성](../../rules/persistence.md),
 [API 버저닝](../../spec/api-versioning.md), [API 응답과 에러 코드](../../spec/api-response-error-codes.md),
 [인증 세션·전송 모델](../../adr/0003-auth-session-transport-model.md),
@@ -23,7 +19,7 @@
 [refresh token 저장 모델](../../adr/0005-refresh-token-storage-model.md),
 [사용자 신원 식별](../../adr/0016-user-identity-key-google-sub.md),
 [projection 경계](../../adr/0008-outbox-worker-projection-boundary.md)를 따른다. 현재 모듈 책임은
-[모듈 맵](../module-map.md)을 기준으로 하되, 이관 중 발견한 충돌은 아래 미결정 절차로 다시 확정한다.
+[모듈 맵](../module-map.md)을 기준으로 하되, 이관 중 발견한 충돌은 관련 작업에서 근거를 남기고 확정한다.
 
 ## 범위
 
@@ -56,10 +52,6 @@
 3. 레거시 문서와 코드가 다르면 코드를 현재 동작으로 보고 차이를 이관 원장에 남긴다.
 4. 분석 뒤 레거시 `origin/main`이 변경되면 대상 파일의 diff를 확인하고 기준 SHA를 갱신한다.
 5. 구현 중 레거시에 같은 capability 변경이 들어오면 컷오버 전에 계약 추적을 다시 수행한다.
-
-2026-08-13 기준 레거시 라우터에는 조건부 등록을 포함해 96개의 route declaration이 있다. 반면
-신규 서버에 구현된 공개 handler mapping은 모바일·인증·사용자 표면 중심이다. 따라서 기존 문서의
-도메인 매핑 요약만으로는 잔여 범위를 판단하지 않고 route 전수 원장을 사용한다.
 
 ### 문서 우선순위
 
@@ -138,39 +130,10 @@ service, repository 같은 수평 레이어가 아니라 독립적으로 검증 
 두 현재 writer, ADR-0016의 예외 근거, 레거시 `users` write 중단 조건을 함께 기록한다. 신규 서버가 유일한
 writer가 된 뒤 MOM-0836으로 `users.email` UNIQUE 제약을 제거한다.
 
-### 슬라이스 선정 기준
-
-첫 슬라이스를 포함한 구현 순서는 아래 항목으로 비교한 뒤 별도 작업에서 확정한다.
-
-- 사용자 가치와 현재 클라이언트 사용 여부
-- 읽기 전용인지, writer 전환이 필요한지
-- 인증·권한 의존성
-- 다른 aggregate와의 transaction 결합도
-- 외부 provider·worker·retrieval 의존성
-- 레거시 테스트와 계약 근거의 충분성
-- 롤백 시 레거시가 신규 데이터 형상을 읽고 쓸 수 있는지
-
-이 문서는 특정 도메인을 첫 슬라이스로 고정하지 않는다. 후보를 고를 때 위 근거와 제외 endpoint를
-Momens 작업 본문에 남긴다.
-
 ## 계약 전략
 
-### path와 version
-
-- Product API 신규 경로는 `/api` prefix를 사용한다.
-- 모든 Product API handler는 `version = "1"`을 갖는다.
-- 레거시 path alias는 만들지 않는다.
-- 클라이언트 계약은 `API-Version: 1`이고, 전환기의 기본 version fallback은 기존 ADR-0006을 따른다.
-
-### response mode
-
-각 endpoint는 구현 전에 다음 중 하나로 분류한다.
-
-- **Legacy compatible**: HTTP status와 성공·실패 JSON body shape를 보존한다.
-- **Standard**: 신규 계약 또는 클라이언트와 합의한 개편 계약을 사용한다.
-
-단순히 Java DTO를 새로 만든다는 이유로 Standard 모드로 바꾸지 않는다. 계약 변경에는 클라이언트
-합의와 spec 갱신이 필요하다. path·version 변경과 response body 호환 여부는 독립적으로 기록한다.
+신규 path/version과 오류 규격은 위 spec을 따른다. 현재 웹 이관은 성공 body의 호환성을 보존하고
+오류는 Standard 모드를 사용한다. 의도적 차이와 제외 endpoint의 근거는 작업·PR에 기록한다.
 
 ### characterization
 
@@ -191,53 +154,20 @@ Momens 작업 본문에 남긴다.
 비교에서는 정규화가 JSON 키 정렬 하나뿐이다. dev 실서버처럼 값을 고정할 수 없는 대상에는
 `--normalize`로 UUID·타임스탬프를 자리표시자로 바꾸고 shape만 비교한다.
 
-diff 출력은 해당 슬라이스의 계약 문서에 근거로 남긴다. 계약 문서가 확정한 차이 외의 diff가
+diff 출력은 해당 작업·PR에 근거로 남긴다. 확정한 차이 외의 diff가
 남아 있으면 `contract_locked`로 올리지 않는다. 레거시 테스트가 없으면
 handler/service/repository 추적 결과를 characterization test의 근거로 함께 남긴다.
 
-## 확정된 웹 인증 계약과 트래픽 전환
+## 웹 인증과 전환
 
-레거시는 `session_token` 단일 쿠키를 사용하고 신규 서버는 `access_token`·`refresh_token` 및 모바일
-Bearer token을 사용한다. 두 서버가 같은 DB를 쓴다는 사실만으로 인증 세션이 호환되지는 않는다.
+인증 모델은 ADR-0003~0005·0016, 양방향 한시 세션 bridge는
+[ADR-0017](../../adr/0017-transitional-legacy-session-token-acceptance.md)·
+[ADR-0018](../../adr/0018-transitional-legacy-acceptance-of-new-access-token.md)를 따른다.
+DB 공유만으로 세션이 호환되지는 않으며 bridge 제거도 별도 조건 확인이 필요하다.
 
-신규 웹 인증 계약과 서버 구현은 이미 확정·완료됐다. 레거시 `session_token`은 신규 서버가 지원할
-호환 계약이 아니라 최종 컷오버에서 폐기할 대상이다.
-
-- 모바일·웹은 공통 access + refresh 세션 코어를 사용한다.
-- 웹은 서버 주도 Google Authorization Code + state·PKCE 흐름과 HttpOnly 쿠키를 사용한다.
-- 프런트와 API 서버는 same-domain(same-site)으로 배포하고 CSRF는 별도 토큰 없이 SameSite 쿠키로
-  방어한다. 배포 형태가 cross-domain으로 바뀌면 이 결정을 다시 검토한다.
-- refresh token은 PostgreSQL 세션 원장에 저장하고 회전·폐기한다.
-- 사용자 신원은 이메일이 아니라 `(provider, provider_user_id)`로 식별하며 Google `sub`을
-  `provider_user_id`로 사용한다.
-- 로그인·콜백·웹 refresh·logout의 경로와 응답 계약은
-  [API 응답과 에러 코드](../../spec/api-response-error-codes.md)를 따른다.
-
-미확정인 것은 신규 인증 모델이 아니라 레거시와 신규 서버 사이의 **웹 트래픽 전환 단위**다. 다음
-상태를 구분한다.
-
-- **구현 병행**: 신규 `/api` endpoint를 구현·검증하지만 웹 운영 트래픽은 계속 레거시를 사용한다.
-- **배포 병행**: 두 서버가 함께 떠 있어도 한 웹 세션은 컷오버 전까지 레거시만 사용한다.
-- **혼합 트래픽**: 한 웹 세션이 레거시 root endpoint와 신규 `/api` endpoint를 함께 호출한다.
-
-구현·배포 병행에는 인증 브리지가 필요하지 않다. 혼합 트래픽을 사용하지 않고 필요한 웹 기능을
-준비한 뒤 신규 인증과 Product API를 함께 전환할 수도 있다. 혼합 트래픽이 필요하다면 아래 호환 방식
-중 하나를 명시적으로 결정해야 한다.
-
-1. 신규 서버가 전환기 동안 레거시 `session_token`을 제한적으로 신뢰한다.
-2. 레거시 서버가 신규 access token을 신뢰한다.
-3. 로그인 과정이 두 서버의 세션을 함께 만든다.
-
-방식 1과 2를 시점을 나눠 모두 채택했다. 웹 컷오버 **이전**에는 방식 1로 신규 서버가 레거시
-`session_token`을 수용하고([ADR-0017](../../adr/0017-transitional-legacy-session-token-acceptance.md)),
-컷오버 **이후**에는 방식 2로 레거시가 신규 `access_token`을 수용한다
-([ADR-0018](../../adr/0018-transitional-legacy-acceptance-of-new-access-token.md)). 방식 3은 두 ADR
-모두에서 기각했다.
-
-호환 방식을 도입하면 ADR-0003의 레거시 단일 세션 폐기 결정에 대한 한시적 예외가 되므로 보안 모델,
-롤백, 세션 폐기, 클라이언트 공수를 비교한 ADR이 필요하다. 혼합 트래픽을 사용하지 않는다면 별도 인증
-ADR 대신 이관 원장과 컷오버 계획에 전환 단위와 롤백 조건을 기록한다. 어느 쪽이든 “웹이 병행 운영될
-수 있다”는 문구만으로 endpoint별 운영 전환을 승인하지 않는다.
+인증 전환은 MOM-0906에서 완료했다. Product API·OAuth/MCP UI·MCP는 MOM-0953·0967·0992에 따라
+준비 후 같은 실행 창에서 전환한다. task dual writer는 허용하지 않고 인계 중 잠시 쓰기를 중단한다.
+상세 gate·실행·복구는 [컷오버](cutover.md), 표면별 구현·전환 증거는 [원장](ledger.md)이 소유한다.
 
 ## writer와 projection 전환
 
@@ -248,8 +178,8 @@ ADR 대신 이관 원장과 컷오버 계획에 전환 단위와 롤백 조건�
 1. 이관 원장에 현재 writer를 기록한다.
 2. REST 외 writer(webhook, MCP, Slack action, scheduler, worker)를 모두 찾는다.
 3. 신규 서버가 같은 데이터와 불변식을 처리할 수 있는지 검증한다.
-4. writer 트래픽을 한 단위로 신규 경로에 전환한다.
-5. 레거시 writer를 비활성화하거나 도달 불가능하게 만든다.
+4. 레거시 writer의 직접 접근과 기존 연결을 차단하고 진행 중 쓰기가 끝났는지 확인한다.
+5. writer 트래픽을 한 단위로 신규 경로에 전환한다. 실패하면 양쪽 쓰기를 닫은 상태에서 복구한다.
 6. 관측 후 레거시 코드를 제거한다.
 
 읽기는 양쪽에서 가능하지만 쓰기는 동시에 활성화하지 않는다. DB constraint가 충돌을 막아 준다는
@@ -259,8 +189,7 @@ ADR 대신 이관 원장과 컷오버 계획에 전환 단위와 롤백 조건�
 
 레거시 `momens-api`는 task·decision·blocker·memory write와 retrieval projection을 같은 transaction에서
 처리한다. 신규 서버는 domain write transaction에서 outbox를 남기고 worker가 projection을 처리하는
-방향이다. 다만 2026-08-14 기준 `momens-worker@9c0c8a7`에는 outbox consumer가 없고, 수집 transaction
-안에서 `retrieval_documents`와 `retrieval_events`를 직접 쓰는 projection만 구현돼 있다.
+방향이다. 구현 존재와 운영 소비·투영 검증 완료는 구별한다. 현재 증거와 담당 작업은 원장에 기록한다.
 
 따라서 projection 대상 aggregate의 write 컷오버에는 다음이 필요하다.
 
@@ -289,8 +218,7 @@ prod 배포 전에는 [prod 운영 준비 대장](../../prod-readiness-ledger.md
 
 스키마는 운영 준비 대장의 책임이 아니다. 소유권은
 [ADR-0019](../../adr/0019-prod-schema-ownership-transfer.md), 상시 규칙과 전환 중 의무는
-[데이터 규칙](../../rules/persistence.md), 부트스트랩 방식·롤백·실행 순서는
-[prod 스키마 주도권 이전 설계](../prod-schema-ownership-transfer.md)가 소유한다. 공유 DB를 사용하므로
+[데이터 규칙](../../rules/persistence.md)을 따른다. 완료된 부트스트랩 이력은 MOM-0909에 있다. 공유 DB를 사용하므로
 일반적인 데이터 복사 migration은 필요하지 않지만, 각 슬라이스는 필요한 마이그레이션 적용과 writer
 호환성을 `cutover_ready` 증거로 확인한다.
 
@@ -381,32 +309,10 @@ write 컷오버 전 다음을 확인한다.
 
 ## 이관 원장
 
-진행 상태는 Momens task 목록이나 이 문서의 서술만으로 추론하지 않고 별도 원장으로 관리한다. 원장은
-최초 route 전수 조사 작업에서 생성한다.
-
-필수 필드는 다음과 같다.
-
-| 필드 | 내용 |
-| --- | --- |
-| surface | Product API, auth, OAuth, MCP, webhook, operational, background runtime, offline |
-| capability | workspace, task, memory 등 사용자 행위 또는 aggregate |
-| legacy entry point | method/path 또는 webhook·tool·scheduler·goroutine·startup migration/backfill 이름 |
-| legacy baseline | 분석한 commit SHA |
-| legacy trace | handler/service/repository/model/migration/test 위치 |
-| target | Gradle module, package, public API |
-| contract | Legacy/Standard, status·body·version 정책 |
-| auth/RBAC | 인증 수단과 권한 규칙 |
-| writer | 현재 writer, 목표 writer, 전환 단위 |
-| projection/external | worker, retrieval, provider, MCP 등 의존 |
-| prod gate | 슬라이스별 cutover 직접 의존성과 prod 필수 설정·수기 의무 확인 위치 |
-| client gate | FE·모바일·외부 provider 변경 |
-| rollback | 되돌릴 수 있는 범위와 제한 |
-| status | traced, contract_locked, implemented, cutover_ready, cutover, retired |
-| task/PR | 구현·결정·전환 작업 링크 |
-
-상태는 증거가 있을 때만 올린다. `implemented`는 코드가 존재한다는 뜻이고 `cutover`나 `retired`를
-뜻하지 않는다. 모바일용으로 같은 aggregate 일부가 구현돼 있어도 레거시 웹 표면의 계약이 다르면
-별도 entry로 추적한다.
+[원장](ledger.md)은 HTTP·비-HTTP 표면별 기준 SHA, trace, 계약, auth/RBAC, writer,
+projection/external, prod/client gate, rollback과 작업·PR 근거를 관리한다.
+상태는 증거가 있을 때만 올린다. `implemented`는 코드가 있다는 뜻이며 운영 전환이나 종료가 아니다.
+모바일에 같은 aggregate가 있어도 웹 계약이 다르면 별도 entry로 추적한다.
 
 ## 레거시 전체 종료 조건
 
@@ -425,33 +331,8 @@ write 컷오버 전 다음을 확인한다.
 
 코드가 이관됐다는 이유만으로 레거시 종료를 선언하지 않는다.
 
-## 선행해서 확정할 결정
+## 남은 실행
 
-다음은 구현하면서 조용히 정하지 않는다.
-
-1. ~~**레거시 웹 트래픽 컷오버**: 혼합 트래픽을 허용할지, 허용한다면 어떤 세션 브리지를 둘지.~~
-   확정했다. Product capability별 혼합 전환은 하지 않고 인증과 Product API를 2단계로 나눈다.
-   미이관 OAuth interaction·MCP grant UI만 한시적 legacy base로 격리하고 ADR-0018의 세션 브리지를
-   유지한다([컷오버 문서](cutover.md), `MOM-0911`).
-2. **첫 수직 슬라이스**: 위 선정 기준에 따른 대상과 제외 endpoint.
-3. **retrieval 책임과 worker 소비 계약**: `module-map`의 신규 서버 `retrieval` 모듈 책임과 ADR-0008의
-   worker projection 책임을 정합화하고, 공통 outbox 소비 기반과 aggregate별 hydrate·projection 경계를
-   어떻게 나눌지.
-4. **MCP/OAuth 모듈 경계**: 최신 레거시에 추가된 `mcpauth`·`mcpserver`의 목표 모듈과 grant/token
-   이전 방식.
-5. **웹·모바일 task 계약**: MOM-0773의 필드·기본값·진행률 정책 정합화.
-6. **source_ref·signal evidence 관계**: MOM-0774의 스키마·조회 계약 정합화.
-7. **모바일 workspace scope**: MOM-0845 결정이 공통 workspace/project API 계약에 주는 영향.
-
-이 결정들은 전략 문서의 선행 조건이 아니라 각 영향 슬라이스의 `contract_locked` 또는
-`cutover_ready` 게이트다.
-
-## 다음 작업
-
-1. 고정 SHA 기준 route·비-HTTP entry point 전수 원장을 만들고 공통 cross-repository 의존성을 등록한다.
-2. worker outbox 소비 기반과 aggregate별 projection 구현 작업을 분리해 만들고 원장에 연결한다.
-3. 원장에서 첫 수직 슬라이스 후보를 비교한다.
-4. ~~혼합 웹 트래픽이 필요한지 판단하고, 필요할 때만 세션 공존 ADR을 작성한다.~~ 완료. Product
-   capability별 혼합은 하지 않으며, 미이관 OAuth/MCP UI의 한시적 legacy base는 ADR-0018의 기존
-   세션 공존 결정으로 처리한다([컷오버 문서](cutover.md), `MOM-0911`).
-5. 선택한 슬라이스마다 `migrate-slice` 추적과 구현 작업을 별도 Momens task로 만든다.
+완료된 첫 슬라이스·MCP 경계 결정은 반복하지 않는다. 현재 미완료 worker·운영 전환·E2E·레거시
+종료 작업은 [원장의 남은 작업](ledger.md#남은-작업)을 따른다. 문서에 없는 제품 정책이나
+전환 예외는 구현 중 추측하지 않고 기존 작업에서 확정한다.
