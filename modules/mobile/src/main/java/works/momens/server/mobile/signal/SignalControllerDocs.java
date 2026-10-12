@@ -73,8 +73,11 @@ interface SignalControllerDocs {
       operationId = "mobileConvertSignalToTask",
       summary = "시그널을 작업으로 전환",
       description =
-          "시그널을 원탭으로 작업에 등록합니다. 요청 body는 없습니다(ADR-0011). 서버가 민수 task draft(title은 시그널 제목, role은 pm,"
-              + " priority는 medium)로 작업을 만듭니다. 같은 시그널에 같은 action을 재요청하면 새 작업을 만들지 않고 기존 결과를 200으로"
+          "시그널을 원탭으로 작업에 등록합니다. 요청 body는 없습니다. 동기 경로에서는 민수가 생성한 draft(title, role, priority)로 작업을 만듭니다."
+              + " 생성 비활성·설정 무효·입력 부족·생성 실패·출력 무효 시에는 fallback(title은 정규화된 시그널 제목으로 최대 15자, role은 pm, priority는 medium)을 사용합니다."
+              + " 비동기 경로에서는 fallback으로 먼저 생성하고 draft_status가 generating인 동안 후속 생성을 진행합니다. 생성 결과는 title, role, priority가 초기 값과 같을 때만 반영하며, 생성 실패나 선행 편집 등으로 반영되지 않을 수 있습니다."
+              + " draft_status가 ready가 되면 후속 생성이 종료된 상태이며 성공 여부를 뜻하지 않습니다. 최신 값은 작업 상세 조회로 확인합니다."
+              + " 같은 시그널에 같은 action을 재요청하면 새 작업을 만들지 않고 기존 결과를 200으로"
               + " 반환합니다.")
   @ApiResponse(
       responseCode = "201",

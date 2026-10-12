@@ -213,8 +213,9 @@ milestone에는 `owner_id` 컬럼 자체가 없어 폴백할 대상이 없다. �
   매핑에서 빼고 있고, 도메인 `Project` 타입에도 `progress`가 없다. 화면의 프로젝트 진행률은
   `taskCompletionRatio`(`src/domain/selectors.ts`)가 작업에서 직접 계산한다. API 타입
   `ApiProject.progress`가 optional이라 키가 없어도 타입 검사와 런타임 모두 영향이 없다.
-- **이 서버는 저장값을 쓰지 않는다.** 진행률은 작업 기준 계산이고 `projects.progress`는 읽지도
-  쓰지도 않는 레거시 컬럼으로 유지한다([ADR-0013](../../adr/0013-project-progress-derivation.md)).
+- **조회 진행률 계산에는 저장값을 사용하지 않는다.** `projects.progress`에는 생성 요청값을 저장하지만,
+  조회 진행률은 작업 상태를 기준으로 계산한다([ADR-0013](../../adr/0013-project-progress-derivation.md)).
+  snapshot 응답에서는 `progress` 필드를 생략한다.
   ADR이 "웹 이관 시 진행률 정책과 함께 다시 판단한다"로 유예한 지점을 여기서 정한다.
 
 계산값을 채우는 선택지도 있었으나, 아무도 읽지 않는 값을 위해 project별 작업 집계를 4.7의 쿼리

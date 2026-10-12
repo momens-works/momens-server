@@ -32,7 +32,7 @@ public record UpdateTaskRequest(
             example = "pm")
         @NotNull
         TaskRole role,
-    @Schema(description = "담당자 식별자. 비우려면 null을 보냅니다.") UUID assigneeId,
+    @Schema(description = "담당자 식별자. 생략하거나 null로 보내면 기존 담당자를 해제합니다.") UUID assigneeId,
     @Schema(description = "우선순위. urgent도 그대로 저장하며 응답에서는 high로 표시합니다.", example = "medium") @NotNull
         TaskPriority priority,
     @Schema(
@@ -41,9 +41,14 @@ public record UpdateTaskRequest(
             example = "in_progress")
         @NotNull
         TaskStatus status,
-    @Schema(description = "설명. 비우면 빈 문자열이나 null입니다. 최대 300자(공백 포함).") @Size(max = 300)
+    @Schema(description = "설명. 생략하거나 null로 보내면 기존 설명을 제거합니다. 빈 문자열도 허용합니다. 최대 300자(공백 포함).")
+        @Size(max = 300)
         String purpose,
-    @Schema(description = "완료 기준 최종 목록. 0개에서 5개까지 허용합니다.") @Size(max = 5) @Valid
+    @Schema(
+            description =
+                "완료 기준 최종 목록으로 전체 교체합니다. 생략하거나 null로 보내면 빈 목록으로 처리해 기존 항목을 모두 삭제합니다. 0개에서 5개까지 허용합니다.")
+        @Size(max = 5)
+        @Valid
         List<ChecklistItemRequest> checklistItems) {
 
   public UpdateTaskRequest {
