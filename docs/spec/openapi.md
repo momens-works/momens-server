@@ -176,9 +176,10 @@ Request/response DTO는 `record`를 기본으로 하고 `@Schema`로 문서화�
 
 ### Property 이름(snake_case)
 
-wire format은 snake_case이고, DTO는 런타임 직렬화에 Jackson 3 `@JsonNaming(SnakeCaseStrategy)`를
-씁니다. 스키마를 만드는 swagger-core는 Jackson 2라 이 애노테이션을 읽지 못해, 그대로 두면 스키마
-property가 Java 필드명(camelCase)으로 나가 실제 API와 어긋납니다.
+런타임 wire format은 `app`의 `application.yml`에 있는
+`spring.jackson.property-naming-strategy: SNAKE_CASE` 전역 설정으로 적용합니다. DTO별
+`@JsonNaming`은 두지 않습니다. 스키마를 만드는 swagger-core는 Jackson 2를 사용하며 이 전역
+설정을 공유하지 않으므로, `ModelResolver`에도 같은 네이밍 전략을 별도로 적용합니다.
 
 - `app`이 등록하는 `ModelResolver` 빈이 swagger-core의 Jackson 2 ObjectMapper에 snake_case 전략을
   걸어 스키마 property를 전역 snake_case로 생성합니다. DTO에는 별도 애노테이션을 추가하지 않습니다.
