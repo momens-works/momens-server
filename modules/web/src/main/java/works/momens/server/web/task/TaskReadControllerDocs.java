@@ -68,7 +68,7 @@ interface TaskReadControllerDocs {
   @Operation(
       operationId = "getTaskContext",
       summary = "작업의 연결된 컨텍스트 조회",
-      description = "작업에 연결된 소프트 삭제되지 않은 memory와 source ref를 생성 시각 내림차순으로 조회합니다.")
+      description = "작업에 연결된 소프트 삭제되지 않은 메모리와 소스(source ref)를 생성 시각 내림차순으로 조회합니다.")
   @ApiResponse(
       responseCode = "200",
       description = "조회 성공. 연결된 항목이 없으면 memories와 source_refs는 빈 배열입니다.",

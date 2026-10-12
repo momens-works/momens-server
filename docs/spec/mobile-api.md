@@ -366,11 +366,13 @@ project는 모바일의 현재 context로 고정되어 있고, description·task
 
 시그널을 원탭으로 작업에 등록합니다. 요청 body는 없습니다.
 
-서버는 작업 등록 시점에 민수가 생성하는 task draft(`title`, `role`, `priority`)를
-사용합니다. 민수는 서버 내 `minsu` 모듈로 구현합니다. 비활성·설정 무효·입력 부족·외부
-실패·출력 무효 시 고정 draft(`title`은 15자로 제한한 Signal title, `role`은 `pm`,
-`priority`는 `medium`)를 사용합니다. 생성된 title은 공백 포함 최대 15자이며, draft는 Signal
-backing에 저장하지 않습니다.
+동기 경로에서는 서버 내 `minsu` 모듈이 생성한 task draft(`title`, `role`, `priority`)로 작업을
+만듭니다. 생성 비활성·설정 무효·입력 부족·생성 실패·출력 무효 시에는 fallback(`title`은
+정규화된 시그널 제목으로 최대 15자, `role`은 `pm`, `priority`는 `medium`)을 사용합니다.
+비동기 경로에서는 fallback으로 먼저 작업을 생성하고 후속 생성을 진행합니다. 생성 결과는
+`title`, `role`, `priority`가 초기 값과 같을 때만 반영하며, 생성 실패나 선행 편집 등으로
+반영되지 않을 수 있습니다. 생성된 title은 공백 포함 최대 15자이며, draft는 Signal backing에
+저장하지 않습니다.
 
 클라이언트는 title·role·priority를 선택하거나 전송하지 않습니다.
 
@@ -745,7 +747,7 @@ convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다�
 `materials[].source_url`은 연결된 소스에서 원본 문서로 이동할 때 사용합니다.
 
 `materials`는 `entity_relations`(task ↔ source_ref)에서 연결을 찾고 `source_refs`에서 원본을 조회해 구성합니다.
-연결된 자료가 없으면 `[]`이고, `material_count`는 `0`입니다.
+연결된 소스가 없으면 `[]`이고, `material_count`는 `0`입니다.
 
 `id`는 source_ref의 식별자입니다. `source`는 원본 출처이며 화면 라벨은 앱이 생성합니다(위 Material 참고).
 `occurred_at`은 원본이 생성된 시각입니다. `summary`는 source_ref의 snippet이고, snippet이 없으면 본문(text)을
@@ -766,14 +768,13 @@ convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다�
 `status`는 저장된 5종(backlog, todo, in_progress, done, cancelled)을 그대로 반환하고(상세 상태 칩이 5종 노출),
 `priority`는 보드와 같이 저장된 urgent를 high로 반환합니다. `purpose`는 레거시 `tasks.description`에 매핑됩니다.
 
-표시 명칭은 갱신된 용어 기준(MOM-1042)의 작업·설명·소스·질문·다음 행동을 사용합니다.
-호환성을 위해 기존 JSON 키 `purpose`, `materials`, `open_questions`, `next_action`은 유지합니다.
+설명·소스·질문·다음 행동의 JSON 키는 각각 `purpose`, `materials`, `open_questions`, `next_action`입니다.
 `materials`는 작업에 직접 연결된 소스이며, 메모리까지 포함하는 웹의 연결된 컨텍스트와는 다릅니다.
-현재 설명 입력의 300자 제한과 업무 역할 필수 조건은 유지합니다.
+설명은 최대 300자이며, 모바일 작업 생성·수정 요청의 업무 역할은 필수입니다.
 
 ### PATCH /api/mobile/tasks/{taskId}
 
-작업 수정 화면에서 편집한 필드를 저장합니다. 요청은 리소스 전체가 아니라 편집 가능한 필드 전체(title, role, assignee_id, priority, status, purpose, checklist_items)를 담고, 서버가 관리하는 필드(materials, open_questions, next_action)는 요청에 없어 그대로 유지합니다. title, role, priority, status는 항상 채워 보냅니다. title은 생성과 달리 빈 문자열을 허용하고, title을 빈 문자열로 보내면 상세 화면이 '새 작업'로 표시합니다.
+작업 수정 화면에서 편집한 필드를 저장합니다. 요청은 리소스 전체가 아니라 편집 가능한 필드 전체(title, role, assignee_id, priority, status, purpose, checklist_items)를 담고, 서버가 관리하는 필드(materials, open_questions, next_action)는 요청에 없어 그대로 유지합니다. title, role, priority, status는 항상 채워 보냅니다. title은 생성과 달리 빈 문자열을 허용하고, title을 빈 문자열로 보내면 상세 화면이 '새 작업'으로 표시합니다.
 
 #### Request
 
