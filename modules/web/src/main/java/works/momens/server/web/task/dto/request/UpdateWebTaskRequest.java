@@ -52,14 +52,14 @@ public final class UpdateWebTaskRequest {
     descriptionSet = true;
   }
 
-  @Schema(description = "작업 status. 생략하면 기존 값을 유지하며, null은 허용하지 않습니다.")
+  @Schema(description = "작업 상태. 생략하면 기존 값을 유지하며, null은 허용하지 않습니다.")
   @JsonSetter("status")
   public void setStatus(TaskStatus value) {
     status = value;
     statusSet = true;
   }
 
-  @Schema(description = "작업 priority. 생략하면 기존 값을 유지하며, null은 허용하지 않습니다.")
+  @Schema(description = "작업 우선순위. 생략하면 기존 값을 유지하며, null은 허용하지 않습니다.")
   @JsonSetter("priority")
   public void setPriority(TaskPriority value) {
     priority = value;

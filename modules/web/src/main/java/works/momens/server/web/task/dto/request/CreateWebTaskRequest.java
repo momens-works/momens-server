@@ -10,8 +10,8 @@ import works.momens.server.project.task.TaskStatus;
 public record CreateWebTaskRequest(
     @Schema(description = "작업 제목", requiredMode = Schema.RequiredMode.REQUIRED) String title,
     @Schema(description = "작업 설명") String description,
-    @Schema(description = "작업 status. 생략하면 backlog를 사용합니다.") TaskStatus status,
+    @Schema(description = "작업 상태. 생략하면 backlog를 사용합니다.") TaskStatus status,
     @Schema(description = "마일스톤 식별자", format = "uuid") UUID milestoneId,
-    @Schema(description = "작업 priority. 생략하면 medium을 사용합니다.") TaskPriority priority,
+    @Schema(description = "작업 우선순위. 생략하면 medium을 사용합니다.") TaskPriority priority,
     @Schema(description = "담당자 식별자", format = "uuid") UUID assigneeId,
     @Schema(description = "마감일", format = "date") LocalDate dueDate) {}

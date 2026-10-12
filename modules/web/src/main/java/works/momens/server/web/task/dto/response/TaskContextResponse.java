@@ -8,11 +8,11 @@ import java.util.UUID;
 import works.momens.server.memory.ConfirmedMemoryDetail;
 import works.momens.server.source.LegacySourceRefDetail;
 
-@Schema(description = "작업에 연결된 memory와 source ref")
+@Schema(description = "작업에 연결된 메모리와 소스(source ref)")
 public record TaskContextResponse(
     @Schema(description = "작업 식별자") UUID taskId,
-    @Schema(description = "생성 시각 내림차순 memory 목록") List<MemoryResponse> memories,
-    @Schema(description = "생성 시각 내림차순 source ref 목록") List<SourceRefResponse> sourceRefs) {
+    @Schema(description = "생성 시각 내림차순 메모리 목록") List<MemoryResponse> memories,
+    @Schema(description = "생성 시각 내림차순 소스(source ref) 목록") List<SourceRefResponse> sourceRefs) {
   public static TaskContextResponse from(
       UUID taskId, List<ConfirmedMemoryDetail> memories, List<LegacySourceRefDetail> sourceRefs) {
     return new TaskContextResponse(

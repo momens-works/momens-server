@@ -510,10 +510,12 @@ MOM-0887에서 다른 표면과 같은 형태로 맞췄다.
   조회(`listByCreatedRange`), 타입별 개수 집계(`countByCreatedRange`)를 `SignalListService`가
   소유한다. 당일 범위 조회는 처리 여부와 무관하게 담고 소프트 삭제는 제외한다(MOM-81). 정렬
   기준과 커서 규칙도 이 모듈이 정하고, 어떤 type을 노출할지와 하루 경계는 호출하는 표면이 정한다.
-- body 없는 `convert-to-task`는 작업 등록 시점에 민수가 생성하는 task draft를 입력으로 사용한다.
-  `signal`은 `minsu`의 공개 `SignalTaskDraftGenerator`를 호출하고, 비활성·설정 무효·입력
-  부족·외부 실패·출력 무효 시 고정 draft(title=15자로 제한한 Signal title, role=`pm`,
-  priority=`medium`)를 쓴다. 모델 호출은 쓰기 트랜잭션 밖에서 하고, 기존 action이 있는 replay·
+- body 없는 `convert-to-task`에서 `signal`은 `minsu`의 공개 `SignalTaskDraftGenerator`로 draft를
+  준비한다. 동기 경로에서는 생성 결과로 작업을 만들고, 비동기 경로에서는 fallback으로 먼저
+  작업을 생성한 뒤 후속 생성을 진행한다. 생성 비활성·설정 무효·입력 부족·생성 실패·출력 무효
+  시에는 fallback(title은 정규화된 시그널 제목으로 최대 15자, role=`pm`, priority=`medium`)을 쓴다.
+  비동기 결과는 title, role, priority가 초기 값과 같을 때만 반영하며, 생성 실패나 선행 편집
+  등으로 반영되지 않을 수 있다. 모델 호출은 쓰기 트랜잭션 밖에서 하고, 기존 action이 있는 replay·
   충돌과 dismiss는 evidence 조회와 모델 호출을 하지 않는다. 모델 입력 evidence는 기존 정렬의
   의미 있는 앞선 10건으로 제한한다. draft는 `signals` backing에 저장하지 않는다
   (ADR-0011·0014, MOM-0804·0805·0806).

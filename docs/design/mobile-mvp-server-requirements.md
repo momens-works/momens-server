@@ -26,7 +26,7 @@ Momens Mobile은 기존 웹 기능을 축소 이식하는 앱이 아니다. 모�
 - Project Owner가 시그널의 근거와 민수 제안을 확인할 수 있어야 한다.
 - Project Owner가 시그널을 작업 등록으로 처리할 수 있어야 한다.
 - 처리 결과는 Signal의 프로젝트 단위 처리 이력과 프로젝트 맥락에 반영되어야 한다.
-- Project Owner가 프로젝트 작업을 생성하고, 상세를 확인하고, 완료 기준를 토글하고, 기본 정보를
+- Project Owner가 프로젝트 작업을 생성하고, 상세를 확인하고, 완료 기준을 토글하고, 기본 정보를
   수정할 수 있어야 한다.
 - 작업 생성 이후 retrieval projection은 api-server가 직접 쓰지 않고 worker가 처리할 수 있어야 한다.
 - Signal 발생 시 모바일 사용자가 알 수 있도록 push notification을 보낼 수 있어야 한다.
@@ -273,9 +273,12 @@ prod gate로 별도 추적한다.
 
 - 경로: `POST /api/mobile/signals/{signalId}/actions/convert-to-task`
 - 요청 body를 받지 않는 원탭 action이다.
-- 작업 등록 시점에 민수가 draft(title, role, priority)를 생성한다. 비활성·설정 무효·입력
-  부족·외부 실패·출력 무효 시 고정 draft(title=15자로 제한한 Signal title, role=`pm`,
-  priority=`medium`)를 사용한다.
+- 동기 경로에서는 민수가 생성한 draft(title, role, priority)로 작업을 만든다.
+  생성 비활성·설정 무효·입력 부족·생성 실패·출력 무효 시에는 fallback(title은 정규화된 시그널
+  제목으로 최대 15자, role=`pm`, priority=`medium`)을 사용한다.
+- 비동기 경로에서는 fallback으로 먼저 작업을 생성하고 후속 생성을 진행한다. 생성 결과는
+  title, role, priority가 초기 값과 같을 때만 반영하며, 생성 실패나 선행 편집 등으로 반영되지
+  않을 수 있다. `draft_status`와 재조회 계약은 [모바일 API 명세](../spec/mobile-api.md)를 따른다.
 - task draft title은 공백 포함 최대 15자여야 한다.
 - task draft role은 `pm`, `design`, `backend`, `frontend` 중 하나여야 한다.
 - task draft priority는 `low`, `medium`, `high` 중 하나여야 한다.
@@ -306,7 +309,7 @@ prod gate로 별도 추적한다.
 
 - 경로: `POST /api/mobile/projects/{projectId}/tasks`
 - MVP 생성 범위는 `title`, `role`, `priority`다.
-- 담당자, 설명, 완료 기준는 1차 생성 요청에 포함하지 않는다.
+- 담당자, 설명, 완료 기준은 1차 생성 요청에 포함하지 않는다.
 - 생성된 task는 기본적으로 `todo` 그룹에 표시되어야 한다.
 - Signal에서 task를 생성하는 `convert-to-task`와 구분해야 한다.
 
@@ -373,11 +376,13 @@ production 코드 분기 대신 worker와 같은 backing 계약의 fixture를 �
 ## Task draft 요구사항
 
 - Task draft는 최종 task가 아니라 사용자 원탭 action을 위한 초안이다.
-- draft(title, role, priority)는 민수 산출물이며, Signal 생성 시점이 아니라 작업 등록
-  (`convert-to-task`) 시점에 생성한다. Signal backing에는 저장하지 않는다.
-- 민수는 서버 내 `minsu` 모듈의 `SignalTaskDraftGenerator`로 구현한다. 비활성·설정 무효·입력
-  부족·외부 실패·출력 무효 시 api-server가 고정 draft(title=15자로 제한한 Signal title,
-  role=`pm`, priority=`medium`)를 사용한다.
+- draft(title, role, priority)는 Signal 생성 시점이 아니라 작업 등록(`convert-to-task`) 요청으로
+  준비한다. Signal backing에는 저장하지 않는다.
+- 민수는 서버 내 `minsu` 모듈의 `SignalTaskDraftGenerator`로 구현한다. 동기 경로에서는 생성
+  결과를 사용하고, 비동기 경로에서는 fallback으로 먼저 작업을 만든 뒤 후속 생성을 진행한다.
+- 생성 비활성·설정 무효·입력 부족·생성 실패·출력 무효 시에는 fallback(title은 정규화된 시그널
+  제목으로 최대 15자, role=`pm`, priority=`medium`)을 사용한다. 비동기 결과는 title, role,
+  priority가 초기 값과 같을 때만 반영하며, 생성 실패나 선행 편집 등으로 반영되지 않을 수 있다.
 - draft 생성에 사용하는 evidence는 기존 정렬의 의미 있는 앞선 10건으로 제한한다. 이 제한은
   Signal evidence 저장과 상세 API 응답에는 적용하지 않는다.
 - api-server는 draft를 모바일 상세 응답에 노출하지 않고 body 없는 `convert-to-task`의 입력으로만

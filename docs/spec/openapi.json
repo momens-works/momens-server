@@ -799,7 +799,7 @@
             "type" : "string"
           },
           "priority" : {
-            "description" : "작업 priority. 생략하면 medium을 사용합니다.",
+            "description" : "작업 우선순위. 생략하면 medium을 사용합니다.",
             "enum" : [
               "low",
               "medium",
@@ -809,7 +809,7 @@
             "type" : "string"
           },
           "status" : {
-            "description" : "작업 status. 생략하면 backlog를 사용합니다.",
+            "description" : "작업 상태. 생략하면 backlog를 사용합니다.",
             "enum" : [
               "backlog",
               "todo",
@@ -1179,7 +1179,7 @@
         "description" : "연결된 소스",
         "properties" : {
           "id" : {
-            "description" : "자료 식별자(source_ref id)",
+            "description" : "소스 식별자(source_ref id)",
             "format" : "uuid",
             "type" : "string"
           },
@@ -2520,17 +2520,17 @@
         }
       },
       "TaskContextResponse" : {
-        "description" : "작업에 연결된 memory와 source ref",
+        "description" : "작업에 연결된 메모리와 소스(source ref)",
         "properties" : {
           "memories" : {
-            "description" : "생성 시각 내림차순 memory 목록",
+            "description" : "생성 시각 내림차순 메모리 목록",
             "items" : {
               "$ref" : "#/components/schemas/MemoryResponse"
             },
             "type" : "array"
           },
           "source_refs" : {
-            "description" : "생성 시각 내림차순 source ref 목록",
+            "description" : "생성 시각 내림차순 소스(source ref) 목록",
             "items" : {
               "$ref" : "#/components/schemas/SourceRefResponse"
             },
@@ -2575,7 +2575,7 @@
             "type" : "string"
           },
           "materials" : {
-            "description" : "연결된 소스 목록. 연결된 자료가 없으면 빈 배열",
+            "description" : "연결된 소스 목록. 연결된 소스가 없으면 빈 배열",
             "items" : {
               "$ref" : "#/components/schemas/MaterialResponse"
             },
@@ -2893,7 +2893,7 @@
             "writeOnly" : true
           },
           "priority" : {
-            "description" : "작업 priority. 생략하면 기존 값을 유지하며, null은 허용하지 않습니다.",
+            "description" : "작업 우선순위. 생략하면 기존 값을 유지하며, null은 허용하지 않습니다.",
             "enum" : [
               "low",
               "medium",
@@ -2904,7 +2904,7 @@
             "writeOnly" : true
           },
           "status" : {
-            "description" : "작업 status. 생략하면 기존 값을 유지하며, null은 허용하지 않습니다.",
+            "description" : "작업 상태. 생략하면 기존 값을 유지하며, null은 허용하지 않습니다.",
             "enum" : [
               "backlog",
               "todo",
@@ -15999,7 +15999,7 @@
     },
     "/api/tasks/{taskId}/context" : {
       "get" : {
-        "description" : "작업에 연결된 소프트 삭제되지 않은 memory와 source ref를 생성 시각 내림차순으로 조회합니다.",
+        "description" : "작업에 연결된 소프트 삭제되지 않은 메모리와 소스(source ref)를 생성 시각 내림차순으로 조회합니다.",
         "operationId" : "getTaskContext",
         "parameters" : [
           {
