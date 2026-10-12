@@ -1,6 +1,6 @@
 # 0001. 모듈러 모놀리스 아키텍처 룰
 
-- 상태: Accepted
+- 상태: Accepted (결정 1의 모듈 경계 기준 중 비즈니스 capability 항목은 [0025](0025-module-boundary-criteria.md)로 개정)
 - 날짜: 2026-06-23
 - 작성자: Kimgyuilli
 
