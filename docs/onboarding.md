@@ -25,7 +25,7 @@ Momens는 여러 레포로 나뉘어 있습니다.
 | **`momens-server`** | **새 Java Spring 제품 API 서버 (여기)** |
 | `momens-worker` | 외부 소스 수집·큐레이션 워커 |
 | `momens-retrieval` | 검색 read-model 서버 (gRPC) |
-| `momens-proto` | 서버·워커가 공유하는 protobuf 계약 (Git submodule) |
+| `momens-proto` | 서비스 간 protobuf 계약 (현재 momens-server 빌드에서는 사용하지 않음) |
 | `k8s` | 쿠버네티스·인프라 정의 |
 
 제품 차원의 배경/용어가 궁금하면 먼저 `teams`를 보세요.
@@ -49,11 +49,8 @@ MOM-1039~MOM-1043 용어 맞추기의 별도 적용 기준은
 
 ```bash
 # 1) 클론
-git clone --recurse-submodules https://github.com/momens-works/momens-server.git
+git clone https://github.com/momens-works/momens-server.git
 cd momens-server
-
-# 이미 클론한 리포라면 submodule 초기화
-git submodule update --init --recursive
 
 # 2) 로컬 환경변수 준비 (.env 는 커밋하지 않음)
 cp .env.example .env
@@ -113,9 +110,11 @@ git reset --hard
 CRLF가 섞인 상태로 두면 워킹 트리를 검사하는 `spotlessCheck`가 실패합니다. 이 경우 코드를
 수정하지 않은 커밋에서도 pre-commit 훅이 차단될 수 있습니다.
 
-`momens-proto`는 private 리포이므로 로컬 GitHub 자격 증명에 읽기 권한이 필요합니다.
-GitHub Actions는 같은 권한을 가진 repository secret `CI_SUBMODULES_TOKEN`으로 submodule을
-checkout합니다.
+`momens-server`는 `momens-proto`의 생성 클래스를 사용하지 않아 서브모듈과 빌드 의존성을
+제거했습니다(MOM-1030). outbox payload는 JSON으로 직렬화하며, Firebase 등 외부 라이브러리가
+사용하는 protobuf/gRPC 전이 의존성은 유지합니다. 서버 빌드에는 JDK 21만 필요하고, CI checkout은
+기본 `GITHUB_TOKEN`을 사용합니다. 레거시 비교 스크립트가 별도 `momens-api` checkout에 준비하는
+proto 서브모듈은 레거시 빌드에 필요하므로 유지합니다.
 
 `.env` 키 설명과 프로필 구성은 [로컬 개발](local-development.md)을 참고하세요.
 
@@ -163,10 +162,8 @@ momens-server
 │   ├── source/
 │   ├── user/
 │   └── workspace/
-├── third_party/
-│   └── momens-proto/          # 공유 protobuf 계약 submodule
 ├── build.gradle               # 루트(공통 설정)
-├── settings.gradle            # 멀티모듈·composite build 정의
+├── settings.gradle            # 멀티모듈 정의
 ├── docker-compose.yml         # 로컬 pgvector PostgreSQL
 └── docs/                      # 문서 (이 폴더)
 ```

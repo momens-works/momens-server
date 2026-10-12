@@ -1,11 +1,5 @@
 rootProject.name = 'momens-server'
 
-includeBuild('third_party/momens-proto') {
-    dependencySubstitution {
-        substitute module('com.momens:momens-proto') using project(':')
-    }
-}
-
 // app: 실행·조립 모듈. common: 최소 공유 기반.
 // capability 모듈은 modules/ 아래에 모으되, Gradle 논리 경로(:auth 등)는 평면으로 유지합니다.
 include 'app'

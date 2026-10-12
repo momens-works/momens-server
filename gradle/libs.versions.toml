@@ -4,7 +4,6 @@
 [versions]
 firebase-admin = "9.11.0"
 google-genai = "1.76.0"
-momens-proto = "1.0.0"
 openapi-request-validator = "3.0.0"
 spring-boot = "4.1.1"
 spring-dotenv = "5.1.0"
@@ -18,9 +17,6 @@ swagger = "2.2.55"
 [libraries]
 firebase-admin = { module = "com.google.firebase:firebase-admin", version.ref = "firebase-admin" }
 google-genai = { module = "com.google.genai:google-genai", version.ref = "google-genai" }
-# settings.gradle의 includeBuild가 그룹과 이름을 기준으로 로컬 프로젝트를 대체하므로,
-# 이 버전은 실제 의존성 해소에 사용되지 않습니다.
-momens-proto = { module = "com.momens:momens-proto", version.ref = "momens-proto" }
 openapi-request-validator-mockmvc = { module = "com.atlassian.oai:openapi-request-validator-mockmvc", version.ref = "openapi-request-validator" }
 spring-dotenv = { module = "me.paulschwarz:spring-dotenv", version.ref = "spring-dotenv" }
 spring-modulith-api = { module = "org.springframework.modulith:spring-modulith-api", version.ref = "spring-modulith" }
