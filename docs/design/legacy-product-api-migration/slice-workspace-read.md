@@ -210,6 +210,8 @@ modules/workspace/src/main/java/works/momens/server/workspace/
     └── WorkspaceRepository.java         # 변경. 멤버십 조인 목록 조회 1개 추가
 ```
 
+위 트리는 2026-08-17 기준 설계입니다. 이후 MOM-0894에서 공개 계약과 구현을, MOM-0959에서 에러 코드를 하위 도메인별 패키지로 이동했습니다. 현재 패키지 구조는 [모듈 맵](../module-map.md)을 참고해 주세요.
+
 - `:web` 모듈을 `settings.gradle`, `app/build.gradle` 의존성, `Dockerfile`의 build script COPY
   목록에 함께 추가한다(`verifyDockerModuleBuildScripts`가 누락을 잡는다).
 - `:web`은 `:common`과 `:workspace`만 의존한다. capability가 늘어날 때마다 의존을 추가한다.
