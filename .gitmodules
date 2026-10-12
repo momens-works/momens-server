@@ -1,3 +1,0 @@
-[submodule "third_party/momens-proto"]
-	path = third_party/momens-proto
-	url = https://github.com/momens-works/momens-proto.git

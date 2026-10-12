@@ -99,7 +99,7 @@ tasks.register('verifyDependencyVersionsInCatalog') {
     description = '빌드 스크립트에 버전 카탈로그 외부의 버전 선언이 있는지 검사합니다.'
 
     // configuration cache 요구사항에 따라 실행 시점에 Project를 참조하지 않도록 파일 목록을 구성 단계에서
-    // 확정합니다. includeBuild로 포함된 third_party/momens-proto는 allprojects에 포함되지 않습니다.
+    // 확정합니다.
     List<File> buildScripts = allprojects.collect { it.buildFile }
     java.nio.file.Path rootPath = rootProject.projectDir.toPath()
 
