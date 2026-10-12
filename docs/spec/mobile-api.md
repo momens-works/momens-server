@@ -16,7 +16,7 @@
 - 시각 값: ISO 8601 UTC의 `Z` 표기로 반환하며, 표시 시간대 변환은 클라이언트가 담당합니다.
 - 응답 형식: [공통 응답 규칙](api-response-error-codes.md)을 따릅니다.
 
-로그인·토큰 갱신과 앱 업데이트 확인은 `Authorization` 헤더가 필요하지 않습니다.
+로그인·토큰 갱신·로그아웃과 앱 업데이트 확인은 `Authorization` 헤더가 필요하지 않습니다.
 경로·버전 규칙은 [API 버저닝](api-versioning.md)을 따릅니다.
 
 ### 에러 응답
@@ -103,9 +103,10 @@ Refresh token을 폐기합니다.
 - `update_required`가 `true`일 때 사용자에게 업데이트를 안내하는 방식은 앱에서 결정합니다.
 - 지원하지 않는 플랫폼, 형식이 올바르지 않은 앱 버전, 필수 쿼리 파라미터 누락은 `COMMON_VALIDATION_FAILED`로 응답하고 `details.fields`에 해당 쿼리 파라미터 이름을 담습니다. `platform`은 `ANDROID`처럼 enum 상수 이름으로 전달해도 허용합니다.
 
-쿼리 형식은 OpenAPI의 `mobileCheckAppUpdate`를 따릅니다. 앱 버전은 숫자 1~3자리를 점으로
-구분하며 생략된 자리는 0입니다(`1.0`과 `1.0.0`은 같음). 각 자리를 정수로 비교하므로
-`1.10`은 `1.9`보다 높습니다. 앞의 0과 접미사(`-beta`, `+5`)는 허용하지 않습니다.
+쿼리 형식은 OpenAPI의 `mobileCheckAppUpdate`를 따릅니다. 앱 버전은 점으로 구분된 정수 구성요소
+1~3개이며, 각 구성요소는 최대 9자리입니다. 생략된 구성요소는 0입니다(`1.0`과 `1.0.0`은 같음).
+각 구성요소를 정수로 비교하므로 `1.10`은 `1.9`보다 높습니다. 0은 허용하지만 선행 0(`01` 등)과
+접미사(`-beta`, `+5`)는 허용하지 않습니다.
 
 ## 모바일 진입
 
@@ -245,8 +246,8 @@ Asia/Seoul 기준이라, `created_at`(UTC 저장)을 KST 하루로 잘라 그 �
 
 `filters`는 당일 시그널에 실제 있는 type으로 구성합니다. `key`가 `all`인 항목을 맨 앞에 고정하고 전체 개수를 담은 뒤,
 나머지 type 칩을 이어 붙입니다. 각 type 칩의 `key`는 signal type(`change`, `decision`, `risk`, `question`)이고
-`count`는 그 type의 당일 시그널 수입니다. 개수가 0인 type은 칩을 만들지 않습니다. type 목록을 서버가 고정하지 않아
-민수가 새 type을 만들면 칩이 자동으로 늘어납니다. `label`은 `type`의 첫 글자만 대문자로 바꾼 값입니다(위 Signal
+`count`는 그 type의 당일 시그널 수입니다. 개수가 0인 type은 칩을 만들지 않습니다.
+`label`은 `type`의 첫 글자만 대문자로 바꾼 값입니다(위 Signal
 카테고리 표시 표와 같음). type 칩 순서는 `label` 글자수가 적은 것부터이고 글자수가 같으면 `label` 알파벳순입니다.
 
 `signal_summary.summary`는 시그널 요약 헤더 아래 문단(해당 프로젝트 이슈와 진행상황 요약)입니다. 그날 시그널을 한
@@ -306,10 +307,9 @@ cancelled를 분모에서 제외하는 기준은 기획이 확정했습니다. �
 | `cursor` | 아니오 | 이전 응답의 `next_cursor`. 없으면 첫 페이지 |
 | `limit` | 아니오 | 페이지 크기. 없거나 0이면 기본 20, 상한 50(넘기면 상한으로 줄임). 음수는 `COMMON_VALIDATION_FAILED` |
 
-정렬과 항목 구성은 브리프 본체의 `signal_summary.items`와 같습니다. `filter`는 열린 어휘라 `all`이나 빈 값이면
+정렬과 항목 구성은 브리프 본체의 `signal_summary.items`와 같습니다. `filter`는 임의 문자열을 허용하며 `all`이나 빈 값이면
 전체를, 그 외 값은 해당 type을 조회합니다. 알려지지 않은 type은 매칭이 없어 빈 목록으로 응답하고 400을 내지
-않습니다. type 어휘를 서버가 고정하지 않아 새 type이 코드 변경 없이 흐르게 하려는 선택입니다. 형식이 잘못된
-`cursor`와 음수 `limit`은 `COMMON_VALIDATION_FAILED`(400)로 응답합니다. 커서가 마지막으로 본 항목의 생성 시각과
+않습니다. 형식이 잘못된 `cursor`와 음수 `limit`은 `COMMON_VALIDATION_FAILED`(400)로 응답합니다. 커서가 마지막으로 본 항목의 생성 시각과
 id를 기준으로 하기 때문에, 페이지 사이에 시그널이 처리되어도 다음 페이지의 위치가 밀리지 않습니다.
 
 ## 작업
@@ -375,7 +375,7 @@ convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다�
 - `checklist_items`는 최종 목록으로 전체 교체합니다. 생략·`null`은 전체 삭제입니다. 기존 항목은
   상세에서 받은 `id`로 제목·완료 상태를 갱신하고, `id` 없는 항목은 생성하며 목록에서 빠진 항목은 삭제합니다.
   `completed` 생략은 `false`입니다. 없는 `id`는 `TASK_CHECKLIST_ITEM_NOT_FOUND`, 중복 `id`는
-  `COMMON_VALIDATION_FAILED`입니다.
+  `COMMON_VALIDATION_FAILED`입니다. 완료 기준 제목은 빈 문자열이거나 공백만으로 구성될 수 없습니다.
 - 상태의 허용 값·필수 필드·개수·글자 수 제한은 OpenAPI의 `UpdateTaskRequest`·`ChecklistItemRequest`를
   따릅니다. 상세 화면의 즉시 토글은 별도 엔드포인트를 사용합니다.
 - 동시 수정은 마지막 저장이 먼저 저장된 내용을 덮어씁니다. 낙관적 잠금은 없습니다.
