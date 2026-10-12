@@ -3,6 +3,8 @@ package works.momens.server.mcp.tools.internal;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import works.momens.server.project.core.ProjectDetail;
 import works.momens.server.project.milestone.MilestoneDetail;
 import works.momens.server.project.task.TaskSnapshot;
@@ -54,7 +56,8 @@ final class McpReadToolText {
       ProjectDetail project,
       String milestone,
       String assignee,
-      List<TaskUpdateDetail> updates) {
+      List<TaskUpdateDetail> updates,
+      Map<UUID, String> authorNames) {
     StringBuilder text =
         new StringBuilder(label(task))
             .append(" · ")
@@ -79,11 +82,18 @@ final class McpReadToolText {
       text.append("\n\n").append(task.description());
     }
     if (!updates.isEmpty()) {
-      text.append("\n\ncomments (").append(updates.size()).append("):");
+      text.append("\n\nactivities (").append(updates.size()).append("):");
       for (TaskUpdateDetail update : updates) {
         text.append("\n- [")
             .append(COMMENT_TIME.format(update.createdAt()))
-            .append("] ")
+            .append(" UTC] ")
+            .append(update.kind())
+            .append(" · ")
+            .append(
+                update.authorId() == null
+                    ? "Unknown author"
+                    : authorNames.getOrDefault(update.authorId(), update.authorId().toString()))
+            .append(": ")
             .append(update.body());
       }
     }

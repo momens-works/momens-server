@@ -1,4 +1,4 @@
-# MCP 작업 목록 읽기 도구
+# MCP 작업 읽기 도구
 
 MOM-1003은 `list_tasks_v2`를 추가한다. 2026-09-30 사용자 결정과 ADR-0023에 따라
 기존 `list_tasks`는 유지하고 새 호출에는 v2를 사용한다. 기존 호출을 자동으로 전환하지 않는다.
@@ -37,4 +37,28 @@ MOM-1003은 `list_tasks_v2`를 추가한다. 2026-09-30 사용자 결정과 ADR-
 미할당 조회에만 `none`·`unassign`·`unassigned`를 사용한다. 상태 필터가 불필요하면
 빈 문자열 대신 `status`를 생략한다. 기존 `list_tasks` 제거는 이번 범위에 포함하지 않는다.
 
-삭제 프로젝트 처리(MOM-1000), 페이지 분할(MOM-1004), 활동 출력(MOM-1005)은 별도 작업이다.
+삭제 프로젝트 처리(MOM-1000), 페이지 분할(MOM-1004)은 별도 작업이다.
+
+## 작업 상세 활동 출력 (MOM-1005)
+
+`get_task`는 기존 `comments (N)` 대신 댓글과 진행 기록을 함께 나타내는 `activities (N)`을
+출력한다. 각 항목은 `[yyyy-MM-dd HH:mm UTC] kind · 작성자: 본문` 형식이며,
+`kind`는 `comment`(댓글) 또는 `update`(진행 기록)다. 시간은 기존 UTC 기준을 유지하고
+시간대를 명시한다. 활동이 없으면 이 절을 생략하며, reader의 순서와 본문은 보존한다.
+
+```text
+activities (2):
+- [2026-09-27 03:04 UTC] comment · Alice: 확인 부탁드립니다.
+- [2026-09-27 03:05 UTC] update · Bob: 구현을 완료했습니다.
+```
+
+작성자는 활동의 중복을 제거한 작성자 ID로 공개 `UserService.getProfiles`를 한 번 호출해
+이름을 표시한다. 현재 워크스페이스 멤버 목록으로 활동을 필터하지 않는다. 탈퇴 등으로 프로필이
+없거나 이름이 없으면 작성자 UUID를, 작성자 ID 자체가 없으면 `Unknown author`를 표시한다.
+이름이 같을 수 있으므로 표시 이름을 고유 식별자로 취급하지 않는다. 이메일·프로필 이미지 등은
+추가하지 않으며, 프로필이 없는 활동도 누락하지 않는다.
+
+기존 작업 상세 헤더, 도구 입력 schema, `resultType: complete`와 text content envelope는
+유지한다. 출력 텍스트의 활동 제목과 항목 형식은 변경되므로 기존 `comments` 문자열을 파싱하던
+호출자는 새 형식을 반영해야 한다. `mcp:tasks:read`, 활성 grant·현재 membership·workspace
+제한 및 삭제 프로젝트의 UUID/MOM-label 상세 조회 거부는 그대로 적용한다.
