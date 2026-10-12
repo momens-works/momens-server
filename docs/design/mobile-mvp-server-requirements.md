@@ -476,8 +476,9 @@ production 코드 분기 대신 worker와 같은 backing 계약의 fixture를 �
 
 ## Proto 정합성 메모
 
-- `momens-proto`에는 현재 Signal 전용 proto message/service가 없다. 내부 서버 간 도메인 계약 정의가
-  필요하면 proto 정의를 두고, PR 단위로 `@server` 리뷰 후 관련 서버가 최신화한다.
+- `momens-proto`에는 `Signal`·`SignalEvidence` 메시지가 존재하지만, 현재 `momens-server`는
+  생성된 Java 클래스를 사용하지 않는다. 계약의 존재와 서버의 빌드 의존성 사용 여부는 구분한다.
+  내부 서버 간 도메인 계약을 추가·변경할 때는 PR 단위로 `@server` 리뷰 후 관련 서버가 최신화한다.
 - `momens.retrieval.v1.RetrievalEvent`는 worker가 publish하고 retrieval이 polling하는 dedicated
   read-model event로 정의되어 있다. api-server가 projection write를 직접 하지 않고 outbox를 통해
   worker에 넘기는 최신 책임 경계와 충돌하지 않는다.
