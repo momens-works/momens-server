@@ -23,11 +23,11 @@ interface TaskReadControllerDocs {
 
   @Operation(
       operationId = "listProjectTasks",
-      summary = "프로젝트 태스크 목록 조회",
-      description = "프로젝트의 소프트 삭제되지 않은 태스크를 생성 시각 내림차순으로 조회합니다.")
+      summary = "프로젝트 작업 목록 조회",
+      description = "프로젝트의 소프트 삭제되지 않은 작업을 생성 시각 내림차순으로 조회합니다.")
   @ApiResponse(
       responseCode = "200",
-      description = "조회 성공. 태스크가 없으면 tasks는 빈 배열입니다.",
+      description = "조회 성공. 작업이 없으면 tasks는 빈 배열입니다.",
       content = @Content(schema = @Schema(implementation = WebTaskListResponse.class)))
   @ApiException(
       value = ProjectErrorCode.class,
@@ -38,8 +38,8 @@ interface TaskReadControllerDocs {
 
   @Operation(
       operationId = "getTask",
-      summary = "태스크 상세 조회",
-      description = "소프트 삭제되지 않은 태스크와 소속 프로젝트의 상세를 조회합니다.")
+      summary = "작업 상세 조회",
+      description = "소프트 삭제되지 않은 작업과 소속 프로젝트의 상세를 조회합니다.")
   @ApiResponse(
       responseCode = "200",
       description = "조회 성공",
@@ -48,12 +48,12 @@ interface TaskReadControllerDocs {
       value = TaskErrorCode.class,
       codes = {"TASK_NOT_FOUND"})
   @ApiException(CommonErrorCode.class)
-  WebTaskResponse get(@Parameter(description = "태스크 식별자") UUID taskId, Principal principal);
+  WebTaskResponse get(@Parameter(description = "작업 식별자") UUID taskId, Principal principal);
 
   @Operation(
       operationId = "listTaskUpdates",
-      summary = "태스크 업데이트 목록 조회",
-      description = "태스크의 소프트 삭제되지 않은 업데이트를 생성 시각 오름차순으로 조회합니다.")
+      summary = "작업 업데이트 목록 조회",
+      description = "작업의 소프트 삭제되지 않은 업데이트를 생성 시각 오름차순으로 조회합니다.")
   @ApiResponse(
       responseCode = "200",
       description = "조회 성공. 업데이트가 없으면 updates는 빈 배열입니다.",
@@ -63,12 +63,12 @@ interface TaskReadControllerDocs {
       codes = {"TASK_NOT_FOUND"})
   @ApiException(CommonErrorCode.class)
   TaskUpdateListResponse updates(
-      @Parameter(description = "태스크 식별자") UUID taskId, Principal principal);
+      @Parameter(description = "작업 식별자") UUID taskId, Principal principal);
 
   @Operation(
       operationId = "getTaskContext",
-      summary = "태스크 컨텍스트 조회",
-      description = "태스크에 연결된 소프트 삭제되지 않은 memory와 source ref를 생성 시각 내림차순으로 조회합니다.")
+      summary = "작업의 연결된 컨텍스트 조회",
+      description = "작업에 연결된 소프트 삭제되지 않은 memory와 source ref를 생성 시각 내림차순으로 조회합니다.")
   @ApiResponse(
       responseCode = "200",
       description = "조회 성공. 연결된 항목이 없으면 memories와 source_refs는 빈 배열입니다.",
@@ -77,5 +77,5 @@ interface TaskReadControllerDocs {
       value = TaskErrorCode.class,
       codes = {"TASK_NOT_FOUND"})
   @ApiException(CommonErrorCode.class)
-  TaskContextResponse context(@Parameter(description = "태스크 식별자") UUID taskId, Principal principal);
+  TaskContextResponse context(@Parameter(description = "작업 식별자") UUID taskId, Principal principal);
 }

@@ -175,8 +175,8 @@ MCP transport, Slack webhook). 위 표는 나머지 H009~H011과 H014~H096을 �
   새로 설계하는 편이 낫다.
 
   다섯 다 되돌릴 길은 닫히지 않는다. 레거시 endpoint와 데이터는 prod에 그대로 남는다.
-- **H027(멤버 목록)과 H072(태스크 컨텍스트)는 폴백 전용이 아니다.** 각각 워크스페이스 설정 화면과
-  태스크 상세에서 직접 호출한다.
+- **H027(멤버 목록)과 H072(작업 컨텍스트)는 폴백 전용이 아니다.** 각각 워크스페이스 설정 화면과
+  작업 상세에서 직접 호출한다.
 - **H081(sync-states)은 실제 소비자가 확인되지 않아 폐기로 확정했다**(2026-10-08).
   웹에는 호출용 메서드만 있고 실행하는 화면은 없다. 상세 근거와 보존 범위는 아래 H081 절을 따른다.
 
@@ -229,19 +229,19 @@ MOM-0975의 “MCP 전용 write이므로 MCP 이관에서 처리”라는 분류
 | --- | --- | --- |
 | `momens-api` | `5ba48d2c2eb7e5a1f6ecf80388ec59fccca7b65a` | `internal/bootstrap/router.go` → `internal/project/{handler,service,repository}.go`에 수정·삭제 구현 존재. MCP 등록 도구에 두 기능 없음 |
 | `momens-server` | `b41ee1c9` | 웹 프로젝트 controller는 생성만 제공. MCP에도 프로젝트 수정·삭제 도구 없음 |
-| `momens-fe` | `54e26ce7d67cbb67369d2d8c3e2da801a7a0c1a2` | API client·호출부에 두 경로 없음. `src/domain/timeline.ts`와 타임라인 설계 문서에는 수정 경로 부재로 목표일 설정을 제공하지 않는다고 기록 |
+| `momens-fe` | `54e26ce7d67cbb67369d2d8c3e2da801a7a0c1a2` | API client·호출부에 두 경로 없음. `src/domain/timeline.ts`와 타임라인 설계 문서에는 수정 경로 부재로 목표 날짜 설정을 제공하지 않는다고 기록 |
 | `momens-android` | `fe8494f555ee5e51e8eb592dddf5048dd9d100dd` | 네트워크 service에 두 경로 없음 |
 | `momens-ios` | `d2072133e3ee54bc96c121c66ba3d7c3ac23a32f` | 초기 화면과 앱 진입점만 존재하며 API 소비 코드 없음 |
 | `e2e` | `eac954dd7991f1d33e5e53353192556023e466da` | API client·테스트에 두 경로 호출 없음 |
 
 이는 정적 코드 조사다. 운영 로그·수동 호출을 확인하지 않았으므로 실제 요청 0건을 주장하지 않는다.
-FE의 향후 목표일 수정 필요성까지 설명한 뒤 폐기를 확정했으며, 향후 기능 요구가 생기면 별도로
+FE의 향후 목표 날짜 수정 필요성까지 설명한 뒤 폐기를 확정했으며, 향후 기능 요구가 생기면 별도로
 설계한다. 레거시 handler 테스트에는 수정·삭제 권한 거부 검증이 있지만 제품 소비자는 아니다.
 
 두 API는 workspace admin/owner만 허용한다. 수정은 프로젝트 필드와 `project_owners`를 저장하고,
-삭제는 `projects.deleted_at`·`updated_at`만 갱신한다. 태스크·마일스톤 등 연관 행이나 검색 문서를
+삭제는 `projects.deleted_at`·`updated_at`만 갱신한다. 작업·마일스톤 등 연관 행이나 검색 문서를
 함께 삭제하지 않으며 projection/outbox도 발행하지 않는다. 이번 폐기는 endpoint의 종료이므로
-프로젝트·소유자·연관 데이터·기존 검색 문서·스키마를 보존한다. 기존 삭제 프로젝트의 태스크 조회·쓰기
+프로젝트·소유자·연관 데이터·기존 검색 문서·스키마를 보존한다. 기존 삭제 프로젝트의 작업 조회·쓰기
 판정은 `MOM-1000` 범위로 유지하며, 이 결정으로 해당 버그 수정이나 검색 정리를 완료 처리하지 않는다.
 
 `MOM-1022`는 두 API를 신규 E2E 이관 대상에서 제외하고 레거시 의존 호출이 새로 생기지 않았는지
@@ -429,7 +429,7 @@ Standard 모드**이며, 모두 `MOM-0848`에서 `traced`됐다.
 | H046 | Product JSON | `POST /invitations/accept` | `workspace.AcceptInvitation` | `WSP` | W | `implemented`: target `POST /api/invitations/accept`. 구현 완료(`MOM-0865`), 전환 전. 토큰 조회부터 멤버십 생성과 초대 수락 상태 반영까지 하나의 트랜잭션으로 처리하며, 같은 토큰을 사용한 동시 요청이 모두 통과하지 않도록 초대 행에 lock을 건다. 검증 순서는 레거시와 동일하게 초대 상태, 만료 여부, 이메일 일치 여부 순이다. 토큰은 레거시와 같은 방식으로 SHA-256 해시하므로 전환 전에 이미 발송된 초대 링크도 사용할 수 있다 |
 | H047 | Product JSON | `GET /projects/:projectId` | `project.Get` | `PRJ` | R | `traced`; **HTTP 경로 폐기 결정·실행 대기**(`MOM-0975`, 2026-09-26). 제품 호출처가 없고 관측한 운영 로그에서도 0건이다. 신규 서버로 이관하지 않는다. 수정 기능에서 쓰는 `Repository.GetByID`는 유지한다. 전용 handler/service 테스트는 실제 제거 범위에 맞춰 정리한다 |
 | H048 | Product JSON | `PATCH /projects/:projectId` | `project.Update` | `PRJ` | W | `traced`; **폐기 결정·실행 대기**(`MOM-1019`, 2026-10-08). 클라이언트·E2E 호출처와 MCP 도구가 없다. 사용자 결정으로 신규 REST/MCP에 이관하지 않는다. 프로젝트·소유자 데이터는 보존하며 종료 실행은 `MOM-1023`, E2E 범위 반영은 `MOM-1022`가 소유한다. 조사 기준과 한계는 위 MOM-1019 절을 따른다 |
-| H049 | Product JSON | `DELETE /projects/:projectId` | `project.Delete` | `PRJ` | W | `traced`; **폐기 결정·실행 대기**(`MOM-1019`, 2026-10-08). 소비자 확인과 실행 담당은 H048과 같다. 기존 프로젝트·연관 행·검색 문서를 보존하며 신규 삭제 API는 구현하지 않는다. 이미 삭제된 프로젝트의 태스크 처리 보완은 `MOM-1000`으로 유지한다 |
+| H049 | Product JSON | `DELETE /projects/:projectId` | `project.Delete` | `PRJ` | W | `traced`; **폐기 결정·실행 대기**(`MOM-1019`, 2026-10-08). 소비자 확인과 실행 담당은 H048과 같다. 기존 프로젝트·연관 행·검색 문서를 보존하며 신규 삭제 API는 구현하지 않는다. 이미 삭제된 프로젝트의 작업 처리 보완은 `MOM-1000`으로 유지한다 |
 | H050 | Product JSON | `POST /projects/:projectId/milestones` | `milestone.Create` | `MIL` | W | `implemented`: target `POST /api/projects/{projectId}/milestones`. 구현 완료(`MOM-0866`), 전환 전. 소유자를 지정하지 않으면 요청자를 소유자로 지정합니다. 레거시는 프로젝트 소유자를 우선 사용하고, 프로젝트 소유자가 없을 때만 요청자를 사용합니다. 신규 서버는 프로젝트 소유자를 사용하지 않습니다(`MOM-1038`). 따라서 프로젝트 소유자가 현재 워크스페이스 멤버가 아닌 경우 레거시는 400으로 실패하지만 신규 서버는 성공합니다. `scripts/legacy-diff`의 비교 데이터에는 프로젝트 소유자 행이 없어 이 차이는 비교 결과에 나타나지 않습니다. 프로젝트 생성과 달리 member 이상의 권한으로 호출할 수 있다. 프로젝트가 없으면 404로 응답한다. 마일스톤 이름과 권한의 검증 순서 차이는 H037과 같다. `health_status`가 허용하지 않는 값이면 요청 본문을 읽는 단계에서 400 `COMMON_VALIDATION_FAILED`로 응답하므로 다른 필드 검증이나 권한 확인보다 먼저 응답합니다(`MOM-0949`). 레거시는 빈 문자열 `health_status`를 기본값(`planned`)으로 처리했지만, 신규 서버는 400 `COMMON_VALIDATION_FAILED`로 거부합니다(`MOM-0949`). |
 | H051 | Product JSON | `GET /projects/:projectId/milestones` | `milestone.List` | `MIL` | R | `traced`. read 기반만 구현(`MOM-0858`), endpoint는 전환 대상이 아니다. 웹 소비자가 snapshot 폴백(`workspaceSnapshot.ts:130`)뿐임이 FE 기준선에서 확인됐다. 마일스톤 데이터는 H023으로 소비된다 |
 | H052 | Product JSON | `POST /projects/:projectId/tasks` | `task.Create` | `TSK` | W | `implemented` (`MOM-0867`); `task.created` outbox 계약을 따른다. worker task projector·legacy MCP·Slack을 포함한 aggregate writer 단일화가 cutover gate. `status`와 `priority`는 정식 값만 받습니다. 레거시에서 허용하던 기존 입력값(`progress`, `in-progress`, `med`), 대소문자가 다른 값, 앞뒤에 공백이 있는 값, 빈 문자열은 400 `COMMON_VALIDATION_FAILED`로 거부합니다(`MOM-0949`). |
@@ -541,8 +541,8 @@ eval set·retrieval 주소·접근 권한과 선택적 Vertex ADC가 필요하�
 | 워크스페이스 목록·상세 | H020, H022 | 사용자 진입 가치가 높고 target `workspace` entity/repository가 이미 있으며 projection 없음 | legacy wrapper·403/404·soft-delete characterization | **확정**. 응답 필드가 target 엔티티와 1:1이고 신규 DDL이 없음. 웹 계약이라 `MOM-0845`와 독립 |
 | 프로젝트 목록·상세 | H038, H047 | target `ProjectReader`와 project backing이 이미 있고 projection 없음 | legacy `health_status`, count, metadata, label, owners와 계산 progress의 응답 정책; `MOM-0845` | ~~두 번째 후보~~ **무효.** FE 사용 실태 확인 결과 H038은 snapshot 폴백 전용이고 H047은 호출처가 없다(`MOM-0856`). 프로젝트 데이터는 H023을 통해 소비되므로 read 기반만 필요하다(`MOM-0857`) |
 | 마일스톤 목록·상세 | H051, H056 | read-only이고 외부 provider·projection 없음 | target milestone entity/API가 아직 없고 owner·health·progress 전체 mapping 필요 | ~~독립성은 높지만 첫 slice의 신규 코드량이 더 큼~~ **무효.** H051은 snapshot 폴백 전용, H056은 호출처 없음. read 기반만 필요하다(`MOM-0858`) |
-| 태스크 목록·상세 | H053, H060 | 사용자 가치가 높고 target task backing·모바일 read가 존재 | `MOM-0773`, legacy milestone/due date·role/default·progress, 웹/모바일 DTO 분리 | 절반 무효. H053은 snapshot 폴백 전용이고 H060만 실사용이다(`MOM-0861`) |
-| 결정·블로커 read | H039, H055, H073 | write를 제외하면 projection 전환 없이 routing rollback 가능 | target entity/API 미구현, legacy 전용 test 없음, 현재 클라이언트 사용 근거 확인 필요 | ~~characterization 근거가 약해 후순위~~ **무효.** H039는 snapshot 폴백 전용이라 H023 합성용 blocker read 기반만 구현했다(`MOM-0859`). H055·H073은 호출처가 없어 decision read 기반도 만들지 않는다 |
+| 작업 목록·상세 | H053, H060 | 사용자 가치가 높고 target task backing·모바일 read가 존재 | `MOM-0773`, legacy milestone/due date·role/default·progress, 웹/모바일 DTO 분리 | 절반 무효. H053은 snapshot 폴백 전용이고 H060만 실사용이다(`MOM-0861`) |
+| 결정·차단 사유 read | H039, H055, H073 | write를 제외하면 projection 전환 없이 routing rollback 가능 | target entity/API 미구현, legacy 전용 test 없음, 현재 클라이언트 사용 근거 확인 필요 | ~~characterization 근거가 약해 후순위~~ **무효.** H039는 snapshot 폴백 전용이라 H023 합성용 blocker read 기반만 구현했다(`MOM-0859`). H055·H073은 호출처가 없어 decision read 기반도 만들지 않는다 |
 
 확정한 슬라이스의 route → handler → service → repository → schema → test 재추적 결과와 잠근
 계약은 [첫 웹 read 슬라이스 계약](slice-workspace-read.md)에 있다.

@@ -18,7 +18,7 @@ public record WorkspaceInvitationResponse(@Schema(description = "초대 정보")
       @Schema(description = "초대 식별자") UUID id,
       @Schema(description = "워크스페이스 식별자") UUID workspaceId,
       @Schema(description = "초대받은 이메일") String email,
-      @Schema(description = "초대 수락 시 부여할 역할입니다. admin 또는 member입니다.") String role,
+      @Schema(description = "초대 수락 시 부여할 권한입니다. admin 또는 member입니다.") String role,
       @JsonInclude(JsonInclude.Include.NON_NULL)
           @Schema(description = "초대한 사용자 식별자입니다. 값이 없으면 응답에서 생략됩니다.", nullable = true)
           UUID inviterId,

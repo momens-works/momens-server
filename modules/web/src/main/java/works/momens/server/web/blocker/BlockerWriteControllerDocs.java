@@ -20,8 +20,8 @@ import works.momens.server.web.dto.response.WebMessageResponse;
 interface BlockerWriteControllerDocs {
   @Operation(
       operationId = "createTaskBlocker",
-      summary = "태스크 블로커 생성",
-      description = "워크스페이스 멤버가 태스크의 블로커를 생성합니다. 초기 상태는 active입니다.")
+      summary = "작업 차단 사유 생성",
+      description = "워크스페이스 멤버가 작업의 차단 사유를 생성합니다. 초기 상태는 active입니다.")
   @ApiResponse(
       responseCode = "201",
       description = "생성 성공",
@@ -49,8 +49,8 @@ interface BlockerWriteControllerDocs {
 
   @Operation(
       operationId = "resolveBlocker",
-      summary = "블로커 해결",
-      description = "워크스페이스 멤버가 블로커를 해결합니다. 이미 해결한 블로커도 해결 시각을 갱신합니다.")
+      summary = "차단 사유 해결",
+      description = "워크스페이스 멤버가 차단 사유를 해결합니다. 이미 해결한 차단 사유도 해결 시각을 갱신합니다.")
   @ApiResponse(
       responseCode = "200",
       description = "해결 성공",
@@ -66,8 +66,8 @@ interface BlockerWriteControllerDocs {
 
   @Operation(
       operationId = "deleteBlocker",
-      summary = "블로커 삭제",
-      description = "워크스페이스 관리자 또는 소유자가 블로커를 영구 삭제합니다.")
+      summary = "차단 사유 삭제",
+      description = "워크스페이스 관리자 또는 소유자가 차단 사유를 영구 삭제합니다.")
   @ApiResponse(
       responseCode = "200",
       description = "삭제 성공",

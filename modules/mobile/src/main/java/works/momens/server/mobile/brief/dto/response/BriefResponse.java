@@ -25,9 +25,9 @@ public record BriefResponse(
   public record ProjectResponse(
       @Schema(description = "project 식별자") UUID id,
       @Schema(description = "이름", example = "Q2 Activation Readiness") String name,
-      @Schema(description = "목표일. 미설정이면 null로 포함됩니다.", nullable = true) LocalDate targetDate,
+      @Schema(description = "목표 날짜. 미설정이면 null로 포함됩니다.", nullable = true) LocalDate targetDate,
       @Schema(
-              description = "진행률(0~100 정수 퍼센트). cancelled를 제외한 태스크 중 done 비율이고, 소수점은 버립니다.",
+              description = "진행률(0~100 정수 퍼센트). cancelled를 제외한 작업 중 done 비율이고, 소수점은 버립니다.",
               example = "64")
           int progress,
       @Schema(description = "핵심 목표 요약. 작성 전이면 null로 포함됩니다.", nullable = true) String summary) {}
@@ -54,8 +54,8 @@ public record BriefResponse(
   @Schema(description = "현재 우선순위 항목")
   public record PriorityResponse(
       @Schema(description = "정렬 순번(1부터). 화면의 01~04 표기와 같습니다.", example = "1") int rank,
-      @Schema(description = "태스크 제목") String title,
-      @Schema(description = "task 식별자. 태스크 상세로 이동할 때 사용합니다.") UUID taskId) {}
+      @Schema(description = "작업 제목") String title,
+      @Schema(description = "task 식별자. 작업 상세로 이동할 때 사용합니다.") UUID taskId) {}
 
   @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
   @Schema(description = "시그널 요약 항목")

@@ -24,11 +24,11 @@ Momens Mobile은 기존 웹 기능을 축소 이식하는 앱이 아니다. 모�
 
 - Project Owner가 오늘 확인해야 할 시그널을 모바일에서 파악할 수 있어야 한다.
 - Project Owner가 시그널의 근거와 민수 제안을 확인할 수 있어야 한다.
-- Project Owner가 시그널을 태스크 등록으로 처리할 수 있어야 한다.
+- Project Owner가 시그널을 작업 등록으로 처리할 수 있어야 한다.
 - 처리 결과는 Signal의 프로젝트 단위 처리 이력과 프로젝트 맥락에 반영되어야 한다.
-- Project Owner가 프로젝트 태스크를 생성하고, 상세를 확인하고, 체크리스트를 토글하고, 기본 정보를
+- Project Owner가 프로젝트 작업을 생성하고, 상세를 확인하고, 완료 기준를 토글하고, 기본 정보를
   수정할 수 있어야 한다.
-- 태스크 생성 이후 retrieval projection은 api-server가 직접 쓰지 않고 worker가 처리할 수 있어야 한다.
+- 작업 생성 이후 retrieval projection은 api-server가 직접 쓰지 않고 worker가 처리할 수 있어야 한다.
 - Signal 발생 시 모바일 사용자가 알 수 있도록 push notification을 보낼 수 있어야 한다.
 
 ## Non-goals
@@ -36,7 +36,7 @@ Momens Mobile은 기존 웹 기능을 축소 이식하는 앱이 아니다. 모�
 모바일 MVP 범위에서 다음은 제외한다.
 
 - 기존 웹 기능 전체 이관
-- Linear/Jira 수준의 태스크 보드
+- Linear/Jira 수준의 작업 보드
 - Notion 수준의 문서 편집
 - 모바일에서 소스 연결과 권한 설정을 완결하는 기능
 - 범용 민수 AI 챗봇
@@ -48,7 +48,7 @@ Momens Mobile은 기존 웹 기능을 축소 이식하는 앱이 아니다. 모�
 - Signal record-decision 액션
 - Signal resolve 액션
 - Signal snooze 액션
-- 관련 자료 상세 전용 API
+- 연결된 소스 상세 전용 API
 - task 생성, Signal 삭제(dismiss), task 상태 변경 push notification
 - worker 내부 재시도/DLQ 저장 방식 상세설계
 - DB 컬럼, index, FK, Java public API, 패키지 구조 등 구현 상세설계
@@ -60,10 +60,10 @@ Momens Mobile은 기존 웹 기능을 축소 이식하는 앱이 아니다. 모�
 | Signal / 시그널 | 프로젝트 목표, 일정, 범위, 품질, 의사결정, 실행 흐름에 영향을 줄 수 있어 사람이 검토해야 하는 변화 |
 | Signal 표시 라벨 | 화면에서 Signal type을 묶어 보여주는 라벨. `risk`/`change`는 `Needs action`, `decision`은 `Needs review`, `question`은 `Needs decision`으로 표현한다. 처리 상태나 목록 필터가 아니다 |
 | Evidence / 근거 | 시그널 판단을 뒷받침하는 출처 기반 정보 |
-| Task draft | 민수가 태스크 등록 시점에 생성하는 사용자 확정 액션용 초안. 최종 task가 아니다 |
-| Minsu suggestion | 시그널을 바탕으로 민수가 제안하는 다음 액션 |
+| Task draft | 민수가 작업 등록 시점에 생성하는 사용자 확정 액션용 초안. 최종 task가 아니다 |
+| Minsu suggestion | 시그널을 바탕으로 민수가 제안하는 다음 행동 |
 | Brief / 브리프 | 프로젝트 상태와 최근 맥락을 짧게 요약한 화면 단위 |
-| Task / 태스크 | 담당자와 상태를 가지고 진행되는 실행 항목 |
+| Task / 작업 | 담당자와 상태를 가지고 진행되는 실행 항목 |
 | Decision / 결정 | 근거와 함께 보존되는 프로젝트 선택 |
 
 ## 시스템 책임
@@ -137,8 +137,8 @@ api-server는 retrieval 서버를 직접 호출하지 않는다.
 | 요청 값 검증 실패 | 400 | `COMMON_VALIDATION_FAILED` |
 | 프로젝트 없음 | 404 | `PROJECT_NOT_FOUND` |
 | 시그널 없음 | 404 | `SIGNAL_NOT_FOUND` |
-| 태스크 없음 | 404 | `TASK_NOT_FOUND` |
-| 태스크 체크리스트 항목 없음 | 404 | `TASK_CHECKLIST_ITEM_NOT_FOUND` |
+| 작업 없음 | 404 | `TASK_NOT_FOUND` |
+| 작업 완료 기준 항목 없음 | 404 | `TASK_CHECKLIST_ITEM_NOT_FOUND` |
 | 현재 상태에서 수행할 수 없는 시그널 액션 | 409 | `SIGNAL_INVALID_STATE` |
 
 Notion 문서에 남아 있는 `AUTH_UNAUTHENTICATED`, `COMMON_VALIDATION` 표기는 이 저장소 기준과
@@ -151,7 +151,7 @@ MVP 이후 단계(웹/레거시 이관)의 이관 후보로 둔다.
 
 | 우선순위 | 의미 |
 | --- | --- |
-| MVP | 모바일 MVP의 핵심 사용자 경험에 직접 연결되는 기능. 시그널 확인, 근거 확인, 태스크 전환, 브리프, 태스크 흐름을 포함한다. |
+| MVP | 모바일 MVP의 핵심 사용자 경험에 직접 연결되는 기능. 시그널 확인, 근거 확인, 작업 전환, 브리프, 작업 흐름을 포함한다. |
 | 필수 | 모바일 MVP를 실제 앱에서 사용하기 위해 반드시 필요한 API/계약/인증/에러 처리. 모바일 API 전체와 계약 안정화를 포함한다. |
 | 선택 | 모바일 MVP 이후 단계의 이관 후보. 기존 웹 API 전체 이관, 레거시 기능 확장, 레거시 서버 폐기 준비는 여기에 둔다. |
 
@@ -159,7 +159,7 @@ MVP 이후 단계(웹/레거시 이관)의 이관 후보로 둔다.
 | --- | --- | --- | --- | --- |
 | Mobile Signal | Signal 목록/상세 조회, convert-to-task, dismiss | MVP | 포함 | 최신 Figma 기준 핵심 흐름 |
 | Mobile Brief | 프로젝트 브리프 조회 | MVP | 포함 | 프로젝트 상태와 최근 맥락 요약 탭 |
-| Mobile Task | 태스크 보드/생성/상세/수정/체크리스트 토글 | MVP | 포함 | 프로젝트 탭 핵심 흐름 |
+| Mobile Task | 작업 보드/생성/상세/수정/완료 기준 토글 | MVP | 포함 | 프로젝트 탭 핵심 흐름 |
 | Mobile API Contract | `/api/mobile/*`, API-Version, 표준 에러, snake_case, no wrapper | 필수 | 포함 | 모바일팀 병렬 개발을 위한 계약 |
 | Auth / Bootstrap | 기존 인증 API 재사용, 모바일 bootstrap | 필수 | 포함 | 앱 진입 필수 |
 | Projection / Outbox | Signal action 이후 worker projection/후속 처리 연계 | 필수 | 포함 | api-server 직접 retrieval write 금지 |
@@ -232,34 +232,34 @@ prod gate로 별도 추적한다.
 - 시그널 요약의 필터 전환과 더보기는 커서 기반 페이지네이션으로 제공한다(2026-07-10 확정,
   하위 엔드포인트 `GET .../brief/signal-summary`).
 - 브리프 signal summary는 당일(Asia/Seoul 기준) 생성된 시그널을 처리 여부와 무관하게 집계한다
-  (2026-07-10 확정, MOM-81). 태스크 전환이나 dismiss와 상관없이 그날 온 개수를 유지하고, 소프트
+  (2026-07-10 확정, MOM-81). 작업 전환이나 dismiss와 상관없이 그날 온 개수를 유지하고, 소프트
   삭제된 시그널은 제외한다. 시그널 탭(미처리 누적 조회)과는 다른 조회 기준이다.
 - 브리프 signal summary는 `change`를 포함해 저장된 모든 type을 노출한다(2026-07-10 기획
   갱신으로 종전 change 제외를 번복). 필터 칩은 당일 시그널에 있는 type으로 데이터 기반 구성한다.
 
-### R-READ-004. 프로젝트 태스크 목록 조회
+### R-READ-004. 프로젝트 작업 목록 조회
 
-서버는 프로젝트 태스크 목록을 상태별로 조회할 수 있어야 한다.
+서버는 프로젝트 작업 목록을 상태별로 조회할 수 있어야 한다.
 
 - 경로: `GET /api/mobile/projects/{projectId}/tasks`
 - 응답은 `todo`, `in_progress`, `done`, `backlog`, `cancelled` 다섯 그룹을 이 순서로 포함한다.
-- 태스크가 없는 그룹도 빈 배열로 포함하며, 각 그룹의 `count`는 `tasks` 배열 길이와 같다.
-- 태스크 카드에는 제목, role, priority, 관련 자료 개수를 표현할 수 있어야 한다.
+- 작업이 없는 그룹도 빈 배열로 포함하며, 각 그룹의 `count`는 `tasks` 배열 길이와 같다.
+- 작업 카드에는 제목, role, priority, 연결된 소스 개수를 표현할 수 있어야 한다.
 
-### R-READ-005. 태스크 상세 조회
+### R-READ-005. 작업 상세 조회
 
-서버는 태스크 상세를 조회할 수 있어야 한다.
+서버는 작업 상세를 조회할 수 있어야 한다.
 
 - 경로: `GET /api/mobile/tasks/{taskId}`
-- 응답은 태스크 기본 정보, role, 담당자, 우선순위, 목적, 체크리스트, 관련 자료 축약본, 열린 질문,
-  다음 액션을 표현할 수 있어야 한다.
-- 관련 자료 bottom sheet는 태스크 상세 응답의 관련 자료 축약본으로 구성할 수 있어야 한다.
-- 원본 문서 이동은 관련 자료의 `source_url`을 사용한다.
+- 응답은 작업 기본 정보, role, 담당자, 우선순위, 설명, 완료 기준, 연결된 소스 축약본, 질문,
+  다음 행동을 표현할 수 있어야 한다.
+- 연결된 소스 bottom sheet는 작업 상세 응답의 연결된 소스 축약본으로 구성할 수 있어야 한다.
+- 원본 문서 이동은 연결된 소스의 `source_url`을 사용한다.
 - 기존 데이터에서 합성할 수 없는 값은 MVP 응답 정책에 따라 빈 값으로 표현할 수 있어야 한다.
 
 ### R-READ-006. 프로젝트 멤버 조회
 
-서버는 태스크 담당자 선택에 사용할 프로젝트 멤버 목록을 조회할 수 있어야 한다.
+서버는 작업 담당자 선택에 사용할 프로젝트 멤버 목록을 조회할 수 있어야 한다.
 
 - 경로: `GET /api/mobile/projects/{projectId}/members`
 - 검색어가 전달되면 이름 기준으로 필터링할 수 있어야 한다.
@@ -267,13 +267,13 @@ prod gate로 별도 추적한다.
 
 ## 모바일 액션 요구사항
 
-### R-ACTION-001. 시그널을 태스크로 전환
+### R-ACTION-001. 시그널을 작업으로 전환
 
-서버는 시그널을 태스크로 전환할 수 있어야 한다.
+서버는 시그널을 작업으로 전환할 수 있어야 한다.
 
 - 경로: `POST /api/mobile/signals/{signalId}/actions/convert-to-task`
 - 요청 body를 받지 않는 원탭 action이다.
-- 태스크 등록 시점에 민수가 draft(title, role, priority)를 생성한다. 비활성·설정 무효·입력
+- 작업 등록 시점에 민수가 draft(title, role, priority)를 생성한다. 비활성·설정 무효·입력
   부족·외부 실패·출력 무효 시 고정 draft(title=15자로 제한한 Signal title, role=`pm`,
   priority=`medium`)를 사용한다.
 - task draft title은 공백 포함 최대 15자여야 한다.
@@ -300,32 +300,32 @@ prod gate로 별도 추적한다.
 - 이미 다른 action으로 처리된 시그널에 요청하면 `SIGNAL_INVALID_STATE`(409)를 반환한다.
 - 삭제 처리한 Signal을 다시 보는 inbox 흐름은 MVP 이후 요구사항이다.
 
-### R-ACTION-003. 일반 태스크 생성
+### R-ACTION-003. 일반 작업 생성
 
-서버는 태스크 탭의 플로팅 버튼에서 일반 태스크를 생성할 수 있어야 한다.
+서버는 작업 탭의 플로팅 버튼에서 일반 작업을 생성할 수 있어야 한다.
 
 - 경로: `POST /api/mobile/projects/{projectId}/tasks`
 - MVP 생성 범위는 `title`, `role`, `priority`다.
-- 담당자, 설명, 체크리스트는 1차 생성 요청에 포함하지 않는다.
+- 담당자, 설명, 완료 기준는 1차 생성 요청에 포함하지 않는다.
 - 생성된 task는 기본적으로 `todo` 그룹에 표시되어야 한다.
 - Signal에서 task를 생성하는 `convert-to-task`와 구분해야 한다.
 
-### R-ACTION-004. 태스크 수정
+### R-ACTION-004. 작업 수정
 
-서버는 태스크 상세 상단 연필 아이콘에서 태스크를 수정할 수 있어야 한다.
+서버는 작업 상세 상단 연필 아이콘에서 작업을 수정할 수 있어야 한다.
 
 - 경로: `PATCH /api/mobile/tasks/{taskId}`
-- 수정 화면의 편집 가능한 필드 전체(제목, role, 담당자, 우선순위, status, 목적, 완료 기준)를 저장한다.
+- 수정 화면의 편집 가능한 필드 전체(제목, role, 담당자, 우선순위, status, 설명, 완료 기준)를 저장한다.
 - `title`, `role`, `priority`, `status`는 필수이며, 생략하면 `400 COMMON_VALIDATION_FAILED`로 응답한다.
 - `assignee_id`와 `purpose`를 생략하거나 null로 보내면 기존 값을 지운다. `purpose`는 빈 문자열도 허용한다.
 - `checklist_items`를 생략하거나 null로 보내면 빈 목록으로 처리해 기존 완료 기준을 모두 삭제한다.
 - 서버가 관리하는 `materials`, `open_questions`, `next_action`은 수정 요청에 포함하지 않으며 유지한다.
-- 요청·응답 예시는 [모바일 API 명세](../spec/mobile-api.md)의 태스크 수정 절을 따른다.
+- 요청·응답 예시는 [모바일 API 명세](../spec/mobile-api.md)의 작업 수정 절을 따른다.
 - 완료 기준 수정은 기존 항목 제목 수정, 새 항목 추가, 기존 항목 삭제를 처리할 수 있어야 한다.
 
-### R-ACTION-005. 태스크 체크리스트 토글
+### R-ACTION-005. 작업 완료 기준 토글
 
-서버는 태스크 상세의 체크박스 완료 상태를 변경할 수 있어야 한다.
+서버는 작업 상세의 체크박스 완료 상태를 변경할 수 있어야 한다.
 
 - 경로: `PATCH /api/mobile/tasks/{taskId}/checklist-items/{itemId}`
 - `itemId`는 `taskId`에 속한 항목이어야 한다.
@@ -368,12 +368,12 @@ production 코드 분기 대신 worker와 같은 backing 계약의 fixture를 �
 - MVP에서 Signal을 처리하는 action은 `convert-to-task`와 `dismiss`다. 화면의 `삭제` 버튼은 `dismiss` action으로
   처리한다.
 - Signal 상세는 근거 목록을 표현할 수 있어야 하며, 개수별 펼침·접힘·빈 상태는 모바일이 담당한다.
-- Signal backing에는 task draft를 저장하지 않는다. draft는 태스크 등록 시점에 생성한다.
+- Signal backing에는 task draft를 저장하지 않는다. draft는 작업 등록 시점에 생성한다.
 
 ## Task draft 요구사항
 
 - Task draft는 최종 task가 아니라 사용자 원탭 action을 위한 초안이다.
-- draft(title, role, priority)는 민수 산출물이며, Signal 생성 시점이 아니라 태스크 등록
+- draft(title, role, priority)는 민수 산출물이며, Signal 생성 시점이 아니라 작업 등록
   (`convert-to-task`) 시점에 생성한다. Signal backing에는 저장하지 않는다.
 - 민수는 서버 내 `minsu` 모듈의 `SignalTaskDraftGenerator`로 구현한다. 비활성·설정 무효·입력
   부족·외부 실패·출력 무효 시 api-server가 고정 draft(title=15자로 제한한 Signal title,
@@ -431,11 +431,12 @@ production 코드 분기 대신 worker와 같은 backing 계약의 fixture를 �
 
 - FCM 디바이스 토큰 등록·해제 계약과 토큰 갱신·중복·폐기 정책은
   [Signal push 데모 설계](signal-push-demo-design.md)의 설치 등록·해제 절을 따른다.
-- 태스크 상세 확장 필드의 빈 값 정책은 이 문서의 「합성/파생 필드 응답 정책」과
-  [모바일 API 명세](../spec/mobile-api.md)의 태스크 상세 절을 따른다.
+- 작업 상세 확장 필드의 빈 값 정책은 이 문서의 「합성/파생 필드 응답 정책」과
+  [모바일 API 명세](../spec/mobile-api.md)의 작업 상세 절을 따른다.
 - Signal 처리 이력과 Signal·evidence의 현행 저장 구조는 [모듈 맵의 signal 절](module-map.md#signal),
   Outbox의 현행 저장 구조와 이벤트별 멱등키는 [모듈 맵의 outbox 절](module-map.md#outbox)을 따른다.
-  [Signal action loop 설계](signal-action-loop-design.md)는 초기 결정 배경을 참고하는 문서다.
+  [ADR-0007](../adr/0007-signal-backing-and-module-boundary.md)은 Signal backing·처리 이력의 결정 배경,
+  [ADR-0008](../adr/0008-outbox-worker-projection-boundary.md)은 outbox 경계의 결정 배경을 설명한다.
 - worker outbox 소비 상태, 재시도, DLQ 설계는 worker 소관이며, 이 서버 요구사항 문서에서 결정하지 않는다.
 
 ## 보류 항목

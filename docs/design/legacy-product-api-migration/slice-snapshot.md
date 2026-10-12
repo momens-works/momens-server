@@ -19,7 +19,7 @@ FE 기준선: `momens-fe@d76a2d5`
 ## 1. 목적
 
 `GET /workspaces/:id/snapshot`(H023)은 웹 보드의 유일한 실질 read 경로다. FE 조사 결과 웹의
-프로젝트·마일스톤·태스크·블로커·메모리 read는 사실상 전부 이 하나로 들어온다. 따라서 웹 read
+프로젝트·마일스톤·작업·차단 사유·메모리 read는 사실상 전부 이 하나로 들어온다. 따라서 웹 read
 이관의 중심은 이 endpoint의 계약을 잠그는 것이고, 이 문서가 확정한 응답 계약이
 `MOM-0857`~`MOM-0861`의 capability read 기반 요구사항을 도출하는 기준이 된다.
 
@@ -139,7 +139,7 @@ milestone에는 `owner_id` 컬럼 자체가 없어 폴백할 대상이 없다. �
 
 - `loadWorkspaceSnapshot`이 snapshot을 먼저 호출하고, **404일 때만** 레거시 fan-out으로 폴백한다
   (`:96`). 폴백 코드에는 "모든 배포 API가 snapshot을 서빙하면 삭제"라는 주석이 달려 있다.
-- 폴백은 `getWorkspace` + 6개 목록 + project별 마일스톤·태스크 + task별 context N+1이다. H022,
+- 폴백은 `getWorkspace` + 6개 목록 + project별 마일스톤·작업 + task별 context N+1이다. H022,
   H038, H053 등은 이 폴백 안에서만 소비된다.
 - `sources`는 **오직 `task_contexts[].source_refs`에서만** 나온다. snapshot에 top-level
   `source_refs` 키가 없다(`:185`).
@@ -148,7 +148,7 @@ milestone에는 `owner_id` 컬럼 자체가 없어 폴백할 대상이 없다. �
   모두 같은 좁은 쿼리를 쓰므로 **`text`는 어느 경로로도 도달할 수 없다.**
 - `confirmedMemories`는 top-level `memories`와 `task_contexts[].memories`를 합친다(`:194`).
   `uniqueById`(`:329`)가 `new Map` 기반이라 **같은 id에서 뒤가 앞을 덮어쓴다.** 좁은 쪽이 뒤에
-  오므로 태스크에 링크된 메모리는 좁은 버전이 이기고, `source_ref_ids`·`related_entity_ids`·
+  오므로 작업에 링크된 메모리는 좁은 버전이 이기고, `source_ref_ids`·`related_entity_ids`·
   `metadata`·`confirmed_at` 등을 잃는다. 이는 FE 버그이며 `MOM-0876`으로 분리했다.
 
 ## 4. 잠근 계약
@@ -211,13 +211,13 @@ milestone에는 `owner_id` 컬럼 자체가 없어 폴백할 대상이 없다. �
 
 - **웹이 이 값을 읽지 않는다.** `momens-fe`의 `mapProject`(`src/api/mappers.ts`)가 이 필드만
   매핑에서 빼고 있고, 도메인 `Project` 타입에도 `progress`가 없다. 화면의 프로젝트 진행률은
-  `taskCompletionRatio`(`src/domain/selectors.ts`)가 태스크에서 직접 계산한다. API 타입
+  `taskCompletionRatio`(`src/domain/selectors.ts`)가 작업에서 직접 계산한다. API 타입
   `ApiProject.progress`가 optional이라 키가 없어도 타입 검사와 런타임 모두 영향이 없다.
-- **이 서버는 저장값을 쓰지 않는다.** 진행률은 태스크 기준 계산이고 `projects.progress`는 읽지도
+- **이 서버는 저장값을 쓰지 않는다.** 진행률은 작업 기준 계산이고 `projects.progress`는 읽지도
   쓰지도 않는 레거시 컬럼으로 유지한다([ADR-0013](../../adr/0013-project-progress-derivation.md)).
   ADR이 "웹 이관 시 진행률 정책과 함께 다시 판단한다"로 유예한 지점을 여기서 정한다.
 
-계산값을 채우는 선택지도 있었으나, 아무도 읽지 않는 값을 위해 project별 태스크 집계를 4.7의 쿼리
+계산값을 채우는 선택지도 있었으나, 아무도 읽지 않는 값을 위해 project별 작업 집계를 4.7의 쿼리
 예산에 얹게 되므로 택하지 않았다. 소비자가 생기면 `TaskProgressReader.progressOf`가 이미 있으므로
 계산값 노출로 올라갈 수 있다.
 
@@ -275,7 +275,7 @@ task의 번들이 남고, 클라이언트는 그 task를 `tasks` 배열에서 �
 중복 출처라 좁으면 원본을 덮어쓴다.
 
 memory를 넓히는 것은 필드 추가이므로 하위호환이다. FE 수정 없이 `MOM-0876`의 증상이 사라진다.
-**대가는 페이로드 중복이다.** 태스크에 링크된 메모리가 top-level과 번들에 전체 필드로 두 번
+**대가는 페이로드 중복이다.** 작업에 링크된 메모리가 top-level과 번들에 전체 필드로 두 번
 실린다. FE 폴백 코드가 삭제되면 `task_contexts`의 memory를 id 참조로 축소해 중복을 없앤다(별도 과제).
 
 Java에는 `omitempty`가 없으므로 이 폭 차이는 명시적으로 선언해야 한다. `source_refs`용 좁은 응답
@@ -327,7 +327,7 @@ UUID라 열거 위험이 없다는 판단도 선례를 따른다.
 특히 다음을 금지한다.
 
 - task별 context 조회 (레거시가 이미 제거한 N+1)
-- project별 마일스톤·태스크 조회 (FE 폴백이 하던 fan-out)
+- project별 마일스톤·작업 조회 (FE 폴백이 하던 fan-out)
 - `owner_user_ids`를 위한 project·milestone **행별** 추가 조회 (배치 2회는 위 표에서 허용)
 
 ## 5. capability read 기반 요구사항

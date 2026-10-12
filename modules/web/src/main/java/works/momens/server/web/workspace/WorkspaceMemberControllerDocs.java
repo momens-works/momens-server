@@ -44,8 +44,8 @@ interface WorkspaceMemberControllerDocs {
 
   @Operation(
       operationId = "updateWorkspaceMemberRole",
-      summary = "워크스페이스 멤버 역할 수정",
-      description = "멤버의 역할을 변경합니다. admin 또는 owner 권한이 필요하며 owner인 멤버는 변경할 수 없습니다.")
+      summary = "워크스페이스 멤버 권한 수정",
+      description = "멤버의 권한을 변경합니다. admin 또는 owner 권한이 필요하며 owner인 멤버는 변경할 수 없습니다.")
   @ApiResponse(
       responseCode = "200",
       description = "수정 성공",

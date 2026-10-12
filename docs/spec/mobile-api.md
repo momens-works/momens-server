@@ -66,7 +66,7 @@ Signal type에 따라 앱이 다음처럼 화면 라벨을 정합니다. 이 라
 | --- | --- |
 | `group_key` | `backlog`, `todo`, `in_progress`, `done`, `cancelled` |
 | `priority` | `high`, `medium`, `low` |
-| `role` | `pm`, `design`, `backend`, `frontend` (하나만 선택. android, qa는 2026-07-08 기획 확정으로 폐기. 응답에서는 웹에서 만든 태스크가 미지정이면 `null`) |
+| `role` | `pm`, `design`, `backend`, `frontend` (하나만 선택. android, qa는 2026-07-08 기획 확정으로 폐기. 응답에서는 웹에서 만든 작업이 미지정이면 `null`) |
 
 ### Membership
 
@@ -80,10 +80,10 @@ Signal type에 따라 앱이 다음처럼 화면 라벨을 정합니다. 이 라
 | --- | --- |
 | `source` | `slack`, `github`, `figma`, `notion`, `file` |
 
-`source`는 관련 자료 원본의 출처입니다. Signal 근거의 `evidence.source`와 같은 source_ref의 출처이므로 값 집합도
+`source`는 연결된 소스 원본의 출처입니다. Signal 근거의 `evidence.source`와 같은 source_ref의 출처이므로 값 집합도
 동일합니다. 화면에 표시하는 출처 라벨과 아이콘은 앱이 `source`에서 생성합니다.
 
-관련 자료 화면은 figma, slack, github, file을 표시합니다. 다만 서버는 source_ref의 출처를 그대로 반환하므로, 앱은
+연결된 소스 화면은 figma, slack, github, file을 표시합니다. 다만 서버는 source_ref의 출처를 그대로 반환하므로, 앱은
 목록에 없는 값이 오더라도 화면이 깨지지 않도록 처리합니다.
 
 ## 인증
@@ -234,7 +234,7 @@ Refresh token을 폐기합니다.
 
 ### GET /api/mobile/projects/{projectId}/members
 
-태스크 담당자 선택에 사용할 프로젝트 멤버 목록을 조회합니다.
+작업 담당자 선택에 사용할 프로젝트 멤버 목록을 조회합니다.
 
 - `members`의 범위는 project가 속한 workspace의 멤버십입니다. 별도 project 멤버 테이블을 두지
   않는 권한 요구사항과 같은 기준입니다.
@@ -364,9 +364,9 @@ project는 모바일의 현재 context로 고정되어 있고, description·task
 
 ### POST /api/mobile/signals/{signalId}/actions/convert-to-task
 
-시그널을 원탭으로 태스크에 등록합니다. 요청 body는 없습니다.
+시그널을 원탭으로 작업에 등록합니다. 요청 body는 없습니다.
 
-서버는 태스크 등록 시점에 민수가 생성하는 task draft(`title`, `role`, `priority`)를
+서버는 작업 등록 시점에 민수가 생성하는 task draft(`title`, `role`, `priority`)를
 사용합니다. 민수는 서버 내 `minsu` 모듈로 구현합니다. 비활성·설정 무효·입력 부족·외부
 실패·출력 무효 시 고정 draft(`title`은 15자로 제한한 Signal title, `role`은 `pm`,
 `priority`는 `medium`)를 사용합니다. 생성된 title은 공백 포함 최대 15자이며, draft는 Signal
@@ -374,7 +374,7 @@ backing에 저장하지 않습니다.
 
 클라이언트는 title·role·priority를 선택하거나 전송하지 않습니다.
 
-`draft_status`는 민수가 이 태스크의 제목을 더 손볼 것이 남았는지를 알립니다. 값은 `generating`과
+`draft_status`는 민수가 이 작업의 제목을 더 손볼 것이 남았는지를 알립니다. 값은 `generating`과
 `ready` 둘뿐이며, 생성이 실패했는지 사용자가 먼저 편집했는지는 구분하지 않고 모두 `ready`입니다.
 서버가 보장하는 것은 셋입니다.
 
@@ -386,7 +386,7 @@ backing에 저장하지 않습니다.
 - `generating` 동안에도 `title`은 항상 유효한 값입니다. 로딩을 표시하지 않고 그대로 렌더해도 됩니다.
 
 `generating`을 어떻게 표시할지와 재조회 간격은 앱이 정합니다. 결과를 확인하는 경로는 이 응답과
-태스크 상세 둘뿐이고, **보드·목록에는 `draft_status`가 없습니다.** 보드 카드의 title은 사용자가
+작업 상세 둘뿐이고, **보드·목록에는 `draft_status`가 없습니다.** 보드 카드의 title은 사용자가
 상세에 들어가지 않으면 이전 값인 채로 있다가 다음 목록 조회에서 조용히 바뀝니다.
 
 #### Response 201
@@ -474,7 +474,7 @@ backing에 저장하지 않습니다.
     "name": "Q2 Activation Readiness",
     "target_date": "2026-06-30",
     "progress": 64,
-    "summary": "목표일까지 Q2 Activation Readiness 범위의 회원 가입 MVP를 안정적으로 릴리즈한다."
+    "summary": "목표 날짜까지 Q2 Activation Readiness 범위의 회원 가입 MVP를 안정적으로 릴리즈한다."
   },
   "signal_summary": {
     "summary": "Android 권한 요청 이슈가 발견되었으며, 소셜 로그인은 MVP 범위에서 제외되었습니다. 이메일 회원가입과 온보딩 이탈 개선이 우선적으로 필요합니다.",
@@ -530,7 +530,7 @@ backing에 저장하지 않습니다.
 ```
 
 브리프는 오늘의 브리프라, 시그널 요약은 그날(당일) 생성된 시그널을 처리 여부와 무관하게 집계합니다(2026-07-10 기획
-확정). 태스크 전환이나 dismiss와 상관없이 그날 온 시그널을 유지하고, 소프트 삭제된 시그널은 제외합니다. 하루 경계는
+확정). 작업 전환이나 dismiss와 상관없이 그날 온 시그널을 유지하고, 소프트 삭제된 시그널은 제외합니다. 하루 경계는
 Asia/Seoul 기준이라, `created_at`(UTC 저장)을 KST 하루로 잘라 그 범위의 시그널을 담습니다. 이 집계 기준은 시그널
 탭(처리 대기)과 다릅니다. 시그널 탭은 프로젝트 단위로 누적된 미처리 시그널을 보여주고, 브리프는 당일 생성분을 봅니다.
 
@@ -556,22 +556,22 @@ Asia/Seoul 기준이라, `created_at`(UTC 저장)을 KST 하루로 잘라 그 �
 change도 다른 type과 똑같이 포함합니다. `next_cursor`는 다음 페이지를 여는 커서 문자열이고 다음 페이지가 없으면
 `null`입니다. 커서는 서버만 해석하므로, 클라이언트는 내용을 해석하지 않고 하위 엔드포인트에 그대로 되돌려줍니다.
 
-`project.progress`는 태스크 상태를 기준으로 계산합니다(2026-06-24 기획 확정). `projects.progress`에 저장된 값은
-사용하지 않으며, 조회할 때마다 다시 계산합니다. 따라서 태스크 상태가 바뀌면 다음 조회부터 바로 반영됩니다.
+`project.progress`는 작업 상태를 기준으로 계산합니다(2026-06-24 기획 확정). `projects.progress`에 저장된 값은
+사용하지 않으며, 조회할 때마다 다시 계산합니다. 따라서 작업 상태가 바뀌면 다음 조회부터 바로 반영됩니다.
 
-진행률은 cancelled를 제외한 태스크를 기준으로 done 비율을 계산한 0~100 정수 퍼센트입니다. 정수 나눗셈을 사용하므로
-소수점은 버리며, 100은 cancelled를 제외한 모든 태스크가 done일 때만 반환합니다. 소프트 삭제된 태스크는 제외하고,
-태스크가 없으면 0을 반환합니다.
+진행률은 cancelled를 제외한 작업을 기준으로 done 비율을 계산한 0~100 정수 퍼센트입니다. 정수 나눗셈을 사용하므로
+소수점은 버리며, 100은 cancelled를 제외한 모든 작업이 done일 때만 반환합니다. 소프트 삭제된 작업은 제외하고,
+작업이 없으면 0을 반환합니다.
 
 cancelled를 분모에서 제외하는 기준은 기획이 확정했습니다. 소수점을 버리는 방식만 아직 확정되지 않아 서버 구현에서
 결정한 정책이며(ADR-0013), 추후 기획 확정에 따라 변경될 수 있습니다.
 
-`priorities`의 원천은 태스크입니다(2026-07-10 기획 확정). `title`은 태스크 제목이고, `task_id`로 태스크 상세로
+`priorities`의 원천은 작업입니다(2026-07-10 기획 확정). `title`은 작업 제목이고, `task_id`로 작업 상세로
 이동할 수 있습니다. 정렬은 `priority`가 높은 순(high, medium, low)이고, 같으면 생성이 오래된 순입니다(생성 시각
 오름차순, 생성 시각까지 같으면 id 오름차순으로 순서를 고정합니다). 저장된 값이 web에서 사용하는 urgent이면 high와
 같은 순위로 정렬합니다. 상위 4개까지만 담습니다. 화면의 "현재 우선순위 · N" 헤더 숫자는 배열 길이로 계산하며,
 배열 길이와 항상 같은 값이라 별도 개수 필드를 두지 않습니다. 후보는 진행 중인 todo와 in_progress 상태의
-태스크이고 backlog와 done, cancelled는 제외합니다(2026-07-10 기획 확정).
+작업이고 backlog와 done, cancelled는 제외합니다(2026-07-10 기획 확정).
 
 ### GET /api/mobile/projects/{projectId}/brief/signal-summary
 
@@ -618,22 +618,22 @@ cancelled를 분모에서 제외하는 기준은 기획이 확정했습니다. �
 `cursor`와 음수 `limit`은 `COMMON_VALIDATION_FAILED`(400)로 응답합니다. 커서가 마지막으로 본 항목의 생성 시각과
 id를 기준으로 하기 때문에, 페이지 사이에 시그널이 처리되어도 다음 페이지의 위치가 밀리지 않습니다.
 
-## 태스크
+## 작업
 
 ### GET /api/mobile/projects/{projectId}/tasks
 
-프로젝트 태스크 보드를 조회합니다.
+프로젝트 작업 보드를 조회합니다.
 
 #### Response 200
 
 ```json
 {
-  "title": "프로젝트 태스크",
-  "description": "태스크를 한눈에 확인하고 상세 내용을 확인하세요.",
+  "title": "프로젝트 작업",
+  "description": "작업을 한눈에 확인하고 상세 내용을 확인하세요.",
   "groups": [
     {
       "group_key": "todo",
-      "label": "Todo",
+      "label": "할 일",
       "count": 1,
       "tasks": [
         {
@@ -645,19 +645,19 @@ id를 기준으로 하기 때문에, 페이지 사이에 시그널이 처리되�
         }
       ]
     },
-    { "group_key": "in_progress", "label": "In Progress", "count": 0, "tasks": [] },
-    { "group_key": "done", "label": "Done", "count": 0, "tasks": [] },
-    { "group_key": "backlog", "label": "Backlog", "count": 0, "tasks": [] },
-    { "group_key": "cancelled", "label": "Cancelled", "count": 0, "tasks": [] }
+    { "group_key": "in_progress", "label": "진행 중", "count": 0, "tasks": [] },
+    { "group_key": "done", "label": "완료", "count": 0, "tasks": [] },
+    { "group_key": "backlog", "label": "백로그", "count": 0, "tasks": [] },
+    { "group_key": "cancelled", "label": "취소됨", "count": 0, "tasks": [] }
   ]
 }
 ```
 
-보드는 todo, in_progress, done, backlog, cancelled 다섯 그룹을 순서대로 노출합니다. 태스크 수정 화면이 상태 5종을 모두 편집하므로, backlog나 cancelled로 바꾼 태스크가 보드에서 사라지지 않도록 다섯 그룹을 모두 담습니다(MOM-75). 다섯 그룹은 태스크가 없어도 항상 포함하며 그때 tasks는 빈 배열입니다. priority는 low, medium, high로 반환하고, 저장된 값이 레거시 전용인 urgent이면 high로 반환합니다(2026-07-06 가결정). material_count는 태스크에 연결된 관련 자료 수이고, 연결이 없으면 0입니다. 웹에서 만든 태스크는 역할이 없어 role을 null로 반환합니다(레거시와 공유하는 tasks에서 role은 nullable이고, 모바일 생성 API는 role을 필수로 받습니다).
+보드는 todo, in_progress, done, backlog, cancelled 다섯 그룹을 순서대로 노출합니다. 작업 수정 화면이 상태 5종을 모두 편집하므로, backlog나 cancelled로 바꾼 작업이 보드에서 사라지지 않도록 다섯 그룹을 모두 담습니다(MOM-75). 다섯 그룹은 작업이 없어도 항상 포함하며 그때 tasks는 빈 배열입니다. priority는 low, medium, high로 반환하고, 저장된 값이 레거시 전용인 urgent이면 high로 반환합니다(2026-07-06 가결정). material_count는 작업에 연결된 소스 수이고, 연결이 없으면 0입니다. 웹에서 만든 작업은 업무 역할이 없어 role을 null로 반환합니다(레거시와 공유하는 tasks에서 role은 nullable이고, 모바일 생성 API는 role을 필수로 받습니다).
 
 ### POST /api/mobile/projects/{projectId}/tasks
 
-일반 태스크를 생성합니다.
+일반 작업을 생성합니다.
 
 #### Request
 
@@ -684,11 +684,11 @@ id를 기준으로 하기 때문에, 페이지 사이에 시그널이 처리되�
 }
 ```
 
-title, role, priority 모두 필수입니다(2026-07-06 기획 확정, 2026-07-07 역할은 하나만 선택하는 단일 값으로 재확정). role은 pm, design, backend, frontend 중 하나입니다(2026-07-08 기획 확정으로 android, qa는 폐기하고 역할은 4종만 둡니다). priority는 low, medium, high, urgent 중 하나이며, urgent는 그대로 저장하고 응답에서는 high로 표시합니다. 셋 중 하나라도 비어 있거나 허용하지 않는 값이면 COMMON_VALIDATION_FAILED로 응답합니다. 제목은 공백을 포함해 15자로 제한하며, 넘기면 COMMON_VALIDATION_FAILED로 응답합니다(수정 화면과 같은 태스크 공통 규칙). 생성한 태스크는 todo 그룹에서 시작합니다. role은 레거시 tasks에 없는 신규 속성이라 CHECK 제약을 둔 문자열 컬럼으로 저장합니다.
+title, role, priority 모두 필수입니다(2026-07-06 기획 확정, 2026-07-07 업무 역할은 하나만 선택하는 단일 값으로 재확정). role은 pm, design, backend, frontend 중 하나입니다(2026-07-08 기획 확정으로 android, qa는 폐기하고 업무 역할은 4종만 둡니다). priority는 low, medium, high, urgent 중 하나이며, urgent는 그대로 저장하고 응답에서는 high로 표시합니다. 셋 중 하나라도 비어 있거나 허용하지 않는 값이면 COMMON_VALIDATION_FAILED로 응답합니다. 제목은 공백을 포함해 15자로 제한하며, 넘기면 COMMON_VALIDATION_FAILED로 응답합니다(수정 화면과 같은 작업 공통 규칙). 생성한 작업은 todo 그룹에서 시작합니다. role은 레거시 tasks에 없는 신규 속성이라 CHECK 제약을 둔 문자열 컬럼으로 저장합니다.
 
 ### GET /api/mobile/tasks/{taskId}
 
-태스크 상세 화면에 필요한 정보를 조회합니다.
+작업 상세 화면에 필요한 정보를 조회합니다.
 
 #### Response 200
 
@@ -735,14 +735,14 @@ title, role, priority 모두 필수입니다(2026-07-06 기획 확정, 2026-07-0
 }
 ```
 
-`draft_status`는 민수가 이 태스크의 제목을 더 손볼 것이 남았는지를 알립니다. 값과 보장은
+`draft_status`는 민수가 이 작업의 제목을 더 손볼 것이 남았는지를 알립니다. 값과 보장은
 convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다시 조회해 종료를 확인합니다.
-`convert-to-task`를 거치지 않은 태스크는 항상 `ready`입니다.
+`convert-to-task`를 거치지 않은 작업은 항상 `ready`입니다.
 
-다만 이 조회는 담당자·관련 자료를 함께 구성하는 무거운 경로라 짧은 간격의 폴링에는 적합하지 않습니다.
+다만 이 조회는 담당자·연결된 소스를 함께 구성하는 무거운 경로라 짧은 간격의 폴링에는 적합하지 않습니다.
 폴링 부담이 문제가 되면 경량 상태 조회 엔드포인트나 재조회 간격 힌트를 후속으로 검토합니다.
 
-`materials[].source_url`은 관련 자료에서 원본 문서로 이동할 때 사용합니다.
+`materials[].source_url`은 연결된 소스에서 원본 문서로 이동할 때 사용합니다.
 
 `materials`는 `entity_relations`(task ↔ source_ref)에서 연결을 찾고 `source_refs`에서 원본을 조회해 구성합니다.
 연결된 자료가 없으면 `[]`이고, `material_count`는 `0`입니다.
@@ -753,22 +753,27 @@ convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다�
 `source_url`은 `null`로 반환합니다. 표시 순서는 연결이 생성된 시각의 내림차순입니다.
 
 `open_questions`와 `next_action`은 민수 산출물입니다. `open_questions[]`는 `task_open_questions`에서, `next_action`은
-`tasks.next_action`에서 읽습니다. 민수가 만든 질문이 없으면 `[]`이고, 다음 액션을 아직 만들지 않았으면 `null`입니다.
+`tasks.next_action`에서 읽습니다. 민수가 만든 질문이 없으면 `[]`이고, 다음 행동을 아직 만들지 않았으면 `null`입니다.
 `open_questions[].id`는 저장된 질문 행의 식별자입니다. 표시 순서는 생산자가 준 순서이고, 순서 값이 겹치면 `id` 순으로
 고정합니다.
 
 두 값은 생산 단계에서 공백을 포함해 각각 50자, 100자 이하로 만들고(2026-07-08 화면설계서 task_002 8번, 9번),
 서버는 값을 생성하거나 자르지 않고 저장된 값을 그대로 반환합니다. 민수가 구현되기 전에는 같은 backing 계약을
-따르는 fixture가 채웁니다(ADR-0011). 태스크 수정 API는 두 값을 요청에 받지 않고 그대로 유지합니다.
+따르는 fixture가 채웁니다(ADR-0011). 작업 수정 API는 두 값을 요청에 받지 않고 그대로 유지합니다.
 
-담당자가 지정되지 않았으면 `assignee`는 `null`, 목적을 아직 작성하지 않았으면 `purpose`는 `null`입니다. 웹에서 만든 태스크는 역할이 없어 `role`도 `null`입니다. 담당자는 저장된 `assignee_id`를 기준으로 조회합니다. 현재 민수 draft 생성 결과는 title, role, priority만 갱신하며 담당자를 자동 지정하지 않습니다. `assignee.avatar_url`은 담당자의 구글 계정 프로필 이미지이고, 없으면 `null`입니다.
+담당자가 지정되지 않았으면 `assignee`는 `null`, 설명을 아직 작성하지 않았으면 `purpose`는 `null`입니다. 웹에서 만든 작업은 업무 역할이 없어 `role`도 `null`입니다. 담당자는 저장된 `assignee_id`를 기준으로 조회합니다. 현재 민수 draft 생성 결과는 title, role, priority만 갱신하며 담당자를 자동 지정하지 않습니다. `assignee.avatar_url`은 담당자의 구글 계정 프로필 이미지이고, 없으면 `null`입니다.
 완료 기준이 없으면 `checklist`는 `completed_count` 0, `total_count` 0, `items` 빈 배열입니다(2026-07-07 확정).
 `status`는 저장된 5종(backlog, todo, in_progress, done, cancelled)을 그대로 반환하고(상세 상태 칩이 5종 노출),
 `priority`는 보드와 같이 저장된 urgent를 high로 반환합니다. `purpose`는 레거시 `tasks.description`에 매핑됩니다.
 
+표시 명칭은 갱신된 용어 기준(MOM-1042)의 작업·설명·소스·질문·다음 행동을 사용합니다.
+호환성을 위해 기존 JSON 키 `purpose`, `materials`, `open_questions`, `next_action`은 유지합니다.
+`materials`는 작업에 직접 연결된 소스이며, 메모리까지 포함하는 웹의 연결된 컨텍스트와는 다릅니다.
+현재 설명 입력의 300자 제한과 업무 역할 필수 조건은 유지합니다.
+
 ### PATCH /api/mobile/tasks/{taskId}
 
-태스크 수정 화면에서 편집한 필드를 저장합니다. 요청은 리소스 전체가 아니라 편집 가능한 필드 전체(title, role, assignee_id, priority, status, purpose, checklist_items)를 담고, 서버가 관리하는 필드(materials, open_questions, next_action)는 요청에 없어 그대로 유지합니다. title, role, priority, status는 항상 채워 보냅니다. title은 생성과 달리 빈 문자열을 허용하고, title을 빈 문자열로 보내면 상세 화면이 '새 태스크'로 표시합니다.
+작업 수정 화면에서 편집한 필드를 저장합니다. 요청은 리소스 전체가 아니라 편집 가능한 필드 전체(title, role, assignee_id, priority, status, purpose, checklist_items)를 담고, 서버가 관리하는 필드(materials, open_questions, next_action)는 요청에 없어 그대로 유지합니다. title, role, priority, status는 항상 채워 보냅니다. title은 생성과 달리 빈 문자열을 허용하고, title을 빈 문자열로 보내면 상세 화면이 '새 작업'로 표시합니다.
 
 #### Request
 
@@ -787,15 +792,15 @@ convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다�
 }
 ```
 
-`assignee_id`와 `purpose`는 생략하거나 `null`로 보내면 기존 값을 지웁니다. `purpose`는 빈 문자열도 허용합니다. `checklist_items`를 생략하거나 `null`로 보내면 빈 목록으로 처리해 기존 항목을 모두 삭제합니다. `status`는 backlog, todo, in_progress, done, cancelled 다섯 값 중 하나입니다. `checklist_items`는 완료 기준 최종 목록이고, `id`가 있으면 기존 항목의 제목과 완료 상태(`completed`)를 함께 갱신하고, `id`가 없으면 새 항목으로 만들며, 목록에서 빠진 기존 항목은 삭제합니다. `checklist_items[].id`는 선택 필드입니다. 기존 항목은 상세 조회에서 받은 `id`를 그대로 보내고, 새 항목은 `id`를 생략합니다. `completed`를 생략하면 `false`로 처리합니다. `id`가 있는데 기존 항목에 없으면 잘못된 요청으로 보고 `TASK_CHECKLIST_ITEM_NOT_FOUND`로 응답하고, 같은 `id`가 목록에 두 번 오면 `COMMON_VALIDATION_FAILED`로 응답합니다. 완료 기준은 0개에서 5개까지 허용하고, 5개를 넘기면 `COMMON_VALIDATION_FAILED`로 응답합니다. 글자 수는 공백을 포함해 태스크 제목 15자, 목적 300자, 완료 기준 항목 50자로 제한하며, 넘기면 `COMMON_VALIDATION_FAILED`로 응답합니다. 상세 화면의 즉시 토글은 아래 별도 엔드포인트로 유지합니다. 같은 태스크를 두 요청이 거의 동시에 저장하면, 마지막에 저장한 요청이 먼저 저장된 내용을 덮어씁니다. 동시 수정 충돌을 막는 낙관적 잠금은 지금 두지 않습니다.
+`assignee_id`와 `purpose`는 생략하거나 `null`로 보내면 기존 값을 지웁니다. `purpose`는 빈 문자열도 허용합니다. `checklist_items`를 생략하거나 `null`로 보내면 빈 목록으로 처리해 기존 항목을 모두 삭제합니다. `status`는 backlog, todo, in_progress, done, cancelled 다섯 값 중 하나입니다. `checklist_items`는 완료 기준 최종 목록이고, `id`가 있으면 기존 항목의 제목과 완료 상태(`completed`)를 함께 갱신하고, `id`가 없으면 새 항목으로 만들며, 목록에서 빠진 기존 항목은 삭제합니다. `checklist_items[].id`는 선택 필드입니다. 기존 항목은 상세 조회에서 받은 `id`를 그대로 보내고, 새 항목은 `id`를 생략합니다. `completed`를 생략하면 `false`로 처리합니다. `id`가 있는데 기존 항목에 없으면 잘못된 요청으로 보고 `TASK_CHECKLIST_ITEM_NOT_FOUND`로 응답하고, 같은 `id`가 목록에 두 번 오면 `COMMON_VALIDATION_FAILED`로 응답합니다. 완료 기준은 0개에서 5개까지 허용하고, 5개를 넘기면 `COMMON_VALIDATION_FAILED`로 응답합니다. 글자 수는 공백을 포함해 작업 제목 15자, 설명 300자, 완료 기준 항목 50자로 제한하며, 넘기면 `COMMON_VALIDATION_FAILED`로 응답합니다. 상세 화면의 즉시 토글은 아래 별도 엔드포인트로 유지합니다. 같은 작업을 두 요청이 거의 동시에 저장하면, 마지막에 저장한 요청이 먼저 저장된 내용을 덮어씁니다. 동시 수정 충돌을 막는 낙관적 잠금은 지금 두지 않습니다.
 
 #### Response 204
 
-저장만 하고 본문은 반환하지 않습니다. 쓰기와 읽기의 역할을 분리하기 위해서입니다. 저장 후 필요한 최신 상태는 태스크 상세 조회(`GET /api/mobile/tasks/{taskId}`)로 다시 읽습니다. 새로 추가한 완료 기준의 서버 id도 이 조회에서 확인합니다.
+저장만 하고 본문은 반환하지 않습니다. 쓰기와 읽기의 역할을 분리하기 위해서입니다. 저장 후 필요한 최신 상태는 작업 상세 조회(`GET /api/mobile/tasks/{taskId}`)로 다시 읽습니다. 새로 추가한 완료 기준의 서버 id도 이 조회에서 확인합니다.
 
 ### PATCH /api/mobile/tasks/{taskId}/checklist-items/{itemId}
 
-태스크 체크리스트 항목의 완료 상태를 변경합니다.
+작업 완료 기준 항목의 완료 상태를 변경합니다.
 
 #### Request
 

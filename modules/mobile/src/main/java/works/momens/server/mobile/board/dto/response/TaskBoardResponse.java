@@ -20,34 +20,34 @@ import works.momens.server.mobile.board.MobileTaskGroup;
  * <p>웹에서 생성한 태스크는 역할 정보가 없으므로 {@code role}은 {@code null}일 수 있습니다. 공유 {@code tasks} 테이블은 {@code
  * role}을 nullable로 두고, 모바일 생성 API만 {@code role}을 필수로 받습니다.
  */
-@Schema(description = "프로젝트 태스크 보드 응답")
+@Schema(description = "프로젝트 작업 보드 응답")
 public record TaskBoardResponse(
-    @Schema(description = "화면 제목", example = "프로젝트 태스크") String title,
+    @Schema(description = "화면 제목", example = "프로젝트 작업") String title,
     @Schema(description = "화면 안내 문구") String description,
     @Schema(description = "상태 그룹 목록(todo, in_progress, done, backlog, cancelled 순서)")
         List<GroupResponse> groups) {
 
-  private static final String BOARD_TITLE = "프로젝트 태스크";
-  private static final String BOARD_DESCRIPTION = "태스크를 한눈에 확인하고 상세 내용을 확인하세요.";
+  private static final String BOARD_TITLE = "프로젝트 작업";
+  private static final String BOARD_DESCRIPTION = "작업을 한눈에 확인하고 상세 내용을 확인하세요.";
 
   @Schema(description = "상태 그룹")
   public record GroupResponse(
       @Schema(description = "그룹 키", example = "todo") String groupKey,
-      @Schema(description = "그룹 라벨", example = "Todo") String label,
-      @Schema(description = "그룹 태스크 수") int count,
-      @Schema(description = "그룹 태스크 목록") List<TaskCardResponse> tasks) {}
+      @Schema(description = "그룹 라벨", example = "할 일") String label,
+      @Schema(description = "그룹 작업 수") int count,
+      @Schema(description = "그룹 작업 목록") List<TaskCardResponse> tasks) {}
 
-  @Schema(description = "보드 태스크 카드")
+  @Schema(description = "보드 작업 카드")
   public record TaskCardResponse(
-      @Schema(description = "태스크 식별자") UUID id,
+      @Schema(description = "작업 식별자") UUID id,
       @Schema(description = "제목") String title,
       @Schema(
-              description = "역할. pm/design/backend/frontend 중 하나. 웹에서 만든 태스크는 미지정이면 null",
+              description = "업무 역할. pm/design/backend/frontend 중 하나. 웹에서 만든 작업은 미지정이면 null",
               example = "pm",
               nullable = true)
           String role,
       @Schema(description = "우선순위. low/medium/high", example = "low") String priority,
-      @Schema(description = "관련 자료 수") int materialCount) {}
+      @Schema(description = "연결된 소스 수") int materialCount) {}
 
   public static TaskBoardResponse from(List<MobileTaskGroup> groups) {
     return new TaskBoardResponse(

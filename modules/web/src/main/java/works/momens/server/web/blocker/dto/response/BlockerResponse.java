@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.util.UUID;
 import works.momens.server.project.blocker.BlockerDetail;
 
-@Schema(description = "블로커")
+@Schema(description = "차단 사유")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record BlockerResponse(
     UUID id,

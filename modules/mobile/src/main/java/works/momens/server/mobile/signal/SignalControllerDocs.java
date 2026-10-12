@@ -71,10 +71,10 @@ interface SignalControllerDocs {
 
   @Operation(
       operationId = "mobileConvertSignalToTask",
-      summary = "시그널을 태스크로 전환",
+      summary = "시그널을 작업으로 전환",
       description =
-          "시그널을 원탭으로 태스크에 등록합니다. 요청 body는 없습니다(ADR-0011). 서버가 민수 task draft(title은 시그널 제목, role은 pm,"
-              + " priority는 medium)로 태스크를 만듭니다. 같은 시그널에 같은 action을 재요청하면 새 태스크를 만들지 않고 기존 결과를 200으로"
+          "시그널을 원탭으로 작업에 등록합니다. 요청 body는 없습니다(ADR-0011). 서버가 민수 task draft(title은 시그널 제목, role은 pm,"
+              + " priority는 medium)로 작업을 만듭니다. 같은 시그널에 같은 action을 재요청하면 새 작업을 만들지 않고 기존 결과를 200으로"
               + " 반환합니다.")
   @ApiResponse(
       responseCode = "201",
@@ -95,7 +95,7 @@ interface SignalControllerDocs {
       operationId = "mobileDismissSignal",
       summary = "시그널을 처리하지 않고 닫음(dismiss)",
       description =
-          "시그널을 태스크로 전환하지 않고 처리 완료로 기록합니다. 물리 삭제가 아니며, 같은 시그널에 dismiss를 재요청하면 기존 결과를 200으로"
+          "시그널을 작업으로 전환하지 않고 처리 완료로 기록합니다. 물리 삭제가 아니며, 같은 시그널에 dismiss를 재요청하면 기존 결과를 200으로"
               + " 반환합니다.")
   @ApiResponse(
       responseCode = "200",

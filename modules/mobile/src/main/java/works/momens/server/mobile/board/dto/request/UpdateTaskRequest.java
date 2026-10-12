@@ -20,14 +20,15 @@ import works.momens.server.project.task.TaskStatus;
  * 완료기준 최종 목록이며 0개에서 5개까지 허용합니다. 각 항목의 {@code completed}는 수정 화면이 저장한 완료 상태입니다. 글자 수는 공백을 포함해 제목 15자,
  * 목적 300자, 완료기준 항목 50자로 제한합니다.
  */
-@Schema(description = "태스크 수정 요청")
+@Schema(description = "작업 수정 요청")
 public record UpdateTaskRequest(
     @Schema(description = "제목. 값은 있어야 하고 빈 문자열은 허용합니다. 최대 15자(공백 포함).", example = "1차 와이어프레임")
         @NotNull
         @Size(max = 15)
         String title,
     @Schema(
-            description = "역할. pm은 기획과 조율, design은 디자인, backend는 서버, frontend는 웹과 앱 화면 작업을 담당합니다.",
+            description =
+                "업무 역할. pm은 기획과 조율, design은 디자인, backend는 서버, frontend는 웹과 앱 화면 작업을 담당합니다.",
             example = "pm")
         @NotNull
         TaskRole role,
@@ -40,7 +41,7 @@ public record UpdateTaskRequest(
             example = "in_progress")
         @NotNull
         TaskStatus status,
-    @Schema(description = "목적. 비우면 빈 문자열이나 null입니다. 최대 300자(공백 포함).") @Size(max = 300)
+    @Schema(description = "설명. 비우면 빈 문자열이나 null입니다. 최대 300자(공백 포함).") @Size(max = 300)
         String purpose,
     @Schema(description = "완료 기준 최종 목록. 0개에서 5개까지 허용합니다.") @Size(max = 5) @Valid
         List<ChecklistItemRequest> checklistItems) {
