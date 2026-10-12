@@ -331,7 +331,7 @@ payload의 `workspace_id`가 현재 bootstrap 목록에 없으면 bootstrap을 �
 
 - `ProjectSnapshot`은 "멤버 role은 workspace 멤버십에서 관리하므로 여기 두지 않습니다"라고 설명한다.
 - [모바일 API](../spec/mobile-api.md)는 "`role`은 소속 workspace 멤버십 role입니다"라고 정의한다.
-- [모바일 MVP 서버 요구사항](../design/mobile-mvp-server-requirements.md)은 "별도 project 멤버 테이블 없이 소속
+- [모바일 MVP 서버 요구사항 보존본](https://github.com/momens-works/momens-server/blob/e2987e89bbdb0dfcbafc5c5e965a614ea08c5279/docs/design/mobile-mvp-server-requirements.md)은 "별도 project 멤버 테이블 없이 소속
   workspace 멤버십 role로 매핑한다"고 정한다.
 
 현재 `projects[].role`은 프로젝트의 속성처럼 보이지만 실제로는 워크스페이스 멤버십의 값을 프로젝트 수만큼
