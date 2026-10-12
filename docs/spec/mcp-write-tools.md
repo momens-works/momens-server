@@ -1,20 +1,13 @@
 # MCP 쓰기 도구
 
-MOM-0993은 `/api/mcp`의 `tools/call`에 기존 쓰기 도구 6개를 연결한다.
-MCP transport·읽기 응답은 MOM-0991 계약을 사용한다. 레거시 참조는
-`momens-api/internal/mcpserver/{tools,milestones,helpers}.go`이며, 입력 schema는
-`modules/mcp/src/main/resources/mcp/write-tools.json`과 테스트 golden fixture로 고정한다.
+`/api/mcp`의 쓰기 도구가 제공하는 권한·수정·재시도 계약이다. 입력 필드와 필수 여부는
+[도구 schema](../../modules/mcp/src/main/resources/mcp/write-tools.json)를 따른다.
+이관 배경과 구현·검증 이력은 MOM-0993과 [PR #281](https://github.com/momens-works/momens-server/pull/281)에 있다.
 
 ## 범위와 권한
 
-| 도구 | 필수 입력 | scope | 공개 writer |
-| --- | --- | --- | --- |
-| `create_task` | `project`, `title` | `mcp:tasks:write` | `TaskWriter.create` |
-| `update_task` | `task` | `mcp:tasks:write` | `TaskWriter.patch` |
-| `create_comment` | `task`, `body` | `mcp:tasks:write` | `TaskUpdateWriter.create` |
-| `create_milestone` | `project`, `name` | `mcp:milestones:write` | `MilestoneWriter.create` |
-| `update_milestone` | `milestone` | `mcp:milestones:write` | `MilestoneWriter.update` |
-| `delete_milestone` | `milestone` | `mcp:milestones:write` | `MilestoneWriter.delete` |
+- `create_task`, `update_task`, `create_comment`: `mcp:tasks:write`
+- `create_milestone`, `update_milestone`, `delete_milestone`: `mcp:milestones:write`
 
 `tools/list`는 읽기·쓰기 도구를 함께 이름 오름차순으로 반환하고 token scope로 필터한다.
 실행 시 활성 grant의 user·client·workspace·scope와 현재 membership을 다시 검사한다.
@@ -26,8 +19,7 @@ MCP transport·읽기 응답은 MOM-0991 계약을 사용한다. 레거시 참�
 중복이면 오류다. 삭제된 프로젝트의 작업·마일스톤은 변경하지 않는다.
 담당자는 `me` 또는 workspace 멤버 UUID·이메일·이름으로 해석한다.
 
-프로젝트 쓰기 도구와 작업 삭제 도구는 레거시에 없으므로 추가하지 않는다. REST endpoint,
-DB schema, OAuth, 운영 ingress 변경도 포함하지 않는다. MCP는 도메인 repository를 직접 쓰지 않는다.
+프로젝트 쓰기 도구와 작업 삭제 도구는 제공하지 않는다. MCP는 도메인 공개 writer를 사용한다.
 
 ## 입력과 응답
 
@@ -53,15 +45,14 @@ DB schema, OAuth, 운영 ingress 변경도 포함하지 않는다. MCP는 도메
 | 작업 `title`, `status`, `priority` | 유지 | 유지 | 없음 |
 | 마일스톤 문자열·목표 날짜 | 유지 | 유지 | 없음 |
 
-작업 설명·기한의 빈 문자열 삭제는 MOM-0993 추가 지시에 따라 `PatchTaskCommand`의 Set 플래그로
-전달한다. 기존 Go MCP가 빈 문자열을 무시하던 동작과 다른 점이다.
+작업 설명·기한의 빈 문자열 삭제는 기존 Go MCP의 빈 문자열 무시와 다른 계약이다.
 마일스톤 설명·요약·목표 날짜 삭제는 MOM-1007에서 공통 command 계약을 확정한 뒤 연결한다.
 
 ## 재시도와 트랜잭션
 
 - **생성은 멱등하지 않다.** `create_task`, `create_milestone`, `create_comment`는 동일한 입력을
   다시 호출해도 새 항목을 만든다. 성공 후 응답이 유실되면 재시도로 중복될 수 있다.
-  JSON-RPC `id`를 중복 방지 키로 사용하지 않는다. 이 계약은 2026-09-28 사용자 확인으로 유지한다.
+  JSON-RPC `id`를 중복 방지 키로 사용하지 않는다.
 - 수정은 전달한 필드를 공통 writer에 적용한다. 같은 값이나 변경 필드 없는 요청도 기존과 같은
   `Updated …` 텍스트를 반환한다. 현재 JPA writer는 실제 값이 변하지 않으면 `updated_at`을
   갱신하지 않는다. MCP가 시간을 강제로 갱신하거나 별도 이벤트를 발행하지 않는다. 공통

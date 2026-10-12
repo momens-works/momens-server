@@ -149,10 +149,9 @@ JSON 에러 본문을 쓰지 않습니다. 실패 시 `?error=`에 실패 사유
 `/api/auth` 하위라 refresh 쿠키(`Path=/api/auth`)가 전송되며, same-domain 배포라 CSRF는 SameSite로
 충족합니다(별도 토큰 없음). 토큰이 HttpOnly 쿠키에 있어 본문은 없습니다.
 
-| 메서드·경로 | 성공 | 실패 |
-| --- | --- | --- |
-| `POST /api/auth/web/refresh` | `204` + `Set-Cookie`로 access/refresh 회전 | refresh 쿠키 없음·무효 → `401` `AUTH_REFRESH_TOKEN_INVALID` |
-| `POST /api/auth/web/logout` | `204` + access/refresh/legacy session 쿠키 정리(`Max-Age=0`) | 없음(쿠키 유무·상태와 무관하게 `204`, 멱등) |
+갱신·로그아웃의 경로, 성공 status, 오류는 [OpenAPI 스냅샷](openapi.json)의
+`webRefreshSession`·`webLogout`에서 확인합니다. 로그아웃은 쿠키 유무·상태와 무관하게
+멱등하며 access·refresh·legacy session 쿠키를 모두 정리합니다.
 
 모바일 JSON 계약(`POST /api/auth/refresh`·`/api/auth/logout`, body의 `refresh_token`)은 그대로
 유지됩니다.

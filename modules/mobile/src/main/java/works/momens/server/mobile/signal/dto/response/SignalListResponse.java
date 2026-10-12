@@ -7,8 +7,7 @@ import works.momens.server.signal.SignalSummary;
 import works.momens.server.signal.SignalSummaryPage;
 
 /**
- * {@code GET /api/mobile/projects/{projectId}/signals} 응답. shape는 docs/spec/mobile-api.md의 Signal
- * 목록 절을 따른다.
+ * {@code GET /api/mobile/projects/{projectId}/signals} 응답. 형식은 docs/spec/openapi.json에서 확인합니다.
  *
  * <p>title·description은 카드 헤더에 쓰이는 고정 문구로, Signal 건별 값이 아니다.
  */

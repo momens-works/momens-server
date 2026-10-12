@@ -8,7 +8,7 @@
 - 성공 응답에는 전역 wrapper(`success`, `data`)를 만들지 않습니다.
 - 실패 응답 예시는 [API 응답과 에러 코드](api-response-error-codes.md)의 응답 모드를 따릅니다.
 - Swagger/OpenAPI 문서화는 실제 public contract를 설명합니다. 내부 구현 세부사항을 노출하지 않습니다.
-- 모든 path는 `/api` prefix로 문서화합니다. 레거시 path alias는 두지 않습니다.
+- 제품 API의 경로·버전과 MCP/OAuth·well-known 예외는 [API 버저닝](api-versioning.md)을 따릅니다.
 
 ## 구성 위치
 
@@ -17,14 +17,6 @@ OpenAPI 공통 설정과 커스터마이저는 실행·조립 모듈인 `app`에
 ```text
 app/src/main/java/works/momens/server/support/openapi
 ```
-
-이 위치에는 다음 구성을 둡니다.
-
-- `OpenAPI` 기본 정보(title, version, description, server)
-- Swagger UI가 사용하는 공통 component
-- 실패 응답 예시를 보강하는 `OperationCustomizer`
-- 컨트롤러 메서드에 적용되는 `@ApiException` 선언을 찾는 `ApiExceptionFinder`
-- `@ApiException` 선언을 `ErrorCode` 목록으로 변환하는 `ApiExceptionResolver`
 
 기능 모듈에는 해당 기능의 controller, request/response DTO, controller docs interface를 둡니다.
 
@@ -128,27 +120,9 @@ path는 `/api/me` 단일 경로이며 `version = "1"` mapping을 둡니다. 레�
   정해지지 않은 경우에만 사용하는 과도기적 표현이며, 범위가 정해지면 `codes`를 명시합니다.
 - `codes`에 지정한 이름은 컴파일러가 검증하지 않습니다. `ApiExceptionDeclarationTest`에서 해당 이름이
   enum에 존재하는지 확인합니다.
-- Standard 모드에서는 아래 형식을 사용합니다.
-
-```json
-{
-  "error": {
-    "code": "USER_NOT_FOUND",
-    "message": "사용자를 찾을 수 없습니다."
-  }
-}
-```
-
-`details`가 필요한 에러 예시는 `details`를 포함할 수 있습니다. 민감 정보, 내부 예외 메시지, SQL,
-stack trace는 예시에 넣지 않습니다.
-
-Legacy compatible 모드 엔드포인트는 기존 Go API의 실패 body shape를 유지해 예시를 작성합니다.
-
-```json
-{
-  "error": "unauthorized"
-}
-```
+- 응답 body와 예시는 [API 응답과 에러 코드](api-response-error-codes.md)의 Standard 또는
+  Legacy compatible 형식을 따릅니다. 필요한 `details`는 포함하되 민감 정보·내부 예외·SQL·stack trace는
+  넣지 않습니다.
 
 ### 선언 검증
 
@@ -188,8 +162,8 @@ Request/response DTO는 `record`를 기본으로 하고 `@Schema`로 문서화�
 
 ## API Version Header
 
-모든 엔드포인트는 [API 버저닝](api-versioning.md)이 적용되므로 `API-Version` request header를 문서화합니다.
-초기 버전은 `1`입니다.
+제품 API는 `API-Version` request header를 문서화하며 초기 버전은 `1`입니다.
+MCP/OAuth protocol과 well-known은 [API 버저닝의 예외](api-versioning.md#외부-표준-protocol-예외)를 따릅니다.
 
 springdoc이 Spring MVC API versioning 설정과 handler의 `version` mapping을 읽어 문자열 header schema를
 자동 생성합니다. `@Operation.parameters`에 `API-Version`을 다시 선언하면 자동 생성된 parameter와 중복되므로
@@ -218,18 +192,9 @@ git rebase origin/develop
 ./gradlew updateOpenApiSnapshot
 ```
 
-스냅샷은 정규화해 직렬화합니다. springdoc 출력의 path·schema 순서가 실행 간 안정적이라고 가정하지
-않고 객체 키를 정렬하며, 줄바꿈은 `\n`으로 고정합니다. 생성과 비교가 같은 정규화 함수를 공유해 두 경로가
-어긋나지 않습니다.
-
-정렬 대상은 객체 키와 루트 `tags` 배열뿐입니다. 배열을 일괄 정렬하지는 않습니다. `enum`, `required`,
-`parameters`와 예시 값 배열은 순서가 내용의 일부이거나 선언 순서를 따라 안정적이라, 정렬하면 의미를
-바꾸거나 얻는 것 없이 diff만 키웁니다. 루트 `tags`만 예외인 이유는 springdoc이 set 순회 순서로 내보내,
-tag를 하나 추가하면 배열 전체가 재정렬되어 무관한 churn diff가 생기고 springdoc·JDK 업그레이드가 계약
-변경 없이 게이트를 깨뜨리기 때문입니다.
-
-환경마다 달라지는 값은 스냅샷에서 제외합니다. `servers`는 `MOMENS_OPENAPI_SERVER_URL`로 주입되므로
-그대로 두면 실행 환경이 스냅샷을 바꿉니다.
+스냅샷 생성·비교는 같은 정규화를 사용합니다. 객체 키와 루트 `tags`만 정렬하고 의미 있는 배열
+순서는 유지하며, 환경별 `servers`는 제외합니다. 구현은
+[OpenApiSnapshotTest](../../app/src/test/java/works/momens/server/support/openapi/OpenApiSnapshotTest.java)을 참고합니다.
 
 ### 유지하는 이유
 
@@ -240,8 +205,6 @@ tag를 하나 추가하면 배열 전체가 재정렬되어 무관한 churn diff
 둘째, 서버를 실행하지 않아도 `git show`로 원하는 시점의 계약을 확인할 수 있습니다. prod 환경에서는 `/api/v3/api-docs`를 제공하지 않으며, dev 환경의 문서는 develop에 배포된 시점의 계약만 보여 줍니다. prod 계약은 `main` 브랜치의 스냅샷에서 확인합니다. 계약 변경 알림 워크플로는 PR의 base와 head에서 스냅샷을 읽어 비교합니다.
 
 ### 사용처
-
-스냅샷을 삭제할 때는 다음 항목도 함께 수정해야 합니다.
 
 스냅샷 파일을 읽는 코드는 다음과 같습니다.
 
@@ -261,7 +224,7 @@ tag를 하나 추가하면 배열 전체가 재정렬되어 무관한 churn diff
 - 주요 실패 응답은 `@ApiException`으로 선언합니다.
 - 호출 경로에서 도달하는 도메인 에러 코드를 `codes`에 모두 지정하고 `ApiExceptionConsistencyTest`가 통과하는지 확인합니다.
 - 모든 엔드포인트에 `operationId`를 명시하고 [operationId](#operationid) 절의 명명 규칙을 따릅니다.
-- 모든 엔드포인트는 `API-Version` header를 문서화합니다.
+- 제품 API는 `API-Version` header를 문서화하고 외부 표준 protocol 예외를 지킵니다.
 - controller docs에 `API-Version` parameter를 직접 중복 선언하지 않습니다.
-- 모든 path를 `/api` prefix 단일 경로로 문서화하고, 레거시 alias path를 두지 않습니다.
+- 경로는 [API 버저닝](api-versioning.md)의 제품 API·외부 표준 protocol 규칙을 따릅니다.
 - 계약을 바꿨으면 `./gradlew updateOpenApiSnapshot`으로 스냅샷을 갱신하고 diff를 PR에 포함합니다.

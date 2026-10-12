@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 
 /**
- * 완료기준 항목 완료 상태 변경 요청. 요청 형식은 docs/spec/mobile-api.md 태스크 수정 절을 따릅니다.
+ * 완료기준 항목 완료 상태 변경 요청. 형식은 docs/spec/openapi.json에서 확인합니다.
  *
  * <p>완료 상태를 그대로 지정하는 값이라 항상 채워야 합니다.
  */

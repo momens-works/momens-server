@@ -6,7 +6,7 @@ import java.util.UUID;
 import works.momens.server.mobile.bootstrap.BootstrapContext;
 
 /**
- * {@code GET /api/mobile/bootstrap} 응답. shape는 docs/spec/mobile-api.md의 모바일 진입 절을 따릅니다.
+ * {@code GET /api/mobile/bootstrap} 응답. 형식은 docs/spec/openapi.json에서 확인합니다.
  *
  * <p>신규 Standard 계약이라 {@code avatar_url}과 {@code default_project_id}는 값이 없어도 null로 항상 포함합니다(레거시
  * {@code /me}의 avatar_url 생략과 의도된 차이).

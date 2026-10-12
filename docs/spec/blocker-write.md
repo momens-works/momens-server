@@ -1,22 +1,14 @@
 # Blocker 쓰기 API와 outbox 계약
 
-MOM-1018은 H066·H074·H075를 이관한다. 레거시 기준은 `momens-api`
-`66eed8da99775753f3e49ad0621cb60527d353c0`의 `internal/blocker`,
-`internal/access/repository.go`, `internal/domain/models.go`,
-`internal/retrieval/projection.go`, `migrations/000001_init.sql`이다.
-갱신한 `origin/main`은 티켓 기준 `7739a77886f16b11ba1f8c3673a3f00f9828b096`이며,
-확인한 checkout과 blocker·권한·모델·projection·해당 DDL의 차이가 없다.
+Blocker 쓰기와 worker 검색 반영의 계약이다. HTTP 입력·응답 형식은
+[OpenAPI 스냅샷](openapi.json)의 `createTaskBlocker`·`resolveBlocker`·`deleteBlocker`를 따른다.
+레거시 비교 기준과 DDL 조사 이력은 MOM-1018에 보존한다.
 
 ## HTTP 계약
 
-모든 요청은 인증과 `API-Version: 1`이 필요하다. 실패 응답은 티켓에서 지정한
-Standard 형식이다. 성공 응답은 레거시 status와 필드를 유지한다.
+모든 요청은 인증과 `API-Version: 1`이 필요하며 실패 응답은 Standard 형식이다.
 
-| 요청 | 최소 권한 | 성공 |
-| --- | --- | --- |
-| `POST /api/tasks/{taskId}/blockers` | member | 201, blocker 객체 |
-| `PATCH /api/blockers/{blockerId}/resolve` | member | 200, `{"message":"resolved"}` |
-| `DELETE /api/blockers/{blockerId}` | admin (owner 포함) | 200, `{"message":"deleted"}` |
+생성·해결에는 workspace member 이상, 삭제에는 admin 또는 owner 권한이 필요하다.
 
 - 생성 body는 `description`과 선택적 `workspace_id`다. 설명 누락·null·빈 문자열은
   400이다. 공백만 있는 문자열은 레거시처럼 보존하며 trim하지 않는다.
@@ -32,7 +24,6 @@ Standard 형식이다. 성공 응답은 레거시 status와 필드를 유지한�
 - 삭제는 물리 삭제다. 삭제된 blocker의 해결·삭제는 404 `BLOCKER_NOT_FOUND`다.
 - 기존 milestone blocker도 해결·삭제할 수 있다. milestone 생성 HTTP API(H059)는 추가하지 않는다.
 - snapshot은 기존 필드와 정렬을 유지하며 active·resolved를 모두 반환한다.
-- 기존 blocker DDL의 컬럼·제약이 쓰기를 지원하므로 이번 이관에는 Flyway 변경이 없다.
 
 ## 생산자 이벤트
 

@@ -6,8 +6,7 @@ import java.util.UUID;
 import works.momens.server.mobile.roster.ProjectMember;
 
 /**
- * {@code GET /api/mobile/projects/{projectId}/members} 응답. shape는 docs/spec/mobile-api.md의 프로젝트 멤버
- * 절을 따릅니다.
+ * {@code GET /api/mobile/projects/{projectId}/members} 응답. 형식은 docs/spec/openapi.json에서 확인합니다.
  *
  * <p>신규 Standard 계약이라 {@code avatar_url}은 값이 없어도 null로 항상 포함합니다(bootstrap 전례).
  */
