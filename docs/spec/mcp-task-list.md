@@ -1,4 +1,4 @@
-# MCP 태스크 목록 읽기 도구
+# MCP 작업 목록 읽기 도구
 
 MOM-1003은 `list_tasks_v2`를 추가한다. 2026-09-30 사용자 결정과 ADR-0023에 따라
 기존 `list_tasks`는 유지하고 새 호출에는 v2를 사용한다. 기존 호출을 자동으로 전환하지 않는다.
@@ -9,7 +9,7 @@ MOM-1003은 `list_tasks_v2`를 추가한다. 2026-09-30 사용자 결정과 ADR-
 | 입력 | `list_tasks` | `list_tasks_v2` |
 | --- | --- | --- |
 | `assignee` 생략·공백 | 전체 담당자 | 전체 담당자 |
-| `assignee=none/unassign/unassigned` | 전체 담당자 | 담당자가 없는 태스크만 |
+| `assignee=none/unassign/unassigned` | 전체 담당자 | 담당자가 없는 작업만 |
 | `assignee=me` | 현재 사용자 | 현재 사용자 |
 | 담당자 UUID·이메일·이름 | workspace 멤버 참조 해석 | 동일 |
 | `status` 생략 | 전체 상태 | 전체 상태 |

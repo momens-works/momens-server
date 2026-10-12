@@ -26,7 +26,7 @@ interface ProjectMemberControllerDocs {
   @Operation(
       operationId = "mobileListProjectMembers",
       summary = "프로젝트 멤버 조회",
-      description = "태스크 담당자 선택에 사용할 프로젝트 멤버 목록을 조회합니다. 멤버 범위는 project가 속한 workspace의 멤버십입니다.")
+      description = "작업 담당자 선택에 사용할 프로젝트 멤버 목록을 조회합니다. 멤버 범위는 project가 속한 workspace의 멤버십입니다.")
   @ApiResponse(
       responseCode = "200",
       description = "멤버 목록 조회 성공. 이름 오름차순으로 정렬되고, 검색 결과가 없으면 members는 빈 배열입니다.",

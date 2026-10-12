@@ -21,13 +21,13 @@ public enum SourceErrorCode implements ErrorCode {
   SOURCE_FIGMA_CREDENTIAL_INVALID(500, "저장된 Figma 자격 증명을 사용할 수 없습니다."),
   SOURCE_FIGMA_WEBHOOK_FAILED(502, "Figma webhook을 등록하지 못했습니다."),
   SOURCE_CONNECTION_CHANGED(409, "연결이 변경되었습니다. 최신 상태를 확인한 뒤 다시 시도해 주세요."),
-  SOURCE_CONNECTION_ALREADY_DISABLED(400, "이미 비활성화된 source 연결입니다."),
+  SOURCE_CONNECTION_ALREADY_DISABLED(400, "이미 비활성화된 소스 연결입니다."),
   SOURCE_UNSUPPORTED_PROVIDER(400, "지원하지 않는 provider입니다."),
   SOURCE_PROVIDER_UNCONFIGURED(500, "provider 설정이 서버에 없습니다."),
   SOURCE_OAUTH_INVALID_REQUEST(400, "승인 요청에 필요한 값이 없습니다."),
   SOURCE_OAUTH_INVALID_STATE(400, "승인 요청을 확인할 수 없습니다."),
   SOURCE_OAUTH_EXCHANGE_FAILED(502, "provider와 토큰을 주고받지 못했습니다."),
-  SOURCE_CONNECTION_NOT_FOUND(404, "source 연결을 찾을 수 없습니다."),
+  SOURCE_CONNECTION_NOT_FOUND(404, "소스 연결을 찾을 수 없습니다."),
   SOURCE_REF_NOT_FOUND(404, "source-ref를 찾을 수 없습니다.");
 
   private final int status;

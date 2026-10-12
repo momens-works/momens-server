@@ -15,9 +15,9 @@ import works.momens.server.signal.SignalActionResult;
 @Schema(description = "convert-to-task 처리 결과")
 public record ConvertToTaskResponse(Task task, Signal signal) {
 
-  @Schema(description = "convert 결과 태스크")
+  @Schema(description = "convert 결과 작업")
   public record Task(
-      @Schema(description = "태스크 식별자") UUID id,
+      @Schema(description = "작업 식별자") UUID id,
       @Schema(description = "제목. generating 동안에도 항상 유효한 draft입니다") String title,
       @Schema(description = "상태", example = "todo") String status,
       @Schema(

@@ -27,7 +27,7 @@
 | --- | --- |
 | **워크스페이스 목록·상세 (H020, H022)** | **확정.** 레거시 응답 필드가 target 엔티티와 1:1로 일치하고, 계산 필드·조인·projection이 없다 |
 | 프로젝트 목록·상세 (H038, H047) | 보류. 레거시 `label`, `owner_user_ids`, `health_status`, `progress`, `unresolved_count`, `voc_signal_count`, `last_context_at`, `metadata`가 target 엔티티에 없어 파생값 계산·보관 정책을 첫 슬라이스에서 함께 정해야 한다 |
-| 마일스톤·태스크·결정/블로커 read | 보류. 원장의 판단을 유지한다 |
+| 마일스톤·작업·결정/차단 사유 read | 보류. 원장의 판단을 유지한다 |
 
 확정 근거는 다음 대조에서 나온다.
 

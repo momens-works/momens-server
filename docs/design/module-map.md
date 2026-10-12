@@ -51,10 +51,10 @@
 - `workspace`는 RBAC·label을 public API로 제공하고 `project`·`memory`·`source`·`minsu`가 사용한다.
 - `context`는 `entity_relations`를 읽어 연결된 식별자만 돌려준다. 지금은 도메인 모듈에 의존하지 않고,
   식별자로 본문을 채우는 조합은 소비하는 쪽이 한다(`mobile`이 `context`의 링크와 `source`의
-  source_ref 조회를 엮어 태스크 관련 자료를 만든다).
+  source_ref 조회를 엮어 작업에 연결된 소스를 만든다).
 - `mobile`은 `user`, `project`, `workspace`, `signal`, `context`, `source`, `notification`, `minsu`,
-  `auth`의 public API만 조합한다(bootstrap, 멤버 조회, 브리프, 태스크 관련 자료, push 설치 등록·해제,
-  태스크 상세의 draft 생성 상태, 인증). 도메인 정책을 소유하지 않는다.
+  `auth`의 public API만 조합한다(bootstrap, 멤버 조회, 브리프, 작업에 연결된 소스, push 설치 등록·해제,
+  작업 상세의 draft 생성 상태, 인증). 도메인 정책을 소유하지 않는다.
 - `mobile`의 `appupdate`는 다른 모듈을 조합하지 않고 모바일 앱의 최소 지원 버전 정책을 직접 소유합니다. 제품 도메인이 아니라 이미 배포된 모바일 앱과의 호환성을 관리하는 정책이며 영속성이 필요하지 않으므로 `mobile` 모듈에 둡니다(MOM-1012).
 - `web`은 `mobile`과 같은 자리의 표면 모듈이고 **같은 소유 원칙**을 따른다. 웹 클라이언트가 호출하는
   HTTP 표면은 **도메인 스코프가 분명해도** `web`이 소유한다. 여러 capability를 조합하는 endpoint만
@@ -73,7 +73,7 @@
 - `web`·`mobile` → `auth` public API. 표면은 인증 결과만 응답으로 옮기고, 토큰 정책과 웹 전송 정책
   (쿠키 속성·리다이렉트 대상·실패 코드 매핑)은 `auth`가 소유한다. 웹 흐름의 결과는 `auth`가 완성한
   `Set-Cookie` 헤더와 리다이렉트 대상으로 넘어가므로 표면은 쿠키 이름을 알지 못한다(`MOM-0852`).
-- 태스크 상세의 `draft_status`를 `mobile`이 읽는 이유는 태스크 상세를 소유한 `project`에서
+- 작업 상세의 `draft_status`를 `mobile`이 읽는 이유는 작업 상세를 소유한 `project`에서
   `minsu`를 부르면 `minsu` → `project`(draft 반영)와 맞물려 순환이 되기 때문이다. 두 원장을 엮는
   조합은 표면이 한다(MOM-0822).
 - `signal`은 `project`의 project/workspace 해석 public API와 `workspace`의 RBAC public API를 사용한다.
@@ -256,33 +256,33 @@ projection도 함께 발생한다. 모델 언어와 변경 이유가 분리될 �
   `ProjectSnapshot`이다. projectId가 속한 workspace를 찾는 책임은 project core가 소유한다.
 - 진행률 계산은 task 하위 경계의 `TaskProgressReader`가 담당한다(`progressOf`, MOM-0800·MOM-0887).
   `projects.progress`에 저장된 값은 사용하지 않고,
-  조회 시점마다 태스크 상태를 기준으로 계산하므로 DB에 저장된 `progress` 값은 조회에 사용하지 않는다.
+  조회 시점마다 작업 상태를 기준으로 계산하므로 DB에 저장된 `progress` 값은 조회에 사용하지 않는다.
   하지만 프로젝트 생성 API가 이 값을 입력받으므로(`MOM-0866`) 컬럼은 매핑하고 요청으로 전달받은 값을 저장한다.
-- 진행률은 `cancelled`를 제외한 태스크를 기준으로 계산하며, 정수 나눗셈을 사용해 소수점은 버린다.
+- 진행률은 `cancelled`를 제외한 작업을 기준으로 계산하며, 정수 나눗셈을 사용해 소수점은 버린다.
   `cancelled` 제외는 기획이 확정했고, 소수점 버림만 아직 확정되지 않아 서버 구현에서 결정했다(ADR-0013).
 - 상태는 `TaskStatus` enum에서 정의하며, `tasks.status`의 DB CHECK 제약과 동일한 5가지 값을 사용한다.
 - 진행률 분모는 상태를 개별적으로 나열하지 않고 `TaskStatus` 전체에서 `cancelled`만 제외해 계산한다.
   이렇게 하면 상태가 추가되더라도 별도 수정 없이 계산 대상에 포함된다.
-- 보드의 그룹, 표시 순서와 라벨은 화면 정책이므로 mobile 모듈의 `MobileTaskStatus`에서 관리한다. 각 그룹은 하나의 `TaskStatus`에 대응하며, 태스크 요청 DTO는 `TaskStatus` 타입으로 값을 받습니다([ADR-0022](../adr/0022-column-value-set-ownership.md)).
-- 진행률은 task 저장소의 상태별 집계 한 번으로 전체 태스크 수와 `done` 태스크 수를 함께 계산한다. 목록
+- 보드의 그룹, 표시 순서와 라벨은 화면 정책이므로 mobile 모듈의 `MobileTaskStatus`에서 관리한다. 각 그룹은 하나의 `TaskStatus`에 대응하며, 작업 요청 DTO는 `TaskStatus` 타입으로 값을 받습니다([ADR-0022](../adr/0022-column-value-set-ownership.md)).
+- 진행률은 task 저장소의 상태별 집계 한 번으로 전체 작업 수와 `done` 작업 수를 함께 계산한다. 목록
   조회와 동일한 조건(projectId, status, 소프트 삭제 제외)을 한 쿼리에 고정해 목록과 진행률이 항상 같은 기준을
   쓰게 하고, 개수만 필요하므로 본문과 정렬은 읽지 않는다. 두 값을 각각 조회하면 기준이 갈릴 수 있다
   (MOM-0779의 `material_count`와 같은 유형).
-- 태스크 도메인은 MOM-62에서 시작했다. `tasks` 테이블은 레거시와 호환되는 범위(모바일 보드와
+- 작업 도메인은 MOM-62에서 시작했다. `tasks` 테이블은 레거시와 호환되는 범위(모바일 보드와
   생성이 쓰는 컬럼)로 시작했고, 상세(MOM-63)가 읽는 레거시 컬럼(description, assignee_id)을
   더했다. 웹 이관에서 추가한 레거시 컬럼(milestone_id, due_date)도 현재 매핑한다. role은
-  레거시 tasks에 없는 신규 속성이지만 태스크당 하나만 선택하는 단일 값이라(MOM-76, 2026-07-07
+  레거시 tasks에 없는 신규 속성이지만 작업당 하나만 선택하는 단일 값이라(MOM-76, 2026-07-07
   확정) priority와 같은 방식으로 CHECK 제약을 둔 문자열 컬럼에 저장한다. 완료 기준은 레거시에
   없는 신규 테이블 `task_checklist_items`이고, Task aggregate 내부 자식이라 별도 repository
-  없이 Task를 통해서만 접근한다(prod 공유 스키마 반영은 컷오버 때 조율). 민수 산출물인 열린 질문
-  (`task_open_questions`)과 다음 액션(`tasks.next_action`)도 이 모듈이 소유하지만, 완료 기준과 달리
+  없이 Task를 통해서만 접근한다(prod 공유 스키마 반영은 컷오버 때 조율). 민수 산출물인 질문
+  (`task_open_questions`)과 다음 행동(`tasks.next_action`)도 이 모듈이 소유하지만, 완료 기준과 달리
   이 서버에 쓰기 경로가 없어 읽기 전용으로 매핑한다(MOM-0788). 민수 구현 전에는 같은 backing
   계약을 따르는 fixture가 채운다(ADR-0011). 모바일 보드·상세 조회 public API는
   `TaskReader`(listTasksByStatus, findDetail)와 `BoardTask`, `TaskDetail`이고, 어떤 상태를
   보일지와 표기 매핑은 표면이 정한다. `BoardTask`는 표면이 생성 시각 기준으로 다시 정렬할 수
   있게 createdAt을 포함한다(MOM-67). 쓰기 public API는 `TaskWriter` 하나이며, 표면별 생성 정책은
   `CreateTaskCommand`로 전달한다. 생성 시 workspace의 `LabelAllocator`로 MOM 라벨을 발급한다.
-  태스크 소속 확인은 `TaskReader.findScope`가 workspaceId와 projectId만 projection한다(MOM-0923).
+  작업 소속 확인은 `TaskReader.findScope`가 workspaceId와 projectId만 projection한다(MOM-0923).
 - project 목록 조회는 호출하는 쪽이 멤버십 조회(`WorkspaceMembershipReader.listUserMemberships`)로
   확정한 workspace id 목록을 받아 자기 테이블에서 조회한다. 멤버십을 이 모듈이 다시 읽지
   않아서 호출 쪽 멤버십 스냅샷과 목록 기준이 항상 같다. 접근 범위(멤버십)는 여전히 호출 쪽이
@@ -298,7 +298,7 @@ projection도 함께 발생한다. 모델 언어와 변경 이유가 분리될 �
 내부는 도메인 하위 경계로 논리 분리했다(MOM-71·MOM-0887). `:project` Gradle 모듈은 프로젝트 운영
 capability의 물리 경계로 유지하고, 배포 단위도 나누지 않는다.
 
-- 프로젝트 코어는 `core`, 태스크는 `task`, 태스크 업데이트는 `taskupdate`, 마일스톤은 `milestone`,
+- 프로젝트 코어는 `core`, 작업은 `task`, 작업 업데이트는 `taskupdate`, 마일스톤은 `milestone`,
   blocker는 `blocker`, decision은 `decision`에 두고 여섯
   패키지를 Spring Modulith named interface로 선언한다. 다른 상위 모듈은 nested application module을
   직접 참조할 수 없으므로 외부 공개 계약이 필요한 이 경계에는 nested module을 사용하지 않는다.
@@ -317,7 +317,7 @@ capability의 물리 경계로 유지하고, 배포 단위도 나누지 않는�
   workspace를 전달하며, writer는 `ProjectReader`의 공유 잠금 조회로 프로젝트 활성 상태와 workspace를
   다시 확인한다. 허용하는 의존 방향은 `decision → core`이며, Decision 저장과 `decision.created`
   outbox 발행은 같은 트랜잭션에서 처리한다.
-- blocker는 `BlockerReader`와 `BlockerWriter`로 조회·생성·해결·삭제를 제공한다. `:web`이 태스크·프로젝트와
+- blocker는 `BlockerReader`와 `BlockerWriter`로 조회·생성·해결·삭제를 제공한다. `:web`이 작업·프로젝트와
   권한을 확인한 뒤 workspace를 전달하며, blocker는 다른 project 하위 경계에 의존하지 않는다.
   도메인 변경과 outbox 발행 계약은 [Blocker 쓰기 명세](../spec/blocker-write.md)에 있다.
 - `ProjectHealthStatus`, `MilestoneHealthStatus`와 소유자 멤버십 검증은 project와 milestone의 구현 계약이다. 현재 저장값과 검증 동작은
@@ -346,7 +346,7 @@ append-only outbox 발행 로그 공용 모듈이다(ADR-0008).
   `task.created:{taskId}` 키를 유지한다. 살아 있는 task의 `title`, `description`, `status`,
   `priority`, `role`, `milestone_id`, `assignee_id`, `due_date` 중 실제 값이 바뀌면
   `task.updated`를 빈 payload `{}`와 `task.updated:{taskId}:{changeUUID}` 키로 남긴다.
-  체크리스트만 바뀌거나 비교 대상 값이 같으면 발행하지 않는다. soft delete에는 빈 payload의
+  완료 기준만 바뀌거나 비교 대상 값이 같으면 발행하지 않는다. soft delete에는 빈 payload의
   `task.deleted`와 `task.deleted:{taskId}` 키를 남긴다. task 변경과 이벤트 저장은 같은
   트랜잭션이다.
 - task consumer 계약(`MOM-0956`): envelope의 `aggregate_id`를 task ID로 사용한다.
@@ -411,13 +411,13 @@ dispatch`(`PushDispatcher`: 수신 설치별 발송 기록 enqueue와 발송 패
 - `GET /api/mobile/projects/{projectId}/members`: project의 workspace 해석(project), 멤버십
   스냅샷(workspace), 프로필 결합(user)을 조합해 담당자 선택용 멤버 목록을 내린다. 검색과
   정렬은 조합 규칙이라 이 모듈이 소유한다(MOM-61).
-- `GET`과 `POST /api/mobile/projects/{projectId}/tasks`: project의 태스크 도메인(보드 조회, 생성)과
+- `GET`과 `POST /api/mobile/projects/{projectId}/tasks`: project의 작업 도메인(보드 조회, 생성)과
   workspace 멤버십을 조합한다. 보드에 노출할 상태와 순서, 라벨은 `MobileTaskStatus` enum 한곳에 모아
   이 모듈이 소유하고(저장 상태 5종 전부. MOM-75에서 backlog와 cancelled를 추가), project 조회에는
   그 상태 목록을 넘긴다. priority 매핑(urgent를 high로 반환), material_count 기본값도 조합
   규칙이라 이 모듈이 소유한다(MOM-62).
 - `GET /api/mobile/projects/{projectId}/brief`와 `GET .../brief/signal-summary`: project의
-  스냅샷(`ProjectReader.findSnapshot`)과 태스크(`TaskReader.listTasksByStatus`), signal의
+  스냅샷(`ProjectReader.findSnapshot`)과 작업(`TaskReader.listTasksByStatus`), signal의
   당일 시그널 요약(타입별 개수와 커서 페이지, `SignalListService.countByCreatedRange`와
   `listByCreatedRange`), workspace 멤버십을 조합해 브리프 화면 정보를 내린다. project 조회
   결과에 workspace id가 포함되어 있어 workspace를 따로 조회하지 않고 바로 멤버십을 검사한다.
@@ -430,11 +430,11 @@ dispatch`(`PushDispatcher`: 수신 설치별 발송 기록 enqueue와 발송 패
   `SignalTypeLabel`, `MobileTaskPriority`, 조합 서비스에서 관리한다(MOM-67).
 - 진행률은 `TaskProgressReader.progressOf`가 반환한 값을 그대로 사용한다. 조합 서비스는 계산에 관여하지
   않으며, 진행률 계산 규칙은 project Gradle 모듈 안의 task 경계에서 관리한다(MOM-0800·MOM-0887).
-- `GET /api/mobile/tasks/{taskId}`: project의 태스크 상세(`TaskReader.findDetail`)와 workspace
-  멤버십(태스크가 속한 workspace 기준), user 프로필(담당자 이름)을 조합한다. purpose 개명
-  (도메인 description)과 priority 매핑은 이 모듈이 소유하는 조합 규칙이다(MOM-63).
+- `GET /api/mobile/tasks/{taskId}`: project의 작업 상세(`TaskReader.findDetail`)와 workspace
+  멤버십(작업이 속한 workspace 기준), user 프로필(담당자 이름)을 조합한다. purpose 매핑
+  (설명의 도메인 필드 description)과 priority 매핑은 이 모듈이 소유하는 조합 규칙이다(MOM-63).
   `open_questions`와 `next_action`은 project가 읽은 저장값을 그대로 전달하며, 값이 없을 때만
-  각각 빈 배열과 null을 반환한다. 관련 자료는 context의 링크와 source의 원본을 조합해
+  각각 빈 배열과 null을 반환한다. 연결된 소스는 context의 링크와 source의 원본을 조합해
   채우고, 연결이 없으면 빈 배열이다(MOM-0779). 수정 계열은 MOM-75가 같은 `/tasks/*` 표면에
   추가한다. `draft_status`는 minsu의 `TaskDraftStatusReader`로 읽으며, **원장을 task보다 먼저
   읽는 순서가 계약이다**(MOM-0822, 비동기 생성 설계 7.3절). 역순이면 이전 title과 `ready`가 함께
@@ -464,7 +464,7 @@ dispatch`(`PushDispatcher`: 수신 설치별 발송 기록 enqueue와 발송 패
 - `bootstrap` — `GET /api/mobile/bootstrap`.
 - `roster` — `GET /api/mobile/projects/{projectId}/members`. `workspace`의 멤버십, `user`의 프로필
   결합과 헷갈리지 않도록 `members`가 아닌 `roster`로 이름 붙였다.
-- `board` — 태스크 보드·생성(`/api/mobile/projects/{projectId}/tasks`)과 태스크 상세·수정·완료 기준
+- `board` — 작업 보드·생성(`/api/mobile/projects/{projectId}/tasks`)과 작업 상세·수정·완료 기준
   토글(`/api/mobile/tasks/{taskId}` 계열). `project`가 Task aggregate를 소유하는 `task` 하위 경계와
   이름이 겹치지 않도록 화면 이름을 따 `board`로 붙였다. priority 저장값 해석(`MobileTaskPriority`)은
   `brief`와 공유해 모듈 root에 둔다.
@@ -510,7 +510,7 @@ MOM-0887에서 다른 표면과 같은 형태로 맞췄다.
   조회(`listByCreatedRange`), 타입별 개수 집계(`countByCreatedRange`)를 `SignalListService`가
   소유한다. 당일 범위 조회는 처리 여부와 무관하게 담고 소프트 삭제는 제외한다(MOM-81). 정렬
   기준과 커서 규칙도 이 모듈이 정하고, 어떤 type을 노출할지와 하루 경계는 호출하는 표면이 정한다.
-- body 없는 `convert-to-task`는 태스크 등록 시점에 민수가 생성하는 task draft를 입력으로 사용한다.
+- body 없는 `convert-to-task`는 작업 등록 시점에 민수가 생성하는 task draft를 입력으로 사용한다.
   `signal`은 `minsu`의 공개 `SignalTaskDraftGenerator`를 호출하고, 비활성·설정 무효·입력
   부족·외부 실패·출력 무효 시 고정 draft(title=15자로 제한한 Signal title, role=`pm`,
   priority=`medium`)를 쓴다. 모델 호출은 쓰기 트랜잭션 밖에서 하고, 기존 action이 있는 replay·
@@ -565,7 +565,7 @@ outbox_events insert 1건`)은 `SignalActionExecutor`가 소유하고, facade(`S
 - source connection lifecycle, source credentials custody
 - provider install/callback, sync states
 - source refs verify
-- 운영 `source_refs` 쓰기 public API `SourceRefWriter`. 사용자가 태스크에 붙여넣은 주소를 source_ref
+- 운영 `source_refs` 쓰기 public API `SourceRefWriter`. 사용자가 작업에 붙여넣은 주소를 source_ref
   한 건으로 저장한다(`MOM-0868`).
 - dev 전용 `source_refs` 쓰기 public API `DevSourceRefWriter`(`@DevOnly`). `signal` 모듈의 dev
   Signal 생성 경로에서 호출자의 트랜잭션에 참여시켜 사용한다([설계](signal-push-demo-design.md) 11.2절).
@@ -596,7 +596,7 @@ outbox_events insert 1건`)은 `SignalActionExecutor`가 소유하고, facade(`S
 여러 도메인에 걸쳐있는 얇은 연결 capability다. 도메인 정책을 소유하지 않고 연결에 대해서만 읽기 작업과
 쓰기 작업을 수행한다.
 
-현재 사실: `EntityRelationReader`는 태스크에 연결된 source_ref 식별자 목록과 개수를 반환하고,
+현재 사실: `EntityRelationReader`는 작업에 연결된 source_ref 식별자 목록과 개수를 반환하고,
 `EntityRelationWriter`는 연결을 생성하고(`MOM-0869`) 해제한다(`MOM-0868`). 연결 조건은
 `from_entity_type='TASK'`, `to_entity_type='SOURCE_OBJECT'`, `relation_type='LINKED_TO'`이며, 연결
 생성에 사용하는 값은 public API인 `EntityType`과 `RelationType`에 정의한다. 두 엔티티가 같은

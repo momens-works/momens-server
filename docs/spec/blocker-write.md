@@ -12,7 +12,7 @@ MOM-1018은 H066·H074·H075를 이관한다. 레거시 기준은 `momens-api`
 모든 요청은 인증과 `API-Version: 1`이 필요하다. 실패 응답은 티켓에서 지정한
 Standard 형식이다. 성공 응답은 레거시 status와 필드를 유지한다.
 
-| 요청 | 최소 역할 | 성공 |
+| 요청 | 최소 권한 | 성공 |
 | --- | --- | --- |
 | `POST /api/tasks/{taskId}/blockers` | member | 201, blocker 객체 |
 | `PATCH /api/blockers/{blockerId}/resolve` | member | 200, `{"message":"resolved"}` |
@@ -20,11 +20,11 @@ Standard 형식이다. 성공 응답은 레거시 status와 필드를 유지한�
 
 - 생성 body는 `description`과 선택적 `workspace_id`다. 설명 누락·null·빈 문자열은
   400이다. 공백만 있는 문자열은 레거시처럼 보존하며 trim하지 않는다.
-- 삭제되지 않은 태스크와 프로젝트를 확인하고 프로젝트에서 workspace를 구한다.
+- 삭제되지 않은 작업과 프로젝트를 확인하고 프로젝트에서 workspace를 구한다.
   요청의 workspace가 다르면 400 `BLOCKER_WORKSPACE_MISMATCH`다.
-- `:web`이 대상 소속과 역할을 확인한 뒤 `BlockerWriter`에 확정한 workspace를 전달한다.
+- `:web`이 대상 소속과 권한을 확인한 뒤 `BlockerWriter`에 확정한 workspace를 전달한다.
   writer의 해결·삭제도 workspace 범위를 제한한다. blocker는 다른 project 하위 도메인을
-  참조하지 않으며, 생성의 태스크 소속 검증은 호출자의 책임이다.
+  참조하지 않으며, 생성의 작업 소속 검증은 호출자의 책임이다.
 - 초기 상태는 `active`, 종류는 `task`이며 `task_id = blocked_entity_id`,
   `milestone_id = null`을 저장한다. 생성 응답의 `resolved_at`은 생략한다.
 - 해결은 행 잠금을 얻은 뒤 하나의 시각으로 `resolved_at`과 `updated_at`을 갱신하고

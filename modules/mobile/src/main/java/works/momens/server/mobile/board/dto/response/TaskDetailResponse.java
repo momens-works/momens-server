@@ -18,25 +18,25 @@ import works.momens.server.mobile.board.MobileTaskDetailView;
  * <p>{@code draft_status}는 이 태스크의 제목을 AI가 더 손볼 것이 남았는지를 알립니다(MOM-0822). 앱이 결과를 확인하는 경로는 convert 응답과
  * 이 상세 둘뿐이고, 보드·목록에는 노출하지 않습니다(설계 7.2절).
  */
-@Schema(description = "태스크 상세 응답")
+@Schema(description = "작업 상세 응답")
 public record TaskDetailResponse(
-    @Schema(description = "태스크 식별자") UUID id,
+    @Schema(description = "작업 식별자") UUID id,
     @Schema(description = "소속 project 식별자") UUID projectId,
     @Schema(description = "제목") String title,
     @Schema(description = "상태. backlog/todo/in_progress/done/cancelled", example = "todo")
         String status,
     @Schema(
-            description = "역할. pm/design/backend/frontend 중 하나. 웹에서 만든 태스크는 미지정이면 null",
+            description = "업무 역할. pm/design/backend/frontend 중 하나. 웹에서 만든 작업은 미지정이면 null",
             example = "pm",
             nullable = true)
         String role,
     @Schema(description = "담당자. 미지정이면 null") AssigneeResponse assignee,
     @Schema(description = "우선순위. low/medium/high", example = "medium") String priority,
-    @Schema(description = "목적. 작성 전이면 null") String purpose,
+    @Schema(description = "설명. 작성 전이면 null") String purpose,
     @Schema(description = "완료 기준") ChecklistResponse checklist,
-    @Schema(description = "관련 자료 목록. 연결된 자료가 없으면 빈 배열") List<MaterialResponse> materials,
-    @Schema(description = "열린 질문 목록. 민수가 만든 질문이 없으면 빈 배열") List<OpenQuestionResponse> openQuestions,
-    @Schema(description = "다음 액션. 민수가 아직 만들지 않았으면 null", nullable = true) String nextAction,
+    @Schema(description = "연결된 소스 목록. 연결된 자료가 없으면 빈 배열") List<MaterialResponse> materials,
+    @Schema(description = "질문 목록. 민수가 만든 질문이 없으면 빈 배열") List<OpenQuestionResponse> openQuestions,
+    @Schema(description = "다음 행동. 민수가 아직 만들지 않았으면 null", nullable = true) String nextAction,
     @Schema(
             description =
                 "AI가 제목을 더 손볼 것이 남았는지. generating이면 나중에 다시 조회해야 합니다."
@@ -64,7 +64,7 @@ public record TaskDetailResponse(
       @Schema(description = "항목 제목") String title,
       @Schema(description = "완료 여부") boolean completed) {}
 
-  @Schema(description = "관련 자료")
+  @Schema(description = "연결된 소스")
   public record MaterialResponse(
       @Schema(description = "자료 식별자(source_ref id)") UUID id,
       @Schema(description = "제목", nullable = true) String title,
@@ -77,7 +77,7 @@ public record TaskDetailResponse(
       @Schema(description = "원본이 생성된 시각", nullable = true) Instant occurredAt,
       @Schema(description = "원본 문서 링크", nullable = true) String sourceUrl) {}
 
-  @Schema(description = "열린 질문")
+  @Schema(description = "질문")
   public record OpenQuestionResponse(
       @Schema(description = "질문 식별자") UUID id, @Schema(description = "질문 본문") String body) {}
 

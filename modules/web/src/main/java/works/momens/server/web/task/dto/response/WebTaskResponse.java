@@ -8,12 +8,12 @@ import java.util.UUID;
 import works.momens.server.project.task.TaskSnapshot;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "웹 태스크")
+@Schema(description = "웹 작업")
 public record WebTaskResponse(
-    @Schema(description = "태스크 식별자", example = "30d9e9fe-f43b-4097-a88e-dc19f0a5b025") UUID id,
+    @Schema(description = "작업 식별자", example = "30d9e9fe-f43b-4097-a88e-dc19f0a5b025") UUID id,
     @Schema(description = "소속 프로젝트 식별자") UUID projectId,
     @Schema(description = "마일스톤 식별자", nullable = true) UUID milestoneId,
-    @Schema(description = "사람이 읽는 태스크 레이블", example = "MOM-861", nullable = true) String label,
+    @Schema(description = "사람이 읽는 작업 레이블", example = "MOM-861", nullable = true) String label,
     @Schema(description = "제목", example = "웹 task read 이관") String title,
     @Schema(description = "설명", nullable = true) String description,
     @Schema(description = "상태", example = "todo") String status,

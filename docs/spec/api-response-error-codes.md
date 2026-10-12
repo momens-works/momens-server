@@ -185,7 +185,7 @@ Bean Validation과 `FieldValidationException`을 통한 필드 단위 검증 실
 
 ## 권한 details
 
-권한이 부족해 `AUTH_FORBIDDEN`을 반환할 때는 `details.required_role`에 요청을 처리하는 데 필요한 최소 역할을 포함합니다.
+권한이 부족해 `AUTH_FORBIDDEN`을 반환할 때는 `details.required_role`에 요청을 처리하는 데 필요한 최소 권한을 포함합니다.
 
 ```json
 {
@@ -200,9 +200,9 @@ Bean Validation과 `FieldValidationException`을 통한 필드 단위 검증 실
 }
 ```
 
-`required_role`에는 `workspace_members.role`에 저장하는 소문자 문자열을 사용하며, 값은 `owner`, `admin`, `member` 중 하나입니다. 역할에는 서열이 있으며, `required_role`은 해당 요청을 처리하는 데 필요한 최소 역할을 의미합니다. 예를 들어 값이 `admin`이면 `admin`과 `owner` 역할이 요청을 처리할 수 있습니다.
+`required_role`에는 `workspace_members.role`에 저장하는 소문자 문자열을 사용하며, 값은 `owner`, `admin`, `member` 중 하나입니다. 권한에는 서열이 있으며, `required_role`은 해당 요청을 처리하는 데 필요한 최소 권한을 의미합니다. 예를 들어 값이 `admin`이면 `admin`과 `owner` 권한이 요청을 처리할 수 있습니다.
 
-멤버가 아닌 경우와 멤버이지만 역할이 부족한 경우는 모두 같은 에러 코드로 응답합니다. 두 경우를 별도 코드로 구분하면 클라이언트가 워크스페이스 멤버십 여부를 추론할 수 있으므로 구분하지 않습니다.
+멤버가 아닌 경우와 멤버이지만 권한이 부족한 경우는 모두 같은 에러 코드로 응답합니다. 두 경우를 별도 코드로 구분하면 클라이언트가 워크스페이스 멤버십 여부를 추론할 수 있으므로 구분하지 않습니다.
 
 ## HTTP status 사용 기준
 

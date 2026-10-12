@@ -25,8 +25,8 @@ interface TaskWriteControllerDocs {
 
   @Operation(
       operationId = "createProjectTask",
-      summary = "프로젝트 태스크 생성",
-      description = "워크스페이스 멤버가 프로젝트에 태스크를 생성합니다.")
+      summary = "프로젝트 작업 생성",
+      description = "워크스페이스 멤버가 프로젝트에 작업을 생성합니다.")
   @ApiResponse(
       responseCode = "201",
       description = "생성 성공",
@@ -42,7 +42,7 @@ interface TaskWriteControllerDocs {
 
   @Operation(
       operationId = "updateTask",
-      summary = "태스크 수정",
+      summary = "작업 수정",
       description = "워크스페이스 멤버가 전달한 필드만 수정합니다.")
   @ApiResponse(
       responseCode = "200",
@@ -53,14 +53,14 @@ interface TaskWriteControllerDocs {
       codes = {"TASK_NOT_FOUND"})
   @ApiException(CommonErrorCode.class)
   WebTaskResponse update(
-      @Parameter(description = "태스크 식별자") UUID taskId,
+      @Parameter(description = "작업 식별자") UUID taskId,
       UpdateWebTaskRequest request,
       Principal principal);
 
   @Operation(
       operationId = "deleteTask",
-      summary = "태스크 삭제",
-      description = "워크스페이스 멤버가 태스크를 소프트 삭제합니다.")
+      summary = "작업 삭제",
+      description = "워크스페이스 멤버가 작업을 소프트 삭제합니다.")
   @ApiResponse(
       responseCode = "200",
       description = "삭제 성공",
@@ -69,12 +69,12 @@ interface TaskWriteControllerDocs {
       value = TaskErrorCode.class,
       codes = {"TASK_NOT_FOUND"})
   @ApiException(CommonErrorCode.class)
-  WebMessageResponse delete(@Parameter(description = "태스크 식별자") UUID taskId, Principal principal);
+  WebMessageResponse delete(@Parameter(description = "작업 식별자") UUID taskId, Principal principal);
 
   @Operation(
       operationId = "createTaskUpdate",
-      summary = "태스크 업데이트 생성",
-      description = "워크스페이스 멤버가 태스크에 업데이트를 작성합니다.")
+      summary = "작업 업데이트 생성",
+      description = "워크스페이스 멤버가 작업에 업데이트를 작성합니다.")
   @ApiResponse(
       responseCode = "201",
       description = "생성 성공",
@@ -84,14 +84,14 @@ interface TaskWriteControllerDocs {
       codes = {"TASK_NOT_FOUND"})
   @ApiException(CommonErrorCode.class)
   UpdateResponse createUpdate(
-      @Parameter(description = "태스크 식별자") UUID taskId,
+      @Parameter(description = "작업 식별자") UUID taskId,
       CreateTaskUpdateRequest request,
       Principal principal);
 
   @Operation(
       operationId = "deleteTaskUpdate",
-      summary = "태스크 업데이트 삭제",
-      description = "작성자만 자신의 태스크 업데이트를 소프트 삭제할 수 있습니다.")
+      summary = "작업 업데이트 삭제",
+      description = "작성자만 자신의 작업 업데이트를 소프트 삭제할 수 있습니다.")
   @ApiResponse(
       responseCode = "200",
       description = "삭제 성공",
@@ -101,7 +101,7 @@ interface TaskWriteControllerDocs {
       codes = {"TASK_NOT_FOUND"})
   @ApiException(CommonErrorCode.class)
   WebMessageResponse deleteUpdate(
-      @Parameter(description = "태스크 식별자") UUID taskId,
-      @Parameter(description = "태스크 업데이트 식별자") UUID updateId,
+      @Parameter(description = "작업 식별자") UUID taskId,
+      @Parameter(description = "작업 업데이트 식별자") UUID updateId,
       Principal principal);
 }

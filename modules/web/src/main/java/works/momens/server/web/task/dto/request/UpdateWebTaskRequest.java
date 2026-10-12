@@ -8,7 +8,7 @@ import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskStatus;
 
 /** PATCH의 누락과 null을 구분하는 웹 task 요청입니다. */
-@Schema(description = "웹 태스크 수정 요청")
+@Schema(description = "웹 작업 수정 요청")
 public final class UpdateWebTaskRequest {
   private String title;
 
@@ -38,28 +38,28 @@ public final class UpdateWebTaskRequest {
 
   private boolean dueDateSet;
 
-  @Schema(description = "태스크 제목. 빈 문자열은 기존 값을 유지하며 null은 허용하지 않습니다.")
+  @Schema(description = "작업 제목. 빈 문자열은 기존 값을 유지하며 null은 허용하지 않습니다.")
   @JsonSetter("title")
   public void setTitle(String value) {
     title = value;
     titleSet = true;
   }
 
-  @Schema(description = "태스크 설명. null이면 설명을 제거합니다.")
+  @Schema(description = "작업 설명. null이면 설명을 제거합니다.")
   @JsonSetter("description")
   public void setDescription(String value) {
     description = value;
     descriptionSet = true;
   }
 
-  @Schema(description = "태스크 status. 생략하면 기존 값을 유지하며, null은 허용하지 않습니다.")
+  @Schema(description = "작업 status. 생략하면 기존 값을 유지하며, null은 허용하지 않습니다.")
   @JsonSetter("status")
   public void setStatus(TaskStatus value) {
     status = value;
     statusSet = true;
   }
 
-  @Schema(description = "태스크 priority. 생략하면 기존 값을 유지하며, null은 허용하지 않습니다.")
+  @Schema(description = "작업 priority. 생략하면 기존 값을 유지하며, null은 허용하지 않습니다.")
   @JsonSetter("priority")
   public void setPriority(TaskPriority value) {
     priority = value;
