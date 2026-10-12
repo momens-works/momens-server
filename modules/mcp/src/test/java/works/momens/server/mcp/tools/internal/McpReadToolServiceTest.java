@@ -22,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.core.io.ClassPathResource;
 import tools.jackson.databind.JsonNode;
@@ -191,8 +192,10 @@ class McpReadToolServiceTest {
     verify(tasks).findSnapshotByLabel(workspaceId, "MOM-0991");
   }
 
-  @Test
-  void batchesActivityAuthorsAndPreservesMissingProfilesAndKinds() {
+  @ParameterizedTest
+  @NullSource
+  @ValueSource(strings = {" "})
+  void batchesActivityAuthorsAndPreservesMissingProfilesAndKinds(String missingName) {
     seed();
     UUID bobId = UUID.randomUUID();
     UUID missingId = UUID.randomUUID();
@@ -211,7 +214,8 @@ class McpReadToolServiceTest {
             List.of(
                 new UserProfile(userId, "alice@example.com", "Alice", null, null, now, now),
                 new UserProfile(bobId, "bob@example.com", "Bob", null, null, now, now),
-                new UserProfile(unnamedId, "unnamed@example.com", " ", null, null, now, now)));
+                new UserProfile(
+                    unnamedId, "unnamed@example.com", missingName, null, null, now, now)));
 
     assertThat(text(call("get_task", "{\"task\":\"MOM-0991\"}")))
         .endsWith(
@@ -229,6 +233,22 @@ class McpReadToolServiceTest {
         .doesNotContain("@example.com");
     verify(users).getProfiles(List.of(userId)); // Existing assignee lookup.
     verify(users, times(1)).getProfiles(List.of(userId, bobId, missingId, unnamedId));
+    verifyNoMoreInteractions(users);
+  }
+
+  @Test
+  void preservesActivitiesWithoutAuthorIdsAndSkipsAuthorLookup() {
+    seed();
+    when(updates.listByTaskId(taskId))
+        .thenReturn(
+            List.of(activity(null, "comment", "Comment"), activity(null, "update", "Progress")));
+
+    assertThat(text(call("get_task", "{\"task\":\"MOM-0991\"}")))
+        .endsWith(
+            "activities (2):"
+                + "\n- [2026-09-27 03:04 UTC] comment · Unknown author: Comment"
+                + "\n- [2026-09-27 03:04 UTC] update · Unknown author: Progress");
+    verify(users).getProfiles(List.of(userId)); // Only the existing assignee lookup.
     verifyNoMoreInteractions(users);
   }
 
