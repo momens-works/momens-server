@@ -1,7 +1,7 @@
 [
   {
     "name": "get_task",
-    "description": "Get a task's details and comments by its MOM-label or id.",
+    "description": "Get a task's details and activities (comments and progress updates), including authors and UTC timestamps, by its MOM-label or id.",
     "inputSchema": {
       "type": "object",
       "properties": {

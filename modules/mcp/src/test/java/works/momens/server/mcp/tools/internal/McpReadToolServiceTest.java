@@ -2,8 +2,10 @@ package works.momens.server.mcp.tools.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.InputStream;
@@ -172,7 +174,7 @@ class McpReadToolServiceTest {
   }
 
   @Test
-  void filtersTasksAndPreservesDetailComments() {
+  void filtersTasksAndDisplaysDetailActivities() {
     seed();
     assertThat(
             text(
@@ -185,8 +187,54 @@ class McpReadToolServiceTest {
     assertThat(text(call("list_tasks", "{\"status\":\"unknown\"}"))).isEqualTo("No tasks match.");
     assertThat(text(call("get_task", "{\"task\":\" mom-0991 \"}")))
         .isEqualTo(
-            "MOM-0991 · Read tools\nstatus: todo · priority: medium · project: PRJ-0003 Sprint · milestone: Release · assignee: Alice · due: 2026-10-01\n\nDescription\n\ncomments (1):\n- [2026-09-27 03:04] Comment");
+            "MOM-0991 · Read tools\nstatus: todo · priority: medium · project: PRJ-0003 Sprint · milestone: Release · assignee: Alice · due: 2026-10-01\n\nDescription\n\nactivities (1):\n- [2026-09-27 03:04 UTC] comment · Alice: Comment");
     verify(tasks).findSnapshotByLabel(workspaceId, "MOM-0991");
+  }
+
+  @Test
+  void batchesActivityAuthorsAndPreservesMissingProfilesAndKinds() {
+    seed();
+    UUID bobId = UUID.randomUUID();
+    UUID missingId = UUID.randomUUID();
+    UUID unnamedId = UUID.randomUUID();
+    when(updates.listByTaskId(taskId))
+        .thenReturn(
+            List.of(
+                activity(userId, "comment", "First"),
+                activity(bobId, "update", "Progress"),
+                activity(userId, "update", "Again"),
+                activity(missingId, "comment", "Missing profile"),
+                activity(unnamedId, "update", "No name"),
+                activity(null, "comment", "Deleted author")));
+    when(users.getProfiles(List.of(userId, bobId, missingId, unnamedId)))
+        .thenReturn(
+            List.of(
+                new UserProfile(userId, "alice@example.com", "Alice", null, null, now, now),
+                new UserProfile(bobId, "bob@example.com", "Bob", null, null, now, now),
+                new UserProfile(unnamedId, "unnamed@example.com", " ", null, null, now, now)));
+
+    assertThat(text(call("get_task", "{\"task\":\"MOM-0991\"}")))
+        .endsWith(
+            "activities (6):"
+                + "\n- [2026-09-27 03:04 UTC] comment · Alice: First"
+                + "\n- [2026-09-27 03:04 UTC] update · Bob: Progress"
+                + "\n- [2026-09-27 03:04 UTC] update · Alice: Again"
+                + "\n- [2026-09-27 03:04 UTC] comment · "
+                + missingId
+                + ": Missing profile"
+                + "\n- [2026-09-27 03:04 UTC] update · "
+                + unnamedId
+                + ": No name"
+                + "\n- [2026-09-27 03:04 UTC] comment · Unknown author: Deleted author")
+        .doesNotContain("@example.com");
+    verify(users).getProfiles(List.of(userId)); // Existing assignee lookup.
+    verify(users, times(1)).getProfiles(List.of(userId, bobId, missingId, unnamedId));
+    verifyNoMoreInteractions(users);
+  }
+
+  private TaskUpdateDetail activity(UUID authorId, String kind, String body) {
+    return new TaskUpdateDetail(
+        UUID.randomUUID(), workspaceId, projectId, taskId, authorId, body, kind, null, now, now);
   }
 
   @Test

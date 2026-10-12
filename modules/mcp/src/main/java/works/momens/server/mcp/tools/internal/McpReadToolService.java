@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -27,6 +28,7 @@ import works.momens.server.project.milestone.MilestoneReader;
 import works.momens.server.project.task.TaskReader;
 import works.momens.server.project.task.TaskSnapshot;
 import works.momens.server.project.task.TaskStatus;
+import works.momens.server.project.taskupdate.TaskUpdateDetail;
 import works.momens.server.project.taskupdate.TaskUpdateReader;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
@@ -295,8 +297,21 @@ class McpReadToolService {
                 .map(UserProfile::name)
                 .findFirst()
                 .orElse("");
+    List<TaskUpdateDetail> activities = updates.listByTaskId(task.id());
+    List<UUID> authorIds =
+        activities.stream()
+            .map(TaskUpdateDetail::authorId)
+            .filter(Objects::nonNull)
+            .distinct()
+            .toList();
+    Map<UUID, String> authorNames =
+        authorIds.isEmpty()
+            ? Map.of()
+            : users.getProfiles(authorIds).stream()
+                .filter(profile -> profile.name() != null && !profile.name().isBlank())
+                .collect(Collectors.toMap(UserProfile::id, UserProfile::name));
     return McpReadToolText.taskDetail(
-        task, project, milestoneName, assigneeName, updates.listByTaskId(task.id()));
+        task, project, milestoneName, assigneeName, activities, authorNames);
   }
 
   private static Map<UUID, ProjectDetail> projectIndex(List<ProjectDetail> found) {
