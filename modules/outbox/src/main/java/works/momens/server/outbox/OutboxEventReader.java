@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * outbox consumer 조회 public API(docs/design/signal-push-demo-design.md 10절, ADR-0009).
+ * outbox consumer 조회 public API(ADR-0009).
  *
  * <p>{@code id}는 BIGSERIAL이라 id 발급 순서와 commit 순서가 다를 수 있다. 나중 id의 event가 먼저 commit되면 watermark가 아직
  * commit되지 않은 앞 id를 지나쳐 그 event를 영구히 건너뛴다. 이를 막기 위해 {@code readAfter}는 안전 지연을 아직 지나지 않은 첫 event에서

@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import works.momens.server.notification.PushInstallationPlatform;
 
-/** 설치 등록 또는 token 갱신 요청(docs/design/signal-push-demo-design.md 8.2절). */
+/** 설치 등록 또는 token 갱신 요청. */
 @Schema(description = "push 설치 등록 또는 FCM token 갱신 요청")
 public record RegisterPushDeviceRequest(
     @Schema(description = "현재 FCM registration token") @NotBlank String fcmRegistrationToken,

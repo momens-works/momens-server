@@ -190,7 +190,7 @@ class SignalControllerTest {
         .andExpect(jsonPath("$.task.id").value(taskId.toString()))
         .andExpect(jsonPath("$.task.title").value("제목"))
         .andExpect(jsonPath("$.task.status").value("todo"))
-        // 공개 어휘는 소문자 두 값뿐이다(설계 7.1절).
+        // 공개 어휘는 소문자 두 값뿐이다.
         .andExpect(jsonPath("$.task.draft_status").value("generating"))
         .andExpect(jsonPath("$.signal.id").value(signalId.toString()))
         .andExpect(jsonPath("$.signal.action").value("convert_to_task"));

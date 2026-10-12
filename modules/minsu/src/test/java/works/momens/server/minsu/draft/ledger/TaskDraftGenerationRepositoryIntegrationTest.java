@@ -69,7 +69,7 @@ class TaskDraftGenerationRepositoryIntegrationTest extends AbstractPostgresInteg
     assertThat(saved.getBaselineTitle()).isEqualTo("결제 실패율 대응");
     assertThat(saved.getBaselineRole()).isEqualTo("backend");
     assertThat(saved.getBaselinePriority()).isEqualTo("medium");
-    // 8.6절의 세 시각. timestamptz ↔ Instant 왕복이 깨지면 deadline 판정이 통째로 어긋난다.
+    // timestamptz ↔ Instant 왕복이 깨지면 deadline 판정이 통째로 어긋난다.
     assertThat(saved.getReadDeadlineAt()).isEqualTo(readDeadline);
     assertThat(saved.getApplyCutoffAt()).isEqualTo(applyCutoff);
     assertThat(saved.getNextAttemptAt()).isEqualTo(nextAttempt);
@@ -203,7 +203,7 @@ class TaskDraftGenerationRepositoryIntegrationTest extends AbstractPostgresInteg
         .baselineTitle("결제 실패율 대응")
         .baselineRole("backend")
         .baselinePriority("medium")
-        // 가드 밴드(8.6절). 두 값을 같게 두면 margin이 0인 행이라 제약이 막는다.
+        // 가드 밴드. 두 값을 같게 두면 margin이 0인 행이라 제약이 막는다.
         .readDeadlineAt(readDeadline)
         .applyCutoffAt(readDeadline.minus(1, ChronoUnit.MINUTES))
         .nextAttemptAt(Instant.now());

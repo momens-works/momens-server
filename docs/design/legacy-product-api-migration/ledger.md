@@ -41,18 +41,7 @@ HTTP 행은 `H001`부터, 비-HTTP 행은 `N001`부터 식별한다. 각 행의 
 
 ## 기준선과 전수성 검증
 
-조사 시작 시 레거시 저장소에서 다음을 실행했다. fetch 전후 `origin/main` SHA는 같았고 작업 트리는
-깨끗했다.
-
-```bash
-git -C ../momens-api fetch origin main
-git -C ../momens-api rev-parse origin/main
-# 71bbd07614fd2aef4dec726bafdf86c1bd097ba6
-
-rg -n '\.(GET|POST|PATCH|DELETE|PUT|Any)\(' \
-  ../momens-api/internal/bootstrap/router.go
-# 96 declarations
-```
+기준 SHA의 `internal/bootstrap/router.go`를 전수 조사했다(MOM-0848).
 
 96개는 조건부 등록을 포함한 **소스 선언 수**다. `r.Any("/mcp", ...)`는 선언 하나로 세며 Gin이
 런타임에 여러 HTTP method로 확장하는 수는 중복해서 세지 않는다.
@@ -68,17 +57,9 @@ rg -n '\.(GET|POST|PATCH|DELETE|PUT|Any)\(' \
 | 운영 표면 | 1 |
 | **합계** | **96** |
 
-HTTP 밖 표면은 다음 방법을 함께 사용했다.
-
-```bash
-rg -n 'mcp\.AddTool' ../momens-api/internal/mcpserver
-rg -n 'go func|time\.NewTicker|RunMigrations|BackfillSearchTokens' \
-  ../momens-api --glob '*.go' --glob '!**/*_test.go'
-rg --files ../momens-api/cmd
-```
-
-그 결과 MCP tool 11개, startup migration runner, retrieval backfill·embedding loop, Slack 비동기
-처리, HTTP server lifecycle, 오프라인 CLI 3개를 확인했다. 별도 cron/scheduler 등록은 없었다.
+HTTP 밖에는 MCP tool 11개, startup migration runner, retrieval backfill·embedding loop,
+Slack 비동기 처리, HTTP lifecycle과 오프라인 CLI 3개를 추적했다. 조사 명령·완료 이력은 MOM-0848과
+MOM-1057에 보존한 변경 전 원문에서 확인한다.
 
 현재 원장 행 기준 HTTP 항목은 `implemented` 66개, `traced` 30개다. 비-HTTP·tool 항목은
 `implemented` 12개, `traced` 7개다. `cutover_ready` 이상으로 기록한 항목은 없다.
@@ -187,103 +168,44 @@ blocker·decision 관련 endpoint(H054, H055, H059, H066, H073~H075)와 minsu qu
 않으므로 웹 컷오버 범위에서 제외한다. 후보·메모리 리뷰 액션, source 온보딩(H041·H082·H096),
 MCP grants UI(H035·H036)는 실사용이다.
 
-## MOM-0975 사용 조사와 처분 결정
+## 폐기·유지 결정과 실행 조건
 
-2026-09-26, 웹 미호출 13건과 추가 확인 4건의 처분을 확정했다.
-조사 근거와 관측 한계는 [사용 조사](unused-surface-usage-audit.md)에 기록했다.
+- MOM-0975의 조사 대상 17건 중 H047·H055·H059·H070·H073·H076·H077·H083·H089·H095는
+  폐기 결정·실행 대기다. 약 75시간의 운영 로그와 코드 조사에서 호출을 찾지 못한 근거이며 영구
+  미사용 증명은 아니다. 전용 구현 제거 시 공유 인가·helper·service·repository·projection과
+  모델·테이블·기존 데이터는 보존한다.
+- 당시 잔류로 분류한 7건은 이후 H079(MOM-1014), H078(MOM-1015), H080(MOM-1016),
+  H054(MOM-1017), H066·H074·H075(MOM-1018)에서 서버 구현을 완료했다. 최종 API owner는 서버이며
+  worker·운영 설정·E2E·writer 인계는 각 행의 후속 작업에서 검증한다.
+- H048·H049는 MOM-1019에서 legacy 종료와 함께 폐기로 확정했다. REST/MCP로 이관하지 않는다.
+  프로젝트·소유자·연관 데이터·검색 문서·스키마와 공유 생성/조회 구현을 보존한다.
+  삭제 프로젝트의 task 판정 버그는 MOM-1000에 남으며 이 결정으로 해결되지 않는다.
+- H081도 legacy 종료와 함께 폐기한다. `sync_states` 테이블·데이터·migration·proto와 공유 source
+  인가·저장소·worker 수집/재동기화를 보존한다. FE 미사용 메서드·타입과 전용 조회 테스트는 실제
+  제거 때 참조를 다시 확인한다. 정적 조사만 했으므로 운영 요청 0건이나 DB 데이터 부재를 주장하지 않는다.
+- MOM-1022는 폐기 API의 새 소비 의존이 없는지, MOM-1023은 종료 직전 소비자와 route 도달 차단을
+  확인한다. 실행 증거 전까지 상태는 `traced`이며 `retired`로 올리지 않는다.
 
-- **폐기 결정·실행 대기 10건:** H047·H055·H059·H070·H073·H076·H077·H083·H089·H095.
-  제품·E2E 호출처가 없고, 관측 가능한 운영 로그
-  (2026-09-23 17:07:58 ~ 09-26 20:50:18 KST)에서도 각각 0건이었다.
-  신규 서버로 이관하지 않는다. 다른 소비자가 없는 전용 구현을 제거할 수 있지만,
-  공용 인가·스캔 helper, 다른 기능의 service·repository·projection, 모델·테이블·기존 데이터는 유지한다.
-  H047의 전용 테스트는 실제 제거 범위에 맞춰 정리한다.
-- **레거시 잔류·유지 7건:** H054·H066·H074·H075·H078·H079·H080.
-  Decision·Task blocker 생성, Blocker 해결·삭제, 수집 중지·재동기화·Figma 설정을 유지한다.
-  연결된 E2E, retrieval 반영과 source 상태·설정에 대한 worker 소비도 유지한다.
+조사 기준 SHA·로그 범위·판단 변경의 상세는 MOM-0975·1019 및 MOM-1057에 보존한 원문을 따른다.
 
-위 내용은 2026-09-26 당시의 처분이다. 이후 7건 모두 신규 서버 이관 대상으로 확정했다.
-H079는 `MOM-1014`, H078은 `MOM-1015`, H080은 `MOM-1016`, H054는 `MOM-1017`,
-H066·H074·H075는 `MOM-1018`에서 서버 구현을 완료했다. 최종 API owner는
-`momens-server`이며 worker projector는 `MOM-1020`·`MOM-1021`, 운영 설정은 `MOM-0954`,
-전체 E2E는 `MOM-1022`, 레거시 종료는 `MOM-1023`에서 검증한다. 구현 완료를 운영 전환 완료로
-간주하지 않으며 실제 writer 인계 전까지 레거시가 운영 요청을 처리할 수 있다.
+## 완료된 workspace read 계약의 확인 위치
 
-폐기 결정한 10건은 route 제거·비활성화가 아직 실행되지 않았으므로 상태는 `traced`다.
-`retired` 전환은 실제 제거 또는 비활성 확인 후 수행한다.
+H020·H022·H023 구현과 응답은
+[workspace 표면](../../../modules/web/src/main/java/works/momens/server/web/workspace/),
+[OpenAPI](../../spec/openapi.md),
+[WebWorkspacesIntegrationTest](../../../app/src/test/java/works/momens/server/web/workspace/WebWorkspacesIntegrationTest.java)에서 확인한다.
+후보 비교·legacy trace·차등 비교 이력은 MOM-0850·0851·0856·0862·0877에 속한다.
 
-후속 `MOM-1017`에서 H054의 신규 서버 생성 API와 outbox 발행을 구현했다. 위 내용은
-`MOM-0975` 당시의 처분 결정이며, 현재 구현 상태와 운영 전환 조건은 아래 H054 행을 따른다.
-
-## MOM-1019 프로젝트 수정·삭제 처분 결정
-
-2026-10-08, 사용자가 H048·H049 모두 **레거시 종료와 함께 폐기**하기로 확정했다.
-신규 서버 REST API나 MCP 도구로 이관하지 않으며 후속 구현 티켓은 만들지 않는다.
-MOM-0975의 “MCP 전용 write이므로 MCP 이관에서 처리”라는 분류는 정정한다.
-두 경로는 Product JSON REST API이며 레거시·신규 MCP에 대응 도구가 없다.
-
-조사 기준은 다음과 같다. 레거시 대상 route·project/access/domain·migration 파일은
-로컬 checkout과 갱신한 `origin/main` 사이에 차이가 없음을 확인했다.
-
-| 저장소 | 기준 SHA | 확인 결과 |
-| --- | --- | --- |
-| `momens-api` | `5ba48d2c2eb7e5a1f6ecf80388ec59fccca7b65a` | `internal/bootstrap/router.go` → `internal/project/{handler,service,repository}.go`에 수정·삭제 구현 존재. MCP 등록 도구에 두 기능 없음 |
-| `momens-server` | `b41ee1c9` | 웹 프로젝트 controller는 생성만 제공. MCP에도 프로젝트 수정·삭제 도구 없음 |
-| `momens-fe` | `54e26ce7d67cbb67369d2d8c3e2da801a7a0c1a2` | API client·호출부에 두 경로 없음. `src/domain/timeline.ts`와 타임라인 설계 문서에는 수정 경로 부재로 목표 날짜 설정을 제공하지 않는다고 기록 |
-| `momens-android` | `fe8494f555ee5e51e8eb592dddf5048dd9d100dd` | 네트워크 service에 두 경로 없음 |
-| `momens-ios` | `d2072133e3ee54bc96c121c66ba3d7c3ac23a32f` | 초기 화면과 앱 진입점만 존재하며 API 소비 코드 없음 |
-| `e2e` | `eac954dd7991f1d33e5e53353192556023e466da` | API client·테스트에 두 경로 호출 없음 |
-
-이는 정적 코드 조사다. 운영 로그·수동 호출을 확인하지 않았으므로 실제 요청 0건을 주장하지 않는다.
-FE의 향후 목표 날짜 수정 필요성까지 설명한 뒤 폐기를 확정했으며, 향후 기능 요구가 생기면 별도로
-설계한다. 레거시 handler 테스트에는 수정·삭제 권한 거부 검증이 있지만 제품 소비자는 아니다.
-
-두 API는 workspace admin/owner만 허용한다. 수정은 프로젝트 필드와 `project_owners`를 저장하고,
-삭제는 `projects.deleted_at`·`updated_at`만 갱신한다. 작업·마일스톤 등 연관 행이나 검색 문서를
-함께 삭제하지 않으며 projection/outbox도 발행하지 않는다. 이번 폐기는 endpoint의 종료이므로
-프로젝트·소유자·연관 데이터·기존 검색 문서·스키마를 보존한다. 기존 삭제 프로젝트의 작업 조회·쓰기
-판정은 `MOM-1000` 범위로 유지하며, 이 결정으로 해당 버그 수정이나 검색 정리를 완료 처리하지 않는다.
-
-`MOM-1022`는 두 API를 신규 E2E 이관 대상에서 제외하고 레거시 의존 호출이 새로 생기지 않았는지
-확인한다. `MOM-1023`은 종료 직전 호출처를 재확인하고 레거시 route 제거·비활성 또는 서버 종료와
-라우팅 정리를 통해 두 handler로 요청이 도달하지 않음을 검증한다. 전용 구현·테스트 정리는 실제
-제거 범위에 맞추며 프로젝트 생성·조회가 공유하는 helper·모델·저장소 코드는 보존한다.
-그 실행 증거가 남기 전까지 H048·H049는 **폐기 결정·실행 대기**인 `traced`를 유지한다.
-
-## H081 동기화 상태 조회 처분 결정
-
-2026-10-08, 사용자가 `GET /source-connections/:id/sync-states`를 **레거시 종료와 함께 폐기**하기로
-확정했다. 신규 서버 REST API나 MCP 도구로 이관하지 않는다.
-
-- 레거시 `momens-api@5ba48d2c2eb7e5a1f6ecf80388ec59fccca7b65a`의 route →
-  `source.Handler.ListSyncStates` → `Service.ListSyncStates` →
-  `Repository.ListSyncStatesByConnectionID`를 추적했다. workspace member 인가 후 기존
-  `sync_states`를 조회하며, 수집 실행·상태 갱신은 하지 않는다. 서비스 호출은 handler와
-  `TestSourceConnectionCountersSyncStatesAndVerification`에서만 확인됐다.
-- `momens-fe@54e26ce7d67cbb67369d2d8c3e2da801a7a0c1a2`에는 `listSyncStates()`와 응답 타입이
-  있지만 화면·훅·snapshot·테스트 호출은 없다. FE 설계 문서와 proto의 `ListSyncStates` 선언은
-  사용 의도이며 실제 소비 증거는 아니다. 조사한 저장소에서 해당 RPC 서버 등록·클라이언트 호출도
-  찾지 못했다.
-- Android `fe8494f555ee5e51e8eb592dddf5048dd9d100dd`, iOS
-  `d2072133e3ee54bc96c121c66ba3d7c3ac23a32f`, E2E
-  `eac954dd7991f1d33e5e53353192556023e466da`, 레거시·신규 MCP에 실제 호출은 없다.
-- `momens-worker@75708fba424b96ee1102538f34c1ef9d82455b85`는 H081이나 `sync_states`를
-  사용하지 않고 `backfill_runs`로 진행 상태·cursor·실패를 관리한다. 조사한 코드에서
-  `sync_states` 쓰기는 데모 seed·테스트뿐이다. worker의
-  `docs/BACKFILL_PHASE5_SYNC_STATES.md`는 proposal / not implemented 상태다.
-- 운영 로그는 `PROD-momens` 클러스터 연결 시간 초과로 확인하지 못했다. DB 행 현황·수동 호출도
-  확인하지 않았으므로 운영 요청 0건이나 데이터 부재를 주장하지 않는다.
-
-기존 `sync_states` 테이블·데이터·migration·proto는 보존한다. 다른 source API와 공유하는
-인가·모델·저장소, worker 수집·재동기화 구현도 보존한다. 레거시 전용 조회 구현·테스트와 FE의
-미사용 메서드·타입은 제거 시 참조를 다시 확인하고, 여러 기능을 함께 검증하는 통합 테스트는
-H081 부분만 정리한다. 향후 대상별 동기화 상태 화면이 필요하면 worker 상태 생산 계약부터 새로
-설계하며 이 endpoint를 미리 이관하지 않는다.
-
-`MOM-1022`는 H081을 이관 E2E 대상에서 제외하고 새로운 호출 의존이 없는지 확인한다.
-`MOM-1023`은 종료 직전 소비자를 재확인하고 레거시 종료·라우팅 정리로 handler에 요청이 도달하지
-않음을 검증한다. FE 정리와 데이터 보존 확인을 종료 점검에 포함한다. 실제 종료 증거 전까지
-`traced`를 유지하며, 이번 결정으로 `retired`나 운영 종료 완료로 변경하지 않는다.
+- snapshot의 최상위 목록과 context 번들 목록은 비어도 `[]`다. 다른 nullable/빈 컬렉션의 생략은
+  `WorkspaceSnapshotResponse`가 소유한다. project progress는 생략하고 milestone progress는 유지한다.
+- context는 살아 있는 응답 task와 교집합을 취한다. edge가 없으면 번들 자체가 없고, edge만 남고
+  대상이 삭제됐으면 빈 번들이다. memory는 top-level과 같은 넓은 투영, source-ref는 좁은 전용
+  투영이다. 좁은 memory가 클라이언트 병합에서 원본 필드를 덮어쓰지 않도록 한 결정이다.
+- 쿼리 예산은 최악 조건 **14회 이하**이며 위 통합 테스트로 고정한다. task별 context나
+  project/milestone별 owner 추가 조회로 N+1을 만들지 않는다.
+- MOM-0967은 FE snapshot fallback을 제거하고 정상·404·권한 오류에서 개별 legacy API 재호출이
+  없는지 검증한다. 신규 H022 API는 유지한다. fallback 제거 뒤 context memory를 id 참조로
+  줄이는 것은 별도 검토이며 이번 정리에서 응답을 바꾸지 않는다.
 
 ## Trace profile
 
@@ -302,7 +224,7 @@ handler/service/repository를 뜻한다.
 | `AUT` | `auth/handler.go` → `auth/service.go` → `auth/repository.go` → `domain.User`, `platform/auth/jwt.go`, `platform/oauth/google.go` | `000001_init.sql`, `000007_user_job_role.sql`, `000018_refresh_tokens.sql`; `auth/service_integration_test.go`, `platform/auth/jwt_test.go` | 도메인 `auth` 세션과 `user` 신원·프로필, HTTP 표면은 `web`·`mobile`(`MOM-0852`) |
 | `USR` | legacy `auth/handler.go`의 `Me`·`UpdateMe` → `auth/service.go` → `auth/repository.go` → `domain.User` | `000001_init.sql`, `000007_user_job_role.sql`; `auth/service_integration_test.go` | 도메인 `user`, 웹 표면 `web`(`MOM-0852`); `/api/me` GET/PATCH 구현 완료 |
 | `WSP` | `workspace/handler.go` → `service.go` → `repository.go`, `access/service.go`·`repository.go`, `label/label.go` → workspace 관련 `domain/models.go` | `000001_init.sql`, `000006_fe_contract.sql`, `000009_member_onboarding_state.sql`, `000011_workspace_invitations.sql`; `workspace/*_test.go`, `access/service_integration_test.go` | 도메인 `workspace`, 웹 표면 `web` |
-| `SNP` | `snapshot/handler.go` → workspace/project/milestone/task/blocker/memory/relation service·repository | 위 capability의 모든 schema; `snapshot/handler_integration_test.go` | 표면과 합성 로직 모두 `:web`(`MOM-0850`). 응답 계약은 [웹 snapshot 계약](slice-snapshot.md)에서 확정(`MOM-0856`) |
+| `SNP` | `snapshot/handler.go` → workspace/project/milestone/task/blocker/memory/relation service·repository | 위 capability의 모든 schema; `snapshot/handler_integration_test.go` | 표면과 합성 로직 모두 `:web`(`MOM-0850`). 응답 계약은 [현재 계약 확인 위치](#완료된-workspace-read-계약의-확인-위치)에서 확정(`MOM-0856`) |
 | `PRJ` | `project/handler.go` → `service.go` → `repository.go` → `domain.Project`, `access` | `000001_init.sql`, `000006_fe_contract.sql`, `000008_project_metadata.sql`, `000017_project_label.sql`; `project/handler_test.go`, `service_integration_test.go` | `project` |
 | `MIL` | `milestone/handler.go` → `service.go` → `repository.go` → `domain.Milestone`, `access` | `000001_init.sql`, `000006_fe_contract.sql`; `milestone/service_integration_test.go` | `project` |
 | `TSK` | `task/handler.go` → `service.go` → `repository.go` → `domain.Task`·`TaskUpdate`, `retrieval/projection.go`·`repository.go` | `000001_init.sql`, `000002_retrieval_projection.sql`, `000006_fe_contract.sql`, `000012_task_updates.sql`, `000013_task_workspace_cascade.sql`; `task/service_integration_test.go`, `retrieval/projection_test.go` | `:project`의 `task` 하위 경계; 웹·모바일 task 계약 정리는 `MOM-0773` 완료 |
@@ -318,10 +240,10 @@ handler/service/repository를 뜻한다.
 | Profile | contract·auth/RBAC | writer·projection/external | gate·rollback·task |
 | --- | --- | --- | --- |
 | `OP` | 운영 계약. 공개 health | read-only, DB 없음 | 신규 `/actuator/health`는 구현됨. ingress/probe 전환과 routing rollback 필요. `MOM-0848` |
-| `MOA-P` | OAuth metadata·등록·인가·token·revoke protocol 계약. endpoint별 client/token 검증 | `oauth_*` writer; OAuth client와 MCP client 외부 의존 | `:mcp`와 Spring Authorization Server 사용으로 결정([ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover)). metadata·등록·인가·token·revoke 구현 완료(`MOM-0988`·`MOM-0989`). 운영 전환은 `MOM-0992` |
-| `MOA-I` | authorization server session으로 interaction user/workspace 검증 | `oauth_interactions`, grant/code writer | 신규 `:mcp`가 소유한다([ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover)); 웹 컷오버 시점의 레거시 보호 endpoint 동작은 [ADR-0018](../../adr/0018-transitional-legacy-acceptance-of-new-access-token.md)으로 유지하고 이후 신규 UI/API로 전환 |
-| `MOA-G` | 현재 사용자·workspace membership·grant ownership | target `mcp_grants`와 OAuth token family 동시 폐기 (`MOM-0999`); legacy `oauth_grants`는 운영 전환 전 유지 | 기존 grant/client/token은 이전하지 않고 전부 재연결한다([ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover)); revoke·만료·재연결 runbook 필요 |
-| `MCP` | MCP Streamable HTTP, OAuth bearer와 tool별 scope | project/milestone/task/comment writer가 REST와 같은 aggregate를 공유 | canonical 주소는 `https://api.momens.works/api/mcp`; 기존 `/mcp`는 전환 후 제거·차단한다([ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover)). 단일 writer와 retrieval projection gate 필요 |
+| `MOA-P` | OAuth metadata·등록·인가·token·revoke protocol 계약. endpoint별 client/token 검증 | `oauth_*` writer; OAuth client와 MCP client 외부 의존 | `:mcp`와 Spring Authorization Server 사용으로 결정([ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover.md)). metadata·등록·인가·token·revoke 구현 완료(`MOM-0988`·`MOM-0989`). 운영 전환은 `MOM-0992` |
+| `MOA-I` | authorization server session으로 interaction user/workspace 검증 | `oauth_interactions`, grant/code writer | 신규 `:mcp`가 소유한다([ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover.md)); 웹 컷오버 시점의 레거시 보호 endpoint 동작은 [ADR-0018](../../adr/0018-transitional-legacy-acceptance-of-new-access-token.md)으로 유지하고 이후 신규 UI/API로 전환 |
+| `MOA-G` | 현재 사용자·workspace membership·grant ownership | target `mcp_grants`와 OAuth token family 동시 폐기 (`MOM-0999`); legacy `oauth_grants`는 운영 전환 전 유지 | 기존 grant/client/token은 이전하지 않고 전부 재연결한다([ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover.md)); revoke·만료·재연결 runbook 필요 |
+| `MCP` | MCP Streamable HTTP, OAuth bearer와 tool별 scope | project/milestone/task/comment writer가 REST와 같은 aggregate를 공유 | canonical 주소는 `https://api.momens.works/api/mcp`; 기존 `/mcp`는 전환 후 제거·차단한다([ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover.md)). 단일 writer와 retrieval projection gate 필요 |
 | `SLK` | Slack signature·retry·3초 ack 계약 | retrieval·Vertex·Slack API; action layer가 task writer | 신규 서버로 전환하지 않는다(`MOM-0971`). 레거시 task action 중단은 `MOM-0967`·`MOM-0992`의 writer 인계 시 수행하고, 봇과 외부 callback의 최종 종료는 `MOM-1023` 범위 |
 | `AUT` | 레거시 단일 JWT 대신 확정된 Standard 웹 access+refresh 쿠키 계약. H014~H016은 공개 transport | `users`, `user_identities`, `refresh_tokens`; Google OAuth. 아래 `users` writer 예외 적용 | 신규 경로 구현 완료(`MOM-0640`, `MOM-0641`). FE 로그인과 함께 전환하며 레거시 세션 rollback은 별도 브리지 없이는 불가 |
 | `USR` | 신규 `/api/me` Standard 계약. H017~H018은 legacy 세션, target은 cookie/Bearer 공통 인증의 현재 사용자 | `users` writer. 아래 `users` writer 예외 적용 | 구현 완료(`MOM-0632`, `MOM-0635`). legacy wrapper와 field 차이 characterization 및 FE 전환 필요 |
@@ -370,8 +292,8 @@ background draft 반영이 구현되어 있다. 이 경로들은 prod에서 활�
 
 따라서 `users`의 ADR-0016 예외를 `tasks`에 확장하지 않는다. target writer를 활성화하기 전 prod
 schema·routing·실제 client traffic을 확인하고, legacy REST·MCP·Slack writer를 포함한 aggregate
-전체를 한 전환 단위로 넘긴다. 두 서버의 task writer를 동시에 활성화해야 한다면 이 원장의 암묵적
-예외가 아니라 별도 결정과 rollback 조건을 먼저 기록한다.
+전체를 한 전환 단위로 넘긴다. MOM-0953은 공존 예외 없이 준비 후 공동 전환을 확정했다.
+차단·drain·rollback 증거는 MOM-0967·0992와 [컷오버](cutover.md)에서 확인한다.
 
 ## HTTP 진입점 원장
 
@@ -400,14 +322,14 @@ Standard 모드**이며, 모두 `MOM-0848`에서 `traced`됐다.
 | H017 | Product auth | `GET /auth/me` | `auth.Me` | `USR` | R | `implemented`: target `GET /api/me`; cutover 전 |
 | H018 | Product auth | `PATCH /auth/me` | `auth.UpdateMe` | `USR` | W | `implemented`: target `PATCH /api/me`; cutover 전 |
 | H019 | Product JSON | `POST /workspaces` | `workspace.Create` | `WSP` | W | `implemented`: target `POST /api/workspaces`. 구현 완료(`MOM-0897`), 전환 전. 워크스페이스 행과 owner 멤버십을 생성하고, 이름이 `Welcome`인 프로젝트 한 개와 메모리 세 건을 같은 트랜잭션에서 저장한다. `project`와 `memory`가 이미 `workspace`를 참조하므로 반대 방향으로 참조하면 순환 의존성이 발생한다. 세 모듈의 저장 순서와 트랜잭션 경계는 새로 추가한 `onboarding` 모듈이 소유한다. 프로젝트 라벨과 메모리 라벨은 `LabelAllocator`에서 발급해 INSERT에 포함한다. 레거시는 라벨이 없는 INSERT에 대해 트리거가 값을 채우지만 신규 서버에는 해당 트리거가 없다. slug를 전달하지 않으면 워크스페이스 이름을 기준으로 생성하고, 이미 사용 중이면 뒤에 번호를 붙여 다음 후보를 찾는다. 한글로만 구성된 이름은 slug에 사용할 수 있는 문자가 남지 않아 `workspace`를 사용하며 레거시와 같은 동작이다. 해당 경로에서 생성한 메모리에는 검색 반영 이벤트를 남기지 않는다. 레거시 `seedWelcome`도 검색 문서를 생성하지 않기 때문이다. `confirmed_memories.created_at`은 JPA Auditing이 채우므로 `confirmed_at`과 밀리초 단위로 차이가 날 수 있다. 응답에 포함되지 않는 값이므로 별도로 일치시키지 않는다. 실패 응답은 공통 전환 규칙에 따라 Standard 형식을 사용하며 HTTP status는 레거시와 같다. 이름이 비어 있으면 400, slug가 형식 또는 예약어 규칙에 맞지 않으면 400, 이미 사용 중이면 409로 응답한다. |
-| H020 | Product JSON | `GET /workspaces` | `workspace.List` | `WSP` | R | `implemented`: target `GET /api/workspaces`, [첫 웹 read 슬라이스 계약](slice-workspace-read.md) (`MOM-0850`). 구현 완료(`MOM-0851`), 전환 대상; cutover 전. 선행 게이트 `MOM-0873` 완료: 2026-09-10에 prod 두 서버의 JWT 서명 키를 동일한 새 값으로 갱신·재기동하고, 레거시 `session_token`으로 target 응답 200을 확인했습니다 |
+| H020 | Product JSON | `GET /workspaces` | `workspace.List` | `WSP` | R | `implemented`: target `GET /api/workspaces`, [현재 계약 확인 위치](#완료된-workspace-read-계약의-확인-위치) (`MOM-0850`). 구현 완료(`MOM-0851`), 전환 대상; cutover 전. 선행 게이트 `MOM-0873` 완료: 2026-09-10에 prod 두 서버의 JWT 서명 키를 동일한 새 값으로 갱신·재기동하고, 레거시 `session_token`으로 target 응답 200을 확인했습니다 |
 | H021 | Product JSON | `GET /workspaces/slug-available` | `workspace.SlugAvailable` | `WSP` | R | `implemented`: target `GET /api/workspaces/slug-available`. 구현 완료(`MOM-0863`), 전환 전 |
-| H022 | Product JSON | `GET /workspaces/:id` | `workspace.Get` | `WSP` | R | `implemented`: target `GET /api/workspaces/{workspaceId}`, [첫 웹 read 슬라이스 계약](slice-workspace-read.md) (`MOM-0850`). 구현 완료(`MOM-0851`), 전환은 제외. 웹 소비자가 snapshot 폴백뿐임이 FE 기준선에서 확인됐다. 2026-10-08 사용자 합의: 웹 전환(`MOM-0967`) 때 레거시 snapshot 폴백을 제거하고 H023만 사용한다. 기존 신규 서버 H022 구현은 유지하며 이번 결정으로 API를 제거하지 않는다 |
-| H023 | Product JSON | `GET /workspaces/:id/snapshot` | `snapshot.Get` | `SNP` | R | `implemented`: target `GET /api/workspaces/{workspaceId}/snapshot`, [웹 snapshot 계약](slice-snapshot.md) (`MOM-0856`). 구현 완료(`MOM-0862`), 전환 전. 웹 read의 유일한 실질 경로 |
+| H022 | Product JSON | `GET /workspaces/:id` | `workspace.Get` | `WSP` | R | `implemented`: target `GET /api/workspaces/{workspaceId}`, [현재 계약 확인 위치](#완료된-workspace-read-계약의-확인-위치) (`MOM-0850`). 구현 완료(`MOM-0851`), 전환은 제외. 웹 소비자가 snapshot 폴백뿐임이 FE 기준선에서 확인됐다. 2026-10-08 사용자 합의: 웹 전환(`MOM-0967`) 때 레거시 snapshot 폴백을 제거하고 H023만 사용한다. 기존 신규 서버 H022 구현은 유지하며 이번 결정으로 API를 제거하지 않는다 |
+| H023 | Product JSON | `GET /workspaces/:id/snapshot` | `snapshot.Get` | `SNP` | R | `implemented`: target `GET /api/workspaces/{workspaceId}/snapshot`, [현재 계약 확인 위치](#완료된-workspace-read-계약의-확인-위치) (`MOM-0856`). 구현 완료(`MOM-0862`), 전환 전. 웹 read의 유일한 실질 경로 |
 | H024 | Product JSON | `PATCH /workspaces/:id` | `workspace.Update` | `WSP` | W | `implemented`: target `PATCH /api/workspaces/{workspaceId}`. 구현 완료(`MOM-0863`), 전환 전. 레거시에서는 미존재와 권한 부족을 모두 403으로 응답했으나, 신규 서버에서는 미존재는 404, 권한 부족은 403으로 구분한다. 레거시는 변경할 값이 없는 요청에도 `updated_at`을 갱신했지만, 신규 서버는 값이 실제로 변경된 경우에만 갱신한다. 웹이 이 endpoint를 신규 서버로 호출하기 시작하면 신규 서버가 `workspaces` 행을 수정하는 반면, 레거시는 H019를 통해 같은 테이블에 행을 생성하므로 H019와 같은 시점에 전환한다 |
 | H025 | Product JSON | `GET /workspaces/:id/onboarding` | `workspace.GetOnboarding` | `WSP` | R | `traced`; **웹 미호출**(`MOM-0856`). `MOM-0863` 범위에서 **제외 확정**(PR #156). 이관 대상이 아니라 retire 후보 |
 | H026 | Product JSON | `PATCH /workspaces/:id/onboarding` | `workspace.PatchOnboarding` | `WSP` | W | `traced`; **웹 미호출**(`MOM-0856`). `MOM-0863` 범위에서 **제외 확정**(PR #156). 이관 대상이 아니라 retire 후보 |
-| H027 | Product JSON | `GET /workspaces/:id/members` | `workspace.ListMembers` | `WSP` | R | `implemented`: target `GET /api/workspaces/{workspaceId}/members`. 구현 완료(`MOM-0864`), 전환 전. 레거시는 쿼리에 정렬 조건이 없어 응답 순서를 보장하지 않습니다. 신규 서버는 [웹 snapshot 계약](slice-snapshot.md) 4.4절에서 H023의 `members`와 함께 확정한 `workspace_members.created_at ASC, user_id ASC`를 정렬 기준으로 사용합니다. `MOM-0895`에서 해당 기준을 적용했습니다. 두 endpoint가 같은 조회 서비스를 사용하므로 동일한 순서를 유지합니다. 정렬은 SQL에서 처리합니다. 사용자 식별자를 애플리케이션에서 비교하면 Java의 `UUID` 비교 결과가 PostgreSQL의 `uuid` 정렬 결과와 달라 확정된 기준을 보장할 수 없기 때문입니다. 레거시에서 워크스페이스 미존재와 비멤버를 모두 403으로 응답하던 동작은 공통 전환 규칙에 따라 각각 404와 403으로 구분한다 |
+| H027 | Product JSON | `GET /workspaces/:id/members` | `workspace.ListMembers` | `WSP` | R | `implemented`: target `GET /api/workspaces/{workspaceId}/members`. 구현 완료(`MOM-0864`), 전환 전. 레거시는 쿼리에 정렬 조건이 없어 응답 순서를 보장하지 않습니다. 신규 서버는 MOM-0856에서 H023의 `members`와 함께 확정한 `workspace_members.created_at ASC, user_id ASC`를 정렬 기준으로 사용합니다. `MOM-0895`에서 해당 기준을 적용했습니다. 두 endpoint가 같은 조회 서비스를 사용하므로 동일한 순서를 유지합니다. 정렬은 SQL에서 처리합니다. 사용자 식별자를 애플리케이션에서 비교하면 Java의 `UUID` 비교 결과가 PostgreSQL의 `uuid` 정렬 결과와 달라 확정된 기준을 보장할 수 없기 때문입니다. 레거시에서 워크스페이스 미존재와 비멤버를 모두 403으로 응답하던 동작은 공통 전환 규칙에 따라 각각 404와 403으로 구분한다 |
 | H028 | Product JSON | `POST /workspaces/:id/invite` | `workspace.Invite` | `WSP` | W | `implemented`: target `POST /api/workspaces/{workspaceId}/invite`. 구현 완료(`MOM-0865`), 전환 전. 웹에서 호출하지 않는 경로지만 `workspace_members` 전환 단위에 포함되어 함께 이관했다. 레거시는 이 경로의 실패를 모두 403으로 응답하므로 HTTP status는 유지하고 에러 코드만 구분했다. 이메일에 해당하는 사용자가 없으면 `WORKSPACE_INVITEE_NOT_FOUND`, 사용자가 이미 다른 역할로 참여 중이면 `WORKSPACE_MEMBER_ROLE_CONFLICT`로 응답한다. 이메일은 레거시와 동일하게 대소문자까지 정확히 일치할 때만 사용자를 찾는다. 요청의 `role`이 `admin`이나 `member`가 아니면 400 `COMMON_VALIDATION_FAILED`로 응답합니다(`MOM-0949`). |
 | H029 | Product JSON | `POST /workspaces/:id/invitations` | `workspace.CreateInvitation` | `WSP` | W | `implemented`: target `POST /api/workspaces/{workspaceId}/invitations`. 구현 완료(`MOM-0865`), 전환 전. 같은 워크스페이스에 같은 이메일로 대기 중인 초대가 있으면 새 행을 생성하지 않고 기존 행을 갱신한다. 해당 이메일의 사용자가 이미 워크스페이스 멤버이면 409 `WORKSPACE_MEMBER_ALREADY_EXISTS`로 응답하며, 이 판정은 레거시와 동일하게 이메일의 대소문자를 구분하지 않는다. 이메일 발송에 실패하면 502 `INVITATION_EMAIL_SEND_FAILED`로 응답하지만 생성하거나 갱신한 초대 행은 유지한다. 요청의 `role`이 `admin`이나 `member`가 아니면 400 `COMMON_VALIDATION_FAILED`로 응답합니다(`MOM-0949`). |
 | H030 | Product JSON | `GET /workspaces/:id/invitations` | `workspace.ListInvitations` | `WSP` | R | `implemented`: target `GET /api/workspaces/{workspaceId}/invitations`. 구현 완료(`MOM-0865`), 전환 전. 만료 상태는 DB에 저장하지 않고 조회 시점에 계산한다 |
@@ -488,7 +410,7 @@ N006~N008의 처분은 `MOM-0976`에서 정했다.
 
 | Profile | contract·auth/RBAC | legacy trace·schema·test | target·writer/projection/external | prod/client gate | rollback |
 | --- | --- | --- | --- | --- | --- |
-| `N-MIG` | 프로세스 startup에서 SQL 파일을 lexical order로 실행하고 파일별 transaction·version row·advisory lock을 보장. 최종 사용자 auth는 N/A, 배포 runtime의 migration DB 권한이 실행 권한 | `bootstrap/app.go` → `platform/db/migrations.go` → `migrations/*.sql`; `schema_migrations`; `platform/db/migrations_integration_test.go` | prod DDL owner 이전과 Flyway 부트스트랩 완료(`MOM-0909`, ADR-0019). 레거시 러너 정지는 서버 종료 시 수행 | 완료된 DDL 이전 근거는 [ADR-0019](../../adr/0019-prod-schema-ownership-transfer.md)와 [주도권 이전 설계](../prod-schema-ownership-transfer.md), 남은 운영 의무는 [prod 운영 준비 대장](../../prod-readiness-ledger.md)에서 확인. 외부 client gate는 N/A, deploy/startup gate만 존재 | 실패한 파일 transaction은 rollback되지만 이미 적용된 이전 파일의 down migration은 없음. 배포 rollback과 schema rollback을 분리하고 객체별 보상 절차 없이는 retire 금지 |
+| `N-MIG` | 프로세스 startup에서 SQL 파일을 lexical order로 실행하고 파일별 transaction·version row·advisory lock을 보장. 최종 사용자 auth는 N/A, 배포 runtime의 migration DB 권한이 실행 권한 | `bootstrap/app.go` → `platform/db/migrations.go` → `migrations/*.sql`; `schema_migrations`; `platform/db/migrations_integration_test.go` | prod DDL owner 이전과 Flyway 부트스트랩 완료(`MOM-0909`, ADR-0019). 레거시 러너 정지는 서버 종료 시 수행 | 완료된 DDL 이전 근거는 [ADR-0019](../../adr/0019-prod-schema-ownership-transfer.md)와 MOM-0909 실행 기록, 남은 운영 의무는 [prod 운영 준비 대장](../../prod-readiness-ledger.md)에서 확인. 외부 client gate는 N/A, deploy/startup gate만 존재 | 실패한 파일 transaction은 rollback되지만 이미 적용된 이전 파일의 down migration은 없음. 배포 rollback과 schema rollback을 분리하고 객체별 보상 절차 없이는 retire 금지 |
 | `N-BACKFILL` | startup goroutine이 live row의 NULL `search_tokens`를 batch로 채우며 조건부 UPDATE로 재실행·경합에 안전. 최종 사용자 auth는 N/A, runtime DB 권한으로 실행 | `bootstrap/app.go` → `retrieval/backfill.go`·`tokenizer.go`; `retrieval_documents.search_tokens`; `retrieval/backfill_test.go`, `retrieval/tokenizer_test.go` | `retrieval_documents.search_tokens` writer; 신규 owner·대체 구현 없이 폐기(`MOM-0974`), 외부 gateway 없음 | `MOM-1023`에서 레거시와 함께 종료. 데이터·스키마·도메인 projection 보존. 별도 제거 작업은 취소됐으며 client gate는 N/A | goroutine을 중단해 rollback하며 이미 계산된 파생 token은 유지 가능. tokenizer 계약이 바뀌면 전체 재계산 절차가 필요 |
 | `N-EMBED` | startup 뒤 즉시 stale row를 drain하고 ticker로 반복. text race guard와 model/dimension 검증을 사용. 최종 사용자 auth는 N/A, Vertex ADC와 runtime DB 권한으로 실행 | `bootstrap/app.go` → `retrieval/embedder.go` → `platform/llm/embeddings.go`; `retrieval_documents.embedding`, `embedding_model`, `text_hash`; `retrieval/embedder_test.go`, `platform/llm/embeddings_test.go` | embedding writer, Vertex AI; 신규 owner·대체 루프 없이 폐기(`MOM-0974`) | `MOM-1023`에서 레거시와 함께 종료. 기존 벡터·토큰·공유 client 보존. client gate는 N/A | 현재 운영 검색은 해당 vector를 소비하지 않는다(`MOM-0974`). 기존 vector는 보존하며 레거시 재기동 시 loop가 다시 실행될 수 있음에 유의 |
 | `N-SLK` | H013의 Slack signature·retry·3초 ack 계약을 공유하고 app mention을 goroutine에서 answer/post. Slack 서명과 구성된 bot identity가 권한 경계 | `slackbot/handler.go` → `answerAndPost`, `grounded.go`, `action.go` → `minsu/*`; `slackbot/handler_test.go`, `grounded_test.go`, `action_test.go` | Slack API·retrieval·Vertex, action이면 task writer; **신규 runtime으로 이관하지 않는다**(`MOM-0971`). 재구현하면 target은 `minsu` + `project` public API가 되지만, 단일 워크스페이스 바인딩을 걷어내는 재설계가 선행한다 | 잔류 중에는 전환 gate가 적용되지 않는다. 재구현 시 signing secret·bot identity·event URL·timeout·실패 관측과 task projection 준비가 필요하고 Slack event URL이 client gate다 | event URL을 legacy로 되돌리고 신규 유입을 중단. 현재 child goroutine drain 관리가 없으므로 최대 answer/post 시간의 in-flight 유실 허용 여부와 Slack retry를 runbook에 명시 |
@@ -529,89 +451,18 @@ eval set·retrieval 주소·접근 권한과 선택적 Vertex ADC가 필요하�
 | N018 | MCP tool | `list_tasks` → `mcpserver.listTasks` | `MCP` → `project` | read-only | `implemented` (`MOM-0991`): MCP 조회 도구 연결과 계약 검증 완료. 운영 전환은 H012와 함께 `MOM-0992`에서 수행 |
 | N019 | MCP tool | `create_comment` → `mcpserver.createComment` | `MCP` → `project` | task update writer | `implemented` (`MOM-0993`); `TaskUpdateWriter.create` 연결. REST task update writer와 함께 전환 |
 
-## 첫 수직 슬라이스 후보 비교
+## 남은 작업
 
-첫 슬라이스는 **워크스페이스 목록·상세(H020, H022)** 로 확정했다(`MOM-0850`). 계약은
-[첫 웹 read 슬라이스 계약](slice-workspace-read.md)이 잠갔다. 아래는 확정 당시
-비교한 read-only 후보이며, write 전환과 projection 공통 기반을 처음부터 묶지 않아도 되는 범위만
-비교했다.
+- worker 공통 소비는 MOM-0898, task·memory·decision·blocker projector는 각각
+  MOM-0956·0957·1020·1021이다. 서버 구현 완료와 prod 소비·E2E는 구별한다.
+- Product API·OAuth/MCP UI·MCP 공동 전환과 writer 검증은 MOM-0967·0992,
+  source 운영 배선은 MOM-0954, 전체 E2E는 MOM-1022, legacy 종료는 MOM-1023이다.
+- MCP는 [ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover.md)에 따라 기존
+  grant/client/token을 이전하지 않고 `/api/mcp`로 재연결한다. bridge 제거는 별도 조건을 확인한다.
+- 전환기 코드 제거의 관찰 기간은 MOM-0875가 MOM-0834 이후 정한다.
+- MOM-0774는 2026-10-08 결정으로 보류했다. 현재 완료 판단의 선행이 아니며 재개 시
+  ADR-0007·0011과 최신 구현으로 문제·범위를 다시 정한다. 테이블 통합·검증 완료를 뜻하지 않는다.
+- startup backfill·embedding은 MOM-0974에 따라 대체 루프 없이 MOM-1023에서 종료한다.
+  데이터·스키마·도메인 projection은 유지한다. offline 도구의 폐기/잔류는 N006~N008을 따른다.
 
-| 후보 | 포함 entry | 장점 | 먼저 잠글 계약·제약 | 판단 |
-| --- | --- | --- | --- | --- |
-| 워크스페이스 목록·상세 | H020, H022 | 사용자 진입 가치가 높고 target `workspace` entity/repository가 이미 있으며 projection 없음 | legacy wrapper·403/404·soft-delete characterization | **확정**. 응답 필드가 target 엔티티와 1:1이고 신규 DDL이 없음. 웹 계약이라 `MOM-0845`와 독립 |
-| 프로젝트 목록·상세 | H038, H047 | target `ProjectReader`와 project backing이 이미 있고 projection 없음 | legacy `health_status`, count, metadata, label, owners와 계산 progress의 응답 정책; `MOM-0845` | ~~두 번째 후보~~ **무효.** FE 사용 실태 확인 결과 H038은 snapshot 폴백 전용이고 H047은 호출처가 없다(`MOM-0856`). 프로젝트 데이터는 H023을 통해 소비되므로 read 기반만 필요하다(`MOM-0857`) |
-| 마일스톤 목록·상세 | H051, H056 | read-only이고 외부 provider·projection 없음 | target milestone entity/API가 아직 없고 owner·health·progress 전체 mapping 필요 | ~~독립성은 높지만 첫 slice의 신규 코드량이 더 큼~~ **무효.** H051은 snapshot 폴백 전용, H056은 호출처 없음. read 기반만 필요하다(`MOM-0858`) |
-| 작업 목록·상세 | H053, H060 | 사용자 가치가 높고 target task backing·모바일 read가 존재 | `MOM-0773`, legacy milestone/due date·role/default·progress, 웹/모바일 DTO 분리 | 절반 무효. H053은 snapshot 폴백 전용이고 H060만 실사용이다(`MOM-0861`) |
-| 결정·차단 사유 read | H039, H055, H073 | write를 제외하면 projection 전환 없이 routing rollback 가능 | target entity/API 미구현, legacy 전용 test 없음, 현재 클라이언트 사용 근거 확인 필요 | ~~characterization 근거가 약해 후순위~~ **무효.** H039는 snapshot 폴백 전용이라 H023 합성용 blocker read 기반만 구현했다(`MOM-0859`). H055·H073은 호출처가 없어 decision read 기반도 만들지 않는다 |
-
-확정한 슬라이스의 route → handler → service → repository → schema → test 재추적 결과와 잠근
-계약은 [첫 웹 read 슬라이스 계약](slice-workspace-read.md)에 있다.
-
-## 미결정 사항
-
-구현 중 조용히 정하지 않는다.
-
-1. ~~웹 트래픽을 capability별로 혼합 전환할지, 신규 인증과 준비된 Product API를 한 번에 전환할지~~
-   — 해소. Product capability별 혼합 전환은 기각하고 인증과 Product API의 2단계 구분은 유지한다.
-   1단계 인증 전환은 `MOM-0906`에서 완료했다. 2단계는 `MOM-0953`·`MOM-0967`·`MOM-0992`에
-   따라 Product API·OAuth/MCP UI·MCP를 같은 실행 창에서 전환한다. 기존 legacy base 격리 계획은
-   대체됐으며 실행·롤백은 최신 티켓의 조건을 따른다. 운영 전환과 검증은 아직 완료되지 않았다.
-2. ~~MCP transport·OAuth authorization server의 target Gradle module과 grant/token 이전 방식~~
-   — 해소. 별도 `:mcp` 모듈이 MCP/OAuth 표면을 소유하고 사용자 세션 토큰과 MCP client
-   토큰을 분리한다. 기존 grant/client/token은 이전하지 않고 전부 재연결하며, canonical
-   MCP 주소는 `/api/mcp`로 전환한다([ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover)).
-   웹 컷오버 시점의 레거시 보호 endpoint 동작은 별도로 [ADR-0018](../../adr/0018-transitional-legacy-acceptance-of-new-access-token.md)에서
-   정했다.
-3. worker 구현·운영 검증 진행 중: 공통 outbox 소비 기반은 `MOM-0898`, task·memory·decision·blocker
-   projector는 각각 `MOM-0956`·`MOM-0957`·`MOM-1020`·`MOM-1021`이 소유한다.
-   서버 task 수정·삭제 outbox 발행은 `MOM-1002`에서 완료했다.
-4. ~~startup retrieval backfill·embedding의 최종 owner~~ — `MOM-0974`에서 이관 없이 폐기로
-   확정했다. 별도 제거 작업 `MOM-1013`은 취소됐으며 레거시 종료(`MOM-1023`) 때 함께 중단한다.
-   기존 데이터·스키마·도메인 projection을 유지하고 대체 루프는 만들지 않는다.
-   이 결정으로 worker projector의 기존 문서 처리·E2E 의무가 사라지지는 않는다.
-5. ~~snapshot 합성 endpoint의 합성 로직 소유와 응답 계약~~ — 해소. 표면·합성 모두 `:web`이고
-   (`MOM-0850`) 응답 계약은 [웹 snapshot 계약](slice-snapshot.md)이
-   잠갔다(`MOM-0856`)
-6. ~~offline CLI 3개의 유지·대체·폐기와 소유 저장소~~ — 해소. N006은 폐기, N007·N008은
-   `momens-api`에 남겨 이관을 무기한 보류한다(`MOM-0976`). 새 요구가 생기면 재설계·재구현한다
-7. `MOM-0773` task 계약과 `MOM-0845` workspace scope 결정은 완료했다.
-   `MOM-0774`는 티켓 설명이 낡아 2026-10-08 사용자 결정으로 우선 보류했다(backlog 유지).
-   현재 이관 완료 판단의 선행 작업에서 제외하며, 재개 시 ADR-0007·ADR-0011과 최신 구현을
-   대조해 실제 문제·범위·완료 조건을 다시 정한다. 테이블 통합이나 검증 완료를 의미하지 않는다.
-8. ~~Product JSON별 실제 웹 사용 여부~~ — 해소. 위 [웹 FE 사용 실태](#웹-fe-사용-실태)에 기록했다
-   (`MOM-0856`). [컷오버 문서](cutover.md) 6절은 전환 직후 판정 창을 정했고, 전환기 코드 제거에
-   필요한 시계열 관찰 기간은 `MOM-0875`가 `MOM-0834` 이후 정한다
-9. ~~레거시 잔류 7건의 최종 API owner~~ — `momens-server`로 확정했다. `MOM-1014`~`MOM-1018`의
-   서버 구현이 최신 `develop`에 반영됐다.
-   H054는 worker `MOM-1020`과 E2E `MOM-1022`, 권한 확인과 writer 단일화가 전환 gate다.
-   H066·H074·H075는 worker `MOM-1021`과 E2E `MOM-1022`가 전환 gate다.
-   운영 writer는 전환 전까지 `momens-api`로 유지한다. 운영 설정·worker·E2E·종료 검증은
-   각 행의 후속 티켓이 소유한다.
-10. ~~H081 sync-states 조회의 최종 처분~~ — 2026-10-08 사용자 결정으로 폐기를 확정했다.
-    H048·H049도 `MOM-1019`에서 폐기로 확정했으며 추가 서버 구현은 없다.
-    N005 lifecycle의 요청 drain·probe·종료 유예시간은 `MOM-1023`의 종료 검증에서 확인한다.
-
-## 후속 작업 제안
-
-중복 여부를 Momens에서 다시 확인한 뒤 필요한 것만 만든다.
-
-1. ~~`[Docs] 첫 웹 read 수직 슬라이스 선정과 계약 잠금`~~ — `MOM-0850`에서 완료.
-   H020·H022로 확정하고 [계약 문서](slice-workspace-read.md)로 잠갔다
-2. ~~`[Docs] MCP/OAuth target module·token/grant 전환 ADR`~~ — `MOM-0973`과 [ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover)에서
-   별도 `:mcp` 모듈, 토큰 분리, 전면 재연결과 `/api/mcp` 전환을 결정했다. 웹 컷오버 시점의
-   동작은 `MOM-0871`과 [ADR-0018](../../adr/0018-transitional-legacy-acceptance-of-new-access-token.md)로 분리되어 있다.
-3. worker outbox 공통 소비 기반 — 기존 `MOM-0898`이 담당한다.
-   - offset, idempotency, retry, DLQ와 관측성 소유
-4. aggregate별 projection — 기존 `MOM-0956`(task), `MOM-0957`(memory),
-   `MOM-1020`(decision), `MOM-1021`(blocker)이 담당한다.
-   - 서버 이벤트 계약을 받아 hydrate·projector·검색 검증을 수행
-5. ~~`[Docs] 웹 인증·Product API 컷오버 단위와 rollback runbook`~~ — `MOM-0911`에서 전환 단위,
-   관측 기준과 FE 배포·롤백 절차를 기록했다. 이후 `MOM-0953`·`MOM-0967`·`MOM-0992`에서
-   Product API·OAuth/MCP UI·MCP를 같은 작업 시간대에 전환하고 dual writer를 허용하지 않기로
-   확정했다. [컷오버 문서](cutover.md)의 legacy base 격리 설명은 현재 실행 기준이 아니며,
-   실행 전 최신 티켓과 대조한다. 이번 문서 변경은 전환 실행이나 검증 완료를 뜻하지 않는다.
-6. ~~`[Docs] 레거시 offline CLI disposition 결정`~~ — `MOM-0976`에서 N006 폐기와 N007·N008
-   이관 무기한 보류를 정했다. 현재 CLI의 소유 저장소와 수동 실행 요건은 비-HTTP 원장에 기록했다
-
-기존 작업은 새로 만들지 않는다. `MOM-0773`, `MOM-0845`, `MOM-0909`의 완료 근거를 참조한다.
-`MOM-0774`는 보류 상태이며 현재 이관 gate로 두지 않는다.
+이미 완료한 설계·구현 작업은 새로 만들지 않는다. 각 행의 현재 gate와 기존 작업을 재사용한다.

@@ -19,9 +19,9 @@ import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.minsu.DraftStatus;
 
 /**
- * 읽기 시점 deadline 투영을 실제 PostgreSQL로 검증한다(MOM-0818, 설계 8.6절).
+ * 읽기 시점 deadline 투영을 실제 PostgreSQL로 검증한다(MOM-0818).
  *
- * <p>판정이 DB 시계 비교이므로 단위 테스트로는 확인할 수 없다. 응답 조립의 읽기 순서 계약(7.3절)과 동시성 검증은 실제 소비자가 붙는 MOM-0822의 범위다.
+ * <p>판정이 DB 시계 비교이므로 단위 테스트로는 확인할 수 없다. 응답 조립의 읽기 순서 계약과 동시성 검증은 실제 소비자가 붙는 MOM-0822의 범위다.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -68,7 +68,7 @@ class TaskDraftStatusReaderIntegrationTest extends AbstractPostgresIntegrationTe
   @DisplayName("deadline으로 닫은 경우에만 투영 counter를 올린다")
   void countsOnlyDeadlineClosedProjections() {
     // 세 ready의 사유가 다르다. 앱에게는 같지만 운영에서는 이것만 0이 아니면 생성이 제때 끝나지 않았다는
-    // 신호다(9.3절). EXISTS 하나로는 이 구분이 나오지 않아 읽기 쿼리를 3분기로 넓혔다.
+    // 신호다. EXISTS 하나로는 이 구분이 나오지 않아 읽기 쿼리를 3분기로 넓혔다.
     SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
     MinsuLedgerObservability observability = new MinsuLedgerObservability(meterRegistry);
     TaskDraftStatusReaderImpl reader = new TaskDraftStatusReaderImpl(repository, observability);

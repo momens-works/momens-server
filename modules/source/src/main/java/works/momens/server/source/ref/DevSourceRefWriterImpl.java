@@ -12,13 +12,12 @@ import works.momens.server.common.config.DevOnly;
 import works.momens.server.source.DevSourceRefWriter;
 
 /**
- * dev 전용 source_refs insert. {@code @Immutable} 읽기 엔티티({@code SourceRef})를 재사용하지 않는 전용 insert
- * 경로다(docs/design/signal-push-demo-design.md 11.2절).
+ * dev 전용 source_refs insert. {@code @Immutable} 읽기 엔티티({@code SourceRef})를 재사용하지 않는 전용 insert 경로다.
  *
  * <p>{@code source_object_type}과 {@code source_object_id}는 운영 환경에서 {@code NOT NULL}이고 기본값이 없으므로 서버가
- * 직접 저장한다(설계 문서 5.4절). 데모에서는 연결된 외부 객체의 종류와 식별자를 알 수 없으므로 {@code source_object_type}에는 프로토 enum의
- * {@code SOURCE_OBJECT_TYPE_UNKNOWN}에 해당하는 값을 저장하고, {@code source_object_id}에는 생성한 source ref ID를
- * 저장한다. 레거시 projection이 생성한 객체의 UUID를 같은 컬럼에 저장하는 방식과 동일하다.
+ * 직접 저장한다. 데모에서는 연결된 외부 객체의 종류와 식별자를 알 수 없으므로 {@code source_object_type}에는 프로토 enum의 {@code
+ * SOURCE_OBJECT_TYPE_UNKNOWN}에 해당하는 값을 저장하고, {@code source_object_id}에는 생성한 source ref ID를 저장한다.
+ * 레거시 projection이 생성한 객체의 UUID를 같은 컬럼에 저장하는 방식과 동일하다.
  */
 @DevOnly
 @Component

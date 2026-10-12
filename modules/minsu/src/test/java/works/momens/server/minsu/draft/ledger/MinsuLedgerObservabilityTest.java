@@ -12,7 +12,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-/** 원장 사건 지표의 이름·태그와 선등록을 고정한다(MOM-0821, 설계 9.3절). */
+/** 원장 사건 지표의 이름·태그와 선등록을 고정한다(MOM-0821). */
 class MinsuLedgerObservabilityTest {
 
   private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
@@ -58,7 +58,7 @@ class MinsuLedgerObservabilityTest {
   @DisplayName("소진에 이를 수 있는 실패 종류를 0으로 등록하고 원인별로 센다")
   void countsRetryExhaustionByFailureReason() {
     // 종료 사유는 retry_exhausted 하나라 timeout 소진과 invalid_output 소진이 섞인다. 두 실패의
-    // 대응이 정반대라 원인을 따로 세지 않으면 값을 조정할 근거가 되지 못한다(9.2절).
+    // 대응이 정반대라 원인을 따로 세지 않으면 값을 조정할 근거가 되지 못한다.
     assertThat(meterRegistry.find("momens.minsu.ledger.retry.exhaustions").counters()).hasSize(5);
 
     observability.recordRetryExhaustion("timeout");

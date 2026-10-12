@@ -37,7 +37,7 @@ import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
 
 /**
- * 포화 뒤 재시작 복구를 <b>하나의 시나리오</b>로 검증한다(MOM-0819 완료 조건, 설계 8.5·9.1절).
+ * 포화 뒤 재시작 복구를 <b>하나의 시나리오</b>로 검증한다(MOM-0819).
  *
  * <p>{@code AsyncTaskDraftExecutorTest}는 슬롯이 묶이는 것까지, {@code
  * TaskDraftGenerationLedgerIntegrationTest}는 lease 만료 회수까지 각각 본다. 둘을 따로 보면 <b>정작 중요한 연결</b>이 빠진다.
@@ -121,7 +121,7 @@ class MinsuDrainRestartRecoveryIntegrationTest extends AbstractPostgresIntegrati
         () -> assertThat(afterCrash.getAttemptCount()).isEqualTo(1));
 
     // 2) 멈춘 호출이 슬롯을 놓지 않는 동안에는 아무것도 집지 않는다. 여기서 집으면 실행되지 못한
-    //    작업이 시도 횟수만 소모한다(9.1절).
+    //    작업이 시도 횟수만 소모한다.
     when(executor.availableSlots()).thenReturn(0);
     scheduler.drain();
 

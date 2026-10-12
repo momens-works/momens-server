@@ -45,7 +45,7 @@ prod는 레거시 `momens-api`와 공유 DB를 쓰는 전환기라 이 서버의
 폐지한다. 그 장치들이 추적하던 크로스 리포 반영 의무가 존재하지 않게 되기 때문이다.
 
 이 ADR은 이관 전략의 "이관 완료 후 별도 결정" 조항을 대체한다. 상시 규칙은 [데이터 규칙](../rules/persistence.md)에,
-부트스트랩 방식·롤백·실행 순서 등 상세는 [prod 스키마 주도권 이전 설계](../design/prod-schema-ownership-transfer.md)에
+부트스트랩 방식·롤백·실행 순서 등 상세는 [부트스트랩 당시 설계](https://github.com/momens-works/momens-server/blob/93a8f733ffdfa5220348be321455ece5dd345d9e/docs/design/prod-schema-ownership-transfer.md)에
 있다.
 
 ## 대안

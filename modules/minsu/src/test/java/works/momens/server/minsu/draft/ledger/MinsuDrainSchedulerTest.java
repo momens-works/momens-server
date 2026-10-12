@@ -28,7 +28,7 @@ import works.momens.server.minsu.draft.generation.GenerationOutcome;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
 
-/** drain 주기의 게이트와 짝짓기를 검증한다(MOM-0819, 설계 9.1·11.2절). */
+/** drain 주기의 게이트와 짝짓기를 검증한다(MOM-0819). */
 class MinsuDrainSchedulerTest {
 
   private final MinsuConfigStatus configStatus = mock(MinsuConfigStatus.class);
@@ -45,7 +45,7 @@ class MinsuDrainSchedulerTest {
 
     scheduler.drain();
 
-    // 원장은 pending 그대로 남는다. 종료로 기록하면 설정을 되돌려도 되살릴 방법이 없다(11.2절).
+    // 원장은 pending 그대로 남는다. 종료로 기록하면 설정을 되돌려도 되살릴 방법이 없다.
     verifyNoInteractions(ledger);
   }
 
@@ -57,7 +57,7 @@ class MinsuDrainSchedulerTest {
 
     scheduler.drain();
 
-    // 이 규칙이 9.2절의 invalid_config 판정보다 앞선다. claim이 없으므로 그 outcome 자체가 생기지 않는다.
+    // 이 규칙이 invalid_config 판정보다 앞선다. claim이 없으므로 그 outcome 자체가 생기지 않는다.
     verifyNoInteractions(ledger);
   }
 
@@ -69,7 +69,7 @@ class MinsuDrainSchedulerTest {
 
     scheduler.drain();
 
-    // 멈춘 호출이 슬롯을 점유한 상태다. 여기서 집으면 실행되지 못한 작업이 시도 횟수만 소모한다(9.1절).
+    // 멈춘 호출이 슬롯을 점유한 상태다. 여기서 집으면 실행되지 못한 작업이 시도 횟수만 소모한다.
     verify(ledger, never()).claimDue(anyInt());
   }
 

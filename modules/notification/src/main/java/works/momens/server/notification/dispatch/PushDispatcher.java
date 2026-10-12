@@ -13,14 +13,14 @@ public interface PushDispatcher {
 
   /**
    * event의 수신 설치별 pending delivery를 기록한다. 동일 event·설치의 재기록은 무시되므로(복합 PK) 소비 replay가 중복 발송으로 이어지지
-   * 않는다(설계 10.1절).
+   * 않는다.
    *
    * @throws org.springframework.transaction.IllegalTransactionStateException 호출자(materialize) 트랜잭션
    *     없이 호출하면 실패한다. watermark 전진과 delivery 기록이 반드시 함께 commit되어야 하기 때문이다.
    */
   void enqueue(long outboxEventId, List<Recipient> recipients);
 
-  /** 재시도 시각이 지난 pending delivery가 소진될 때까지 클레임·발송한다. 최초 전송과 재시도가 같은 경로를 지난다(설계 10.3절). */
+  /** 재시도 시각이 지난 pending delivery가 소진될 때까지 클레임·발송한다. 최초 전송과 재시도가 같은 경로를 지난다. */
   void runSendPass();
 
   /** 발송 대상 설치 한 건. */

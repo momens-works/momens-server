@@ -13,7 +13,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
- * notification consumer의 outbox polling watermark(docs/design/signal-push-demo-design.md 10.2절).
+ * notification consumer의 outbox polling watermark.
  *
  * <p>consumer 이름이 자연키인 단일 상태 행이라 공유 베이스 엔티티(UUID PK)를 상속하지 않는다. 행 생성은 native {@code ON CONFLICT DO
  * NOTHING} 시드가 담당하고, JPA는 잠금 조회와 전진(update)만 다룬다.

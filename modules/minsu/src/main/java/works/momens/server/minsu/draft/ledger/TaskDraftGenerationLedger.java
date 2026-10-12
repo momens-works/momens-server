@@ -25,13 +25,13 @@ import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
 
 /**
- * claim과 결과 기록 트랜잭션(docs/design/minsu-async-task-draft-design.md 7.1·8.2·8.5절).
+ * claim과 결과 기록 트랜잭션.
  *
  * <p>claim 트랜잭션이 시도 횟수와 소유권을 먼저 커밋하고, provider 호출은 트랜잭션 <b>밖</b>에서 이뤄진다. 결과 기록은 다시 행을 잠그고 claim
  * token을 재검증한 뒤에만 반영한다. 서버가 기록 전에 종료되면 lease 만료 후 회수되며 이는 at-least-once 특성 안에 있다.
  *
  * <p>성공 결과의 {@code tasks} 반영과 원장 terminal 전이, {@code task.draft_generated} 발행은 {@link #record}의 한
- * 트랜잭션 안에 있다(8.3절). 이 세 가지는 나눌 수 없다.
+ * 트랜잭션 안에 있다. 이 세 가지는 나눌 수 없다.
  */
 @Slf4j
 @Component
@@ -69,7 +69,7 @@ class TaskDraftGenerationLedger {
    *
    * <p><b>회수를 먼저 보는 이유는 기아를 막기 위해서다.</b> 신규를 먼저 보면 매 주기 {@code pending}이 슬롯을 모두 채우는 동안 만료 행이 한 번도
    * 집히지 않고, 그대로 {@code apply_cutoff_at}을 지나면 두 쿼리 모두에서 빠져 영영 회수되지 않는다. "lease 만료 후 다음 주기가 회수한다"는
-   * 8.5절의 복구 보장이 부하에 따라 깨지는 것이다.
+   * lease 회수에 의한 복구 보장이 부하에 따라 깨지는 것이다.
    *
    * <p>반대 방향의 기아는 생기지 않는다. 만료 집합은 유한하고 자기 자신을 줄인다. 회수된 행은 {@code processing}이 되어 그 집합에서 빠지고, 회수마다
    * 시도 횟수가 올라 결국 상한에서 종료된다. 새로 들어오는 것은 장애로 lease가 만료된 행뿐이다. 반면 {@code pending}은 사용자 요청으로 계속 유입되는 무한
@@ -127,10 +127,10 @@ class TaskDraftGenerationLedger {
   }
 
   /**
-   * 반영 창이 닫힌 미종료 원장을 종료로 닫는다(11.1절).
+   * 반영 창이 닫힌 미종료 원장을 종료로 닫는다.
    *
    * <p>사유는 {@code operationally_closed}가 아니라 <b>{@code deadline_exceeded}</b>다. 전자는 운영자가 명시적으로 끝내는
-   * 경우이고(11.1절), 이건 나이 상한을 넘겨 자동으로 닫히는 것이라 {@link #record}가 같은 상황에 이미 쓰는 사유와 같다.
+   * 경우이고, 이건 나이 상한을 넘겨 자동으로 닫히는 것이라 {@link #record}가 같은 상황에 이미 쓰는 사유와 같다.
    *
    * <p>bulk update가 아니라 행을 잠그고 엔티티를 바꾼다. bulk는 JPA Auditing을 우회해 {@code updated_at}이 멈추고(MOM-0819
    * 코멘트 1번), 무엇보다 종료 지표가 이 경로만 비게 된다. 한 번에 처리할 수를 제한해 rollback 직후처럼 대상이 많을 때도 트랜잭션이 길어지지 않게 한다.
@@ -147,10 +147,10 @@ class TaskDraftGenerationLedger {
   }
 
   /**
-   * 실행 결과를 원장에 기록한다(9.2절 표).
+   * 실행 결과를 원장에 기록한다.
    *
-   * <p>claim token이 다르면 그 결과는 stale이므로 버린다(8.2절). lease가 만료돼 다른 worker가 재claim한 뒤 이전 실행이 뒤늦게 돌아오는
-   * 경우이고, at-least-once와 만료 lease를 택한 이상 정상 동작이다.
+   * <p>claim token이 다르면 그 결과는 stale이므로 버린다. lease가 만료돼 다른 worker가 재claim한 뒤 이전 실행이 뒤늦게 돌아오는 경우이고,
+   * at-least-once와 만료 lease를 택한 이상 정상 동작이다.
    */
   @Transactional
   public void record(ClaimedGeneration claim, AsyncGenerationResult result) {
@@ -162,7 +162,7 @@ class TaskDraftGenerationLedger {
     }
     Instant now = repository.currentDatabaseTime();
     if (generation.isPastApplyCutoff(now)) {
-      // 반영 창이 닫힌 뒤의 결과는 쓰지 않는다(8.6절). 읽기 투영이 이미 ready로 알렸을 수 있어, 여기서
+      // 반영 창이 닫힌 뒤의 결과는 쓰지 않는다. 읽기 투영이 이미 ready로 알렸을 수 있어, 여기서
       // 반영하면 ready로 알린 title이 뒤늦게 바뀐다.
       complete(generation, CompletionReason.DEADLINE_EXCEEDED);
       return;
@@ -173,7 +173,7 @@ class TaskDraftGenerationLedger {
       // 입력이 그대로이므로 재시도해도 같다.
       case INSUFFICIENT_CONTEXT -> complete(generation, CompletionReason.INSUFFICIENT_CONTEXT);
       // 설정 수정은 배포 사건이라 재시도로 기다리지 않는다. claim 자체가 설정 유효를 전제하므로
-      // (11.2절) 이 값은 claim 이후 설정이 무효해진 경합에서만 도달한다.
+      //  이 값은 claim 이후 설정이 무효해진 경합에서만 도달한다.
       case INVALID_CONFIG -> complete(generation, CompletionReason.INVALID_CONFIG);
       // structured output 위반은 결정적 오류가 아니다. 같은 입력으로 반복 실패하면 프롬프트·스키마
       // 문제이고 그것은 retry_exhausted 중 failure.reason별 건수와 구성비로 구분한다.
@@ -191,20 +191,20 @@ class TaskDraftGenerationLedger {
   }
 
   /**
-   * 생성 결과를 {@code tasks}에 조건부로 반영하고 원장을 닫는다(8.1·8.3절).
+   * 생성 결과를 {@code tasks}에 조건부로 반영하고 원장을 닫는다.
    *
    * <p>반영·원장 종료·event append가 모두 {@link #record}의 트랜잭션 안에서 일어난다. 나누면 반영은 커밋됐는데 원장이 {@code
    * processing}으로 남는 구간이 생기고, 그 뒤 재시도가 baseline 불일치를 보고 사용자 편집으로 오분류한다. 어느 단계에서 실패하든 예외가 그대로 올라가
    * 전체가 롤백된다.
    *
-   * <p>{@code task.draft_generated}는 <b>실제로 갱신했을 때만</b> 발행한다(5.4절). {@code tasks}가 그대로인 종료에서는
-   * projection도 바뀔 것이 없다.
+   * <p>{@code task.draft_generated}는 <b>실제로 갱신했을 때만</b> 발행한다. {@code tasks}가 그대로인 종료에서는 projection도
+   * 바뀔 것이 없다.
    *
    * <p>생성 결과가 baseline과 같은 값일 수 있다. {@code GENERATED_TITLE_FALLBACK}은 성공 outcome이면서 title이 convert
    * 시점 고정 fallback과 같은 규칙으로 만들어지므로, role·priority까지 {@code pm}·{@code medium}이면 세 값이 정확히 일치한다. 이때
    * {@code APPLIED}가 돌아오지만 dirty check가 UPDATE를 내지 않아 {@code tasks}는 그대로다. 원장은 성공으로 닫되 발행은 건너뛴다.
    * 비교를 {@code project}가 아니라 여기서 하는 이유는 baseline을 소유한 쪽이 이 모듈이고, "값이 그대로다"를 결과 enum으로 만들면 {@code
-   * project}가 알 필요 없는 어휘가 늘기 때문이다(8.1절이 {@code USER_EDITED}를 두지 않은 것과 같은 이유).
+   * project}가 알 필요 없는 어휘가 늘기 때문이다.
    */
   private void applyDraft(TaskDraftGeneration generation, TaskDraft draft, Instant now) {
     TaskDraftValues baseline =
@@ -233,7 +233,7 @@ class TaskDraftGenerationLedger {
               Map.of());
         }
       }
-      // baseline과 달라진 이유를 project는 모른다. baseline을 소유한 이쪽이 사용자 편집으로 해석한다(8.1절).
+      // baseline과 달라진 이유를 project는 모른다. baseline을 소유한 이쪽이 사용자 편집으로 해석한다.
       case BASELINE_MISMATCH -> complete(generation, CompletionReason.USER_EDITED);
       case TASK_GONE -> complete(generation, CompletionReason.TASK_GONE);
       // 반영 결과가 늘어나면 크게 실패한다. 빠뜨리면 원장이 닫히지 않은 채 커밋된다(위 switch와 같은 이유).
@@ -247,7 +247,7 @@ class TaskDraftGenerationLedger {
     if (generation.isExhausted(execution.maxAttempts())) {
       complete(generation, CompletionReason.RETRY_EXHAUSTED);
       // 어떤 실패로 소진됐는지는 종료 사유만으로 갈리지 않는다. timeout 편중과 invalid_output 편중은
-      // 대응이 정반대다(9.2절).
+      // 대응이 정반대다.
       observability.recordRetryExhaustion(failureReason);
       return;
     }

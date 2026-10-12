@@ -14,7 +14,7 @@ import org.hibernate.type.SqlTypes;
 import works.momens.server.common.persistence.BaseEntity;
 
 /**
- * Minsu task draft 비동기 생성 원장(docs/design/minsu-async-task-draft-design.md 6절).
+ * Minsu task draft 비동기 생성 원장.
  *
  * <p>convert 트랜잭션이 {@code pending}으로 적재하고 scheduler가 claim해 처리한다. 이 클래스는 원장의 상태와 불변식만 담고, claim·반영
  * 로직은 후속 티켓(MOM-0819·0820)이 붙인다.
@@ -128,7 +128,7 @@ class TaskDraftGeneration extends BaseEntity {
   }
 
   /**
-   * 반영 창을 지났는지(8.6절). 읽기 투영보다 margin만큼 이른 시각이라, 여기서 참이면 앱은 아직 {@code generating}을 보고 있을 수 있다.
+   * 반영 창을 지났는지. 읽기 투영보다 margin만큼 이른 시각이라, 여기서 참이면 앱은 아직 {@code generating}을 보고 있을 수 있다.
    *
    * <p>비교 시각은 호출자가 DB 시계에서 읽어 넘긴다. 애플리케이션 시계로 비교하면 인스턴스 간 시계 편차가 그대로 반영 여부의 편차가 된다.
    */
@@ -137,7 +137,7 @@ class TaskDraftGeneration extends BaseEntity {
   }
 
   /**
-   * 시도를 claim한다(7.1절). 시도 횟수를 <b>이 시점에</b> 올리는 것이 핵심이다.
+   * 시도를 claim한다. 시도 횟수를 <b>이 시점에</b> 올리는 것이 핵심이다.
    *
    * <p>결과 기록 시점에 올리면 claim 후 프로세스가 죽은 시도는 세지 않아 상한에 영원히 도달하지 못한다. lease 만료로 회수될 때마다 같은 작업이 다시 시도되고
    * 그 사이 provider 호출 비용은 계속 발생한다.
@@ -154,7 +154,7 @@ class TaskDraftGeneration extends BaseEntity {
   }
 
   /**
-   * retryable 실패를 {@code pending}으로 되돌린다(7.1절).
+   * retryable 실패를 {@code pending}으로 되돌린다.
    *
    * <p>{@code processing}을 유지한 채 token만 비우면 "claim 보유 중"이라는 상태 의미와 어긋나고, 마이그레이션의 claim CHECK에도 걸린다.
    * 이전 token과 lease를 함께 정리한다.
@@ -166,7 +166,7 @@ class TaskDraftGeneration extends BaseEntity {
     this.nextAttemptAt = nextAttemptAt;
   }
 
-  /** 종료한다. 사유는 상태가 아니라 별도 컬럼이며 둘의 정합은 마이그레이션의 CHECK가 지킨다(7.1절). */
+  /** 종료한다. 사유는 상태가 아니라 별도 컬럼이며 둘의 정합은 마이그레이션의 CHECK가 지킨다. */
   void complete(CompletionReason reason) {
     this.status = GenerationStatus.COMPLETED.value();
     this.completionReason = reason.value();

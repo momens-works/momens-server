@@ -65,7 +65,7 @@ Flyway의 `flyway_schema_history`와는 별개의 이력이라 한 DB에서 공�
 
 **이 서버가 마이그레이션 파일을 가진 객체의 DDL은 레거시와 worker가 쓰지 않습니다.** 경계는
 "이 리포에 그 객체를 만드는 파일이 있는가"이고, 겹치는 20개 테이블이 실제 동결 대상입니다
-(목록은 [설계 5절](../design/prod-schema-ownership-transfer.md)). 기간 한정이 아니라 영구입니다.
+(목록은 [부트스트랩 당시 목록](https://github.com/momens-works/momens-server/blob/93a8f733ffdfa5220348be321455ece5dd345d9e/docs/design/prod-schema-ownership-transfer.md#5-결정-3--레거시-마이그레이션-정책)). 기간 한정이 아니라 영구입니다.
 
 바깥쪽은 각자 계속 소유합니다 — 레거시 전용(`oauth_*`, `decisions`, `retrieval_*`, `sync_states`)과
 worker 전용(`raw_source_events` 등)입니다. 이 서버는 그 객체들의 파일도 엔티티도 갖지 않습니다.
@@ -123,7 +123,7 @@ checksum 때문에 고치지 않으니 그 주석을 보고 되돌아가지 않�
 
 - prod에는 있으나 서버 파일이 만들지 않는 컬럼이 5개 있습니다 — `entity_relations`의 `metadata`·
   `source_ref_ids`·`weight`, `source_refs.content_hash`, `workspace_members.onboarding_state`.
-  매핑하지 않아 `validate` 대상이 아닙니다([설계 2.6절](../design/prod-schema-ownership-transfer.md)).
+  매핑하지 않아 `validate` 대상이 아닙니다([MOM-0909 조사 기록](https://github.com/momens-works/momens-server/blob/93a8f733ffdfa5220348be321455ece5dd345d9e/docs/design/prod-schema-ownership-transfer.md#26-미러가-재현하지-않는-prod-컬럼이-5개-있다)).
 - `tasks.workspace_id`가 서버 파일에서는 `NOT NULL`이지만 레거시(`000006_fe_contract.sql`)에서는
   nullable입니다. 레거시가 백필하고 트리거로 채워 실제 `NULL` 행은 사실상 없고, `validate`도
   nullability를 보지 않습니다.

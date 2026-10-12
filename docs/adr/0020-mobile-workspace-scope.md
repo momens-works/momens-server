@@ -557,7 +557,7 @@ Spring Modulith는 모듈의 public API를 패키지와 접근 제어자를 기�
   초안 결정 3의 필드 제거가 해당 규칙의 적용 대상인지 확인한 뒤 처리 방식을 확정한다.
 
 - 초안 결정 7은 MOM-0851에서 `workspace` 모듈 root에 `WorkspaceReader`를 먼저 추가한 뒤 다시 검토한다.
-  [첫 웹 read 슬라이스 계약](../design/legacy-product-api-migration-workspace-read-design.md)에서도 웹
+  [첫 웹 read 슬라이스 계약 당시 기록](https://github.com/momens-works/momens-server/blob/93a8f733ffdfa5220348be321455ece5dd345d9e/docs/design/legacy-product-api-migration/slice-workspace-read.md)에서도 웹
   워크스페이스 조회를 위한 public API로 같은 이름을 사용하지만, 반환 타입은 `WorkspaceDetail`이며 단건 조회
   메서드는 `Optional`을 반환한다. 모듈 경계에 대한 판단은 이번 결정과 같지만, 구체적인 조회 계약은 다르다.
   bootstrap은 워크스페이스 id 집합으로 여러 건을 조회하며, 결과에서 `id`와 `name`만 사용한다. 따라서 이번

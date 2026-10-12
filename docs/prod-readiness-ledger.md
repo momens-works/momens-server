@@ -17,8 +17,8 @@ prod 스키마 주도권이 이 서버로 넘어오면서([ADR-0019](adr/0019-pr
 마이그레이션 첫 줄의 `-- prod-schema:` 헤더도 함께 폐지했습니다. 기존 파일에 남아 있는 헤더는
 Flyway checksum 때문에 지우지 않고 역사적 주석으로 둡니다. **새 마이그레이션에는 달지 않습니다.**
 
-경위와 부트스트랩 절차는 [prod 스키마 주도권 이전 설계](design/prod-schema-ownership-transfer.md)가
-소유합니다.
+완료된 부트스트랩 경위·리허설·적용 결과는 MOM-0908·0909와 관련 PR에 보존합니다.
+과거 절차를 재실행하지 않으며, 변경 전 원문은 MOM-1057에 고정 커밋 링크로 남겼습니다.
 
 ## prod 필수 설정 선언
 
@@ -65,3 +65,23 @@ CI가 실제 Secret·ConfigMap의 존재나 값을 조회해 증명하지는 않
 | Figma webhook 설정 (`MOM-1016`, 운영 배선 `MOM-0954`) | `확인 필요` | `MOMENS_SOURCE_FIGMA_WEBHOOK_ENDPOINT`에 기존 worker 수신 URL, `MOMENS_SOURCE_FIGMA_WEBHOOK_PASSCODE`에 worker와 동일한 passcode를 주입합니다. 기본값이 비어 있으면 configure는 500을 반환합니다. 실제 provider 등록·PING·댓글 수신과 worker 연결 매칭은 운영 전환 전에 검증해야 합니다. |
 | source OAuth state 서명 비밀 | `비활성` | 전환이 완료될 때까지 레거시의 인증 JWT 시크릿과 같은 값을 `MOMENS_SOURCE_OAUTH_STATE_SECRET`에 주입해야 합니다. 값이 다르면 한쪽 서버가 발급한 state를 다른 서버가 검증하지 못해 전환 중 source 연결이 실패합니다. 전환이 끝난 뒤에는 이 값을 독립적으로 교체할 수 있습니다. |
 | DNS·ingress·TLS 인증서 | `응답 확인` | 2026-08-13에 `https://api.momens.works/api/health`의 TLS 응답(HTTP 401)을 확인했습니다. 애플리케이션 readiness를 뜻하지는 않습니다 |
+
+## DB 접속·권한 변경 시 확인
+
+다음은 MOM-0909에서 확인해 계속 필요한 운영 조건입니다. 당시 실행 목록을 현재 객체 목록으로
+간주하지 않고 변경 대상의 실제 role·소유자·ACL을 확인합니다.
+
+- 당시 prod의 IPv4 GKE 노드는 IPv6 direct endpoint에 도달하지 못해 session pooler 5432로 전환했습니다.
+  접속 정보 교체 시 transaction pooler 6543과 혼동하지 않습니다. Flyway의 세션 잠금과 init SQL을
+  사용할 수 있는 접속인지 확인합니다.
+- 확장이 `extensions`에 있는 환경에서는 runtime role의 `USAGE`와 `search_path`를 확인합니다.
+  local의 public 확장 배치만으로 prod를 검증하지 않습니다.
+- 부트스트랩으로 만든 `flyway_schema_history`는 postgres 소유이고 runtime에는 DML을 부여했습니다.
+  Flyway 업그레이드가 이력 테이블 ALTER를 요구하면 DML만으로 충분하다고 가정하지 않습니다.
+- 소유권을 되돌릴 때 이전 runtime의 DML이 유지된다고 가정하지 않습니다. 소유권 변경 **후** 필요한
+  테이블 DML·시퀀스 권한을 재부여하고 실제 읽기/쓰기를 검증합니다. `ddl-auto=validate`는 이를 검사하지 않습니다.
+- 새 공유 테이블·시퀀스의 권한은 [영속성 규칙](rules/persistence.md)을 따릅니다. 기존 누락 판단과
+  보완은 MOM-0936, migration Job 분리는 MOM-0917, Data API 소비·권한 확인은 MOM-0925가 소유합니다.
+  문서 이관으로 이 작업들이 해결된 것은 아닙니다.
+- rollout 실패를 자동 undo로 간주하지 않습니다. 배포 도구 동작을 확인하고 필요 시 운영자가
+  이전 deployment 또는 설정으로 복구합니다. 적용된 migration 파일과 checksum은 수정하지 않습니다.

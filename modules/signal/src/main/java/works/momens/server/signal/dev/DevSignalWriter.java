@@ -20,7 +20,7 @@ import works.momens.server.signal.dev.dto.request.CreateDevSignalRequest;
 import works.momens.server.source.DevSourceRefWriter;
 
 /**
- * dev 데모용 Signal 원자 쓰기 트랜잭션(docs/design/signal-push-demo-design.md 5.5절).
+ * dev 데모용 Signal 원자 쓰기 트랜잭션.
  *
  * <p>evidence별 {@code source_refs}, {@code signals}, evidence별 {@code signal_evidence}, {@code
  * signal.created} outbox event를 한 DB 트랜잭션에서 저장한다. 하나라도 실패하면 모두 rollback한다. HTTP 성공은 위 데이터가

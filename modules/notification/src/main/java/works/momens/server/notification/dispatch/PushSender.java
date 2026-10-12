@@ -16,10 +16,10 @@ import works.momens.server.project.core.ProjectReader;
 import works.momens.server.signal.SignalReader;
 
 /**
- * 클레임된 delivery를 FCM으로 발송하는 발송기(docs/design/signal-push-demo-design.md 10.3절).
+ * 클레임된 delivery를 FCM으로 발송하는 발송기.
  *
  * <p>클레임(DB 트랜잭션)과 FCM 호출(트랜잭션 밖)을 분리하고, event 단위로 저장된 Signal·Project를 hydrate해 push 문구와 data
- * payload를 만든다(6절). 문구·data 계약은 7절을 따르며, 서버는 프로젝트명과 Signal 제목을 임의로 자르지 않는다.
+ * payload를 만든다. 서버는 프로젝트명과 Signal 제목을 임의로 자르지 않는다.
  */
 @Slf4j
 @Component

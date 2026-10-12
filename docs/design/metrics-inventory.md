@@ -7,8 +7,7 @@
 지표의 의미와 설계 배경은 표에 복제하지 않고 다음 문서를 따릅니다.
 
 - 인증 전환 지표: [ADR-0017](../adr/0017-transitional-legacy-session-token-acceptance.md)
-- Minsu 동기 생성 지표: [MOM-0803 Signal Minsu task draft 상세 설계 13절](minsu-signal-task-draft-design.md#13-관측성)
-- Minsu 비동기 원장 지표: [MOM-0810 Minsu 비동기 task draft 생성 9.3절](minsu-async-task-draft-design.md#93-관측)
+- Minsu 생성·원장 운영: [생성 계약의 관측](minsu-async-task-draft-design.md#관측)
 
 ## Auth
 
