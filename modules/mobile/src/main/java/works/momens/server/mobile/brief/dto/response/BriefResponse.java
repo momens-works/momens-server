@@ -4,8 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
-import tools.jackson.databind.PropertyNamingStrategies;
-import tools.jackson.databind.annotation.JsonNaming;
 import works.momens.server.mobile.brief.MobileBrief;
 import works.momens.server.project.core.ProjectSnapshot;
 
@@ -13,14 +11,12 @@ import works.momens.server.project.core.ProjectSnapshot;
  * {@code GET /api/mobile/projects/{projectId}/brief} 응답. 응답 형식은 docs/spec/mobile-api.md 브리프 절을
  * 따릅니다.
  */
-@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "프로젝트 브리프 응답")
 public record BriefResponse(
     @Schema(description = "프로젝트 스냅샷") ProjectResponse project,
     @Schema(description = "시그널 요약") SignalSummaryResponse signalSummary,
     @Schema(description = "현재 우선순위(상위 4개, 정렬 순번 포함)") List<PriorityResponse> priorities) {
 
-  @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
   @Schema(description = "프로젝트 스냅샷")
   public record ProjectResponse(
       @Schema(description = "project 식별자") UUID id,
@@ -32,7 +28,6 @@ public record BriefResponse(
           int progress,
       @Schema(description = "핵심 목표 요약. 작성 전이면 null로 포함됩니다.", nullable = true) String summary) {}
 
-  @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
   @Schema(description = "시그널 요약")
   public record SignalSummaryResponse(
       @Schema(description = "시그널 요약 문단. 민수가 아직 만들지 않았으면 null로 포함됩니다.", nullable = true)
@@ -43,21 +38,18 @@ public record BriefResponse(
       @Schema(description = "다음 페이지 커서. 다음 페이지가 없으면 null로 포함됩니다.", nullable = true)
           String nextCursor) {}
 
-  @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
   @Schema(description = "필터 칩")
   public record FilterResponse(
       @Schema(description = "필터 키", example = "all") String key,
       @Schema(description = "화면 라벨", example = "All") String label,
       @Schema(description = "해당 type의 당일 시그널 수. all은 노출 type 전체 합") long count) {}
 
-  @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
   @Schema(description = "현재 우선순위 항목")
   public record PriorityResponse(
       @Schema(description = "정렬 순번(1부터). 화면의 01~04 표기와 같습니다.", example = "1") int rank,
       @Schema(description = "작업 제목") String title,
       @Schema(description = "task 식별자. 작업 상세로 이동할 때 사용합니다.") UUID taskId) {}
 
-  @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
   @Schema(description = "시그널 요약 항목")
   public record SignalItemResponse(
       @Schema(description = "signal 식별자") UUID id,
