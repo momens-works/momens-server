@@ -1,6 +1,8 @@
 # 모바일 API 명세
 
-이 문서는 모바일 MVP에서 앱이 호출하는 HTTP API 계약만 정리합니다.
+이 문서는 모바일 앱의 호출 흐름과 상태·재시도·표시 의미를 설명합니다.
+요청·응답 필드, 필수 여부, 허용 값과 오류 예시는 [OpenAPI 스냅샷](openapi.json)의 해당 경로에서
+확인합니다. Swagger UI와 스냅샷 사용 방법은 [OpenAPI 안내](openapi.md#스냅샷-고정)를 따릅니다.
 
 ## 공통
 
@@ -12,20 +14,12 @@
 - Content-Type: `application/json`
 - 필드 표기: `snake_case`
 - 시각 값: ISO 8601 UTC의 `Z` 표기로 반환하며, 표시 시간대 변환은 클라이언트가 담당합니다.
-- 성공 응답: 별도 wrapper 없이 응답 DTO 그대로 반환
+- 응답 형식: [공통 응답 규칙](api-response-error-codes.md)을 따릅니다.
 
-인증 API 중 로그인과 토큰 갱신은 `Authorization` 헤더가 필요하지 않습니다.
+로그인·토큰 갱신과 앱 업데이트 확인은 `Authorization` 헤더가 필요하지 않습니다.
+경로·버전 규칙은 [API 버저닝](api-versioning.md)을 따릅니다.
 
 ### 에러 응답
-
-```json
-{
-  "error": {
-    "code": "COMMON_VALIDATION_FAILED",
-    "message": "요청 값이 유효하지 않습니다."
-  }
-}
-```
 
 엔드포인트별로 반환할 수 있는 에러 코드는 [OpenAPI 스냅샷](openapi.json)의 operation별 실패 응답 예시에서 확인합니다. 에러 응답 형식과 에러 코드 규칙은 [API 응답과 에러 코드](api-response-error-codes.md)를 따릅니다.
 
@@ -62,11 +56,9 @@ Signal type에 따라 앱이 다음처럼 화면 라벨을 정합니다. 이 라
 
 ### Task
 
-| 이름 | 값 |
-| --- | --- |
-| `group_key` | `backlog`, `todo`, `in_progress`, `done`, `cancelled` |
-| `priority` | `high`, `medium`, `low` |
-| `role` | `pm`, `design`, `backend`, `frontend` (하나만 선택. android, qa는 2026-07-08 기획 확정으로 폐기. 응답에서는 웹에서 만든 작업이 미지정이면 `null`) |
+입력의 허용 값은 OpenAPI의 `CreateTaskRequest`·`UpdateTaskRequest`를 따릅니다.
+응답에서 `urgent`를 `high`로 표시하고 웹 작업의 미지정 `role`을 `null`로 반환하는 차이는
+아래 작업 조회 절을 참고합니다.
 
 ### Membership
 
@@ -92,68 +84,13 @@ Signal type에 따라 앱이 다음처럼 화면 라벨을 정합니다. 이 라
 
 Google ID token을 Momens access/refresh token으로 교환합니다.
 
-#### Request
-
-```json
-{
-  "id_token": "google-id-token",
-  "device": "iPhone 15 Pro"
-}
-```
-
-#### Response 200
-
-```json
-{
-  "access_token": "access-token",
-  "refresh_token": "refresh-token",
-  "token_type": "Bearer",
-  "expires_in": 900
-}
-```
-
 ### POST /api/auth/refresh
 
 Refresh token으로 access/refresh token을 재발급합니다.
 
-#### Request
-
-```json
-{
-  "refresh_token": "refresh-token"
-}
-```
-
-#### Response 200
-
-```json
-{
-  "access_token": "new-access-token",
-  "refresh_token": "new-refresh-token",
-  "token_type": "Bearer",
-  "expires_in": 900
-}
-```
-
 ### POST /api/auth/logout
 
 Refresh token을 폐기합니다.
-
-#### Request
-
-```json
-{
-  "refresh_token": "refresh-token"
-}
-```
-
-#### Response 200
-
-```json
-{
-  "message": "logged out"
-}
-```
 
 ## 앱 업데이트
 
@@ -166,20 +103,9 @@ Refresh token을 폐기합니다.
 - `update_required`가 `true`일 때 사용자에게 업데이트를 안내하는 방식은 앱에서 결정합니다.
 - 지원하지 않는 플랫폼, 형식이 올바르지 않은 앱 버전, 필수 쿼리 파라미터 누락은 `COMMON_VALIDATION_FAILED`로 응답하고 `details.fields`에 해당 쿼리 파라미터 이름을 담습니다. `platform`은 `ANDROID`처럼 enum 상수 이름으로 전달해도 허용합니다.
 
-#### Query
-
-| 이름 | 필수 | 설명 |
-| --- | --- | --- |
-| `platform` | 예 | 앱이 실행되는 플랫폼. `android`, `ios` 중 하나입니다. |
-| `app_version` | 예 | 앱 버전. 점으로 구분된 숫자를 1개부터 3개까지 허용하며, 생략된 자리는 0으로 간주합니다(`1.0`과 `1.0.0`은 같은 버전). 각 자리는 정수로 비교하므로 `1.10`은 `1.9`보다 높은 버전입니다. 앞에 0이 붙은 값과 접미사(`-beta`, `+5`)는 허용하지 않습니다. |
-
-#### Response 200
-
-```json
-{
-  "update_required": false
-}
-```
+쿼리 형식은 OpenAPI의 `mobileCheckAppUpdate`를 따릅니다. 앱 버전은 숫자 1~3자리를 점으로
+구분하며 생략된 자리는 0입니다(`1.0`과 `1.0.0`은 같음). 각 자리를 정수로 비교하므로
+`1.10`은 `1.9`보다 높습니다. 앞의 0과 접미사(`-beta`, `+5`)는 허용하지 않습니다.
 
 ## 모바일 진입
 
@@ -188,47 +114,10 @@ Refresh token을 폐기합니다.
 로그인 후 앱 진입에 필요한 사용자 정보와 프로젝트 목록을 조회합니다.
 
 - `projects`는 접근 가능한 프로젝트를 생성 최신순으로 담습니다. `role`은 소속 workspace 멤버십 role입니다.
-- `default_project_id`는 임의의 프로젝트 1개면 충분하다고 기획이 확인했고(2026-07-04), 서버는
-  접근 가능한 프로젝트 중 가장 최근에 만든 것을 선택합니다.
+- `default_project_id`는 접근 가능한 프로젝트 중 가장 최근에 만든 것을 선택합니다.
 - 접근 가능한 프로젝트가 없으면 `200`으로 `default_project_id`는 `null`, `projects`는 빈 배열을
   반환하고, 빈 화면 처리는 앱이 담당합니다(2026-07-04 가결정, 기획 확인 후 확정).
 - 토큰은 유효하지만 사용자가 삭제된 경우 `USER_NOT_FOUND`로 응답합니다. `GET /api/me`와 동일한 동작입니다.
-
-#### Response 200
-
-```json
-{
-  "me": {
-    "id": "0b3f8c1a-2d4e-4f6a-8b9c-1e2d3f4a5b6c",
-    "email": "minji@example.com",
-    "name": "김민지",
-    "avatar_url": null
-  },
-  "default_project_id": "30d9e9fe-f43b-4097-a88e-dc19f0a5b025",
-  "projects": [
-    {
-      "id": "30d9e9fe-f43b-4097-a88e-dc19f0a5b025",
-      "name": "Q2 Activation Readiness",
-      "role": "member"
-    }
-  ]
-}
-```
-
-#### Response 200 (접근 가능한 프로젝트 없음)
-
-```json
-{
-  "me": {
-    "id": "0b3f8c1a-2d4e-4f6a-8b9c-1e2d3f4a5b6c",
-    "email": "minji@example.com",
-    "name": "김민지",
-    "avatar_url": null
-  },
-  "default_project_id": null,
-  "projects": []
-}
-```
 
 ## 프로젝트
 
@@ -246,26 +135,6 @@ Refresh token을 폐기합니다.
   bottom sheet가 쓰는 값(id, 이름, 아바타)만 담는 신규 계약입니다(의도된 차이).
 - project가 없거나 삭제된 경우 `PROJECT_NOT_FOUND`로 응답합니다. project는 존재하지만 요청 사용자가 해당 workspace의 멤버가 아닌 경우 `AUTH_FORBIDDEN`으로 응답합니다.
 
-#### Query
-
-| 이름 | 필수 | 설명 |
-| --- | --- | --- |
-| `query` | 아니오 | 이름 검색어 |
-
-#### Response 200
-
-```json
-{
-  "members": [
-    {
-      "id": "b9b1...e7",
-      "name": "김민지",
-      "avatar_url": null
-    }
-  ]
-}
-```
-
 ## 시그널
 
 ### GET /api/mobile/projects/{projectId}/signals
@@ -277,7 +146,7 @@ MVP에서는 아직 처리되지 않은 시그널만 반환합니다. `convert-t
 
 정렬은 최신 Signal이 먼저 오도록 생성 시각 내림차순을 기본으로 합니다. 생성 시각이 같으면 id 내림차순으로 순서를 고정합니다.
 
-시그널 탭은 무한 스크롤로 목록을 이어서 보여 주고, 서버는 cursor pagination으로 한 페이지씩 반환합니다. 첫 요청은 `cursor` 없이 보내고, 목록 끝에 도달하면 직전 응답의 `next_cursor`를 `cursor`로 전달해 다음 페이지를 조회합니다. `next_cursor`가 `null`이면 더 조회할 데이터가 없습니다. 기본 페이지 크기는 한 화면에 카드가 약 3개 보이는 것을 고려해 5로 정했고(2026-09-26), 최대 페이지 크기 50은 서버 보호를 위한 상한입니다. `limit`과 `cursor`의 해석 규칙은 브리프 시그널 요약과 동일합니다.
+시그널 탭은 무한 스크롤로 목록을 이어서 보여 주고, 서버는 cursor pagination으로 한 페이지씩 반환합니다. 첫 요청은 `cursor` 없이 보내고, 목록 끝에 도달하면 직전 응답의 `next_cursor`를 `cursor`로 전달해 다음 페이지를 조회합니다. `next_cursor`가 `null`이면 더 조회할 데이터가 없습니다. 기본 페이지 크기는 5, 최대 페이지 크기는 50입니다. `limit`과 `cursor`의 해석 규칙은 브리프 시그널 요약과 동일합니다.
 
 형식이 잘못된 `cursor`와 음수 `limit`은 `COMMON_VALIDATION_FAILED`(400)로 응답합니다.
 
@@ -286,11 +155,13 @@ MVP에서는 아직 처리되지 않은 시그널만 반환합니다. `convert-t
 
 `impact`는 프로젝트에 미칠 영향 요약이며 목록 카드의 보조 문구로도 사용합니다. `impact`는 worker가
 Signal과 함께 생산하고, worker가 준비되지 않은 MVP 환경에서는 같은 backing 계약의 fixture가 채웁니다.
-`minsu_suggestion`은 민수 산출물이며, 민수(서버 내 모듈로 구현 예정)가 구현되기 전에는 목으로
-처리합니다. 서버는 근거 없는 문구를 임의 생성하지 않습니다.
+`minsu_suggestion`은 아직 생성 기능이 구현되지 않아 목으로 처리합니다.
+서버 내 `minsu`의 task draft 생성과는 별도 기능입니다. 서버는 근거 없는 문구를 임의 생성하지 않습니다.
 
 응답 항목에서는 `project_id`를 생략하지만 Signal backing의 `project_id`는 유지합니다. 서버가 경로의 프로젝트로
 목록을 필터링하고, 원탭 전환 시 task를 어느 프로젝트에 만들지 결정하는 내부 귀속 정보이기 때문입니다.
+Signal 처리 이력은 사용자별이 아닌 프로젝트 단위로 적용합니다. task 생성·처리 이력·outbox는
+같은 트랜잭션으로 반영하며, 클라이언트가 `Idempotency-Key`를 보낼 필요는 없습니다.
 
 #### Query
 
@@ -299,55 +170,11 @@ Signal과 함께 생산하고, worker가 준비되지 않은 MVP 환경에서는
 | `cursor` | 아니오 | 이전 응답의 `next_cursor`. 없으면 첫 페이지를 조회합니다.                                                             |
 | `limit`  | 아니오 | 페이지 크기. 없거나 0이면 기본값 5를 사용하고, 상한은 50입니다. 50을 초과하면 50으로 제한하며, 음수이면 `COMMON_VALIDATION_FAILED`로 응답합니다. |
 
-#### Response 200
-
-```json
-{
-  "title": "오늘 확인해야 할 시그널",
-  "description": "프로젝트의 의사결정에 영향을 줄 수 있는 변화입니다.",
-  "signals": [
-    {
-      "id": "6f3d8a61-4de7-4c01-9d2b-16fdf182e9a1",
-      "type": "risk",
-      "title": "Android 13+ 권한 요청 플로우에서 이탈 가능성 발견",
-      "impact": "MVP 완료율과 온보딩 품질에 영향을 줄 수 있습니다.",
-      "minsu_suggestion": "내용이 들어갈 공간입니다"
-    }
-  ],
-  "next_cursor": "MjAyNi0wOS0yNlQwMTowMDowMFp8NmYzZDhhNjEtNGRlNy00YzAxLTlkMmItMTZmZGYxODJlOWEx"
-}
-```
-
 ### GET /api/mobile/signals/{signalId}
 
 시그널 상세 bottom sheet에 필요한 정보를 조회합니다.
 
 상세 상단의 `Needs action` 등 라벨은 Signal type 기반 표시 라벨이며, 처리 상태가 아닙니다.
-
-#### Response 200
-
-```json
-{
-  "id": "6f3d8a61-4de7-4c01-9d2b-16fdf182e9a1",
-  "type": "risk",
-  "title": "Android 13+ 권한 요청 플로우에서 이탈 가능성 발견",
-  "impact": "MVP 완료율과 온보딩 품질에 영향을 줄 수 있습니다.",
-  "evidence": [
-    {
-      "source_ref_id": "source-ref-uuid",
-      "source": "figma",
-      "occurred_at": "2026-06-28T00:48:00Z",
-      "details": {
-        "target": "권한 요청 화면",
-        "change": "권한 요청 단계 이탈률 증가",
-        "impact": "회원가입 완료율 저하 가능"
-      },
-      "source_url": "https://..."
-    }
-  ],
-  "minsu_suggestion": "권한 요청 시점을 다시 검토해보세요."
-}
-```
 
 `impact`는 Signal 전체가 프로젝트에 미칠 영향 요약입니다. `evidence[].details.impact`는 해당 근거 한 건에서
 관찰한 영향이라 범위가 다릅니다. `details.target`, `details.change`, `details.impact`는 worker 또는 같은 backing
@@ -391,41 +218,8 @@ project는 모바일의 현재 context로 고정되어 있고, description·task
 작업 상세 둘뿐이고, **보드·목록에는 `draft_status`가 없습니다.** 보드 카드의 title은 사용자가
 상세에 들어가지 않으면 이전 값인 채로 있다가 다음 목록 조회에서 조용히 바뀝니다.
 
-#### Response 201
-
-```json
-{
-  "task": {
-    "id": "new-task-uuid",
-    "title": "권한 요청 플로우 점검",
-    "status": "todo",
-    "draft_status": "generating"
-  },
-  "signal": {
-    "id": "6f3d8a61-4de7-4c01-9d2b-16fdf182e9a1",
-    "action": "convert_to_task"
-  }
-}
-```
-
-#### Response 200 (이미 처리된 시그널 재요청)
-
-같은 시그널에 같은 액션을 재요청하면 새 task를 만들지 않고 기존 결과를 그대로 반환합니다(멱등).
-
-```json
-{
-  "task": {
-    "id": "existing-task-uuid",
-    "title": "권한 요청 플로우 점검",
-    "status": "todo",
-    "draft_status": "ready"
-  },
-  "signal": {
-    "id": "6f3d8a61-4de7-4c01-9d2b-16fdf182e9a1",
-    "action": "convert_to_task"
-  }
-}
-```
+최초 전환은 `201`, 같은 시그널의 같은 액션 재요청은 `200`으로 기존 작업을 반환합니다(멱등).
+이미 다른 액션으로 처리된 시그널은 `409 SIGNAL_INVALID_STATE`입니다.
 
 ### POST /api/mobile/signals/{signalId}/actions/dismiss
 
@@ -434,31 +228,9 @@ project는 모바일의 현재 context로 고정되어 있고, description·task
 사용자가 현재 시그널을 task로 전환하지 않겠다는 처리 기록입니다. 삭제 처리한 시그널을 다시 보는 inbox
 흐름은 MVP 이후로 둡니다.
 
-`SIGNAL_INVALID_STATE`(409)는 Signal이 이미 다른 액션으로 처리되었거나, 현재 상태에서 요청한 액션을 수행할 수 없는 경우 반환합니다. 같은 액션을 다시 요청한 경우에는 아래의 `200` 멱등 응답으로 처리합니다.
-
-#### Response 200
-
-```json
-{
-  "signal": {
-    "id": "6f3d8a61-4de7-4c01-9d2b-16fdf182e9a1",
-    "action": "dismiss"
-  }
-}
-```
-
-#### Response 200 (이미 같은 액션으로 처리된 시그널 재요청)
+`SIGNAL_INVALID_STATE`(409)는 Signal이 이미 다른 액션으로 처리되었거나, 현재 상태에서 요청한 액션을 수행할 수 없는 경우 반환합니다. 같은 액션을 다시 요청한 경우에는 `200` 멱등 응답으로 처리합니다.
 
 같은 시그널에 dismiss를 재요청하면 같은 결과를 멱등하게 반환합니다.
-
-```json
-{
-  "signal": {
-    "id": "6f3d8a61-4de7-4c01-9d2b-16fdf182e9a1",
-    "action": "dismiss"
-  }
-}
-```
 
 ## 브리프
 
@@ -467,72 +239,7 @@ project는 모바일의 현재 context로 고정되어 있고, description·task
 프로젝트 브리프 화면의 초기 로드에 필요한 정보를 조회합니다. 쿼리 파라미터는 없습니다. 시그널 요약의
 필터 전환과 더보기 페이지 이동은 아래 하위 엔드포인트가 담당합니다.
 
-#### Response 200
-
-```json
-{
-  "project": {
-    "id": "30d9e9fe-f43b-4097-a88e-dc19f0a5b025",
-    "name": "Q2 Activation Readiness",
-    "target_date": "2026-06-30",
-    "progress": 64,
-    "summary": "목표 날짜까지 Q2 Activation Readiness 범위의 회원 가입 MVP를 안정적으로 릴리즈한다."
-  },
-  "signal_summary": {
-    "summary": "Android 권한 요청 이슈가 발견되었으며, 소셜 로그인은 MVP 범위에서 제외되었습니다. 이메일 회원가입과 온보딩 이탈 개선이 우선적으로 필요합니다.",
-    "filters": [
-      { "key": "all", "label": "All", "count": 6 },
-      { "key": "risk", "label": "Risk", "count": 1 },
-      { "key": "change", "label": "Change", "count": 1 },
-      { "key": "decision", "label": "Decision", "count": 2 },
-      { "key": "question", "label": "Question", "count": 2 }
-    ],
-    "items": [
-      {
-        "id": "5c1a2b34-56d7-4e89-9f01-234a5b6c7d8e",
-        "type": "change",
-        "title": "권한 요청 반복 문의"
-      },
-      {
-        "id": "6f3d8a61-4de7-4c01-9d2b-16fdf182e9a1",
-        "type": "decision",
-        "title": "소셜 로그인은 MVP 범위에서 제외"
-      },
-      {
-        "id": "3b9e0d12-78f4-4a56-8c01-9d2e3f4a5b6c",
-        "type": "risk",
-        "title": "Android 13+ 권한 요청 플로우 이탈 가능성"
-      }
-    ],
-    "next_cursor": "MjAyNi0wNy0wM1QwMDowMDowMFp8M2I5ZTBkMTItNzhmNC00YTU2LThjMDEtOWQyZTNmNGE1YjZj"
-  },
-  "priorities": [
-    {
-      "rank": 1,
-      "title": "이메일 회원가입 완료율 개선",
-      "task_id": "27afd507-9c7f-4f0d-a2be-fcdab2477b19"
-    },
-    {
-      "rank": 2,
-      "title": "Android 13+ 권한 요청 플로우 정비",
-      "task_id": "4c8e1f23-a567-4b89-9c01-2d3e4f5a6b7c"
-    },
-    {
-      "rank": 3,
-      "title": "온보딩 이탈 구간 계측 추가",
-      "task_id": "9d0a2b34-c678-4d90-8e12-3f4a5b6c7d8e"
-    },
-    {
-      "rank": 4,
-      "title": "소셜 로그인 제외 범위 QA",
-      "task_id": "1e2f3a45-b789-4c01-9d23-4a5b6c7d8e9f"
-    }
-  ]
-}
-```
-
-브리프는 오늘의 브리프라, 시그널 요약은 그날(당일) 생성된 시그널을 처리 여부와 무관하게 집계합니다(2026-07-10 기획
-확정). 작업 전환이나 dismiss와 상관없이 그날 온 시그널을 유지하고, 소프트 삭제된 시그널은 제외합니다. 하루 경계는
+브리프는 오늘의 브리프라, 시그널 요약은 그날(당일) 생성된 시그널을 처리 여부와 무관하게 집계합니다. 작업 전환이나 dismiss와 상관없이 그날 온 시그널을 유지하고, 소프트 삭제된 시그널은 제외합니다. 하루 경계는
 Asia/Seoul 기준이라, `created_at`(UTC 저장)을 KST 하루로 잘라 그 범위의 시그널을 담습니다. 이 집계 기준은 시그널
 탭(처리 대기)과 다릅니다. 시그널 탭은 프로젝트 단위로 누적된 미처리 시그널을 보여주고, 브리프는 당일 생성분을 봅니다.
 
@@ -543,13 +250,12 @@ Asia/Seoul 기준이라, `created_at`(UTC 저장)을 KST 하루로 잘라 그 �
 카테고리 표시 표와 같음). type 칩 순서는 `label` 글자수가 적은 것부터이고 글자수가 같으면 `label` 알파벳순입니다.
 
 `signal_summary.summary`는 시그널 요약 헤더 아래 문단(해당 프로젝트 이슈와 진행상황 요약)입니다. 그날 시그널을 한
-문단으로 요약한 민수 산출물이고 `signal_digests`에서 읽습니다. 민수가 아직 만들지 않았으면 `null`입니다. 민수가
-구현되기 전에는 같은 backing 계약을 따르는 fixture가 채웁니다(ADR-0011, ADR-0012).
+문단으로 요약한 민수 산출물이고 `signal_digests`에서 읽습니다. 민수가 아직 만들지 않았으면 `null`입니다. 요약 생산 기능이
+준비되기 전에는 같은 backing 계약을 따르는 fixture가 채웁니다(ADR-0011, ADR-0012).
 
 문단은 `items`와 같은 하루 범위(생성 시각)로 조회하므로 문단과 목록의 기준일이 항상 같습니다. 같은 범위에 문단이
 여러 건이면 가장 최근 것을 반환합니다.
-2026-07-10 화면설계서는 이 문단을 시그널 요약이라 부르고 리뷰 요약이라는 개념이나 헤더는 따로 없어서, 별도
-`review_summary` 객체를 두지 않습니다. 화면의 "시그널 요약 · N" 헤더 숫자는 `filters`에서 `key`가 `all`인 항목의
+화면의 "시그널 요약 · N" 헤더 숫자는 `filters`에서 `key`가 `all`인 항목의
 `count`로 렌더링합니다(필터 선택과 무관하게 유지).
 
 `items`는 당일 시그널의 최신순(생성 시각 내림차순, 같으면 id 내림차순) 첫 페이지이고 기본 20개입니다. 클라이언트는
@@ -558,7 +264,7 @@ Asia/Seoul 기준이라, `created_at`(UTC 저장)을 KST 하루로 잘라 그 �
 change도 다른 type과 똑같이 포함합니다. `next_cursor`는 다음 페이지를 여는 커서 문자열이고 다음 페이지가 없으면
 `null`입니다. 커서는 서버만 해석하므로, 클라이언트는 내용을 해석하지 않고 하위 엔드포인트에 그대로 되돌려줍니다.
 
-`project.progress`는 작업 상태를 기준으로 계산합니다(2026-06-24 기획 확정). `projects.progress`에 저장된 값은
+`project.progress`는 작업 상태를 기준으로 계산합니다. `projects.progress`에 저장된 값은
 사용하지 않으며, 조회할 때마다 다시 계산합니다. 따라서 작업 상태가 바뀌면 다음 조회부터 바로 반영됩니다.
 
 진행률은 cancelled를 제외한 작업을 기준으로 done 비율을 계산한 0~100 정수 퍼센트입니다. 정수 나눗셈을 사용하므로
@@ -568,22 +274,23 @@ change도 다른 type과 똑같이 포함합니다. `next_cursor`는 다음 페�
 cancelled를 분모에서 제외하는 기준은 기획이 확정했습니다. 소수점을 버리는 방식만 아직 확정되지 않아 서버 구현에서
 결정한 정책이며(ADR-0013), 추후 기획 확정에 따라 변경될 수 있습니다.
 
-`priorities`의 원천은 작업입니다(2026-07-10 기획 확정). `title`은 작업 제목이고, `task_id`로 작업 상세로
+`priorities`의 원천은 작업입니다. `title`은 작업 제목이고, `task_id`로 작업 상세로
 이동할 수 있습니다. 정렬은 `priority`가 높은 순(high, medium, low)이고, 같으면 생성이 오래된 순입니다(생성 시각
 오름차순, 생성 시각까지 같으면 id 오름차순으로 순서를 고정합니다). 저장된 값이 web에서 사용하는 urgent이면 high와
 같은 순위로 정렬합니다. 상위 4개까지만 담습니다. 화면의 "현재 우선순위 · N" 헤더 숫자는 배열 길이로 계산하며,
 배열 길이와 항상 같은 값이라 별도 개수 필드를 두지 않습니다. 후보는 진행 중인 todo와 in_progress 상태의
-작업이고 backlog와 done, cancelled는 제외합니다(2026-07-10 기획 확정).
+작업이고 backlog와 done, cancelled는 제외합니다.
 
 ### GET /api/mobile/projects/{projectId}/brief/signal-summary
 
 브리프 시그널 요약의 필터 전환과 더보기에 사용합니다. 커서 기반 페이지네이션을 사용하며, 정렬은 최신순입니다(생성
-시각 내림차순, 같으면 id 내림차순, 2026-07-10 확정).
+시각 내림차순, 같으면 id 내림차순).
 
 더보기는 접힌 상태의 3개 프리뷰를 목록으로 확장하는 동작입니다. 화면설계서의 "드롭다운에서 페이지네이션"은 전체를
 한 번에 펼치는 것이 아니라, 목록을 연 뒤 내부 스크롤로 다음 페이지를 이어 조회하는 무한 스크롤을 의미합니다.
 
-첫 요청은 `limit`을 생략해 기본 페이지 크기(20)만큼 조회합니다. 이후 목록 끝까지 스크롤하면 직전 응답의
+브리프 본체가 첫 페이지를 이미 반환하므로 처음 더보기를 열 때 다시 요청하지 않습니다.
+필터를 바꾸면 `cursor` 없이 해당 필터의 첫 페이지를 요청합니다. `limit`을 생략하면 기본 20개입니다. 이후 목록 끝까지 스크롤하면 직전 응답의
 `next_cursor`를 `cursor`로 전달해 다음 페이지를 조회하고, 반환된 항목을 기존 목록 뒤에 추가합니다. `next_cursor`가
 `null`이면 더 조회할 데이터가 없습니다.
 
@@ -599,21 +306,6 @@ cancelled를 분모에서 제외하는 기준은 기획이 확정했습니다. �
 | `cursor` | 아니오 | 이전 응답의 `next_cursor`. 없으면 첫 페이지 |
 | `limit` | 아니오 | 페이지 크기. 없거나 0이면 기본 20, 상한 50(넘기면 상한으로 줄임). 음수는 `COMMON_VALIDATION_FAILED` |
 
-#### Response 200
-
-```json
-{
-  "items": [
-    {
-      "id": "6f3d8a61-4de7-4c01-9d2b-16fdf182e9a1",
-      "type": "decision",
-      "title": "소셜 로그인은 MVP 범위에서 제외"
-    }
-  ],
-  "next_cursor": null
-}
-```
-
 정렬과 항목 구성은 브리프 본체의 `signal_summary.items`와 같습니다. `filter`는 열린 어휘라 `all`이나 빈 값이면
 전체를, 그 외 값은 해당 type을 조회합니다. 알려지지 않은 type은 매칭이 없어 빈 목록으로 응답하고 400을 내지
 않습니다. type 어휘를 서버가 고정하지 않아 새 type이 코드 변경 없이 흐르게 하려는 선택입니다. 형식이 잘못된
@@ -626,116 +318,19 @@ id를 기준으로 하기 때문에, 페이지 사이에 시그널이 처리되�
 
 프로젝트 작업 보드를 조회합니다.
 
-#### Response 200
-
-```json
-{
-  "title": "프로젝트 작업",
-  "description": "작업을 한눈에 확인하고 상세 내용을 확인하세요.",
-  "groups": [
-    {
-      "group_key": "todo",
-      "label": "할 일",
-      "count": 1,
-      "tasks": [
-        {
-          "id": "27afd507-9c7f-4f0d-a2be-fcdab2477b19",
-          "title": "1차 와이어프레임",
-          "role": "frontend",
-          "priority": "low",
-          "material_count": 2
-        }
-      ]
-    },
-    { "group_key": "in_progress", "label": "진행 중", "count": 0, "tasks": [] },
-    { "group_key": "done", "label": "완료", "count": 0, "tasks": [] },
-    { "group_key": "backlog", "label": "백로그", "count": 0, "tasks": [] },
-    { "group_key": "cancelled", "label": "취소됨", "count": 0, "tasks": [] }
-  ]
-}
-```
-
-보드는 todo, in_progress, done, backlog, cancelled 다섯 그룹을 순서대로 노출합니다. 작업 수정 화면이 상태 5종을 모두 편집하므로, backlog나 cancelled로 바꾼 작업이 보드에서 사라지지 않도록 다섯 그룹을 모두 담습니다(MOM-75). 다섯 그룹은 작업이 없어도 항상 포함하며 그때 tasks는 빈 배열입니다. priority는 low, medium, high로 반환하고, 저장된 값이 레거시 전용인 urgent이면 high로 반환합니다(2026-07-06 가결정). material_count는 작업에 연결된 소스 수이고, 연결이 없으면 0입니다. 웹에서 만든 작업은 업무 역할이 없어 role을 null로 반환합니다(레거시와 공유하는 tasks에서 role은 nullable이고, 모바일 생성 API는 role을 필수로 받습니다).
+보드는 todo, in_progress, done, backlog, cancelled 다섯 그룹을 순서대로 노출합니다. 다섯 그룹은 작업이 없어도 항상 포함하며 그때 tasks는 빈 배열입니다. 각 그룹의 count는 tasks 배열 길이와 같습니다. priority는 low, medium, high로 반환하고, 저장된 값이 레거시 전용인 urgent이면 high로 반환합니다(2026-07-06 가결정). material_count는 작업에 연결된 소스 수이고, 연결이 없으면 0입니다. 웹에서 만든 작업은 업무 역할이 없어 role을 null로 반환합니다(레거시와 공유하는 tasks에서 role은 nullable이고, 모바일 생성 API는 role을 필수로 받습니다).
 
 ### POST /api/mobile/projects/{projectId}/tasks
 
 일반 작업을 생성합니다.
 
-#### Request
-
-```json
-{
-  "title": "Write",
-  "role": "pm",
-  "priority": "medium"
-}
-```
-
-#### Response 201
-
-```json
-{
-  "task": {
-    "id": "new-task-uuid",
-    "project_id": "30d9e9fe-f43b-4097-a88e-dc19f0a5b025",
-    "title": "Write",
-    "role": "pm",
-    "priority": "medium",
-    "status": "todo"
-  }
-}
-```
-
-title, role, priority 모두 필수입니다(2026-07-06 기획 확정, 2026-07-07 업무 역할은 하나만 선택하는 단일 값으로 재확정). role은 pm, design, backend, frontend 중 하나입니다(2026-07-08 기획 확정으로 android, qa는 폐기하고 업무 역할은 4종만 둡니다). priority는 low, medium, high, urgent 중 하나이며, urgent는 그대로 저장하고 응답에서는 high로 표시합니다. 셋 중 하나라도 비어 있거나 허용하지 않는 값이면 COMMON_VALIDATION_FAILED로 응답합니다. 제목은 공백을 포함해 15자로 제한하며, 넘기면 COMMON_VALIDATION_FAILED로 응답합니다(수정 화면과 같은 작업 공통 규칙). 생성한 작업은 todo 그룹에서 시작합니다. role은 레거시 tasks에 없는 신규 속성이라 CHECK 제약을 둔 문자열 컬럼으로 저장합니다.
+생성된 작업은 `todo`로 시작합니다. 입력 검증은 OpenAPI의 `CreateTaskRequest`를 따릅니다.
+입력의 `urgent`는 그대로 저장하고 응답에서는 `high`로 표시합니다. 담당자·설명·완료 기준은
+생성 입력에 포함하지 않고 생성 후 수정합니다.
 
 ### GET /api/mobile/tasks/{taskId}
 
 작업 상세 화면에 필요한 정보를 조회합니다.
-
-#### Response 200
-
-```json
-{
-  "id": "27afd507-9c7f-4f0d-a2be-fcdab2477b19",
-  "project_id": "30d9e9fe-f43b-4097-a88e-dc19f0a5b025",
-  "title": "1차 와이어프레임",
-  "status": "todo",
-  "role": "pm",
-  "assignee": {
-    "id": "b9b1...e7",
-    "name": "김민지",
-    "avatar_url": "https://lh3.googleusercontent.com/a/..."
-  },
-  "priority": "medium",
-  "purpose": "이번 범위에서 확인해야 할 화면 흐름을 정리합니다.",
-  "checklist": {
-    "completed_count": 2,
-    "total_count": 4,
-    "items": [
-      { "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7", "title": "어쩌구어쩌구 반영", "completed": true },
-      { "id": "5a1b2c3d-4e5f-4061-8273-8495a6b7c8d9", "title": "어쩌구어쩌구 반영", "completed": false }
-    ]
-  },
-  "materials": [
-    {
-      "id": "9f1c2b3a-4d5e-4f60-8a71-2b3c4d5e6f70",
-      "title": "회원가입 에러 메시지 정책 초안",
-      "summary": "회원가입의 MVP 완료율과 온보딩 품질에 영향을 줄 수 있습니다.",
-      "source": "figma",
-      "occurred_at": "2026-06-28T00:48:00Z",
-      "source_url": "https://..."
-    }
-  ],
-  "open_questions": [
-    {
-      "id": "3f2a1b4c-5d6e-4f70-8a91-b2c3d4e5f6a7",
-      "body": "약한 비밀번호 기준을 얼마나 구체적으로 안내할지 결정 필요"
-    }
-  ],
-  "next_action": "에러 메시지 정책 초안을 검토하고 핵심 문구 다섯 가지를 먼저 확정하세요.",
-  "draft_status": "ready"
-}
-```
 
 `draft_status`는 민수가 이 작업의 제목을 더 손볼 것이 남았는지를 알립니다. 값과 보장은
 convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다시 조회해 종료를 확인합니다.
@@ -759,12 +354,12 @@ convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다�
 `open_questions[].id`는 저장된 질문 행의 식별자입니다. 표시 순서는 생산자가 준 순서이고, 순서 값이 겹치면 `id` 순으로
 고정합니다.
 
-두 값은 생산 단계에서 공백을 포함해 각각 50자, 100자 이하로 만들고(2026-07-08 화면설계서 task_002 8번, 9번),
-서버는 값을 생성하거나 자르지 않고 저장된 값을 그대로 반환합니다. 민수가 구현되기 전에는 같은 backing 계약을
+두 값은 생산 단계에서 공백을 포함해 각각 50자, 100자 이하로 만들고,
+서버는 값을 생성하거나 자르지 않고 저장된 값을 그대로 반환합니다. 해당 산출물의 생산 기능이 준비되기 전에는 같은 backing 계약을
 따르는 fixture가 채웁니다(ADR-0011). 작업 수정 API는 두 값을 요청에 받지 않고 그대로 유지합니다.
 
 담당자가 지정되지 않았으면 `assignee`는 `null`, 설명을 아직 작성하지 않았으면 `purpose`는 `null`입니다. 웹에서 만든 작업은 업무 역할이 없어 `role`도 `null`입니다. 담당자는 저장된 `assignee_id`를 기준으로 조회합니다. 현재 민수 draft 생성 결과는 title, role, priority만 갱신하며 담당자를 자동 지정하지 않습니다. `assignee.avatar_url`은 담당자의 구글 계정 프로필 이미지이고, 없으면 `null`입니다.
-완료 기준이 없으면 `checklist`는 `completed_count` 0, `total_count` 0, `items` 빈 배열입니다(2026-07-07 확정).
+완료 기준이 없으면 `checklist`는 `completed_count` 0, `total_count` 0, `items` 빈 배열입니다.
 `status`는 저장된 5종(backlog, todo, in_progress, done, cancelled)을 그대로 반환하고(상세 상태 칩이 5종 노출),
 `priority`는 보드와 같이 저장된 urgent를 high로 반환합니다. `purpose`는 레거시 `tasks.description`에 매핑됩니다.
 
@@ -776,56 +371,24 @@ convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다�
 
 작업 수정 화면에서 편집한 필드를 저장합니다. 요청은 리소스 전체가 아니라 편집 가능한 필드 전체(title, role, assignee_id, priority, status, purpose, checklist_items)를 담고, 서버가 관리하는 필드(materials, open_questions, next_action)는 요청에 없어 그대로 유지합니다. title, role, priority, status는 항상 채워 보냅니다. title은 생성과 달리 빈 문자열을 허용하고, title을 빈 문자열로 보내면 상세 화면이 '새 작업'으로 표시합니다.
 
-#### Request
+- `assignee_id`·`purpose`를 생략하거나 `null`로 보내면 기존 값을 지웁니다. `purpose`는 빈 문자열도 허용합니다.
+- `checklist_items`는 최종 목록으로 전체 교체합니다. 생략·`null`은 전체 삭제입니다. 기존 항목은
+  상세에서 받은 `id`로 제목·완료 상태를 갱신하고, `id` 없는 항목은 생성하며 목록에서 빠진 항목은 삭제합니다.
+  `completed` 생략은 `false`입니다. 없는 `id`는 `TASK_CHECKLIST_ITEM_NOT_FOUND`, 중복 `id`는
+  `COMMON_VALIDATION_FAILED`입니다.
+- 상태의 허용 값·필수 필드·개수·글자 수 제한은 OpenAPI의 `UpdateTaskRequest`·`ChecklistItemRequest`를
+  따릅니다. 상세 화면의 즉시 토글은 별도 엔드포인트를 사용합니다.
+- 동시 수정은 마지막 저장이 먼저 저장된 내용을 덮어씁니다. 낙관적 잠금은 없습니다.
 
-```json
-{
-  "title": "1차 와이어프레임",
-  "role": "pm",
-  "assignee_id": "b1c2d3e4-5f60-4711-8a22-99c0ab12cd34",
-  "priority": "medium",
-  "status": "in_progress",
-  "purpose": "이번 범위에서 확인해야 할 화면 흐름을 정리합니다.",
-  "checklist_items": [
-    { "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "title": "어쩌구어쩌구 반영", "completed": true },
-    { "title": "새 완료 기준", "completed": false }
-  ]
-}
-```
-
-`assignee_id`와 `purpose`는 생략하거나 `null`로 보내면 기존 값을 지웁니다. `purpose`는 빈 문자열도 허용합니다. `checklist_items`를 생략하거나 `null`로 보내면 빈 목록으로 처리해 기존 항목을 모두 삭제합니다. `status`는 backlog, todo, in_progress, done, cancelled 다섯 값 중 하나입니다. `checklist_items`는 완료 기준 최종 목록이고, `id`가 있으면 기존 항목의 제목과 완료 상태(`completed`)를 함께 갱신하고, `id`가 없으면 새 항목으로 만들며, 목록에서 빠진 기존 항목은 삭제합니다. `checklist_items[].id`는 선택 필드입니다. 기존 항목은 상세 조회에서 받은 `id`를 그대로 보내고, 새 항목은 `id`를 생략합니다. `completed`를 생략하면 `false`로 처리합니다. `id`가 있는데 기존 항목에 없으면 잘못된 요청으로 보고 `TASK_CHECKLIST_ITEM_NOT_FOUND`로 응답하고, 같은 `id`가 목록에 두 번 오면 `COMMON_VALIDATION_FAILED`로 응답합니다. 완료 기준은 0개에서 5개까지 허용하고, 5개를 넘기면 `COMMON_VALIDATION_FAILED`로 응답합니다. 글자 수는 공백을 포함해 작업 제목 15자, 설명 300자, 완료 기준 항목 50자로 제한하며, 넘기면 `COMMON_VALIDATION_FAILED`로 응답합니다. 상세 화면의 즉시 토글은 아래 별도 엔드포인트로 유지합니다. 같은 작업을 두 요청이 거의 동시에 저장하면, 마지막에 저장한 요청이 먼저 저장된 내용을 덮어씁니다. 동시 수정 충돌을 막는 낙관적 잠금은 지금 두지 않습니다.
-
-#### Response 204
+MCP의 부분 수정은 생략한 필드를 유지하므로 이 API와 다릅니다
+([MCP 생략·삭제 계약](mcp-write-tools.md#생략과-삭제)).
 
 저장만 하고 본문은 반환하지 않습니다. 쓰기와 읽기의 역할을 분리하기 위해서입니다. 저장 후 필요한 최신 상태는 작업 상세 조회(`GET /api/mobile/tasks/{taskId}`)로 다시 읽습니다. 새로 추가한 완료 기준의 서버 id도 이 조회에서 확인합니다.
 
 ### PATCH /api/mobile/tasks/{taskId}/checklist-items/{itemId}
 
-작업 완료 기준 항목의 완료 상태를 변경합니다.
-
-#### Request
-
-```json
-{
-  "completed": true
-}
-```
-
-#### Response 200
-
-```json
-{
-  "checklist": {
-    "completed_count": 2,
-    "total_count": 4,
-    "item": {
-      "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
-      "title": "어쩌구어쩌구 반영",
-      "completed": true
-    }
-  }
-}
-```
+작업 완료 기준 항목의 완료 상태를 변경합니다. 항목은 지정한 작업에 속해야 하며,
+변경 결과와 작업 전체의 완료 수·전체 수를 반환합니다.
 
 ## Push 설치
 
@@ -833,25 +396,9 @@ convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다�
 
 Android 기기의 Firebase Installation ID(FID)와 FCM registration token을 등록하거나 갱신합니다.
 
-#### Request
-
-```json
-{
-  "fcm_registration_token": "...",
-  "platform": "android"
-}
-```
-
-| 필드 | 필수 | 규칙 |
-| --- | --- | --- |
-| `fcm_registration_token` | 필수 | 공백 문자열 불가 |
-| `platform` | 필수 | `android`만 허용 |
-
 같은 FID의 재요청은 token을 갱신하고 활성화합니다. 다른 사용자에게 귀속된 FID면 현재 인증 사용자에게
 소유권을 원자적으로 이전합니다. 동일한 활성 FCM token이 다른 FID에 연결돼 있으면 이전 연결을
 비활성화합니다.
-
-#### Response 204
 
 생성과 갱신 모두 본문 없이 `204 No Content`를 반환합니다.
 
@@ -859,8 +406,6 @@ Android 기기의 Firebase Installation ID(FID)와 FCM registration token을 등
 
 현재 인증 사용자가 소유한 설치를 비활성화합니다. 로그아웃과 별도 endpoint이며, 앱은 로그아웃 직전에
 호출합니다.
-
-#### Response 204
 
 자기 소유 설치만 비활성화하고, 이미 비활성화됐거나 없는 설치도 `204 No Content`로 멱등 처리합니다.
 다른 사용자가 소유한 활성 설치는 해제하지 않습니다. 물리 삭제하지 않아 같은 사용자의 재등록과 token
@@ -889,4 +434,6 @@ data payload:
 ```
 
 `notification_type`은 알림이 발생한 이유이고, `destination`은 클릭 시 이동할 화면입니다. 앱은 알림
-클릭 시 `signal_id`로 Signal 상세 화면을 엽니다.
+클릭 시 `signal_id`로 Signal 상세 화면을 엽니다. payload에는 Signal type이 없으므로
+상세 조회 후 type을 사용합니다. 설치·토큰의 운영 정책은
+[Signal push 설계](../design/signal-push-demo-design.md)를 따릅니다.

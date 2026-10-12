@@ -6,8 +6,8 @@ import works.momens.server.mobile.MobileDraftStatus;
 import works.momens.server.signal.SignalActionResult;
 
 /**
- * {@code POST /api/mobile/signals/{signalId}/actions/convert-to-task} 응답. shape는
- * docs/spec/mobile-api.md의 시그널 action 절을 따릅니다.
+ * {@code POST /api/mobile/signals/{signalId}/actions/convert-to-task} 응답. 형식은
+ * docs/spec/openapi.json에서 확인합니다.
  *
  * <p>새로 처리됐으면 201, 같은 action 재요청(멱등 replay)이면 200으로 응답하되 body shape는 같습니다. {@code signal.action}은
  * ledger 값 그대로 underscore 표기({@code convert_to_task})입니다.

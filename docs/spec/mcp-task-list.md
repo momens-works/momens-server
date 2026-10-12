@@ -1,8 +1,10 @@
 # MCP 작업 목록 읽기 도구
 
-MOM-1003은 `list_tasks_v2`를 추가한다. 2026-09-30 사용자 결정과 ADR-0023에 따라
-기존 `list_tasks`는 유지하고 새 호출에는 v2를 사용한다. 기존 호출을 자동으로 전환하지 않는다.
+기존 `list_tasks`는 유지하고 새 호출에는 `list_tasks_v2`를 사용한다. 기존 호출을 자동으로 전환하지 않는다.
 두 도구의 scope는 `mcp:tasks:read`이며, token·활성 grant·현재 workspace membership을 검증한다.
+
+입력 필드는 [도구 schema](../../modules/mcp/src/main/resources/mcp/read-tools.json),
+전환 결정과 검증 이력은 MOM-1003과 [PR #288](https://github.com/momens-works/momens-server/pull/288)을 참고한다.
 
 ## 입력 계약
 

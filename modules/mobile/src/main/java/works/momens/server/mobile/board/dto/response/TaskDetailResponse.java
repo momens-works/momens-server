@@ -9,7 +9,7 @@ import works.momens.server.mobile.board.MobileTaskDetail;
 import works.momens.server.mobile.board.MobileTaskDetailView;
 
 /**
- * {@code GET /api/mobile/tasks/{taskId}} 응답. 응답 형식은 docs/spec/mobile-api.md 태스크 상세 절을 따릅니다.
+ * {@code GET /api/mobile/tasks/{taskId}} 응답. 형식은 docs/spec/openapi.json에서 확인합니다.
  *
  * <p>완료 수와 전체 수는 항목 목록에서 파생합니다(별도 저장 없음). {@code materials}는 태스크에 연결된 source_ref를 조합한 값이고, 연결된 자료가
  * 없으면 빈 배열입니다. {@code open_questions}와 {@code next_action}은 민수가 생산한 값을 그대로 내려줍니다(ADR-0011). 열린질문이

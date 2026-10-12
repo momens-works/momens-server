@@ -7,7 +7,7 @@ import java.util.UUID;
 import works.momens.server.signal.SignalDetail;
 
 /**
- * {@code GET /api/mobile/signals/{signalId}} 응답. shape는 docs/spec/mobile-api.md의 시그널 상세 절을 따릅니다.
+ * {@code GET /api/mobile/signals/{signalId}} 응답. 형식은 docs/spec/openapi.json에서 확인합니다.
  *
  * <p>상단 라벨은 {@code type}에서 앱이 파생하므로 처리 상태 필드는 없습니다. {@code impact}, {@code minsuSuggestion}은
  * worker/Minsu 미생산 시 null입니다. 근거는 {@code details.target}·{@code change}·{@code impact}(대상·변화·영향,

@@ -12,13 +12,10 @@ import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskStatus;
 
 /**
- * 태스크 수정 요청. 요청 형식은 docs/spec/mobile-api.md 태스크 수정 절을 따릅니다.
+ * 태스크 수정 요청. 형식은 docs/spec/openapi.json에서 확인합니다.
  *
- * <p>수정 화면은 저장할 때 편집 상태 전체를 보내므로 title, role, priority, status는 항상 채워진 값입니다. title은 생성과 달리 빈 문자열을
- * 허용합니다. 제목을 비우면 상세 화면이 '새 태스크'로 표시하기 때문입니다. 그래서 값이 있는지만 확인하고 공백은 막지 않습니다. {@code assigneeId}는 값이면
- * 지정, null이면 담당자 비우기입니다. {@code purpose}는 목적이고 저장 시 description에 매핑됩니다. {@code checklistItems}는
- * 완료기준 최종 목록이며 0개에서 5개까지 허용합니다. 각 항목의 {@code completed}는 수정 화면이 저장한 완료 상태입니다. 글자 수는 공백을 포함해 제목 15자,
- * 목적 300자, 완료기준 항목 50자로 제한합니다.
+ * <p>편집 상태 전체를 저장하므로 생략한 선택 필드는 유지가 아니라 삭제입니다. 생성과 달리 빈 제목을 허용해 앱에서 '새 작업'으로 표시합니다. 세부 저장·재조회 흐름은
+ * docs/spec/mobile-api.md의 작업 절을 따릅니다.
  */
 @Schema(description = "작업 수정 요청")
 public record UpdateTaskRequest(

@@ -17,15 +17,8 @@
 
 ## 적용 대상
 
-버저닝은 **모든 Momens 제품 API**에 적용합니다. 레거시 Go API를 이관한 엔드포인트도 예외가 아닙니다.
-
-- 새로 추가하는 공개 API
-- 기존 API를 호환되지 않게 바꾸는 개편 API
-- 레거시 Go API를 이관한 엔드포인트
-
-레거시 이관 엔드포인트도 `/api` prefix와 `version = "1"` mapping을 갖추고, 클라이언트는 `API-Version`
-헤더를 전달합니다. 기존 Go API의 path(`/me` 등)를 alias로 유지하지 않습니다. 레거시 클라이언트는 새
-서버로 호출을 옮길 때 `/api` prefix와 `API-Version` 헤더를 사용하도록 맞춥니다.
+신규·개편·레거시 이관 제품 API 모두 `/api` prefix와 `version` mapping을 갖춥니다.
+레거시 클라이언트도 새 서버로 옮길 때 `/api`와 `API-Version`을 사용하도록 맞춥니다.
 
 응답 body shape는 별도 정책입니다. 레거시 이관 엔드포인트는 [API 응답과 에러 코드](api-response-error-codes.md)의
 Legacy compatible 응답 모드를 유지할 수 있습니다. path·버저닝 일원화와 응답 body 호환은 독립적으로 다룹니다.

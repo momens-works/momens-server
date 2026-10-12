@@ -5,8 +5,8 @@ import java.util.UUID;
 import works.momens.server.signal.SignalActionResult;
 
 /**
- * {@code POST /api/mobile/signals/{signalId}/actions/dismiss} 응답. shape는 docs/spec/mobile-api.md의
- * 시그널 action 절을 따릅니다. 새로 처리·멱등 replay 모두 200이며 body shape는 같습니다.
+ * {@code POST /api/mobile/signals/{signalId}/actions/dismiss} 응답. 형식은 docs/spec/openapi.json에서
+ * 확인합니다. 새로 처리·멱등 replay 모두 200이며 body shape는 같습니다.
  */
 @Schema(description = "dismiss 처리 결과")
 public record DismissResponse(Signal signal) {
