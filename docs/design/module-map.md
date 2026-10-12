@@ -336,6 +336,19 @@ capability의 물리 경계로 유지하고, 배포 단위도 나누지 않는�
 
 append-only outbox 발행 로그 공용 모듈이다(ADR-0008).
 
+사용자 확정 액션과 outbox 발행은 같은 트랜잭션에 속한다. 멱등키는 서버가 생성하며
+모바일 클라이언트에 `Idempotency-Key`를 요구하지 않는다.
+Signal·task 생성과 Signal 처리의 기본 이벤트 계약은 다음과 같다. `aggregate_id`는 해당 Signal 또는 task의 ID다.
+
+| event_type | issued_by | aggregate_type | payload |
+| --- | --- | --- | --- |
+| `signal.created` | worker | signal | `{}` |
+| `task.created` | api-server | task | `{ "origin_type": "manual\|signal", "origin_signal_id": null\|"<signal_id>" }` |
+| `signal.converted_to_task` | api-server | signal | `{ "task_id": "<task_id>" }` |
+| `signal.dismissed` | api-server | signal | `{}` |
+
+비동기 draft 반영 이벤트는 [비동기 설계](minsu-async-task-draft-design.md)를 따른다.
+
 - `outbox_events` 엔티티·리포지토리·마이그레이션을 소유한다.
 - 쓰기 public API `OutboxAppender`: 호출자 트랜잭션에 합류해(`Propagation.MANDATORY`)
   `{workspace_id, aggregate_type, aggregate_id, event_type, payload}`를 append한다. 기존 `append()`는

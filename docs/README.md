@@ -35,7 +35,6 @@ docs/
 - [서버 명세](spec/README.md)
 - [서버 명세 > 모바일 API](spec/mobile-api.md) — 앱 연동 의미; HTTP 필드는 [OpenAPI 스냅샷](spec/openapi.json) 참조
 - [상세설계 > 모듈 맵](design/module-map.md)
-- [상세설계 > 모바일 MVP 서버 요구사항](design/mobile-mvp-server-requirements.md)
 - [상세설계 > 레거시 Product API 이관 전략](design/legacy-product-api-migration/strategy.md)
 - [상세설계 > 레거시 Product API 이관 원장](design/legacy-product-api-migration/ledger.md)
 - [상세설계 > 첫 웹 read 슬라이스 계약 (워크스페이스 조회)](design/legacy-product-api-migration/slice-workspace-read.md)

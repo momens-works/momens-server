@@ -533,8 +533,8 @@ consumer는 `issued_by`를 분기 조건으로 사용하지 않기 때문에 전
 
 ## 14. 기존 문서와의 차이
 
-- [모바일 MVP 서버 요구사항](mobile-mvp-server-requirements.md)의 “push에서 Signal type을 참조해 category
-  tag를 표시” 요구는 이번 계약으로 대체한다. FCM data에는 `signal_type`을 보내지 않는다.
+- [모바일 FCM 계약](../spec/mobile-api.md#fcm-push-notification-계약)에 따라 FCM data에는
+  `signal_type`을 보내지 않는다.
 - 기존 문서의 `signal.created.issued_by=worker`는 운영 생산자를 설명하며 유효하다. dev admin 생산 시에만
   일반 생산자 규칙에 따라 `api-server`를 사용한다.
 - 모바일 Signal 계약의 source 집합은 더 넓을 수 있지만, dev 생성 API는 이번 데모에 합의한
