@@ -232,6 +232,8 @@ source-ref·Signal·evidence·`signal.created`를 한 트랜잭션으로 저장�
 push 성공을 기다리지 않는다. 전용 insert 경로를 사용하고 `@Immutable` 읽기 엔티티를 재사용하지 않는다.
 `DevSourceRefWriter`와 `OutboxAppender`는 호출자 트랜잭션에 참여한다.
 worker도 같은 backing과 빈 payload·`signal.created:{signal_id}` 멱등키를 사용하며 producer만 바뀐다.
+생산 시작 전 **MOM-0916**의 UUID 생성 방식·FK·삭제 정책 재검토를 완료해야 한다
+([worker Signal 생산 전 확인](../prod-readiness-ledger.md#worker-signal-생산-전-확인)).
 도구 제거는 MOM-0944가 소유하고, worker 입력의 `file` 등 proto 정합성 검증도 별도로 남는다.
 
 ### Minsu 생성·반영 경계

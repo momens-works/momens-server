@@ -57,7 +57,8 @@ CI가 실제 Secret·ConfigMap의 존재나 값을 조회해 증명하지는 않
 | Google OAuth redirect URI 등록 | `확인 완료` | 2026-09-15에 prod web OAuth client에 신규 callback `https://api.momens.works/api/auth/google/callback`을 레거시 callback `https://api.momens.works/auth/google/callback`과 병행 등록했습니다. 등록 전에는 신규 로그인이 `redirect_uri_mismatch`로 실패했고, 등록 뒤 Google 로그인 화면까지 정상 진입합니다. 레거시 callback은 1단계 rollback 경로이므로 지우지 않습니다 |
 | 웹 client ID·secret 일치 | `확인 완료` | 2026-09-15에 깨끗한 브라우저 프로필에서 prod 신규 웹 로그인 → callback → 쿠키 발급을 끝까지 통과했습니다. `access_token`(`Path=/`)과 `refresh_token`(`Path=/api/auth`)이 발급됐고, `app.momens.works`가 그 쿠키로 정상 로드됐습니다. 웹 callback은 `MOMENS_AUTH_GOOGLE_CLIENT_ID`·`MOMENS_AUTH_GOOGLE_CLIENT_SECRET`으로 code를 교환하고 사용자 정보를 조회할 뿐 audiences를 쓰지 않으므로, 이 확인은 audiences 값을 보증하지 않습니다 |
 | 모바일 client ID와 audiences 일치 | `확인 필요` | `MOMENS_AUTH_GOOGLE_AUDIENCES`는 모바일 로그인(`POST /api/auth/google/token`)에서 앱이 보낸 Google ID 토큰의 `aud`를 검증할 때만 쓰입니다(`GoogleIdTokenVerifier`). 앱 client ID가 목록에 있는지 모바일 prod 로그인으로 따로 확인합니다 |
-| FCM 프로젝트·ADC 자격증명 | `비활성` | push 기본값은 꺼져 있습니다. 활성화할 때 `MOMENS_NOTIFICATION_PUSH_FIREBASE_PROJECT_ID`와 ADC를 확인합니다 |
+| worker Signal 생산 전 스키마 검토 (`MOM-0916`) | `required` | 작업은 backlog입니다. 생산 시작 전에 UUID 생성 방식과 FK·삭제 정책을 [worker Signal 생산 전 확인](#worker-signal-생산-전-확인)에 따라 검토하고 작업을 닫습니다. |
+| FCM 프로젝트·ADC 자격증명 | `비활성` | push 기본값은 꺼져 있습니다. 활성화할 때 [FCM 활성화 전 확인](#fcm-활성화-전-확인)의 프로젝트·권한·인증 연결을 검증합니다 |
 | Minsu GCP 프로젝트·리전·ADC | `비활성` | task draft와 비동기 enroll/drain 기본값은 꺼져 있습니다. 활성화 조건은 [Minsu 활성화와 복구](#minsu-활성화와-복구)를 따릅니다 |
 | source provider redirect URI 등록 | `확인 필요` | GitHub, Slack, Notion, Figma의 관리 화면에 `https://api.momens.works/api/source-connections/oauth/callback`을 등록해야 합니다. 신규 경로에는 레거시 경로에 없는 `/api` 접두사가 포함되어 있어 서로 다른 주소입니다. 기존 주소를 삭제하지 않고 신규 주소를 추가하면 redirect URI 설정만 변경해 레거시 경로로 되돌릴 수 있습니다. 등록 여부는 레포지토리에서 확인할 수 없습니다. |
 | 초대 이메일 발송 설정 | `비활성` | 이메일 발송은 기본적으로 비활성화되어 있어 초대를 생성해도 이메일이 발송되지 않습니다. 활성화하려면 `EMAIL_PROVIDER=resend`와 함께 `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO`, `APP_INVITE_URL`을 모두 주입해야 합니다. 필수 설정 중 하나라도 비어 있으면 서버 기동에 실패합니다 |
@@ -86,10 +87,40 @@ CI가 실제 Secret·ConfigMap의 존재나 값을 조회해 증명하지는 않
 - rollout 실패를 자동 undo로 간주하지 않습니다. 배포 도구 동작을 확인하고 필요 시 운영자가
   이전 deployment 또는 설정으로 복구합니다. 적용된 migration 파일과 checksum은 수정하지 않습니다.
 
+## worker Signal 생산 전 확인
+
+**MOM-0916은 미완료이며 worker가 Signal 생산을 시작하기 전에 닫아야 합니다.**
+과거의 “생산자가 없어 무해하다”는 조사 결과를 현재 활성화 근거로 사용하지 않습니다.
+
+- 먼저 worker가 `signals.id`를 직접 생성하는지 확인합니다. 서버의 `create_signals` migration은
+  `id UUID PRIMARY KEY`에 기본값을 두지 않으므로 worker가 DB UUID 기본값을 기대하면 INSERT가 실패합니다.
+- `signals`·`outbox_events`의 FK 부재에 따른 참조 무결성과 삭제 정책을 재검토합니다.
+  workspace 삭제가 hard/soft delete 중 무엇인지 확인하고, 자동 cascade가 없을 때 관련 행의
+  정합성을 누가 유지할지 worker 생산 경로와 대조합니다.
+- FK나 ID 기본값 보완이 필요하면 새 migration으로 처리합니다. 적용된 SQL은 수정하지 않으며,
+  모듈 경계와 충돌하면 ADR-0007 관점에서 재판단합니다. 이번 문서 보완은 이 결정을 확정하지 않습니다.
+
 ## Signal push 운영
 
-FCM 활성화 전 명시적 Firebase project와 ADC를 확인합니다. dev Workload Identity·로컬 ADC는
-[로컬 개발](local-development.md), 앱 메시지·설치 계약은 [모바일 명세](spec/mobile-api.md#push-설치)를 따릅니다.
+### FCM 활성화 전 확인
+
+아래 조건을 대상 환경에서 확인한 뒤 push를 활성화합니다. 과거 데모의 프로젝트·서비스 계정·클러스터
+값을 현재 값으로 간주하지 않습니다.
+
+- `MOMENS_NOTIFICATION_PUSH_FIREBASE_PROJECT_ID`의 대상 Firebase 프로젝트와 Android 앱의
+  applicationId·Firebase 앱 등록·`google-services.json`이 같은 프로젝트를 가리키는지 확인합니다.
+- ADC가 사용하는 서버 서비스 계정을 확인하고, 그 계정에 **대상 Firebase 프로젝트의 FCM 전송 권한**이
+  있는지 검증합니다. ADC 발급 프로젝트와 전송 대상 프로젝트가 다를 수 있으며, 인증 성공만으로
+  대상 프로젝트의 전송 권한을 보장하지 않습니다.
+- GKE에서는 실제 Pod의 Kubernetes ServiceAccount와 서버 서비스 계정 사이의 Workload Identity
+  연결을 확인합니다. 해당 Pod에서 ADC를 얻는지 확인하고 명시적 대상 project ID로 SDK를 초기화합니다.
+- 로컬에서도 실행 프로세스가 사용하는 ADC의 주체와 대상 프로젝트 전송 권한을 확인합니다.
+  credential·서비스 계정 키·FCM token은 저장소에 기록하지 않습니다. 실제 Android 설치로 전송을
+  검증하고, 과거 dev의 키 생성 금지 정책과 인증 방식이 현재 환경에도 적용되는지 확인합니다.
+
+### 소비와 복구
+
+앱 메시지·설치 계약은 [모바일 명세](spec/mobile-api.md#push-설치)를 따릅니다.
 
 - 소비는 1초 polling, id 오름차순이며 DB 시계 기준 안전 지연 2초를 지나지 않은 첫 이벤트에서
   멈춥니다(prefix-cap). 최초 watermark도 같은 prefix 끝으로 시드하므로 과거 일괄 push는 하지 않습니다.
