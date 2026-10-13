@@ -219,8 +219,20 @@ apply_cutoff_at은 적재 시각 + deadline - margin, read_deadline_at은 적재
 NOW()가 트랜잭션 시작 시각이므로 cutoff 전에 평가된 트랜잭션의 commit이 margin보다 지연되면
 ready 응답 뒤 title이 바뀔 수 있습니다. margin은 이 창을 줄이며 절대 보장은 아닙니다.
 
-정적 설정 무효를 기본값으로 clamp하지 않습니다. 앱은 기동하며 동기 요청은 fallback을 사용합니다.
-비활성·설정 무효·입력 부족이면 provider client를 생성하지 않습니다. Google client는 첫 성공만
+설정 오류의 처리는 검증 범위에 따라 다릅니다. 값을 기본값으로 clamp하지 않습니다.
+
+- `momens.minsu.llm`의 바인딩이 성공한 뒤 [LlmConfigStatus](../modules/minsu/src/main/java/works/momens/server/minsu/llm/LlmConfigStatus.java)가
+  판정하는 의미 설정 오류(provider/model 지원 여부, Google project/location, 동기 timeout 범위)는
+  기동을 차단하지 않습니다. 동기 요청은 fallback을 사용하고, 비동기 원장은 적재하되 claim하지 않습니다.
+  이는 provider·enroll이 활성인 경우이며 비활성이면 신규 적재하지 않습니다.
+- `momens.minsu.task-draft.async`의 실행 설정은 [MinsuAsyncProperties](../modules/minsu/src/main/java/works/momens/server/minsu/draft/config/MinsuAsyncProperties.java)가
+  기동 시 검증합니다. `provider-timeout < attempt-timeout < lease < generation-deadline - apply-margin`,
+  `0 < apply-margin < generation-deadline` 등의 불변식과 timeout 범위·재시도·동시성 조건을 위반하면
+  **기동에 실패합니다.** 예를 들어 attempt-timeout과 lease가 모두 60초이거나 apply-margin이 0이면
+  fallback으로 계속 동작하지 않습니다. 이 검증은 enroll/drain 비활성 여부와 무관합니다.
+- Duration 등 설정값의 바인딩 실패도 위 LLM 의미 검증의 fallback 대상이 아닙니다.
+
+provider 비활성·LLM 의미 설정 무효·입력 부족이면 provider client를 생성하지 않습니다. Google client는 첫 성공만
 캐시하고 ADC/client 생성 실패는 다음 호출에서 재시도하며 성공 client는 context 종료 시 닫습니다.
 
 `task.created`가 먼저 fallback을 투영할 수 있으므로 `task.draft_generated` 소비를 worker에 먼저
