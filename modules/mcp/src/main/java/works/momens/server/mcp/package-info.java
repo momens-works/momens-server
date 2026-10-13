@@ -1,4 +1,3 @@
-/** MCP authorization and transport functionality. */
 @ApplicationModule
 package works.momens.server.mcp;
 

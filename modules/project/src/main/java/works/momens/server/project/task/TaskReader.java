@@ -6,11 +6,6 @@ import java.util.Optional;
 import java.util.UUID;
 import works.momens.server.project.core.ProjectReader;
 
-/**
- * task 조회 public API.
- *
- * <p>모바일 보드(MOM-62)와 상세(MOM-63)가 project 내부 repository를 직접 참조하지 않고 태스크를 읽도록 합니다.
- */
 public interface TaskReader {
 
   /**

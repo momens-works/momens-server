@@ -11,6 +11,5 @@ package works.momens.server.project.core;
  */
 public interface ProjectCreator {
 
-  /** 프로젝트를 저장하고 웹 응답에 필요한 필드를 반환합니다. */
   ProjectDetail create(CreateProjectCommand command);
 }

@@ -18,11 +18,7 @@ import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.minsu.DraftStatus;
 
-/**
- * 읽기 시점 deadline 투영을 실제 PostgreSQL로 검증한다(MOM-0818).
- *
- * <p>판정이 DB 시계 비교이므로 단위 테스트로는 확인할 수 없다. 응답 조립의 읽기 순서 계약과 동시성 검증은 실제 소비자가 붙는 MOM-0822의 범위다.
- */
+/** 읽기 시점 deadline 투영을 실제 PostgreSQL로 검증한다. 소비자의 읽기 순서와 동시성은 app 통합 테스트에서 검증한다. */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(JpaAuditingConfig.class)

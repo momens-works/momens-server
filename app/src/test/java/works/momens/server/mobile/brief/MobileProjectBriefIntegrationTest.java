@@ -27,15 +27,7 @@ import works.momens.server.mobile.MobileClock;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
-/**
- * {@code GET /api/mobile/projects/{projectId}/brief} 실배선 통합 테스트.
- *
- * <p>실토큰(auth public testFixtures)과 실제 PostgreSQL로 보안 체인부터 권한 검사, 프로젝트 스냅샷 응답 shape까지 끝까지 확인합니다.
- * 사용자는 user public API로 만들고, workspace/멤버십/project는 아직 생성 public API가 없어 소유 스키마에 SQL로 시드합니다.
- *
- * <p>브리프의 "오늘"이 결정적이도록 mobileClock을 고정 Clock으로 덮어씁니다(FIXED_NOW). 시그널 시드는 그날(KST) 범위 안에 두고, 범위 밖과
- * 처리(전환)된 시그널로 당일 집계 규칙을 검증합니다(MOM-81).
- */
+/** 브리프의 오늘을 고정 Clock으로 제어하며 KST 경계 밖·처리된 시그널을 함께 넣어 집계 범위를 검증합니다. */
 @SpringBootTest
 @AutoConfigureMockMvc
 class MobileProjectBriefIntegrationTest extends AbstractPostgresIntegrationTest {
@@ -170,9 +162,6 @@ class MobileProjectBriefIntegrationTest extends AbstractPostgresIntegrationTest 
         .andExpect(jsonPath("$.signal_summary.filters[3].count").value(2))
         .andExpect(jsonPath("$.signal_summary.filters[4].key").value("question"))
         .andExpect(jsonPath("$.signal_summary.filters[4].count").value(2))
-        // 첫 조회는 한 페이지(20)를 미리 조회하므로 당일 데이터 6개가 모두 포함됩니다.
-        // 클라이언트는 이 중 최신 3개만 먼저 노출하고, 나머지는 더보기에서 펼칩니다.
-        // 첫 페이지에 모든 항목이 담겨 있으므로 next_cursor는 null입니다.
         .andExpect(jsonPath("$.signal_summary.items.length()").value(6))
         .andExpect(jsonPath("$.signal_summary.items[0].id").value(voc.toString()))
         .andExpect(jsonPath("$.signal_summary.items[0].type").value("change"))
@@ -253,7 +242,6 @@ class MobileProjectBriefIntegrationTest extends AbstractPostgresIntegrationTest 
       }
     }
 
-    // 브리프 조회는 최신 20개를 반환하고 next_cursor를 내려줍니다.
     String briefBody =
         mockMvc
             .perform(
@@ -270,7 +258,6 @@ class MobileProjectBriefIntegrationTest extends AbstractPostgresIntegrationTest 
             .getContentAsString();
     String nextCursor = JsonPath.read(briefBody, "$.signal_summary.next_cursor");
 
-    // next_cursor로 조회하면 남은 가장 오래된 1개가 이어지고, 다음 next_cursor는 null입니다.
     mockMvc
         .perform(
             get("/api/mobile/projects/{projectId}/brief/signal-summary", project)
@@ -345,7 +332,6 @@ class MobileProjectBriefIntegrationTest extends AbstractPostgresIntegrationTest 
     insertSignal(workspace, project, "change", "VOC", "2026-07-10T02:30:00Z");
     UUID d1 = insertSignal(workspace, project, "decision", "결정 1", "2026-07-10T02:00:00Z");
 
-    // filter=decision, limit=2로 1페이지에 decision 둘만 담고 next_cursor를 받는다.
     String firstPageBody =
         mockMvc
             .perform(
@@ -366,7 +352,6 @@ class MobileProjectBriefIntegrationTest extends AbstractPostgresIntegrationTest 
             .getContentAsString();
     String nextCursor = JsonPath.read(firstPageBody, "$.next_cursor");
 
-    // 더보기: 커서로 넘긴 2페이지에도 decision만 이어진다. 사이에 낀 question, change는 새어 들어오지 않는다.
     mockMvc
         .perform(
             get("/api/mobile/projects/{projectId}/brief/signal-summary", project)
@@ -504,7 +489,6 @@ class MobileProjectBriefIntegrationTest extends AbstractPostgresIntegrationTest 
     addMember(workspace, gyuil.id(), "owner");
     UUID project = insertProject(workspace, gyuil.id(), "brief-forbidden-project", null, 0, null);
 
-    // 규일만 멤버인 workspace의 project를 진수 토큰으로 조회한다.
     mockMvc
         .perform(
             get("/api/mobile/projects/{projectId}/brief", project)

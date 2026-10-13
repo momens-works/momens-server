@@ -14,7 +14,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-/** 멱등키 조립과 payload 직렬화(null 포함) 규칙을 DB 없이 검증한다. */
 @ExtendWith(MockitoExtension.class)
 class OutboxAppenderImplTest {
 

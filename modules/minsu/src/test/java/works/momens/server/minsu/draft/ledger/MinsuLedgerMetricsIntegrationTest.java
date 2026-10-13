@@ -23,12 +23,8 @@ import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 
 /**
- * 원장 운영 지표를 실제 PostgreSQL로 검증한다(MOM-0821).
- *
- * <p>집계가 SQL에 있으므로 실제 DB로 봐야 의미가 있다. {@code FILTER} 절과 {@code NOW()} 비교, 미종료로 스캔을 좁히는 WHERE가 모두 여기서
- * 확정된다.
- *
- * <p>스케줄러는 쓰지 않고 {@code refresh()}를 직접 호출한다. 주기를 기다리면 테스트가 느려지고 타이밍에 흔들린다.
+ * 집계 SQL의 FILTER·DB 시계 비교·미종료 조건을 실제 PostgreSQL로 검증한다. 스케줄링 타이밍에 의존하지 않도록 {@code refresh()}를 직접
+ * 호출한다.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)

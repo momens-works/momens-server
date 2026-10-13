@@ -19,14 +19,7 @@ import works.momens.server.project.ProjectSeedSql;
 import works.momens.server.project.core.ProjectDetail;
 import works.momens.server.project.core.ProjectDetailReader;
 
-/**
- * 웹 상세 조회 public API 검증.
- *
- * <p>레거시가 저장한 값을 그대로 읽는지, {@code owner_user_ids}의 정렬과 폴백이 레거시 집계와 같은지, 목록의 정렬과 소프트 삭제 필터가 계약대로인지
- * 확인합니다(웹 snapshot 계약 4.4).
- *
- * <p>웹 read 전용 컬럼과 {@code project_owners}는 이 서버에 쓰기 경로가 없어(쓰기는 MOM-0866) 레거시처럼 네이티브 SQL로 시드합니다.
- */
+/** 생성 경로와 독립적으로 기존 공유 DB 행의 소유자 정렬·폴백·삭제 필터를 검증하도록 SQL로 시드합니다. */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({JpaAuditingConfig.class, ProjectDetailReaderImpl.class})
@@ -89,7 +82,6 @@ class ProjectDetailReaderIntegrationTest extends AbstractPostgresIntegrationTest
     assertThat(detail.summary()).isNull();
     assertThat(detail.lastContextAt()).isNull();
     assertThat(detail.metadata()).isNull();
-    // 레거시 DEFAULT를 그대로 따른다.
     assertThat(detail.healthStatus()).isEqualTo("open");
     assertThat(detail.unresolvedCount()).isZero();
     assertThat(detail.vocSignalCount()).isZero();
@@ -170,7 +162,6 @@ class ProjectDetailReaderIntegrationTest extends AbstractPostgresIntegrationTest
     assertThat(projectDetailReader.listDetailsByWorkspaceId(workspaceId)).isEmpty();
   }
 
-  /** project가 하나뿐인 workspace의 조회 결과를 꺼냅니다. 단건 조회 API를 두지 않아 목록으로 검증합니다. */
   private ProjectDetail onlyDetailOf(UUID workspaceId) {
     List<ProjectDetail> details = projectDetailReader.listDetailsByWorkspaceId(workspaceId);
     assertThat(details).hasSize(1);
@@ -235,7 +226,7 @@ class ProjectDetailReaderIntegrationTest extends AbstractPostgresIntegrationTest
     entityManager.clear();
   }
 
-  /** 소프트 삭제 API는 아직 없으므로(read 기반 슬라이스) 삭제 상태를 네이티브 SQL로 만듭니다. */
+  /** 조회할 삭제 상태를 네이티브 SQL로 구성합니다. */
   private void softDelete(UUID projectId) {
     entityManager
         .getEntityManager()

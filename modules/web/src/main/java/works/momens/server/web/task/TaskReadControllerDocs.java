@@ -17,7 +17,6 @@ import works.momens.server.web.task.dto.response.TaskUpdateListResponse;
 import works.momens.server.web.task.dto.response.WebTaskListResponse;
 import works.momens.server.web.task.dto.response.WebTaskResponse;
 
-/** {@code /api} 웹 태스크 조회 OpenAPI 문서. */
 @Tag(name = "Web", description = "웹 진입 API")
 interface TaskReadControllerDocs {
 

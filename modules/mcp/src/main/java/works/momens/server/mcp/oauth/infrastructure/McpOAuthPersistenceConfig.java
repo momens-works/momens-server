@@ -8,7 +8,6 @@ import org.springframework.security.oauth2.server.authorization.OAuth2Authorizat
 import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 
-/** Spring Authorization Server persistence adapters owned by the MCP module. */
 @Configuration
 class McpOAuthPersistenceConfig {
 

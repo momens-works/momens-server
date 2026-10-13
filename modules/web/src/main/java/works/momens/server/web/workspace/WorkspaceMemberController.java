@@ -16,12 +16,6 @@ import works.momens.server.web.dto.response.WebMessageResponse;
 import works.momens.server.web.workspace.dto.request.UpdateWorkspaceMemberRequest;
 import works.momens.server.web.workspace.dto.response.WorkspaceMembersResponse;
 
-/**
- * 웹 워크스페이스 멤버 endpoint.
- *
- * <p>성공 응답은 레거시 형식을 유지합니다. 멤버 목록은 {@code members}로 감싸고, 역할 변경과 멤버 제거는 반환할 리소스가 없으므로 {@code
- * message}만 담아 응답합니다.
- */
 @RestController
 @RequestMapping("/api/workspaces/{workspaceId}/members")
 @RequiredArgsConstructor

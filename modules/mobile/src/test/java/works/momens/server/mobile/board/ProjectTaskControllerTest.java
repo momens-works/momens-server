@@ -159,7 +159,6 @@ class ProjectTaskControllerTest {
 
   @Test
   void createTaskRejectsTitleOverFifteen() throws Exception {
-    // 제목은 공백 포함 15자 제한이고 수정과 같은 태스크 공통 규칙이다(task_001 화면설계서). 16자는 400으로 거절한다.
     String sixteenChars = "가".repeat(16);
     mockMvc
         .perform(
@@ -174,7 +173,6 @@ class ProjectTaskControllerTest {
 
   @Test
   void createTaskRejectsMissingRoleOrPriority() throws Exception {
-    // title, role, priority 모두 필수다(2026-07-06 기획 확정, 2026-07-07 role은 단일 선택으로 재확정).
     mockMvc
         .perform(
             post("/api/mobile/projects/{projectId}/tasks", PROJECT_ID)
@@ -226,8 +224,6 @@ class ProjectTaskControllerTest {
 
   @Test
   void createTaskRejectsRolesOutsideCreationFour() throws Exception {
-    // 역할은 pm/design/backend/frontend 4종만 남기고 android, qa는 폐기했다(2026-07-08 기획 확정).
-    // 폐기된 값은 생성에서 400으로 거절한다.
     for (String role : new String[] {"android", "qa"}) {
       mockMvc
           .perform(

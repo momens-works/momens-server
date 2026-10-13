@@ -11,12 +11,7 @@ import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskStatus;
 
-/**
- * 태스크 수정 요청. 형식은 docs/spec/openapi.json에서 확인합니다.
- *
- * <p>편집 상태 전체를 저장하므로 생략한 선택 필드는 유지가 아니라 삭제입니다. 생성과 달리 빈 제목을 허용해 앱에서 '새 작업'으로 표시합니다. 세부 저장·재조회 흐름은
- * docs/spec/mobile-api.md의 작업 절을 따릅니다.
- */
+/** 편집 상태 전체를 저장하므로 생략한 선택 필드는 삭제됩니다. 생성과 달리 빈 제목을 허용해 앱에서 새 작업으로 표시합니다. */
 @Schema(description = "작업 수정 요청")
 public record UpdateTaskRequest(
     @Schema(description = "제목. 값은 있어야 하고 빈 문자열은 허용합니다. 최대 15자(공백 포함).", example = "1차 와이어프레임")

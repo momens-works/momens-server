@@ -5,7 +5,6 @@ import java.util.UUID;
 import works.momens.server.mobile.MobileTaskPriority;
 import works.momens.server.project.task.TaskSnapshot;
 
-/** {@code POST /api/mobile/projects/{projectId}/tasks} 응답. 생성된 태스크를 {@code task} 아래에 담습니다. */
 @Schema(description = "작업 생성 응답")
 public record TaskCreateResponse(@Schema(description = "생성된 작업") TaskResponse task) {
 

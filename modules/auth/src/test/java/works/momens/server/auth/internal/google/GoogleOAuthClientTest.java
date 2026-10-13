@@ -16,7 +16,6 @@ import works.momens.server.auth.AuthErrorCode;
 import works.momens.server.auth.internal.config.AuthProperties;
 import works.momens.server.common.api.BusinessException;
 
-/** 웹 Authorization Code 교환·userinfo 조회를 로컬 HttpServer 목으로 검증합니다. */
 class GoogleOAuthClientTest {
 
   private static final String TOKEN_BODY = "{\"access_token\":\"google-access-token\"}";

@@ -22,12 +22,7 @@ import works.momens.server.signal.SignalActionService;
 import works.momens.server.signal.SignalDetailService;
 import works.momens.server.signal.SignalListService;
 
-/**
- * 모바일 Signal 조회·action 엔드포인트.
- *
- * <p>경로는 {@code /api/mobile/*}이지만 Signal 도메인 정책·영속성은 mobile이 아니라 signal 모듈이 소유합니다(ADR-0007). {@code
- * /api/mobile/*}는 보호 체인의 기본 인증 대상이라 별도 보안 설정이 없고, 현재 사용자는 {@link CurrentUser#id(Principal)}로 읽습니다.
- */
+/** 모바일 시그널 HTTP 계약을 소유하며 도메인 정책은 signal API에 위임합니다. */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/mobile")

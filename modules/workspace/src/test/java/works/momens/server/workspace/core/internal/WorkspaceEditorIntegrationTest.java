@@ -22,11 +22,6 @@ import works.momens.server.workspace.core.WorkspaceDetail;
 import works.momens.server.workspace.core.WorkspaceEditor;
 import works.momens.server.workspace.core.WorkspaceErrorCode;
 
-/**
- * 워크스페이스 수정이 레거시 {@code workspace.Update}와 동일하게 동작하는지 실제 PostgreSQL을 사용해 검증합니다.
- *
- * <p>빈 값을 기존 값 유지로 처리하는 규칙, slug 검증 시점, 상황별 에러 구분을 검증합니다.
- */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({JpaAuditingConfig.class, WorkspaceEditorImpl.class})

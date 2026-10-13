@@ -6,7 +6,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/** OAuth scopes that can be granted to an MCP client. */
 public enum McpScope {
   PROJECTS_READ("mcp:projects:read"),
   MEMBERS_READ("mcp:members:read"),

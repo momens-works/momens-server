@@ -131,7 +131,6 @@ class ProjectBriefServiceTest {
     MobileBrief brief = projectBriefService.getBrief(PROJECT_ID, CALLER_ID);
 
     assertThat(brief.project()).isEqualTo(snapshot);
-    // 진행률은 project 모듈의 task 경계가 계산한 값을 그대로 싣는다.
     assertThat(brief.progress()).isEqualTo(64);
     // All이 맨 앞(전체 12), 나머지는 라벨 글자수 오름차순과 알파벳순(Risk, Change, Decision, Question).
     assertThat(brief.filters())
@@ -244,7 +243,6 @@ class ProjectBriefServiceTest {
   @Test
   void getSignalSummaryPagePassesSingleTypeForTypeFilter() {
     UUID signalId = UUID.randomUUID();
-    // filter=change는 change 하나만 type으로 넘긴다.
     when(signalListService.listByCreatedRange(
             eq(PROJECT_ID),
             eq(CALLER_ID),

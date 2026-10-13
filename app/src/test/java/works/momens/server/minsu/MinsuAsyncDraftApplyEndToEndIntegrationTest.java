@@ -177,10 +177,8 @@ class MinsuAsyncDraftApplyEndToEndIntegrationTest extends AbstractPostgresIntegr
     return new TaskDraft(GENERATED_TITLE, TaskRole.BACKEND, TaskPriority.HIGH);
   }
 
-  /** convert 결과. 상세 조회에 호출자 토큰이 필요해 함께 돌려준다. */
   private record Converted(UUID taskId, String authorization) {}
 
-  /** convert-to-task를 호출하고 생성된 task의 식별자를 돌려준다. */
   private Converted convert(String slug) throws Exception {
     UserProfile actor = userService.findOrCreate(slug + "@momens.works", "홍길동", null);
     UUID workspace = insertWorkspace(slug);

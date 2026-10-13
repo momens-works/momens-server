@@ -72,7 +72,6 @@ public class PushDelivery {
     return attemptCount >= MAX_ATTEMPTS;
   }
 
-  /** 전송 시도를 클레임한다. 시도 횟수와 claim token, 처리 lease 만료 시각을 기록한다. */
   void claimAttempt(UUID claimToken, Instant leaseUntil) {
     this.attemptCount++;
     this.claimToken = claimToken;

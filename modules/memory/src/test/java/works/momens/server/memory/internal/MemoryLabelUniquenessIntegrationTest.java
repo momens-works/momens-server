@@ -14,18 +14,9 @@ import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.memory.MemorySeedSql;
 
 /**
- * 미러가 레거시의 라벨 UNIQUE 제약을 그대로 갖는지 검증합니다.
+ * local/test에서도 prod와 같은 중복 라벨을 거부해야 합니다.
  *
- * <p>레거시 {@code 000006_fe_contract.sql:186-192}가 {@code memory_candidates}·{@code
- * confirmed_memories}에 워크스페이스 범위 부분 UNIQUE 인덱스를 걸어 둡니다. 이 서버가 두 테이블에 쓰기 시작했으므로 미러도 같은 제약을 가져야 합니다.
- * 미러가 더 느슨하면 prod가 거부할 중복 라벨을 local/test가 통과시킵니다(docs/rules/persistence.md 미러 기준).
- *
- * <p>행동과 정의를 함께 봅니다. 앞의 세 테스트는 거부하는 집합을(같은 워크스페이스 중복은 거부, 다른 워크스페이스는 허용, 라벨 없는 행은 공존) 확인하고, 마지막
- * 테스트는 시스템 카탈로그에서 인덱스 정의 자체를 확인합니다.
- *
- * <p>정의를 따로 보는 이유는 행동만으로는 부분 조건이 드러나지 않기 때문입니다. {@code workspace_id}가 {@code NOT NULL}이고 Postgres
- * 기본이 {@code NULLS DISTINCT}라, 조건 없는 UNIQUE 인덱스도 라벨이 없는 행을 여러 개 허용합니다. 즉 부분 조건을 빼도 앞의 세 테스트는 그대로
- * 통과합니다. 미러의 기준은 결과가 같아 보이는가가 아니라 레거시와 같은가이므로 정의를 직접 봅니다.
+ * <p>조건 없는 UNIQUE도 NULL 라벨의 공존을 허용하므로, 행동 검사만으로는 부분 조건 누락을 잡지 못합니다. 시스템 카탈로그의 인덱스 정의도 확인합니다.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)

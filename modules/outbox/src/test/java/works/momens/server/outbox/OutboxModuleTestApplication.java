@@ -6,14 +6,7 @@ import org.springframework.boot.context.TypeExcludeFilter;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 
-/**
- * 슬라이스 테스트용 부트스트랩.
- *
- * <p>feature 모듈에는 실행 가능한 {@code @SpringBootApplication}이 없으므로, 슬라이스 테스트가 위로 탐색해 찾을
- * {@code @SpringBootConfiguration}을 테스트 스코프에 둔다. {@code @ComponentScan}에 {@code TypeExcludeFilter}를
- * excludeFilters로 명시해, {@code @DataJpaTest} 슬라이스에 모듈의 모든 {@code @Component}가 자동으로 올라오지 않게 한다
- * (signal/project 부트스트랩과 동일).
- */
+/** {@code TypeExcludeFilter}로 JPA 슬라이스에 모듈의 모든 컴포넌트가 등록되는 것을 막습니다. */
 @SpringBootConfiguration
 @EnableAutoConfiguration
 @ComponentScan(

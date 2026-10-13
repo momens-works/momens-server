@@ -7,7 +7,6 @@ import java.util.UUID;
 import works.momens.server.mobile.brief.MobileBrief;
 import works.momens.server.project.core.ProjectSnapshot;
 
-/** {@code GET /api/mobile/projects/{projectId}/brief} 응답. 형식은 docs/spec/openapi.json에서 확인합니다. */
 @Schema(description = "프로젝트 브리프 응답")
 public record BriefResponse(
     @Schema(description = "프로젝트 스냅샷") ProjectResponse project,

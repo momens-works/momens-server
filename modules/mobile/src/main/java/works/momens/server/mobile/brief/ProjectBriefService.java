@@ -42,18 +42,7 @@ import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 @RequiredArgsConstructor
 class ProjectBriefService {
 
-  /**
-   * 시그널 요약 한 페이지의 기본 크기입니다.
-   *
-   * <p>브리프 조회는 첫 페이지를 이 크기로 반환하고, 더보기 엔드포인트도 {@code limit}이 없으면 이 값을 사용합니다.
-   *
-   * <p>접힌 상태에서는 클라이언트가 이 중 최신 3개만 노출합니다. 더보기를 누르면 이미 받은 항목을 먼저 펼쳐 보여주고, 모두 표시한 뒤에는 {@code
-   * next_cursor}로 다음 페이지를 조회해 무한 스크롤을 이어갑니다(2026-07-10 화면설계서). 최신 3개만 노출하는 규칙은 화면 정책이므로, 서버는 응답을
-   * 자르지 않고 클라이언트가 처리합니다.
-   *
-   * <p>이 값은 화면의 기본 페이지 크기를 정하는 UX 설정이고, {@code MAX_PAGE_SIZE}는 서버 보호를 위한 상한입니다. 두 값은 목적이 다르므로 별도로
-   * 관리합니다. 현재 기획 확정값은 20입니다(2026-07-16).
-   */
+  /** 화면의 기본 페이지 크기이며 서버 보호 상한과는 별개입니다. 접힌 화면의 최신 3개 표시는 클라이언트가 처리하므로 서버는 첫 페이지를 자르지 않습니다. */
   private static final int SIGNAL_SUMMARY_PAGE_SIZE = 20;
 
   /** 타입 칩 정렬. 라벨 글자수 오름차순, 같으면 라벨 알파벳순입니다(2026-07-10 기획 확정). All 칩은 정렬에서 빼고 맨 앞에 둡니다. */
@@ -61,7 +50,6 @@ class ProjectBriefService {
       Comparator.comparingInt((MobileBrief.FilterCount chip) -> chip.label().length())
           .thenComparing(MobileBrief.FilterCount::label);
 
-  /** 현재 우선순위 최대 개수. 화면의 상위 4개 표기와 같습니다(2026-07-10 화면설계서). */
   private static final int PRIORITY_LIMIT = 4;
 
   /** 현재 우선순위 후보 상태. 진행 중인 todo와 in_progress만 담고 backlog와 완료 상태는 제외합니다(2026-07-10 기획 확정). */
@@ -98,7 +86,6 @@ class ProjectBriefService {
       throw new BusinessException(
           CommonErrorCode.AUTH_FORBIDDEN, Map.of("project_id", projectId.toString()));
     }
-    // 진행률 계산 책임은 project Gradle 모듈 안의 task 경계에 있다. 여기서는 계산된 값을 그대로 사용한다.
     int progress =
         taskProgressReader
             .progressOf(projectId)
@@ -164,7 +151,6 @@ class ProjectBriefService {
     return new MobileBriefSignalPage(toItems(page.items()), nextCursor(anchor, page));
   }
 
-  /** signal 커서를 기준일 앵커와 함께 감싼다. 다음 페이지가 없으면 null이다. */
   private static String nextCursor(LocalDate anchor, SignalSummaryPage page) {
     return page.nextCursor() == null ? null : BriefSignalCursor.encode(anchor, page.nextCursor());
   }

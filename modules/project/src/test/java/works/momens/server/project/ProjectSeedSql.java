@@ -15,7 +15,6 @@ public final class ProjectSeedSql {
 
   private ProjectSeedSql() {}
 
-  /** users FK(projects.owner_id, tasks.assignee_id)를 만족할 사용자 행을 삽입합니다. */
   public static UUID insertUser(TestEntityManager entityManager, String email) {
     UUID id = UUID.randomUUID();
     entityManager
@@ -28,7 +27,6 @@ public final class ProjectSeedSql {
     return id;
   }
 
-  /** workspaces FK를 만족할 workspace 행을 삽입합니다. */
   public static UUID insertWorkspace(TestEntityManager entityManager, String slug) {
     UUID id = UUID.randomUUID();
     entityManager
@@ -41,7 +39,6 @@ public final class ProjectSeedSql {
     return id;
   }
 
-  /** tasks.project_id FK를 만족할 project 행을 삽입합니다. */
   public static UUID insertProject(
       TestEntityManager entityManager, UUID workspaceId, UUID ownerId) {
     UUID id = UUID.randomUUID();
@@ -57,7 +54,6 @@ public final class ProjectSeedSql {
     return id;
   }
 
-  /** {@code project_owners} 행을 추가합니다. 생성 시각은 현재 시각으로 설정합니다. */
   public static void insertProjectOwner(
       TestEntityManager entityManager, UUID projectId, UUID ownerUserId) {
     insertProjectOwner(entityManager, projectId, ownerUserId, Instant.now());

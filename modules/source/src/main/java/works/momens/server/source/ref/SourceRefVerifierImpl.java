@@ -18,14 +18,7 @@ import works.momens.server.source.SourceErrorCode;
 import works.momens.server.source.SourceRefDetail;
 import works.momens.server.source.SourceRefVerifier;
 
-/**
- * source-ref 검증 표시를 조건부 갱신으로 처리합니다.
- *
- * <p>대상을 조회한 뒤 갱신하지 않고 하나의 갱신 쿼리로 처리합니다. 대상이 없거나 이미 소프트 삭제된 경우는 갱신된 행 수로 판정하므로, 조회와 갱신 사이에 대상이 삭제되는
- * 경우에도 동일한 결과를 반환합니다.
- *
- * <p>읽기 전용으로 매핑된 엔티티는 사용하지 않고 갱신합니다. 해당 엔티티는 변경할 수 없도록 선언되어 있으며, 같은 이유로 별도의 쓰기 경로가 이미 마련되어 있습니다.
- */
+/** 조회와 갱신 사이의 삭제 경합을 피하도록 조건부 UPDATE를 사용합니다. 갱신 행 수로 대상의 존재 여부를 판정합니다. */
 @Component
 @RequiredArgsConstructor
 class SourceRefVerifierImpl implements SourceRefVerifier {

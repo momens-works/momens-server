@@ -14,14 +14,9 @@ interface MilestoneRepository extends JpaRepository<Milestone, UUID> {
   boolean existsByIdAndProjectIdAndDeletedAtIsNull(UUID id, UUID projectId);
 
   /**
-   * 웹 목록 조회용 DTO projection입니다. 엔티티를 영속성 컨텍스트에 올리지 않고 필요한 컬럼만 읽습니다.
+   * 워크스페이스와 프로젝트 생존 여부를 확인하기 위해 projects를 조인합니다. 소유자는 별도 배치 조회로 결합합니다.
    *
-   * <p>{@code milestones}에 {@code workspace_id}가 없어 {@code projects}를 조인합니다. 소속 project가 소프트 삭제되면 그
-   * 마일스톤도 목록에서 빠집니다. 레거시가 조인 조건에 두 {@code deleted_at}을 모두 거는 동작과 같습니다(웹 snapshot 계약 4.4).
-   *
-   * <p>소유자는 여기서 조인하지 않습니다. 레거시는 행마다 상관 서브쿼리로 집계하지만, 계약이 배치 조회를 허용하고 행별 추가 조회를 금지합니다.
-   *
-   * <p>정렬은 레거시와 같은 생성 시각 내림차순입니다. 레거시에 tie-break가 없어 두지 않습니다.
+   * <p>생성 시각 내림차순이며 레거시와 같이 동률 보조 키는 두지 않습니다.
    */
   @Query(
       """

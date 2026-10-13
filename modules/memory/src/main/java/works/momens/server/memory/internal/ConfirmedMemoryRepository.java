@@ -11,14 +11,7 @@ import works.momens.server.memory.ConfirmedMemoryDetail;
 
 interface ConfirmedMemoryRepository extends JpaRepository<ConfirmedMemory, UUID> {
 
-  /**
-   * 웹 목록 조회용 DTO projection입니다. 엔티티를 영속성 컨텍스트에 올리지 않고 필요한 컬럼만 읽습니다.
-   *
-   * <p>소프트 삭제된 메모리를 제외합니다. 상태로는 거르지 않아 {@code INVALIDATED}·{@code ARCHIVED}도 담깁니다(웹 snapshot 계약
-   * 4.4).
-   *
-   * <p>정렬은 레거시와 같은 생성 시각 내림차순입니다. 레거시에 tie-break가 없어 두지 않습니다.
-   */
+  /** 상태와 무관하게 {@code deleted_at}이 없는 행을 조회합니다. 레거시와 같이 생성 시각 내림차순이며 동률 보조 키는 두지 않습니다. */
   @Query(
       """
       select new works.momens.server.memory.ConfirmedMemoryDetail(

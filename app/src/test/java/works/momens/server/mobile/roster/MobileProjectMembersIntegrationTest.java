@@ -17,13 +17,7 @@ import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
-/**
- * {@code GET /api/mobile/projects/{projectId}/members} 실배선 통합 테스트.
- *
- * <p>실토큰(auth public testFixtures)과 실제 PostgreSQL로 보안 체인부터 권한 검사, 검색과 정렬, 응답 shape까지 끝까지 확인합니다.
- * 사용자는 user public API로 만들고, workspace/멤버십/project는 아직 생성 public API가 없어 소유 스키마에 SQL로 시드합니다. 검색(부분
- * 일치, 대소문자 무시)과 정렬(이름 오름차순)은 2026-07-04 가결정 규칙입니다.
- */
+/** 실제 토큰·DB로 멤버 검색과 정렬을 검증합니다. SQL로 fixture를 구성하며 부분 일치·대소문자 무시·이름 정렬은 기획 확인이 남은 가결정입니다. */
 @SpringBootTest
 @AutoConfigureMockMvc
 class MobileProjectMembersIntegrationTest extends AbstractPostgresIntegrationTest {
@@ -97,7 +91,6 @@ class MobileProjectMembersIntegrationTest extends AbstractPostgresIntegrationTes
     addMember(workspace, gyuil.id(), "owner");
     UUID project = insertProject(workspace, gyuil.id(), "members-forbidden-project");
 
-    // 규일만 멤버인 workspace의 project를 진수 토큰으로 조회한다.
     mockMvc
         .perform(
             get("/api/mobile/projects/{projectId}/members", project)

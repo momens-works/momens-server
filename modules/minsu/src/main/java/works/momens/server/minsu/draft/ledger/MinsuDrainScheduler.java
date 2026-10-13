@@ -12,21 +12,11 @@ import works.momens.server.minsu.draft.generation.AsyncGenerationResult;
 import works.momens.server.minsu.draft.generation.AsyncTaskDraftExecutor;
 
 /**
- * 생성 원장 drain.
+ * 생성 원장 drain. push 설정과 독립적으로 drain 설정이 빈 등록과 폴링 여부를 결정한다.
  *
- * <p>drain 축이 꺼져 있으면 이 빈이 등록되지 않아 폴링 자체가 없다. 스케줄링 인프라는 조립 모듈 {@code app}이 항상 켜므로(MOM-0816) 이
- * scheduler는 {@code notification}의 push 설정과 무관하게 자신의 설정 축만으로 동작 여부가 정해진다.
- *
- * <p>주기를 1초로 둔 이유는 원장을 늦게 집을수록 앱이 {@code generating}을 보는 시간이 길어지기 때문이다. 빈 폴링은 {@code
- * (next_attempt_at) WHERE status = 'pending'} 부분 인덱스 덕에 싸다.
- *
- * <p><b>다만 1초가 claim 간격의 하한은 아니다.</b> {@code fixedDelay}는 {@code runPass}가 끝난 뒤부터 세고 {@code
- * runPass}는 배치의 결과 기록까지 블로킹하므로, 실제 하한은 <b>직전 배치에서 가장 느린 시도 + 결과 기록 + 1초</b>다. 그 사이 빈 슬롯이 있어도 새로 적재된
- * 원장은 집히지 않는다. 배치 전체가 하나의 wall-clock 상한을 공유하므로 이 지연의 상한은 {@code execution.attempt-timeout}이다.
- *
- * <p>{@code notification}의 {@code PushSender.runSendPass}처럼 패스 안에서 claim을 반복하는 방식은 여기서 듣지 않는다. 그쪽은
- * 발송 슬롯이 아니라 배치 크기가 한계라 라운드를 돌리면 백로그가 줄지만, minsu는 배치가 슬롯을 다 채운 상태라 라운드를 더 돌려도 claim이 0이다. 지연을 실제로
- * 줄이려면 결과 기록을 워커 스레드로 내려 패스를 논블로킹으로 만들어야 하고, 그것은 이 슬라이스를 넘는다. MVP 물량에서는 수용하고, 값의 재측정은 MOM-0824다.
+ * <p>{@code fixedDelay}는 배치 결과 기록이 끝난 뒤부터 센다. 실행 중 빈 슬롯이 생겨도 다음 주기까지 신규 원장을 claim하지 않으므로, 설정한 주기가
+ * 실제 claim 간격을 보장하지 않는다. 실행 대기에는 {@code execution.attempt-timeout} 상한을 적용하지만 DB 처리 시간은 별도다. 기본 주기의
+ * dev 실측은 MOM-0824에서 다룬다.
  */
 @Slf4j
 @Component

@@ -18,11 +18,6 @@ import works.momens.server.source.BeginInstallCommand;
 import works.momens.server.source.SourceErrorCode;
 import works.momens.server.source.connection.oauth.SourceOAuthProperties.ProviderCredentials;
 
-/**
- * source 연결 시작 시 생성하는 provider 승인 URL과 요청 거부 조건을 검증합니다.
- *
- * <p>승인 URL에 포함된 state를 다시 검증해 요청한 워크스페이스, 사용자, provider 정보가 복원되는지 확인합니다.
- */
 class SourceInstallerImplTest {
 
   private static final UUID WORKSPACE_ID = UUID.randomUUID();

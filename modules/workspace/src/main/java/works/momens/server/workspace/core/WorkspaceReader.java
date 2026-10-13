@@ -13,13 +13,8 @@ import java.util.UUID;
  */
 public interface WorkspaceReader {
 
-  /** workspaceId 한 건을 조회합니다. */
   Optional<WorkspaceDetail> findById(UUID workspaceId);
 
-  /**
-   * userId가 멤버인 워크스페이스를 모두 조회합니다. 정렬은 레거시와 같은 생성 시각 내림차순입니다.
-   *
-   * <p>별도 권한 검사가 필요 없습니다. 멤버십 조인 자체가 접근 범위 필터입니다.
-   */
+  /** 사용자의 멤버십으로 접근 범위를 제한하며 워크스페이스 생성 시각 내림차순으로 반환합니다. */
   List<WorkspaceDetail> listByMemberUserId(UUID userId);
 }

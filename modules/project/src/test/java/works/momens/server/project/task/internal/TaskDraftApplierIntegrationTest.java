@@ -24,12 +24,6 @@ import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskStatus;
 
-/**
- * 조건부 draft 반영 public API 검증(MOM-0820).
- *
- * <p>실제 PostgreSQL에서 baseline 일치 시 반영, 세 필드 중 하나라도 다를 때의 전부-아니면-전무, 소프트 삭제된 task 처리, 반영이 건드리지 않는
- * 필드를 확인합니다.
- */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({JpaAuditingConfig.class, TaskDraftApplierImpl.class})

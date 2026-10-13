@@ -13,7 +13,6 @@ import works.momens.server.project.blocker.BlockedEntityType;
 import works.momens.server.project.blocker.BlockerDetail;
 import works.momens.server.project.blocker.BlockerStatus;
 
-/** blocker 상태와 레거시 task/milestone 참조를 보존합니다. */
 @Getter
 @Entity
 @Table(name = "blockers")

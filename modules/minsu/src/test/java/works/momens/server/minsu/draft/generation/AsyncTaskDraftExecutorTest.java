@@ -20,7 +20,7 @@ import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
 
 /**
- * 시도 전체를 감싸는 wall-clock 상한과 포화 동작을 검증한다(MOM-0819).
+ * 시도 전체를 감싸는 wall-clock 상한과 포화 동작을 검증한다.
  *
  * <p>핵심은 <b>interrupt를 무시하는 호출</b>이다. SDK나 ADC 호출이 interrupt에 응답하지 않으면 {@code cancel(true)}는 효과가 없고
  * underlying thread는 계속 점유된다. 상한이 하는 일은 호출을 취소하는 것이 아니라 <b>호출자를 대기에서 푸는 것</b>이고, 그래야 원장에 결과를 남겨
@@ -113,8 +113,8 @@ class AsyncTaskDraftExecutorTest {
 
     executor.executeAll(List.of(input("하나"), input("둘")));
 
-    // 상한이 지났는데 두 시도 모두 반환하지 않았다. availableSlots가 activeCount 기반이라 이 값이 곧
-    // 영구히 잃은 슬롯 수다.
+    // 상한을 넘겨도 반환하지 않은 두 시도는 activeCount에 남아 슬롯을 점유한다.
+    // 늦게 반환하면 해당 슬롯은 다시 사용할 수 있다.
     assertThat(hungAttempts(meterRegistry)).isEqualTo(2);
 
     // 늦게라도 돌아오면 슬롯이 회수된다. 실행 스레드와 대기 스레드가 결말을 한 번만 가져가지 않으면

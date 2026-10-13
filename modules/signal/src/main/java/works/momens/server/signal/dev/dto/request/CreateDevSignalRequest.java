@@ -10,7 +10,6 @@ import java.time.Instant;
 import java.util.List;
 import works.momens.server.signal.SignalType;
 
-/** dev 데모용 Signal 생성 요청. */
 @Schema(description = "dev 데모용 Signal 생성 요청")
 public record CreateDevSignalRequest(
     @Schema(description = "Signal type", example = "risk") @NotNull SignalType type,
@@ -23,7 +22,6 @@ public record CreateDevSignalRequest(
     @Schema(description = "근거 목록. 생략 또는 빈 배열 허용, 배열 순서가 sort_order") @Valid
         List<Evidence> evidence) {
 
-  /** 요청에서 생략된 evidence를 빈 목록으로 정규화한다. */
   public List<Evidence> evidenceOrEmpty() {
     return evidence == null ? List.of() : evidence;
   }

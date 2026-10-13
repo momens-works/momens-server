@@ -12,14 +12,9 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Immutable;
 
 /**
- * Signal 원본.
+ * worker가 생산하는 Signal의 조회 모델입니다. 사용자 처리 이력은 별도 {@code signal_actions}가 소유합니다.
  *
- * <p>worker가 원천 이벤트를 바탕으로 생성하는 Signal의 조회 모델입니다(ADR-0007). 서버는 Signal을 쓰지 않고 읽기만 하므로 {@code
- * BaseEntity}(앱 생성 식별자·감사)를 상속하지 않고 {@link Immutable}로 둡니다. 사용자 처리 이력은 별도 {@code signal_actions}가
- * 소유하고, 화면 표시 라벨은 {@code type}에서 앱이 파생하므로 별도 status 컬럼은 없습니다.
- *
- * <p>운영에서는 공유 DB의 실제 signals를 validate로 검증하고, local/test는 별도 DB의 미러를 사용합니다([데이터]
- * docs/rules/persistence.md). 목록/상세가 읽는 컬럼만 매핑하며 {@code metadata}, {@code updated_at}은 매핑하지 않습니다.
+ * <p>식별자·생성 시각은 생산자가 정하며, 매핑하지 않는 {@code metadata}·{@code updated_at}은 스키마 검증 대상이 아닙니다.
  */
 @Getter
 @Entity

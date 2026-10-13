@@ -17,14 +17,7 @@ import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.context.EntityRelationReader;
 import works.momens.server.workspace.WorkspaceSeedSql;
 
-/**
- * 엔티티 연결 조회 public API를 검증합니다.
- *
- * <p>실제 PostgreSQL(Testcontainers)를 사용해 source_ref 연결 조회 계약을 검증합니다. 표시 순서와 배치 개수 조회, 소프트 삭제된 연결 제외,
- * 다른 워크스페이스와 연결 종류 제외를 함께 확인합니다.
- *
- * <p>entity_relations는 레거시가 소유하는 읽기 전용 테이블이라 fixture는 엔티티를 사용하지 않고 네이티브 SQL로 구성합니다.
- */
+/** 연결 엔티티는 읽기 전용 매핑이므로 fixture는 네이티브 SQL로 구성합니다. */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(EntityRelationReaderImpl.class)

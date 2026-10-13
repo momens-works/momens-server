@@ -51,8 +51,8 @@ public class AsyncTaskDraftExecutor implements DisposableBean {
   /**
    * 상한을 넘겼는데도 아직 반환하지 않은 시도 수.
    *
-   * <p>{@link #availableSlots()}가 {@code activeCount} 기반이라 이 값이 곧 <b>영구히 잃은 슬롯 수</b>다. 동시성 설정에 도달하면
-   * claim이 완전히 멈춘다. 시도 횟수 분포만 보면 이 상태가 재시도처럼 보이므로 둘을 같이 봐야 한다.
+   * <p>{@link #availableSlots()}는 {@code activeCount}를 사용하므로 이 시도들은 반환할 때까지 슬롯을 점유한다. 동시성 상한만큼 점유하면
+   * claim이 멈춘다. 재시도와 슬롯 포화를 구분하기 위해 시도 횟수 분포와 함께 본다.
    */
   private final AtomicInteger hungAttempts = new AtomicInteger();
 

@@ -6,7 +6,6 @@ import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-/** slug 규칙이 레거시 {@code internal/workspace/slug.go}와 동일하게 동작하는지 검증합니다. */
 class WorkspaceSlugPolicyTest {
 
   @Test

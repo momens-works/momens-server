@@ -1,4 +1,3 @@
-/** Public MCP grant contracts. */
 @NamedInterface("grant")
 package works.momens.server.mcp.grant;
 

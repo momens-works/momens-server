@@ -13,13 +13,6 @@ import works.momens.server.user.UserService;
 import works.momens.server.web.user.dto.request.UpdateMeRequest;
 import works.momens.server.web.user.dto.response.MeResponse;
 
-/**
- * 현재 사용자 프로필 엔드포인트.
- *
- * <p>path는 {@code /api/me} 단일 경로이며 {@code version = "1"} mapping을 둡니다(레거시 path alias 없음,
- * docs/spec/api-versioning.md). 현재 사용자는 {@link CurrentUser#id(Principal)}로 읽습니다({@code
- * Principal.getName()} = userId). 인증 수단에 중립이며, SecurityContext를 채우는 배선은 auth(MOM-8)가 담당합니다.
- */
 @RestController
 @RequiredArgsConstructor
 class UserController implements UserControllerDocs {

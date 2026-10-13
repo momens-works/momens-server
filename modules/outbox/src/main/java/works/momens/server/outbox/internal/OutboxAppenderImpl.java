@@ -10,13 +10,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.outbox.OutboxAppender;
 
-/**
- * api-server가 발행하는 outbox row를 호출자 트랜잭션에 합류시킨다(ADR-0008). {@code issued_by}는 이 서버가 발행하는 이벤트만 다루므로
- * {@code "api-server"}로 고정한다.
- *
- * <p>{@code payload} 직렬화는 web 계층 {@code ObjectMapper} 설정(날짜 포맷, 프로퍼티 네이밍 등)과 절연하기 위해 전용 {@link
- * ObjectMapper}를 쓴다. 일회성 이벤트의 멱등키는 {@code "{event_type}:{aggregate_id}"}로 결정적으로 조립한다(SD-3).
- */
+/** payload 직렬화는 HTTP 응답의 날짜·프로퍼티 네이밍 설정에 영향받지 않도록 전용 {@link ObjectMapper}를 사용합니다. */
 @Component
 @RequiredArgsConstructor
 class OutboxAppenderImpl implements OutboxAppender {

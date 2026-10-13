@@ -23,7 +23,6 @@ public interface ProjectReader {
    */
   Optional<UUID> lockWorkspaceIdOf(UUID projectId);
 
-  /** project 한 건의 스냅샷을 조회합니다. */
   Optional<ProjectSnapshot> findSnapshot(UUID projectId);
 
   /**

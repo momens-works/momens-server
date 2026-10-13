@@ -16,14 +16,10 @@ import works.momens.server.common.persistence.BaseEntity;
 /**
  * Minsu task draft 비동기 생성 원장.
  *
- * <p>convert 트랜잭션이 {@code pending}으로 적재하고 scheduler가 claim해 처리한다. 이 클래스는 원장의 상태와 불변식만 담고, claim·반영
- * 로직은 후속 티켓(MOM-0819·0820)이 붙인다.
+ * <p>baseline은 convert가 {@code tasks}에 실제로 쓴 title·role·priority를 복사한 값이다. 반영 시 fallback 규칙을 재계산하면
+ * 규칙 변경 전 적재된 작업을 {@code user_edited}로 오분류할 수 있다.
  *
- * <p>baseline은 값으로 소유한다. convert가 {@code tasks}에 실제로 쓴 title·role·priority를 적재 시점에 복사해 두고, 반영 시점에
- * 고정 fallback 규칙을 다시 계산해 비교하지 않는다. 재계산 방식은 규칙이 바뀌는 순간 진행 중이던 작업 전부를 {@code user_edited}로 오분류한다.
- *
- * <p>입력 snapshot은 evidence만 jsonb로 담는다. 원장이 evidence의 구조를 해석할 일이 없고, 해석하는 쪽은 프롬프트를 만드는 시점에 다시
- * 역직렬화한다({@code outbox_events.payload}와 같은 방식).
+ * <p>evidence snapshot은 jsonb로 보관하고 프롬프트를 만들 때 역직렬화한다. 원장은 evidence의 내부 구조를 해석하지 않는다.
  */
 @Getter
 @Entity

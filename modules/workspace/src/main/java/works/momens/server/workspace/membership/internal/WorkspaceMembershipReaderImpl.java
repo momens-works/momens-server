@@ -11,7 +11,6 @@ import works.momens.server.workspace.membership.WorkspaceMembershipDetail;
 import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 import works.momens.server.workspace.membership.WorkspaceRole;
 
-/** 멤버십 엔티티를 조회해 public API의 결과 타입으로 변환하는 구현입니다. */
 @Service
 @RequiredArgsConstructor
 class WorkspaceMembershipReaderImpl implements WorkspaceMembershipReader {

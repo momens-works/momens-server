@@ -9,6 +9,5 @@ public record FieldValidationDetails(List<FieldViolation> fields) {
     fields = List.copyOf(fields);
   }
 
-  /** 검증에 실패한 JSON 필드와 사유. */
   public record FieldViolation(String field, String reason) {}
 }

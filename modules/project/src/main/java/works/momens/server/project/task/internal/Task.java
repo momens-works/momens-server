@@ -28,17 +28,9 @@ import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.UpdateTaskCommand;
 
 /**
- * 태스크.
+ * 태스크와 완료기준의 쓰기 aggregate입니다. 다른 aggregate는 식별자로 참조합니다.
  *
- * <p>레거시 {@code momens-api}의 {@code tasks} 테이블과 호환됩니다. 모바일 보드/생성(MOM-62)이 읽고 쓰는 컬럼에 태스크 상세(MOM-63)가
- * 읽는 description, assignee_id를 더해 매핑하고, 모바일이 안 쓰는 레거시 컬럼(milestone_id, due_date)은 웹 이관에서 추가합니다.
- * assignee_id는 다른 모듈(user) 소유 리소스라 엔티티 연관 없이 식별자로만 참조합니다(projectId와 같은 기준).
- *
- * <p>{@code status}와 {@code priority}는 {@code Project}와 같은 기준으로 문자열로 둡니다. DB CHECK 제약이 각각 레거시
- * 5종/4종만 허용합니다. {@code role}은 레거시 {@code tasks}에 없는 신규 속성이지만 단일 값이라 부가 테이블 없이 문자열 컬럼으로 두고,
- * priority와 같은 CHECK 제약 방식을 씁니다(MOM-76, 역할은 다중 선택이 아니라 단일 선택입니다). status/priority와 달리 레거시 DB
- * DEFAULT가 없고 null 기본값도 두지 않습니다. mobile의 {@code @NotBlank} 검증이 항상 값을 보장하므로, 불변식이 깨지면 조용히 기본 역할로 채우는
- * 대신 DB {@code NOT NULL} 제약으로 크게 실패합니다.
+ * <p>웹에서 생성한 태스크는 role이 null일 수 있습니다. milestone과 due date도 함께 저장합니다.
  */
 @Getter
 @Entity

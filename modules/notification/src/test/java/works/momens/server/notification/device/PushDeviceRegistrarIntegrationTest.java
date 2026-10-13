@@ -24,7 +24,6 @@ import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.notification.PushInstallationPlatform;
 
-/** 설치 등록·해제의 소유권 이전, token 이동, 멱등 해제와 활성 token 부분 unique 제약을 실제 PostgreSQL로 검증합니다. */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({JpaAuditingConfig.class, PushDeviceRegistrarImpl.class})

@@ -24,11 +24,6 @@ import works.momens.server.auth.internal.jwt.TokenPair;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.user.UserErrorCode;
 
-/**
- * 웹 인증 전송 정책(쿠키 속성·리다이렉트 대상·실패 코드 매핑) 검증.
- *
- * <p>표면 컨트롤러는 이 결과를 응답에 옮기기만 하므로, 쿠키와 failure-uri 계약은 여기서 지킵니다(MOM-0852).
- */
 class WebAuthSessionImplTest {
 
   private static final String SUCCESS_URI = "http://localhost:3000/auth/success";

@@ -23,6 +23,5 @@ public interface PushDispatcher {
   /** 재시도 시각이 지난 pending delivery가 소진될 때까지 클레임·발송한다. 최초 전송과 재시도가 같은 경로를 지난다. */
   void runSendPass();
 
-  /** 발송 대상 설치 한 건. */
   record Recipient(UUID installationId, UUID targetUserId) {}
 }

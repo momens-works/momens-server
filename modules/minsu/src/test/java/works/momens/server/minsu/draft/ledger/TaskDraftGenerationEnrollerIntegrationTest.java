@@ -27,7 +27,6 @@ import works.momens.server.minsu.draft.json.MinsuJson;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
 
-/** convert 트랜잭션의 원장 적재를 실제 PostgreSQL로 검증한다(MOM-0818). */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(JpaAuditingConfig.class)

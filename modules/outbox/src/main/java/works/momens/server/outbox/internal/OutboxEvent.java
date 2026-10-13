@@ -16,9 +16,9 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 /**
- * append-only outbox 발행 로그(SD-2). {@code id}는 consumer의 polling watermark라 공유 베이스 엔티티의 UUID PK 대신
- * DB {@code bigserial} 시퀀스를 그대로 쓰고, 발행 로그는 수정되지 않으므로 {@code updated_at} 감사 필드도 두지 않는다(persistence
- * 규칙의 append-only 예외, docs/rules/persistence.md).
+ * append-only 발행 로그는 수정되지 않아 {@code updated_at}을 두지 않습니다.
+ *
+ * <p>식별자는 소비자의 polling watermark이므로 UUID 대신 DB의 {@code bigserial}을 사용합니다.
  */
 @Getter
 @Entity

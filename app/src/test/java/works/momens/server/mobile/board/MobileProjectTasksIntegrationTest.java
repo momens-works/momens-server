@@ -20,13 +20,7 @@ import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
-/**
- * {@code /api/mobile/projects/{projectId}/tasks} 보드 조회와 생성을 실제 Spring 컨텍스트로 확인하는 통합 테스트입니다.
- *
- * <p>실제 토큰(auth 모듈이 제공하는 test fixture)과 실제 PostgreSQL을 사용해 보안 필터부터 권한 검사, 보드 그룹 구성, 라벨 발급, 응답 형태까지
- * 검증합니다. 사용자는 user public API로 생성합니다. workspace와 멤버십, project, task는 아직 생성 public API가
- * 없거나(workspace 쪽) 시드를 간단히 하려고 각 모듈 스키마에 SQL로 직접 넣습니다.
- */
+/** 실제 토큰과 PostgreSQL로 보안 필터부터 보드 조합·라벨 발급까지 검증합니다. 조회 fixture는 생성 API와 독립적으로 SQL로 구성합니다. */
 @SpringBootTest
 @AutoConfigureMockMvc
 class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest {

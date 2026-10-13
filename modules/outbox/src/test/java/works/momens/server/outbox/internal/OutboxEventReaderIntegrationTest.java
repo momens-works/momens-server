@@ -17,7 +17,6 @@ import org.springframework.context.annotation.Import;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.outbox.OutboxEventView;
 
-/** consumer 조회의 watermark(id) 필터, DB 시계 기반 안전 지연 prefix-cap, id 오름차순을 실제 PostgreSQL로 검증합니다. */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(OutboxEventReaderImpl.class)

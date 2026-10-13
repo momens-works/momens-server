@@ -27,9 +27,7 @@ public record TaskDetail(
     List<OpenQuestion> openQuestions,
     String nextAction) {
 
-  /** 완료기준 항목 한 건. */
   public record ChecklistItem(UUID id, String title, boolean completed) {}
 
-  /** 열린질문 한 건. */
   public record OpenQuestion(UUID id, String body) {}
 }

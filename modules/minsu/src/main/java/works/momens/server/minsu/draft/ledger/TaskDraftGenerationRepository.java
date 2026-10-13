@@ -37,20 +37,13 @@ interface TaskDraftGenerationRepository extends JpaRepository<TaskDraftGeneratio
   Instant currentDatabaseTime();
 
   /**
-   * 아직 생성이 진행 중인 원장이 있는지 판정한다.
+   * 생성 진행 여부를 DB 시계와 저장된 deadline으로 판정한다. scheduler가 멈추거나 비활성화되어도 읽기 투영은 deadline에 닫힌다.
    *
-   * <p>나이 상한을 DB에서 비교 하나로 끝내므로 scheduler가 멈춰 있어도, 설정을 꺼서 rollback해도 앱이 {@code generating}에 무기한 갇히지
-   * 않는다. 상한을 scheduler가 강제하게 두면 scheduler가 멈춘 상황을 막으려는 장치를 그 scheduler가 실행하는 순환이 된다.
+   * <p>빈 값(미종료 원장 없음)과 {@code false}(deadline 경과)는 공개 계약에서 모두 {@code ready}다. {@code true}만 {@code
+   * generating}이며, deadline 경과는 별도 운영 지표로 센다.
    *
-   * <p>결과가 셋으로 갈린다. 빈 값은 미종료 원장이 없다는 뜻이고({@code ready}), {@code true}는 아직 창이 열려 있다는 뜻이며({@code
-   * generating}), {@code false}는 deadline이 지나 투영이 닫는 경우다. 앞의 둘은 공개 계약에서 모두 {@code ready}지만 운영에서는
-   * 구분해야 한다. deadline으로 닫힌 건수가 0이 아니면 생성이 제때 끝나지 않았다는 뜻이라 경보 대상이기 때문이다. {@code EXISTS} 하나로는 이 구분이
-   * 나오지 않는다.
-   *
-   * <p>{@code task_id}가 UNIQUE라 미종료 행은 많아야 하나다.
-   *
-   * <p><b>이 3분기는 {@code read_deadline_at}이 NOT NULL이라는 데 기대고 있다.</b> nullable이 되면 행이 있는데도 빈 값이 돌아와
-   * "원장 없음"과 구분되지 않고 조용히 {@code ready}가 된다. 컬럼 제약을 풀려면 이 판정부터 바꿔야 한다.
+   * <p>{@code task_id} UNIQUE로 대상은 최대 한 행이다. {@code read_deadline_at}의 NOT NULL 제약을 풀면 원장 없음과
+   * deadline 누락을 구분할 수 없으므로 이 판정도 함께 바꿔야 한다.
    */
   @Query(
       value =
@@ -92,19 +85,12 @@ interface TaskDraftGenerationRepository extends JpaRepository<TaskDraftGeneratio
   List<TaskDraftGeneration> lockExpiredProcessing(@Param("limit") int limit);
 
   /**
-   * 원장 운영 지표를 한 번에 집계한다.
+   * 미종료 원장만 집계해 완료 이력 증가가 조회 범위를 넓히지 않게 한다. {@code status <> 'completed'} 조건은 미종료 부분 인덱스와 맞춰 유지한다.
    *
-   * <p>여섯 값이 모두 미종료 행만 필요해 스캔을 {@code status <> 'completed'}로 좁힌다. 미종료 집합은 처리량에 묶여 유계이므로 테이블이 커져도
-   * 비용이 늘지 않는다. {@code completed} 건수를 여기에 넣지 않는 이유가 이것이다. 하나만 넣어도 전체 스캔이 된다.
+   * <p>{@code lease_expires_at}과 {@code NOW()}는 DB 시계지만 {@code created_at}은 JPA Auditing의 앱 시계다. 시계
+   * 차이로 음수가 된 나이는 {@code GREATEST}로 0에서 자른다.
    *
-   * <p>WHERE 절이 {@code idx_minsu_task_draft_generations_unfinished}의 부분 인덱스 술어와 <b>문자 그대로</b> 같아야
-   * planner가 그 인덱스를 쓴다. 조건을 바꿀 때 마이그레이션도 함께 봐야 한다.
-   *
-   * <p>{@code lease_expires_at}은 claim이 DB 시계로 계산해 저장한 값이라 여기서 {@code NOW()}와 빼는 것이 같은 시계 안의 연산이다.
-   * 반면 <b>{@code created_at}은 JPA Auditing이 애플리케이션 시계로 쓴다.</b> 두 시계가 어긋나면 나이가 음수가 될 수 있어 {@code
-   * GREATEST}로 0에서 자른다. 편차는 보통 밀리초 단위이고, 이 지표가 보려는 것은 정지로 인한 큰 양수라 0 절단이 판정을 가리지 않는다.
-   *
-   * <p>별칭을 큰따옴표로 감싼 것은 Postgres가 따옴표 없는 식별자를 소문자로 접기 때문이다. interface projection은 별칭과 속성명을 맞춰야 한다.
+   * <p>PostgreSQL의 식별자 소문자 변환을 피하고 interface projection 속성과 맞추기 위해 별칭을 큰따옴표로 감싼다.
    */
   @Query(value = SNAPSHOT_UNFINISHED_SQL, nativeQuery = true)
   LedgerSnapshotRow snapshotUnfinished();

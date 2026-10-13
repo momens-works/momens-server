@@ -231,7 +231,7 @@ class McpReadToolServiceTest {
                 + ": No name"
                 + "\n- [2026-09-27 03:04 UTC] comment · Unknown author: Deleted author")
         .doesNotContain("@example.com");
-    verify(users).getProfiles(List.of(userId)); // Existing assignee lookup.
+    verify(users).getProfiles(List.of(userId));
     verify(users, times(1)).getProfiles(List.of(userId, bobId, missingId, unnamedId));
     verifyNoMoreInteractions(users);
   }
@@ -248,7 +248,7 @@ class McpReadToolServiceTest {
             "activities (2):"
                 + "\n- [2026-09-27 03:04 UTC] comment · Unknown author: Comment"
                 + "\n- [2026-09-27 03:04 UTC] update · Unknown author: Progress");
-    verify(users).getProfiles(List.of(userId)); // Only the existing assignee lookup.
+    verify(users).getProfiles(List.of(userId));
     verifyNoMoreInteractions(users);
   }
 

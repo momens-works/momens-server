@@ -7,16 +7,7 @@ import works.momens.server.source.connection.oauth.ProviderDefinition.ClientAuth
 import works.momens.server.source.connection.oauth.ProviderDefinition.IdentityMethod;
 import works.momens.server.source.connection.oauth.ProviderDefinition.TokenBodyFormat;
 
-/**
- * provider 이름에 해당하는 OAuth 승인 URL 생성 규칙을 조회합니다.
- *
- * <p>지원하는 provider는 GitHub, Slack, Notion, Figma이며 각각 승인 URL과 scope 규칙이 다릅니다. Slack은 여러 scope를 쉼표로
- * 연결해 별도 파라미터로 전달하고, Notion은 scope 대신 {@code owner}를 전달하며, Figma는 두 scope를 공백으로 연결합니다. 각 값과 조합 방식은
- * 레거시의 규칙을 따릅니다.
- *
- * <p>provider 이름을 비교할 때는 대소문자와 앞뒤 공백을 무시합니다. 웹에서 소문자 이름을 전달하기 때문입니다. 지원하지 않는 이름은 빈 값을 반환하며, 사용할 수
- * 없는 provider로 처리할지는 호출하는 쪽에서 결정합니다.
- */
+/** provider 이름의 대소문자와 앞뒤 공백을 무시하며, 지원하지 않는 이름은 빈 값으로 반환합니다. */
 class OAuthProviderRegistry {
 
   static final String GITHUB = "GITHUB";

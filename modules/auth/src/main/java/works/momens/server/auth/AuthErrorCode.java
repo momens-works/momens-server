@@ -3,7 +3,6 @@ package works.momens.server.auth;
 import lombok.RequiredArgsConstructor;
 import works.momens.server.common.api.ErrorCode;
 
-/** auth 모듈의 Standard 에러 코드. */
 @RequiredArgsConstructor
 public enum AuthErrorCode implements ErrorCode {
   AUTH_GOOGLE_TOKEN_INVALID(401, "Google ID 토큰이 유효하지 않습니다."),

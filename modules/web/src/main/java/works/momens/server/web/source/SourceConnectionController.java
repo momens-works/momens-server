@@ -12,12 +12,6 @@ import works.momens.server.common.api.CurrentUser;
 import works.momens.server.web.source.dto.response.SourceConnectionsResponse;
 import works.momens.server.web.source.dto.response.SourceInstallResponse;
 
-/**
- * 웹 source 연결 endpoint입니다.
- *
- * <p>성공 응답은 레거시 형식을 유지합니다. 연결 목록은 {@code source_connections}로 감싸고, 연결 시작은 provider 승인 URL 하나만 포함해
- * 응답합니다.
- */
 @RestController
 @RequestMapping("/api/workspaces/{workspaceId}/source-connections")
 @RequiredArgsConstructor

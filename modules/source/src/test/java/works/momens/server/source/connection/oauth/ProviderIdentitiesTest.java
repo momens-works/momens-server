@@ -7,11 +7,6 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-/**
- * provider별 응답에서 외부 계정 정보를 추출하는 규칙을 검증합니다.
- *
- * <p>레거시의 응답 해석 방식을 동일하게 구현했는지 확인합니다.
- */
 class ProviderIdentitiesTest {
 
   @Test

@@ -3,7 +3,6 @@ package works.momens.server.workspace.membership;
 import lombok.RequiredArgsConstructor;
 import works.momens.server.common.api.ErrorCode;
 
-/** 멤버십의 존재 여부와 역할 판정 규칙에서 발생하는 에러 코드입니다. */
 @RequiredArgsConstructor
 public enum MembershipErrorCode implements ErrorCode {
   WORKSPACE_MEMBER_NOT_FOUND(404, "워크스페이스 멤버를 찾을 수 없습니다."),

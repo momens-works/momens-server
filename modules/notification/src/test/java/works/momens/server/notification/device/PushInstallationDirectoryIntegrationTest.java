@@ -16,7 +16,6 @@ import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.notification.PushInstallationPlatform;
 import works.momens.server.notification.device.PushInstallationDirectory.InstallationSnapshot;
 
-/** delivery nested 모듈에 여는 설치 원장 계약(활성 android 조회·id 조회·무효 token 비활성화)을 실제 PostgreSQL로 검증합니다. */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({

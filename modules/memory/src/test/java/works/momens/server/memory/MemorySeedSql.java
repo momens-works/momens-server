@@ -38,7 +38,6 @@ public final class MemorySeedSql {
     return id;
   }
 
-  /** {@code review_actions.workspace_id} FK를 만족할 워크스페이스 행을 넣습니다. */
   public static UUID insertWorkspace(TestEntityManager entityManager) {
     UUID id = UUID.randomUUID();
     entityManager
@@ -51,7 +50,6 @@ public final class MemorySeedSql {
     return id;
   }
 
-  /** {@code review_actions.reviewer_user_id} FK를 만족할 사용자 행을 넣습니다. */
   public static UUID insertUser(TestEntityManager entityManager) {
     UUID id = UUID.randomUUID();
     entityManager
@@ -64,7 +62,6 @@ public final class MemorySeedSql {
     return id;
   }
 
-  /** 리뷰를 기다리는 {@code PROPOSED} 후보를 넣습니다. */
   public static UUID insertProposedCandidate(TestEntityManager entityManager, UUID workspaceId) {
     UUID id = UUID.randomUUID();
     entityManager
@@ -79,7 +76,6 @@ public final class MemorySeedSql {
     return id;
   }
 
-  /** 확정 메모리 한 건을 넣습니다. */
   public static UUID insertMemory(
       TestEntityManager entityManager, UUID workspaceId, String status) {
     UUID id = UUID.randomUUID();

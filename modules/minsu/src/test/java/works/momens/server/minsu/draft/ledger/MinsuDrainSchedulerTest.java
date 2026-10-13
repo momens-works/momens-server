@@ -28,7 +28,6 @@ import works.momens.server.minsu.draft.generation.GenerationOutcome;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
 
-/** drain 주기의 게이트와 짝짓기를 검증한다(MOM-0819). */
 class MinsuDrainSchedulerTest {
 
   private final MinsuConfigStatus configStatus = mock(MinsuConfigStatus.class);
@@ -114,8 +113,8 @@ class MinsuDrainSchedulerTest {
     when(executor.availableSlots()).thenReturn(1);
     when(ledger.claimDue(1)).thenThrow(new IllegalStateException("DB 연결 실패"));
 
-    // 예외가 올라가면 fixedDelay 스케줄러는 그 자리에서 멈춘다. 그러면 원장만 쌓이고 아무도 처리하지
-    // 않는데, 그 상태는 설정을 끈 것과 구분되지 않는다.
+    // 주기 실패를 기록하되 마지막 성공 시각을 갱신하지 않아 정지를 관측할 수 있어야 한다.
+    // 다음 호출에서 처리할 수 있도록 예외는 주기 경계에서 처리한다.
     assertThatCode(scheduler::drain).doesNotThrowAnyException();
   }
 
@@ -163,7 +162,7 @@ class MinsuDrainSchedulerTest {
         .withPropertyValues("momens.minsu.task-draft.async.drain=false")
         .run(context -> assertThat(context).doesNotHaveBean(MinsuDrainScheduler.class));
     runner.run(context -> assertThat(context).doesNotHaveBean(MinsuDrainScheduler.class));
-    // 스케줄링 인프라는 app이 항상 켜므로(MOM-0816) push를 꺼도 minsu drain은 자신의 축만 따른다.
+    // 스케줄링 인프라는 app이 항상 켜므로 push를 꺼도 minsu drain은 자신의 설정만 따른다.
     runner
         .withPropertyValues(
             "momens.minsu.task-draft.async.drain=true", "momens.notification.push.enabled=false")

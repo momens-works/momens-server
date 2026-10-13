@@ -18,13 +18,6 @@ import works.momens.server.mobile.signal.dto.response.SignalListResponse;
 import works.momens.server.project.core.ProjectErrorCode;
 import works.momens.server.signal.SignalErrorCode;
 
-/**
- * {@code /api/mobile/projects/{projectId}/signals} OpenAPI 문서. Swagger 애너테이션을 컨트롤러 구현과
- * 분리합니다(docs/spec/openapi.md).
- *
- * <p>401/403은 보안 필터가 Standard shape로 응답하고, 없는 project는 PROJECT_NOT_FOUND(404), project는 있는데
- * workspace 멤버가 아니면 AUTH_FORBIDDEN(403)입니다.
- */
 @Tag(name = "Signal", description = "모바일 Signal API")
 interface SignalControllerDocs {
 

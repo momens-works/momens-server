@@ -13,7 +13,6 @@ public final class MobileDraftStatus {
 
   private MobileDraftStatus() {}
 
-  /** 응답으로 반환하는 draft 생성 상태 값입니다. */
   public static String key(DraftStatus status) {
     return status.name().toLowerCase(Locale.ROOT);
   }

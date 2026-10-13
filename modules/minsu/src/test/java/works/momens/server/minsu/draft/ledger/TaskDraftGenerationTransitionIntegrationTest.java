@@ -17,15 +17,10 @@ import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 
 /**
- * 엔티티 전이가 마이그레이션의 CHECK를 만족하는지 실제 PostgreSQL로 검증한다(MOM-0819).
+ * 엔티티 전이가 DB CHECK를 통과하는지 검증한다. 제약을 일부러 위반하는 {@link TaskDraftGenerationRepositoryIntegrationTest}와
+ * 반대 방향을 확인한다.
  *
- * <p>MOM-0817의 제약 테스트는 native update로 불변식을 <b>위반</b>시켜 DB가 막는지 봤다. 여기서는 반대 방향으로, 코드가 실제로 수행하는 전이가 그
- * 제약을 <b>통과</b>하는지 본다. 두 방향이 모두 있어야 제약이 과하게 좁은 경우와 넓은 경우를 다 잡는다.
- *
- * <p>전이를 native bulk update가 아니라 엔티티 mutation으로 구현한 이유도 함께 확인한다. JPQL이나 native update는 JPA Auditing
- * 리스너를 우회해 {@code updated_at}이 그대로 남는데, {@code docs/rules/persistence.md}는 수정 테이블의 {@code
- * updated_at}을 Auditing으로 관리하도록 정한다. {@code notification}의 {@code PushDelivery}도 같은 이유로 mutation을
- * 쓴다.
+ * <p>native bulk update는 JPA Auditing을 우회하므로 엔티티 mutation이 {@code updated_at}을 갱신하는지도 검증한다.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)

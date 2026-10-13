@@ -37,15 +37,10 @@ import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
 
 /**
- * 포화 뒤 재시작 복구를 <b>하나의 시나리오</b>로 검증한다(MOM-0819).
+ * 포화 중 claim이 중단되고 재시작 뒤 lease 만료 원장이 scheduler를 통해 처리되는 연결을 검증한다.
  *
- * <p>{@code AsyncTaskDraftExecutorTest}는 슬롯이 묶이는 것까지, {@code
- * TaskDraftGenerationLedgerIntegrationTest}는 lease 만료 회수까지 각각 본다. 둘을 따로 보면 <b>정작 중요한 연결</b>이 빠진다.
- * interrupt를 무시하는 호출이 붙들고 있던 실제 원장 행이 재시작 뒤 scheduler를 통해 끝까지 처리되는지다. 그 연결이 끊어져도 두 테스트는 모두 통과한다.
- *
- * <p>실행기는 mock으로 둔다. 여기서 보려는 것은 원장과 scheduler의 복구 경로이고, 멈춘 호출이 스레드를 놓지 않는다는 성질 자체는 {@code
- * AsyncTaskDraftExecutorTest}가 진짜 스레드로 확인한다. 여기서 재현하는 것은 그 성질이 원장에 남기는 <b>흔적</b>이다. claim은 커밋됐는데 결과
- * 기록이 없는 행과, 그동안 0으로 떨어진 빈 슬롯.
+ * <p>실행기는 mock으로 두고, 결과 없이 커밋된 claim과 0인 빈 슬롯으로 프로세스 중단 상태를 재현한다. interrupt를 무시하는 호출의 실제 스레드 점유는
+ * {@code AsyncTaskDraftExecutorTest}가 검증한다.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)

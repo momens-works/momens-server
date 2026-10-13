@@ -11,15 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.context.EntityRelationCommand;
 import works.momens.server.context.EntityRelationWriter;
 
-/**
- * 레거시 {@code relation/repository.go}의 {@code LinkWithType}을 옮긴 구현입니다.
- *
- * <p>가장 최근 행 하나를 보고 세 갈래로 갈립니다. 활성이면 no-op, 소프트 삭제면 되살리기, 없으면 INSERT입니다. 레거시가 같은 순서 ({@code ORDER
- * BY created_at DESC LIMIT 1})로 판단하므로 중복 행이 이미 쌓인 워크스페이스에서도 두 서버의 결과가 같습니다.
- *
- * <p>{@code unlink}는 레거시의 {@code Unlink}와 같이 조건부 UPDATE 한 번으로 처리합니다. 대상을 먼저 조회하지 않으므로 조회와 삭제 사이에 다른
- * 요청이 실행되어도 결과가 달라지지 않으며, 갱신된 행 수로 삭제할 연결이 있었는지 판단합니다.
- */
+/** 중복 연결이 이미 있어도 레거시와 같은 행을 선택하도록 생성 시각이 가장 최근인 행의 상태로 upsert를 판단합니다. */
 @Service
 @RequiredArgsConstructor
 class EntityRelationWriterImpl implements EntityRelationWriter {

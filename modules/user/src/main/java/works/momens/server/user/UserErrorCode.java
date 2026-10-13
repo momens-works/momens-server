@@ -3,11 +3,6 @@ package works.momens.server.user;
 import lombok.RequiredArgsConstructor;
 import works.momens.server.common.api.ErrorCode;
 
-/**
- * user 도메인 에러 코드.
- *
- * <p>공통 코드를 재사용하지 않고 도메인 의미가 드러나는 코드를 모듈이 소유합니다(docs/spec/api-response-error-codes.md).
- */
 @RequiredArgsConstructor
 public enum UserErrorCode implements ErrorCode {
   USER_NOT_FOUND(404, "사용자를 찾을 수 없습니다."),

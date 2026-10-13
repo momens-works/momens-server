@@ -3,14 +3,7 @@ package works.momens.server.workspace.core.internal;
 import java.util.Set;
 import java.util.function.Predicate;
 
-/**
- * workspace slug 규칙.
- *
- * <p>레거시 {@code internal/workspace/slug.go}의 규칙을 그대로 이관했습니다. 형식 검증, 예약어 판정, 워크스페이스 이름으로부터 slug를
- * 생성하는 규칙, 이미 사용 중인 경우 다음 후보를 찾는 규칙을 한곳에서 관리합니다. 조회(H021), 생성(H019), 수정(H024)이 모두 동일한 규칙을 사용합니다.
- *
- * <p>slug의 최대 길이는 63자입니다. 상한에 맞춰 자른 뒤 앞뒤 하이픈을 다시 제거하므로 최종 결과는 63자보다 짧을 수 있습니다.
- */
+/** 조회·생성·수정이 공유하는 slug 규칙입니다. 이름에서 생성한 slug와 사용자가 직접 입력한 slug의 정규화 규칙은 다릅니다. */
 final class WorkspaceSlugPolicy {
 
   static final int MAX_LENGTH = 63;
@@ -55,7 +48,6 @@ final class WorkspaceSlugPolicy {
     return rawSlug == null ? "" : rawSlug.strip();
   }
 
-  /** 길이가 2자 이상 63자 이하인지, 소문자와 숫자와 하이픈만 사용하는지, 하이픈이 처음이나 끝에 오거나 연속되지 않는지 검증합니다. */
   static boolean isValid(String slug) {
     if (slug.length() < MIN_LENGTH || slug.length() > MAX_LENGTH) {
       return false;
@@ -80,7 +72,6 @@ final class WorkspaceSlugPolicy {
     return true;
   }
 
-  /** 레거시에서 사용을 제한한 예약어 22개에 해당하는지 확인합니다. */
   static boolean isReserved(String slug) {
     return RESERVED.contains(slug);
   }

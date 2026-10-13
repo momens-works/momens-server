@@ -2,7 +2,6 @@ package works.momens.server.project.milestone.internal;
 
 import java.util.Optional;
 
-/** 마일스톤의 {@code status} 값입니다. {@code milestones.status} CHECK 제약과 같은 값 집합을 소유합니다. */
 enum MilestoneStatus {
   PLANNED("planned"),
   ACTIVE("active"),
