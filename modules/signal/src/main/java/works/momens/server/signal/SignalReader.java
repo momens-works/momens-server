@@ -30,6 +30,5 @@ public interface SignalReader {
       String description,
       String impact) {}
 
-  /** task draft 생성에 쓰는 근거 의미 값(대상·변화·영향). */
   record DraftEvidence(String target, String change, String impact) {}
 }

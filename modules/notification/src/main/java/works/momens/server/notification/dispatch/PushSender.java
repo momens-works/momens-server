@@ -36,7 +36,6 @@ class PushSender {
   private final ProjectReader projectReader;
   private final FcmClient fcmClient;
 
-  /** 재시도 시각이 지난 pending delivery가 소진될 때까지 클레임·발송한다. 최초 전송과 재시도가 같은 경로를 지난다. */
   public void runSendPass() {
     for (int round = 0; round < MAX_ROUNDS_PER_PASS; round++) {
       List<ClaimedPushDelivery> claims = pushDeliveryLedger.claimDue(CLAIM_BATCH_SIZE);

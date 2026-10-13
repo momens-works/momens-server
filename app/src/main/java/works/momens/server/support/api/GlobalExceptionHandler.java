@@ -30,15 +30,9 @@ import works.momens.server.common.api.FieldValidationDetails;
 import works.momens.server.common.api.FieldValidationException;
 
 /**
- * Standard 모드 에러 응답을 한곳에서 렌더링하는 전역 예외 핸들러.
+ * Spring MVC 예외의 status·헤더는 보존하고 본문만 공통 에러 형식으로 변환합니다. 내부 예외 메시지·SQL·secret은 응답에 노출하지 않습니다.
  *
- * <p>{@link ResponseEntityExceptionHandler}를 상속해 Spring MVC 표준 예외(405/415/400 등)는 프레임워크가 정한 HTTP
- * status를 보존하고, body만 docs/spec/api-response-error-codes.md의 Standard 에러 shape로 통일합니다. 도메인·애플리케이션
- * 예외({@link BusinessException})와 예상 밖 예외(500)는 직접 처리합니다. 내부 예외 메시지·stack trace·SQL·secret은 응답에 노출하지
- * 않습니다.
- *
- * <p>인증/인가 거부(401/403) 본문은 필터 단계에서 발생해 여기서 잡히지 않습니다. SecurityFilterChain의 entry point/handler 배선은
- * 인증/인가 구현 시점(MOM-8)에 추가합니다.
+ * <p>필터 단계의 인증·인가 거부는 여기서 잡히지 않으므로 auth의 entry point와 denied handler가 처리합니다.
  */
 @Slf4j
 @RestControllerAdvice
@@ -63,7 +57,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         .body(ErrorResponse.of(errorCode.code(), errorCode.defaultMessage(), null));
   }
 
-  /** Bean Validation 실패는 {@code details.fields}로 풍부하게 매핑합니다. */
   @Override
   protected ResponseEntity<Object> handleMethodArgumentNotValid(
       MethodArgumentNotValidException ex,

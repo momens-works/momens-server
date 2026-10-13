@@ -42,7 +42,6 @@ class SignalCreatedDeliveryMaterializer {
   private final SignalReader signalReader;
   private final WorkspaceMembershipReader workspaceMembershipReader;
 
-  /** 한 폴링 구간을 materialize한다. */
   @Transactional
   public void materialize() {
     NotificationConsumerOffset offset = lockOrSeed();

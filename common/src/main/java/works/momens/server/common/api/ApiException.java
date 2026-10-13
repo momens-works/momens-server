@@ -15,7 +15,6 @@ import java.lang.annotation.Target;
 @Repeatable(ApiExceptions.class)
 public @interface ApiException {
 
-  /** 문서화할 {@link ErrorCode} enum 클래스입니다. */
   Class<? extends ErrorCode> value();
 
   /**

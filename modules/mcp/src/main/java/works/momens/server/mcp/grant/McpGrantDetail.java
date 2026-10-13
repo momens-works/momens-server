@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/** Read model for the MCP permission aggregate. */
 public record McpGrantDetail(
     UUID id,
     UUID userId,

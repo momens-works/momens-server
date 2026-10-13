@@ -7,7 +7,6 @@ import java.security.Principal;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-/** 보호 API의 현재 사용자 식별자 추출 계약 단위 검증. */
 class CurrentUserTest {
 
   @Test

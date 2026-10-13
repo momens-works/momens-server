@@ -19,14 +19,7 @@ import works.momens.server.workspace.membership.WorkspaceMembershipDetail;
 import works.momens.server.workspace.membership.WorkspaceMembershipWriter;
 import works.momens.server.workspace.membership.WorkspaceRole;
 
-/**
- * 워크스페이스 멤버십 쓰기 기능을 구현합니다.
- *
- * <p>멤버 추가는 단일 INSERT 쿼리로 처리해 같은 사용자에 대한 요청이 동시에 들어와도 복합 기본 키가 중복 삽입을 방지하도록 합니다. 역할 변경은 조회한 엔티티의 값을
- * 변경하고 JPA 더티 체킹으로 반영하며, 멤버 제거는 엔티티를 삭제하는 방식으로 처리합니다.
- *
- * <p>owner 보호와 자기 자신을 멤버에서 제거할 수 없다는 규칙은 이 구현에서 검증합니다.
- */
+/** owner 보호와 자기 제거 금지를 검증합니다. 멤버 추가는 단일 INSERT와 복합 PK로 동시 요청의 중복을 방지합니다. */
 @Service
 @RequiredArgsConstructor
 class WorkspaceMembershipWriterImpl implements WorkspaceMembershipWriter {

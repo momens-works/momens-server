@@ -8,7 +8,6 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.web.servlet.config.annotation.ApiVersionConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/** Test bootstrap for the MCP module's JPA slice tests. */
 @SpringBootConfiguration
 @EnableAutoConfiguration
 @ComponentScan(

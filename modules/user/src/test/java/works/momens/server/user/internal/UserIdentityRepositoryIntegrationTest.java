@@ -16,15 +16,7 @@ import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.user.UserService;
 
-/**
- * {@code user_identities} 스키마와 엔티티 매핑을 검증합니다.
- *
- * <p>애플리케이션에서 생성한 기본 키와 감사 필드가 정상적으로 저장되는지 확인하고, 마이그레이션에서 정의한 UNIQUE, CHECK, ON DELETE CASCADE 제약이
- * 실제로 동작하는지도 함께 검증합니다.
- *
- * <p>제약 위반을 검증할 때는 해당 시점에서 flush를 호출해 SQL이 즉시 실행되도록 해야 합니다. flush를 하지 않으면 테스트 종료 시 트랜잭션 정리 과정에서 예외가
- * 발생하면서, 테스트는 제약을 검증한 것처럼 보이지만 실제로는 아무것도 검증하지 못하게 됩니다.
- */
+/** 제약 위반은 assertion 안에서 flush해 검증합니다. 트랜잭션 종료 시점까지 미루면 해당 assertion이 SQL 실패를 확인하지 못합니다. */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(JpaAuditingConfig.class)

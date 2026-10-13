@@ -108,11 +108,7 @@ class MinsuLedgerMetrics {
     return (System.nanoTime() - refreshedAtNanos) / 1_000_000_000.0;
   }
 
-  /**
-   * 한 시점의 원장 단면.
-   *
-   * <p>첫 주기 전에는 {@link #EMPTY}다. 값이 0이라 "미종료 없음"과 구분되지 않지만, 그 구분은 스냅샷 나이 gauge가 한다.
-   */
+  /** 한 시점의 원장 단면. 첫 집계 전에는 {@link #EMPTY}를 사용한다. 집계 실패 시 직전 값이 남으므로 스냅샷 나이 gauge와 함께 해석한다. */
   private record Snapshot(
       long pending,
       long processing,

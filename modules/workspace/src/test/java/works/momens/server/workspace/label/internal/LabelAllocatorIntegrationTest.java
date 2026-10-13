@@ -25,12 +25,6 @@ import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.workspace.WorkspaceSeedSql;
 import works.momens.server.workspace.label.LabelAllocator;
 
-/**
- * 라벨 발급 동작 검증.
- *
- * <p>PostgreSQL(Testcontainers)에 Flyway 마이그레이션을 적용한 환경에서 세 가지를 검증합니다. 워크스페이스마다 라벨 번호가 1부터 독립적으로
- * 증가하는지, 동일한 워크스페이스 안에서도 접두사별로 번호가 독립적으로 증가하는지, 동일한 워크스페이스에서 라벨을 동시에 발급해도 번호가 중복되지 않는지 확인합니다.
- */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({JpaAuditingConfig.class, LabelAllocatorImpl.class})

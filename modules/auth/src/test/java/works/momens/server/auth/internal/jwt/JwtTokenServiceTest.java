@@ -23,7 +23,6 @@ import works.momens.server.auth.internal.refresh.RefreshToken;
 import works.momens.server.auth.internal.refresh.RefreshTokenStore;
 import works.momens.server.common.api.BusinessException;
 
-/** 우리 access token 발급/검증 round-trip과 거부 경로 단위 검증. */
 class JwtTokenServiceTest {
 
   private static final String SECRET = "unit-test-momens-auth-jwt-secret-0123456789abcdef";

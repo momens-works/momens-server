@@ -67,11 +67,6 @@ class WorkspaceService {
     return detail;
   }
 
-  /**
-   * 워크스페이스를 수정합니다.
-   *
-   * <p>워크스페이스의 존재 여부를 먼저 확인한 뒤 역할을 검증합니다. 순서를 바꾸면 존재하지 않는 워크스페이스에도 404가 아닌 403을 반환하게 됩니다.
-   */
   @Transactional
   public WorkspaceDetail update(
       UUID workspaceId, UUID userId, String name, String description, String slug) {

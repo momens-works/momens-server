@@ -4,16 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * {@code workspace} 모듈에서 멤버십을 조회할 때 사용하는 공개 API입니다.
- *
- * <p>다른 모듈이 {@code workspace} 내부 레포지토리를 직접 참조하지 않고 멤버십을 조회할 수 있도록 합니다. 이 API는 멤버십 조회만 담당하며, 권한이 부족할
- * 때 반환할 오류는 호출하는 쪽에서 결정합니다. project나 task가 어느 workspace에 속하는지 판단하는 것은 이 API의 책임이 아닙니다. 멤버십 레포지토리는
- * {@code membership.internal} 패키지에 있습니다.
- *
- * <p>{@code WorkspaceAccess}와 {@code WorkspaceRoleReader}는 MOM-0885에서 이 인터페이스로 통합되었습니다. 멤버십 조회 메서드는
- * 모두 같은 테이블을 조회하고 함께 변경되므로 하나의 인터페이스에서 관리합니다.
- */
+/** 멤버십 조회만 담당하며 권한 부족 오류와 리소스의 소속 워크스페이스 판정은 호출자가 결정합니다. */
 public interface WorkspaceMembershipReader {
 
   /** workspaceId에 속한 userId의 역할을 조회합니다. 멤버가 아니면 빈 Optional을 반환합니다. */

@@ -24,7 +24,6 @@ import works.momens.server.project.task.TaskWriter;
 import works.momens.server.signal.SignalActionResult;
 import works.momens.server.signal.SignalReader;
 
-/** convert/dismiss가 CO-6 이벤트 계약대로 outbox를 발행하는지 검증한다(DB 없이 협력 대상 mock). */
 class SignalActionExecutorTest {
 
   private static final UUID SIGNAL_ID = UUID.randomUUID();

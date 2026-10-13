@@ -12,7 +12,6 @@ import works.momens.server.auth.internal.refresh.ClientType;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
-/** 모바일 로그인과 refresh/logout use case orchestration. */
 @Service
 @RequiredArgsConstructor
 class MobileAuthServiceImpl implements MobileAuthService {

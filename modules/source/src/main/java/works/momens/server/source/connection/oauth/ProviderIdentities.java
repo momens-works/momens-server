@@ -3,14 +3,6 @@ package works.momens.server.source.connection.oauth;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * provider별 응답에서 외부 계정 정보를 추출하는 함수를 모아 둡니다.
- *
- * <p>각 provider 응답을 해석하는 방식은 레거시의 구현을 따릅니다.
- *
- * <p>GitHub는 사용자 정보 응답의 로그인 ID를 외부 계정 식별자로 사용하며, 이름이 없으면 로그인 ID로 대체합니다. Slack은 응답이 성공 상태가 아니거나 팀
- * 식별자가 없으면 유효하지 않은 응답으로 처리합니다. Notion과 Figma는 사용자 정보를 별도로 조회하지 않고 토큰 응답에 포함된 값을 사용합니다.
- */
 final class ProviderIdentities {
 
   private ProviderIdentities() {}

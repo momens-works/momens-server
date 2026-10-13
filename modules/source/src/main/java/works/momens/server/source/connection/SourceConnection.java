@@ -17,14 +17,7 @@ import org.hibernate.type.SqlTypes;
 import works.momens.server.common.persistence.BaseEntity;
 
 /**
- * 워크스페이스와 외부 provider 간의 연결을 나타냅니다.
- *
- * <p>레거시 {@code momens-api}가 소유하는 {@code source_connections} 테이블과 호환됩니다. 신규 서버에서도 쓰기 작업을 수행하므로 단일
- * UUID 기본 키와 감사 필드를 제공하는 {@link BaseEntity}를 상속합니다. 같은 조건을 가진 {@code :workspace} 모듈의 {@code
- * Workspace}와 동일한 방식입니다.
- *
- * <p>{@code captures_read_count}와 {@code candidates_extracted_count}는 {@code momens-worker}가 갱신합니다.
- * 이 엔티티는 두 값을 조회만 하며 변경하지 않습니다.
+ * {@code captures_read_count}와 {@code candidates_extracted_count}는 worker가 갱신하므로 이 엔티티에서는 조회만 합니다.
  */
 @Getter
 @Entity

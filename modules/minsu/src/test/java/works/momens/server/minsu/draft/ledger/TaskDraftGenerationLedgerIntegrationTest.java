@@ -39,12 +39,7 @@ import works.momens.server.project.task.TaskDraftValues;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
 
-/**
- * claim·재시도·결과 기록을 실제 PostgreSQL로 검증한다(MOM-0819).
- *
- * <p>{@code notification}의 {@code PushDeliveryLedgerIntegrationTest}와 같은 형태다. 다른 점은 minsu가 lease와
- * {@code next_attempt_at}을 별도 컬럼으로 갖는다는 것이라, lease 만료 회수와 백오프 대기가 각각 다른 컬럼을 되돌려 재현된다.
- */
+/** lease 만료 회수와 백오프 대기를 각각 {@code lease_expires_at}과 {@code next_attempt_at}으로 재현한다. */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({

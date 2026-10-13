@@ -4,12 +4,7 @@ import java.util.Arrays;
 import works.momens.server.project.task.TaskPriority;
 
 /**
- * 저장된 태스크 priority를 모바일 응답 값으로 mapping하는 single source of truth입니다. `urgent`는 web에서 사용하는 제품 값이며,
- * 앱에서 urgent priority를 지원하기 전까지 모바일 응답에서는 `high`로 표시합니다. 선언 순서가 priority 정렬 순서(높은 순)이므로, 브리프의 현재
- * priority를 선택할 때도 이 순서를 사용합니다(MOM-67).
- *
- * <p>저장값은 DB CHECK 제약이 4종(low, medium, high, urgent)만 허용하므로 그 밖의 값은 불변식이 깨진 경우입니다. 기본값으로 대체하지 않고
- * IllegalStateException으로 처리합니다. 담당자 조회가 USER_NOT_FOUND로 처리하는 것과 같은 방식입니다.
+ * 저장된 urgent는 앱 지원 전까지 high로 표시합니다. enum 선언 순서는 우선순위 정렬에도 사용합니다. 알 수 없는 저장값은 기본값으로 숨기지 않고 실패시킵니다.
  */
 public enum MobileTaskPriority {
   HIGH(TaskPriority.HIGH),
@@ -22,7 +17,6 @@ public enum MobileTaskPriority {
     this.taskPriority = taskPriority;
   }
 
-  /** 응답으로 반환하는 모바일 priority 값입니다. */
   public String key() {
     return taskPriority.value();
   }

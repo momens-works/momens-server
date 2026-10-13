@@ -25,10 +25,6 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 class SpringDocSecurityConfig {
 
-  /**
-   * OpenAPI 문서와 Swagger UI 경로의 공개 설정을 담당하는 {@code SecurityFilterChain}입니다. OAuth2 Resource Server를
-   * 적용하지 않아 문서와 정적 리소스에 인증 없이 접근할 수 있도록 합니다.
-   */
   @Bean
   @Order(0)
   SecurityFilterChain springDocSecurityFilterChain(HttpSecurity http) throws Exception {

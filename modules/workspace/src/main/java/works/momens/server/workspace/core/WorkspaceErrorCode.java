@@ -3,7 +3,6 @@ package works.momens.server.workspace.core;
 import lombok.RequiredArgsConstructor;
 import works.momens.server.common.api.ErrorCode;
 
-/** {@code Workspace} aggregate의 존재 여부와 slug 규칙에서 발생하는 에러 코드입니다. */
 @RequiredArgsConstructor
 public enum WorkspaceErrorCode implements ErrorCode {
   WORKSPACE_NOT_FOUND(404, "워크스페이스를 찾을 수 없습니다."),

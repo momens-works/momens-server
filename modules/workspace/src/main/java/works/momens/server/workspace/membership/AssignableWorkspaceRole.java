@@ -35,7 +35,6 @@ public enum AssignableWorkspaceRole {
     return workspaceRole.value();
   }
 
-  /** 멤버십에 저장할 `WorkspaceRole`을 반환합니다. */
   public WorkspaceRole workspaceRole() {
     return workspaceRole;
   }

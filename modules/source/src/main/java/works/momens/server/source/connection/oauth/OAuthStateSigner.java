@@ -23,21 +23,10 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 
 /**
- * {@link OAuthState}를 서명된 문자열로 변환하고 다시 복원합니다.
+ * 전환 중 양쪽 서버가 발급한 state를 검증할 수 있도록 서명 키·issuer·audience·claim 이름은 레거시와 같게 유지합니다.
  *
- * <p>HS256으로 서명하며, 발급자({@code iss})는 {@code momens-api}, 대상({@code aud})은 {@code source-oauth},
- * 주체({@code sub})는 사용자 식별자입니다. 워크스페이스 식별자와 provider는 별도 claim에 저장하고, state 재사용을 막기 위한 난수 식별자도 함께
- * 포함합니다.
- *
- * <p><strong>발급자를 {@code momens-api}로 지정한 것은 의도된 동작입니다.</strong> 전환 기간에는 신규 서버가 발급한 state를 레거시가
- * 검증하거나 레거시가 발급한 state를 신규 서버가 검증하는 구간이 생길 수 있습니다. provider 관리 화면에 등록된 주소를 배포와 정확히 같은 시점에 변경할 수 없기
- * 때문입니다. 따라서 서명 비밀, 발급자, 대상, claim 이름을 레거시와 동일하게 유지합니다. 양쪽 서버가 서로 발급한 값을 검증할 수 있다는 것도 실제 실행으로
- * 확인했습니다.
- *
- * <p>만료 여부는 주입된 시각을 기준으로 판정하며 라이브러리의 기본 만료 검증은 비활성화합니다. 이를 통해 테스트에서 시각을 고정하고 만료 동작을 검증할 수 있습니다.
- *
- * <p>발급자 claim은 문자열로 읽습니다. 라이브러리의 표준 접근자는 발급자 값을 URL로 해석하지만, {@code momens-api}는 URL 형식이 아니므로 표준
- * 접근자를 사용하면 검증에 실패합니다.
+ * <p>issuer는 URL이 아닌 {@code momens-api}이므로 URL로 해석하는 표준 접근자 대신 문자열로 읽습니다. 만료는 주입한 시계로 직접 검증합니다. 난수
+ * jti는 포함하지만 소비 이력을 저장하지 않아 일회성 사용을 보장하지 않습니다.
  */
 class OAuthStateSigner {
 

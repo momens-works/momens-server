@@ -25,11 +25,6 @@ import works.momens.server.workspace.WorkspaceSeedSql;
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({SourceRefVerifierImpl.class, SourceRefReaderImpl.class})
-/**
- * source-ref 검증 표시를 실제 PostgreSQL에서 검증합니다.
- *
- * <p>검증 시 갱신되는 컬럼과 반환 필드, 대상이 없거나 소프트 삭제된 경우의 처리 방식을 확인합니다.
- */
 class SourceRefVerifierIntegrationTest extends AbstractPostgresIntegrationTest {
 
   @Autowired private SourceRefVerifier sourceRefVerifier;

@@ -29,12 +29,6 @@ import works.momens.server.user.UserErrorCode;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
-/**
- * 외부 신원 정보를 기준으로 사용자 조회 및 생성 로직을 검증합니다.
- *
- * <p>로그인 수단으로 사용자를 조회하는 경로, 이메일로 기존 사용자를 조회한 뒤 로그인 수단을 연결하는 경로, 그리고 새로운 사용자를 생성하는 경로가 각각 정상적으로
- * 동작하는지 확인합니다.
- */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({JpaAuditingConfig.class, UserServiceImpl.class})

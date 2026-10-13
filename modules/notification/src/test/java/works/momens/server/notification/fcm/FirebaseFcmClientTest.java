@@ -23,7 +23,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import works.momens.server.notification.fcm.FcmClient.FcmSendResult;
 
-/** token별 결과 분류(무효 token vs 일시 실패)와 500개 단위 multicast 분할을 검증합니다. */
 @ExtendWith(MockitoExtension.class)
 class FirebaseFcmClientTest {
 

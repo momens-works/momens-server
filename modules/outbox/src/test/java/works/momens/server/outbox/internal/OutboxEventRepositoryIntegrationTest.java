@@ -11,9 +11,6 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 
-/**
- * {@code idempotency_key UNIQUE} + {@code ON CONFLICT DO NOTHING} dedup(SD-3)을 실제 PostgreSQL로 검증한다.
- */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class OutboxEventRepositoryIntegrationTest extends AbstractPostgresIntegrationTest {

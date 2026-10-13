@@ -28,7 +28,6 @@ public final class WorkspaceSeedSql {
     return id;
   }
 
-  /** workspace_members.user_id FK를 만족시킬 사용자 행을 삽입합니다. */
   public static UUID insertUser(TestEntityManager entityManager, String email) {
     UUID id = UUID.randomUUID();
     entityManager

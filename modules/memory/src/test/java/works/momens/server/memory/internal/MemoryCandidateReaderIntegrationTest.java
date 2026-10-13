@@ -19,14 +19,7 @@ import works.momens.server.memory.MemoryCandidateDetail;
 import works.momens.server.memory.MemoryCandidateReader;
 import works.momens.server.memory.MemorySeedSql;
 
-/**
- * 후보 조회 public API 검증.
- *
- * <p>레거시가 저장한 값을 그대로 읽는지, 목록의 정렬이 snapshot의 다른 컬렉션과 달리 중요도 우선인지, 상태로 거르지 않는 동작이 계약대로인지 확인합니다(웹
- * snapshot 계약 2.2·4.4).
- *
- * <p>후보는 이 서버에 쓰기 경로가 전혀 없어(쓰기는 MOM-0869) 모든 시드를 레거시 워커처럼 네이티브 SQL로 넣습니다.
- */
+/** worker 형태의 데이터를 네이티브 SQL로 구성해 상태 필터 없는 중요도 우선 정렬을 검증합니다. */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({JpaAuditingConfig.class, MemoryCandidateReaderImpl.class})
@@ -102,7 +95,6 @@ class MemoryCandidateReaderIntegrationTest extends AbstractPostgresIntegrationTe
     assertThat(detail.rejectionReason()).isNull();
     assertThat(detail.expiresAt()).isNull();
     assertThat(detail.metadata()).isNull();
-    // 레거시 DEFAULT를 그대로 따른다.
     assertThat(detail.status()).isEqualTo("PROPOSED");
     assertThat(detail.proposedBy()).isEqualTo("CURATOR");
   }
@@ -194,7 +186,6 @@ class MemoryCandidateReaderIntegrationTest extends AbstractPostgresIntegrationTe
     assertThat(memoryCandidateReader.listDetailsByWorkspaceId(UUID.randomUUID())).isEmpty();
   }
 
-  /** 워크스페이스 하나와 그 안의 후보를 다루는 테스트 픽스처입니다. */
   private final class Fixture {
 
     private final UUID workspaceId;

@@ -19,11 +19,6 @@ import works.momens.server.user.UserErrorCode;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
-/**
- * user public API의 실제 DB(Testcontainers) 동작 검증.
- *
- * <p>{@code findOrCreate}의 조회와 생성, 프로필 갱신, 사용자를 찾지 못했을 때의 에러를 Flyway 스키마에서 검증합니다.
- */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({JpaAuditingConfig.class, UserServiceImpl.class})

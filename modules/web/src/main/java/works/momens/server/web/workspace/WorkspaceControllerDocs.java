@@ -18,12 +18,6 @@ import works.momens.server.web.workspace.dto.response.WorkspaceSlugAvailabilityR
 import works.momens.server.web.workspace.dto.response.WorkspaceSnapshotResponse;
 import works.momens.server.workspace.core.WorkspaceErrorCode;
 
-/**
- * {@code /api/workspaces} OpenAPI 문서. Swagger 애너테이션을 컨트롤러 구현과 분리합니다(docs/spec/openapi.md).
- *
- * <p>401/403은 보안 필터가 Standard shape로 응답하고, 없는 workspace는 WORKSPACE_NOT_FOUND(404), workspace는 있는데
- * 멤버가 아니면 AUTH_FORBIDDEN(403)입니다.
- */
 @Tag(name = "Web", description = "웹 진입 API")
 interface WorkspaceControllerDocs {
 

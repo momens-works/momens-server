@@ -127,7 +127,6 @@ class ProjectTaskServiceTest {
     when(taskReader.listTasksByStatus(eq(PROJECT_ID), any()))
         .thenReturn(List.of(new BoardTask(taskId, "긴급 태스크", "todo", "urgent", "pm", CREATED_AT)));
 
-    // 보드 그룹 순서는 todo, in_progress, ... 이므로 todo 그룹은 인덱스 0이다.
     MobileTaskCard card = projectTaskService.getBoard(PROJECT_ID, CALLER_ID).get(0).tasks().get(0);
 
     assertThat(card.priority()).isEqualTo("high");

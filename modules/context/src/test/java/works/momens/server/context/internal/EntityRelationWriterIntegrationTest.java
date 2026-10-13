@@ -21,13 +21,6 @@ import works.momens.server.context.EntityType;
 import works.momens.server.context.RelationType;
 import works.momens.server.workspace.WorkspaceSeedSql;
 
-/**
- * 엔티티 연결 쓰기 public API를 검증합니다.
- *
- * <p>레거시 {@code relation/repository.go}의 {@code LinkWithType}과 같은 upsert 시맨틱인지 봅니다. {@code
- * entity_relations}에는 UNIQUE 제약이 없어 조건 없이 INSERT 하면 중복 행이 조용히 쌓이고, 그 상태는 스냅샷 응답과 retrieval
- * projection에 그대로 드러납니다.
- */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(EntityRelationWriterImpl.class)

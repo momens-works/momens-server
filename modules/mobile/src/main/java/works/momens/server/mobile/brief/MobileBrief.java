@@ -27,9 +27,7 @@ public record MobileBrief(
   /** 필터 칩 하나. key는 filter 쿼리 값(all 또는 signal type)이고, all은 노출 type 전체 합이라 화면 헤더 숫자로도 쓰입니다. */
   public record FilterCount(String key, String label, long count) {}
 
-  /** 시그널 요약 목록의 한 줄(색 점 type + 제목). */
   public record SignalItem(UUID id, String type, String title) {}
 
-  /** 현재 우선순위 한 줄. rank는 정렬 순번(1부터)이고 화면의 01~04 표기와 같습니다. */
   public record Priority(int rank, String title, UUID taskId) {}
 }

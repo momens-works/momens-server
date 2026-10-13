@@ -24,6 +24,5 @@ public interface SourceRefWriter {
    */
   UUID createManualLink(NewManualLink manualLink);
 
-  /** 저장할 링크의 입력값입니다. {@code sourceType}과 {@code title}은 비어 있을 수 있습니다. */
   record NewManualLink(UUID workspaceId, String sourceType, String sourceUrl, String title) {}
 }

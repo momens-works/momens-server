@@ -218,7 +218,7 @@ class SignalListServiceImplTest extends AbstractPostgresIntegrationTest {
     Instant toExclusive = Instant.parse("2026-07-11T00:00:00Z");
     insertSignal("risk", "어제", null, null, Instant.parse("2026-07-09T23:59:59Z"));
     UUID inRange = insertSignal("risk", "당일", null, null, Instant.parse("2026-07-10T12:00:00Z"));
-    insertSignal("risk", "끝 경계", null, null, toExclusive); // 끝은 제외
+    insertSignal("risk", "끝 경계", null, null, toExclusive);
     insertDeletedSignal("risk", "당일 삭제", Instant.parse("2026-07-10T13:00:00Z"));
 
     SignalSummaryPage page =

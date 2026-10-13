@@ -6,12 +6,7 @@ import java.util.UUID;
 import works.momens.server.mobile.board.MobileTaskDetail;
 import works.momens.server.project.task.TaskDetail;
 
-/**
- * {@code PATCH /api/mobile/tasks/{taskId}/checklist-items/{itemId}} 응답. 형식은
- * docs/spec/openapi.json에서 확인합니다.
- *
- * <p>완료 상태를 바꾼 항목 하나와 함께, 태스크 전체 기준 완료 수와 전체 수를 반환합니다. 상세 화면의 완료 헤더(완료 수 / 전체 수)를 바로 갱신하기 위해서입니다.
- */
+/** 수정한 항목과 태스크 전체 완료 수를 함께 반환해 화면의 완료 헤더를 갱신합니다. */
 @Schema(description = "완료 기준 완료 상태 변경 응답")
 public record ChecklistToggleResponse(
     @Schema(description = "완료 기준 요약") ChecklistResponse checklist) {

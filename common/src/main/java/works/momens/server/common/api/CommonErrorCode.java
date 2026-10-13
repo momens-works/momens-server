@@ -2,14 +2,7 @@ package works.momens.server.common.api;
 
 import lombok.RequiredArgsConstructor;
 
-/**
- * 도메인에 속하지 않는 공통 에러 코드.
- *
- * <p>도메인 의미가 드러나는 에러는 이 코드를 재사용하지 않고 도메인 모듈이 자기 코드를 추가합니다.
- *
- * <p>{@code AUTH_*} 코드는 규격상 함께 정의하지만, 인증/인가 거부 본문 배선(SecurityFilterChain의 entry point/handler)은
- * 인증/인가 구현 시점(MOM-8)에 추가합니다.
- */
+/** 도메인에 속하지 않는 공통 에러 코드입니다. 도메인 의미가 있는 에러는 각 모듈에서 정의합니다. */
 @RequiredArgsConstructor
 public enum CommonErrorCode implements ErrorCode {
   COMMON_BAD_REQUEST(400, "요청 형식이 올바르지 않습니다."),

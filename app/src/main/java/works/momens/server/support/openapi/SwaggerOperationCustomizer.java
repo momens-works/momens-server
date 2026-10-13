@@ -6,7 +6,6 @@ import org.springdoc.core.customizers.OperationCustomizer;
 import org.springframework.web.method.HandlerMethod;
 import works.momens.server.common.api.ApiException;
 
-/** 컨트롤러 메서드 또는 docs interface에 선언된 {@link ApiException}을 읽어 OpenAPI 실패 응답 예시를 추가합니다. */
 @RequiredArgsConstructor
 public class SwaggerOperationCustomizer implements OperationCustomizer {
 

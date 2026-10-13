@@ -32,7 +32,6 @@ import works.momens.server.workspace.core.WorkspaceDetail;
 import works.momens.server.workspace.core.WorkspaceErrorCode;
 import works.momens.server.workspace.core.WorkspaceReader;
 
-/** 웹 보드가 한 번의 요청으로 읽는 workspace snapshot을 조합합니다. */
 @Service
 @RequiredArgsConstructor
 class WorkspaceSnapshotService {

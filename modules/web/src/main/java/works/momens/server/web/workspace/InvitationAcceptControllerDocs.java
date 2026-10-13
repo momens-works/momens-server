@@ -15,14 +15,6 @@ import works.momens.server.workspace.core.WorkspaceErrorCode;
 import works.momens.server.workspace.invitation.InvitationErrorCode;
 import works.momens.server.workspace.membership.MembershipErrorCode;
 
-/**
- * {@code /api/invitations/accept} 엔드포인트의 OpenAPI 문서입니다. Swagger 애너테이션을 컨트롤러 구현과 분리합니다({@code
- * docs/spec/openapi.md}).
- *
- * <p>401 응답은 보안 필터에서 처리합니다. 초대를 찾을 수 없으면 {@code INVITATION_NOT_FOUND}(404), 초대받은 이메일 주소와 로그인한 계정의
- * 이메일 주소가 다르면 {@code INVITATION_EMAIL_MISMATCH}(403)를 반환합니다. 초대가 이미 수락되었거나 만료 또는 폐기되었거나, 사용자가 이미
- * 워크스페이스 멤버라면 409를 반환합니다.
- */
 @Tag(name = "Web", description = "웹 진입 API")
 interface InvitationAcceptControllerDocs {
 

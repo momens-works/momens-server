@@ -41,7 +41,7 @@ class MinsuAbandonedGenerationScheduler {
         log.info("반영 창이 닫힌 Minsu 원장 {}건을 종료했습니다", closed);
       }
     } catch (RuntimeException e) {
-      // 다음 주기가 다시 시도한다. 여기서 예외가 올라가면 fixedDelay 스케줄러가 그 자리에서 멈춘다.
+      // 이번 주기 실패를 기록하고 다음 주기에 재시도한다.
       log.error("Minsu 원장 종료 주기 실패", e);
     }
   }

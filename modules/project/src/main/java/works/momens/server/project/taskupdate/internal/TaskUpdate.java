@@ -15,7 +15,6 @@ import works.momens.server.common.persistence.BaseEntity;
 import works.momens.server.project.taskupdate.TaskUpdateDetail;
 import works.momens.server.project.taskupdate.TaskUpdateKind;
 
-/** 레거시 task_updates 매핑입니다. */
 @Getter
 @Entity
 @Table(name = "task_updates")

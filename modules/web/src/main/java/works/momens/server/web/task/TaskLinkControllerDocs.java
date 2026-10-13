@@ -17,7 +17,6 @@ import works.momens.server.web.dto.response.WebMessageResponse;
 import works.momens.server.web.task.dto.request.CreateTaskSourceRefRequest;
 import works.momens.server.web.task.dto.response.CreateTaskSourceRefResponse;
 
-/** {@code /api} 웹 태스크 연결 endpoint의 OpenAPI 문서입니다. */
 @Tag(name = "Web", description = "웹 진입 API")
 interface TaskLinkControllerDocs {
 

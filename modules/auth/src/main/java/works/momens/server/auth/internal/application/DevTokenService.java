@@ -43,7 +43,6 @@ public class DevTokenService {
             .findByEmail(email)
             .orElseGet(() -> userService.findOrCreate(email, email, null));
     String accessToken = jwtTokenService.issueAccessToken(user.id());
-    // 개인정보(email)는 로그에 남기지 않는다(code-conventions 로깅 규칙). 식별은 userId로 한다.
     log.info("dev access token issued userId={}", user.id());
     return accessToken;
   }

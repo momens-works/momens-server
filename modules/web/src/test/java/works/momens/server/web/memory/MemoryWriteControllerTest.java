@@ -80,10 +80,9 @@ class MemoryWriteControllerTest {
         .andExpect(jsonPath("$.body").doesNotExist())
         .andExpect(jsonPath("$.valid_from").doesNotExist())
         .andExpect(jsonPath("$.metadata").doesNotExist())
-        // 빈 배열도 키를 내보내지 않습니다(웹 snapshot 계약 4.2).
+        // 빈 배열도 키를 내보내지 않습니다.
         .andExpect(jsonPath("$.source_ref_ids").doesNotExist())
         .andExpect(jsonPath("$.related_entity_ids").doesNotExist())
-        // 값이 있는 필드는 그대로 나갑니다.
         .andExpect(jsonPath("$.title").value("제목만 있는 메모리"))
         .andExpect(jsonPath("$.status").value("ACTIVE"));
   }

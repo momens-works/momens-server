@@ -26,12 +26,7 @@ import works.momens.server.auth.internal.refresh.RefreshToken;
 import works.momens.server.auth.internal.refresh.RefreshTokenStore;
 import works.momens.server.common.api.BusinessException;
 
-/**
- * 우리 token 발급과 refresh token 회전.
- *
- * <p>클레임은 플랫폼 중립으로 최소화합니다(sub=userId, iat, exp). 전송수단(Bearer/쿠키)·role/권한 정보는 토큰에 넣지 않습니다.
- * principal은 sub=userId만 신뢰하며, 권한 판단은 추후 workspace public API에서 DB 기준으로 합니다.
- */
+/** 토큰은 사용자 식별자만 담고 권한 정보는 담지 않습니다. 권한은 요청 처리 시 workspace API로 확인합니다. */
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class JwtTokenService {
@@ -45,7 +40,6 @@ public class JwtTokenService {
   private final RefreshTokenStore refreshTokenStore;
   private final SecureRandom secureRandom = new SecureRandom();
 
-  /** userId를 sub로 담은 HS256 access token을 발급합니다. */
   public String issueAccessToken(UUID userId) {
     Instant now = clock.instant();
     JwtClaimsSet claims =
@@ -58,7 +52,6 @@ public class JwtTokenService {
     return accessTokenEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
   }
 
-  /** access token과 서버 저장형 refresh token을 함께 발급합니다. */
   @Transactional
   public TokenPair issueTokenPair(UUID userId, ClientType clientType, String device) {
     String refreshToken = generateRefreshToken();
@@ -73,7 +66,6 @@ public class JwtTokenService {
         issueAccessToken(userId), refreshToken, properties.accessTtl().toSeconds());
   }
 
-  /** refresh token을 회전하고 새 access+refresh token을 발급합니다. */
   @Transactional
   public TokenPair refresh(String refreshToken) {
     Instant now = clock.instant();
@@ -91,7 +83,6 @@ public class JwtTokenService {
     return issueTokenPair(current.getUserId(), current.getClientType(), current.getDevice());
   }
 
-  /** refresh token을 폐기합니다. */
   @Transactional
   public void revoke(String refreshToken) {
     Instant now = clock.instant();

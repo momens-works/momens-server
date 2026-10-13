@@ -22,18 +22,13 @@ import works.momens.server.workspace.label.LabelAllocator;
 import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 /**
- * 레거시 {@code memory/service.go}의 후보 리뷰·메모리 해결 write 경로를 옮긴 구현입니다.
+ * 부분 UPDATE·후보 값 복사·행 잠금이 필요해 네이티브 SQL을 사용합니다. 새 행만 생성하는 {@link ConfirmedMemoryCreatorImpl}은 엔티티를
+ * 사용합니다.
  *
- * <p>JPA 엔티티 대신 네이티브 SQL로 저장합니다. 값이 비어 있지 않은 컬럼만 덮어쓰는 부분 UPDATE, 후보 행의 값을 복사하는 INSERT, 행 잠금이 필요하기
- * 때문입니다. 레거시가 소유한 테이블이므로 레거시 동작에 필요한 컬럼만 명시적으로 변경합니다. 새 행 생성만 담당하는 {@link
- * ConfirmedMemoryCreatorImpl}은 엔티티를 사용합니다.
+ * <p>워크스페이스(404) → 멤버십(403) → 잠금 → 상태(409) 순서를 지켜 비멤버에게 후보 상태를 노출하지 않습니다.
  *
- * <p>검사 순서는 레거시를 따릅니다. 워크스페이스 확인(404) → 멤버십(403) → 잠금 → 상태(409) 순이며, 순서가 바뀌면 비멤버가 후보 상태를 알게 되고 레거시와
- * status code가 갈립니다.
- *
- * <p>projection은 레거시가 {@code retrieval_documents}·{@code retrieval_events}에 직접 쓰던 것을 outbox 이벤트로
- * 대신합니다(ADR-0008). 검색 반영은 worker consumer가 담당하며 그 구현이 cutover gate입니다({@code MOM-0898}). 레거시가
- * projection을 남기지 않는 reject·merge·expire는 이 서버도 이벤트를 남기지 않습니다.
+ * <p>검색 반영은 outbox를 소비하는 worker가 담당합니다. 공통 소비 기반은 MOM-0898, memory 투영·운영 검증은 MOM-0957 범위입니다. 레거시와
+ * 같이 reject·merge·expire는 이벤트를 발행하지 않습니다.
  */
 @Service
 @RequiredArgsConstructor
@@ -317,7 +312,6 @@ class MemoryWriterImpl implements MemoryWriter {
             VALUES (:id, :workspaceId, :candidateId, :actionType, :reviewerId,
                     :title, :summary, :body, :reason, :target, :now)
             """)
-        // PK는 앱에서 만듭니다(docs/rules/persistence.md, 레거시 InsertReviewAction도 uuid.New()).
         .setParameter("id", UUID.randomUUID())
         .setParameter("workspaceId", workspaceId)
         .setParameter("candidateId", candidateId)

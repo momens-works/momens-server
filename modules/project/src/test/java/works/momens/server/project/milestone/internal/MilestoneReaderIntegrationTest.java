@@ -19,14 +19,7 @@ import works.momens.server.project.ProjectSeedSql;
 import works.momens.server.project.milestone.MilestoneDetail;
 import works.momens.server.project.milestone.MilestoneReader;
 
-/**
- * 마일스톤 조회 public API 검증.
- *
- * <p>레거시가 저장한 값을 그대로 읽는지, {@code owner_user_ids}의 정렬과 빈 목록 동작이 레거시 집계와 같은지, 목록의 정렬과 두 겹의 소프트 삭제 필터가
- * 계약대로인지 확인합니다(웹 snapshot 계약 2.3·4.4).
- *
- * <p>마일스톤은 이 서버에 쓰기 경로가 전혀 없어(쓰기는 MOM-0866) 모든 시드를 레거시처럼 네이티브 SQL로 넣습니다.
- */
+/** 생성 경로와 독립적으로 기존 공유 DB 행의 소유자·정렬·삭제 필터를 검증하도록 SQL로 시드합니다. */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({JpaAuditingConfig.class, MilestoneReaderImpl.class})
@@ -131,7 +124,7 @@ class MilestoneReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     Fixture fixture = new Fixture("no-owners");
     fixture.insertMilestone("소유자 행 없음");
 
-    // project와 달리 폴백할 소유자 컬럼이 없어 빈 목록이 그대로 결과가 된다(웹 snapshot 계약 2.3).
+    // project와 달리 폴백할 소유자 컬럼이 없어 빈 목록이 그대로 결과가 된다.
     assertThat(fixture.onlyDetail().ownerUserIds()).isEmpty();
   }
 
@@ -174,7 +167,6 @@ class MilestoneReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     assertThat(milestoneReader.listDetailsByWorkspaceId(workspaceId)).isEmpty();
   }
 
-  /** 사용자·워크스페이스·project 한 벌과, 그 위에서 조회를 돌리는 헬퍼. */
   private final class Fixture {
 
     private final UUID ownerId;
@@ -199,7 +191,6 @@ class MilestoneReaderIntegrationTest extends AbstractPostgresIntegrationTest {
       return milestoneReader.listDetailsByWorkspaceId(workspaceId);
     }
 
-    /** 마일스톤이 하나뿐인 workspace의 조회 결과를 꺼냅니다. 단건 조회 API를 두지 않아 목록으로 검증합니다. */
     private MilestoneDetail onlyDetail() {
       List<MilestoneDetail> details = details();
       assertThat(details).hasSize(1);
@@ -277,7 +268,7 @@ class MilestoneReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     entityManager.clear();
   }
 
-  /** 소프트 삭제 API는 아직 없으므로(read 기반 슬라이스) 삭제 상태를 네이티브 SQL로 만듭니다. */
+  /** 조회할 삭제 상태를 네이티브 SQL로 구성합니다. */
   private void softDeleteMilestone(UUID milestoneId) {
     entityManager
         .getEntityManager()

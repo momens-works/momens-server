@@ -16,7 +16,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 
-/** SignalAction 컬럼 매핑과 {@code UNIQUE(signal_id)} 멱등 제약(SD-4)을 실제 PostgreSQL로 검증합니다. */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(JpaAuditingConfig.class)

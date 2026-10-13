@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/** project 모듈의 blocker 조회 public API. */
 public interface BlockerReader {
 
   Optional<UUID> workspaceIdOf(UUID blockerId);

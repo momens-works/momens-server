@@ -5,15 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * memory 모듈의 확정 메모리 조회 public API.
- *
- * <p>워크스페이스 단위 목록 하나만 두는 이유는 {@link MemoryCandidateReader}와 같습니다. 레거시 단건 조회(H089)와 목록(H044) 모두
- * snapshot 폴백 밖의 소비자가 없습니다.
- *
- * <p>{@code task_contexts} 번들도 이 모델을 씁니다(계약 4.5). 다만 id 배치 조회는 두지 않았습니다. 번들을 만드는 MOM-0862가 같은 응답의
- * 워크스페이스 목록을 이미 갖고 있어 그 안에서 고르면 되는지, 별도 조회가 필요한지는 그 작업에서 정합니다.
- */
+/** 워크스페이스 목록과 태스크 context 조합에 필요한 확정 메모리를 조회합니다. */
 public interface ConfirmedMemoryReader {
 
   /**

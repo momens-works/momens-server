@@ -9,14 +9,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import works.momens.server.common.persistence.BaseEntity;
 
-/**
- * 사용자.
- *
- * <p>레거시 {@code momens-api}의 {@code users} 테이블과 호환됩니다. 식별자·감사 필드는 {@link BaseEntity}가 담당합니다.
- *
- * <p>엔티티가 cross-module API로 노출되지 않도록 모듈 {@code internal} 패키지에 package-private로 둡니다. 다른 모듈은 루트 패키지의
- * {@code UserService}/{@code UserProfile}만 사용합니다.
- */
 @Getter
 @Entity
 @Table(name = "users")

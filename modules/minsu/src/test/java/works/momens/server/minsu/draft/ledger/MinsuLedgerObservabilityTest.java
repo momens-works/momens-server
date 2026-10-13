@@ -12,7 +12,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-/** 원장 사건 지표의 이름·태그와 선등록을 고정한다(MOM-0821). */
 class MinsuLedgerObservabilityTest {
 
   private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();

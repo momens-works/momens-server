@@ -50,7 +50,7 @@ class DefaultSignalTaskDraftGeneratorTest {
   private static final ModelSelection SELECTION =
       new ModelSelection("google", "gemini-3.5-flash-lite", "project", "global");
 
-  /** 동기 경로의 SDK timeout(MOM-0806). 비동기 값과 별도 키다. */
+  /** 동기 경로의 SDK timeout. 비동기 값과 별도 키다. */
   private static final Duration SYNC_TIMEOUT = Duration.ofSeconds(8);
 
   /** 이 테스트는 요청 경로만 다루므로 실행 정책 값은 부등식을 만족하기만 하면 된다. */

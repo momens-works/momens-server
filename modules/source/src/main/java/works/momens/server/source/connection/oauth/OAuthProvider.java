@@ -5,15 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.TreeMap;
 
-/**
- * provider 한 곳의 OAuth 승인 URL 생성 규칙과 자격 증명을 포함합니다.
- *
- * <p>{@code authorizeUrl}이 생성하는 문자열은 레거시에서 생성하는 값과 완전히 같아야 합니다. 사용자가 이 URL에서 승인을 완료하면 provider가 사전에
- * 등록된 주소로 redirect하며, 요청 값이 다르면 provider가 승인을 거부할 수 있습니다.
- *
- * <p>쿼리 파라미터는 이름을 기준으로 정렬합니다. 레거시에서 사용하는 라이브러리가 같은 방식으로 정렬하므로 파라미터 순서까지 포함해 실제 실행 결과를 대조했습니다.
- * scope는 값이 있을 때만 포함합니다.
- */
+/** 승인 URL은 레거시와 같은 정렬·인코딩을 유지합니다. scope는 값이 있을 때만 포함합니다. */
 record OAuthProvider(
     ProviderDefinition definition, String clientId, String clientSecret, String redirectUri) {
 

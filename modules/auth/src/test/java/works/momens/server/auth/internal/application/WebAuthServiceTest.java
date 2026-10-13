@@ -19,7 +19,6 @@ import works.momens.server.common.api.BusinessException;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
-/** 웹 Authorization Code 로그인의 핸드셰이크 검증과 토큰 발급 오케스트레이션 단위 검증. */
 class WebAuthServiceTest {
 
   private final GoogleOAuthClient googleOAuthClient = mock(GoogleOAuthClient.class);

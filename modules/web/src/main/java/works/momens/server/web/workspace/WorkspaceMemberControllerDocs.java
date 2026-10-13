@@ -16,14 +16,6 @@ import works.momens.server.web.workspace.dto.response.WorkspaceMembersResponse;
 import works.momens.server.workspace.core.WorkspaceErrorCode;
 import works.momens.server.workspace.membership.MembershipErrorCode;
 
-/**
- * {@code /api/workspaces/{workspaceId}/members} endpoint의 OpenAPI 문서. Swagger 애너테이션을 컨트롤러 구현과 분리합니다
- * ({@code docs/spec/openapi.md}).
- *
- * <p>401은 보안 필터에서 응답합니다. 워크스페이스가 없으면 {@code WORKSPACE_NOT_FOUND}(404), 워크스페이스는 있지만 요청자의 권한이 부족하면
- * {@code AUTH_FORBIDDEN}(403)을 반환합니다. 대상 사용자가 멤버가 아니면 {@code WORKSPACE_MEMBER_NOT_FOUND}(404), 대상이
- * owner이거나 요청자 자신이면 409를 반환합니다.
- */
 @Tag(name = "Web", description = "웹 진입 API")
 interface WorkspaceMemberControllerDocs {
 

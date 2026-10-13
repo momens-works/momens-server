@@ -15,14 +15,6 @@ import works.momens.server.web.source.dto.response.SourceConnectionsResponse;
 import works.momens.server.web.source.dto.response.SourceInstallResponse;
 import works.momens.server.workspace.core.WorkspaceErrorCode;
 
-/**
- * {@code /api/workspaces/{workspaceId}/source-connections} endpoint의 OpenAPI 문서입니다. Swagger 애너테이션은
- * 컨트롤러 구현과 분리합니다({@code docs/spec/openapi.md}).
- *
- * <p>401 응답은 보안 필터에서 처리합니다. 워크스페이스가 없으면 {@code WORKSPACE_NOT_FOUND}(404), 워크스페이스는 존재하지만 요청자의 권한이
- * 부족하면 {@code AUTH_FORBIDDEN}(403)을 반환합니다. 목록 조회에는 member 이상의 권한이 필요하고, 연결 시작에는 admin 또는 owner 권한이
- * 필요합니다.
- */
 @Tag(name = "Web", description = "웹 진입 API")
 interface SourceConnectionControllerDocs {
 

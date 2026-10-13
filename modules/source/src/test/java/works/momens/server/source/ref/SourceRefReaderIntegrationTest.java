@@ -17,12 +17,7 @@ import works.momens.server.source.SourceRefReader;
 import works.momens.server.source.SourceRefView;
 import works.momens.server.workspace.WorkspaceSeedSql;
 
-/**
- * source_ref 조회 public API 검증.
- *
- * <p>실제 PostgreSQL(Testcontainers)에서 id 조회, 소프트 삭제 제외, 근거 카드 필드 매핑을 확인합니다. source_refs는 읽기 전용 외부
- * 테이블이므로 fixture는 네이티브 SQL로 삽입합니다(엔티티로 쓰지 않습니다).
- */
+/** 엔티티 생성 경로와 독립적으로 기존 공유 DB 행의 조회를 검증하도록 네이티브 SQL로 fixture를 구성합니다. */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(SourceRefReaderImpl.class)

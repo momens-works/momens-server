@@ -61,7 +61,6 @@ class UserControllerTest {
         .andExpect(jsonPath("$.user.email").value("user@example.com"))
         .andExpect(jsonPath("$.user.job_role").value("Engineer"))
         .andExpect(jsonPath("$.user.created_at").exists())
-        // avatar_url은 null이라 생략된다.
         .andExpect(jsonPath("$.user.avatar_url").doesNotExist());
   }
 

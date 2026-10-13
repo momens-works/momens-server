@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Configuration;
 import works.momens.server.mcp.grant.McpTokenFamilyRevoker;
 import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
-/** MCP grant application service wiring. */
 @Configuration
 class McpGrantConfig {
 

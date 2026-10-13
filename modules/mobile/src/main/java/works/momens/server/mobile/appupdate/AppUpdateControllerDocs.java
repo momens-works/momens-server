@@ -11,13 +11,7 @@ import works.momens.server.common.api.ApiException;
 import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.mobile.appupdate.dto.response.AppUpdateResponse;
 
-/**
- * {@code /api/mobile/app-update}의 OpenAPI 문서입니다. Swagger 애너테이션을 컨트롤러 구현과
- * 분리합니다(docs/spec/openapi.md).
- *
- * <p>로그인 전에 호출하는 공개 엔드포인트이므로 {@code OpenApiConfig}에서 설정한 전역 Bearer 인증 요구 사항을
- * {@code @SecurityRequirements}로 제외합니다.
- */
+/** 로그인 전 공개 엔드포인트이므로 전역 Bearer 요구를 {@code @SecurityRequirements}로 제외합니다. */
 @Tag(name = "Mobile", description = "모바일 앱 진입 API")
 interface AppUpdateControllerDocs {
 

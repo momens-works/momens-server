@@ -81,7 +81,6 @@ class SignalListServiceImpl implements SignalListService {
         .collect(Collectors.groupingBy(Signal::getType, Collectors.counting()));
   }
 
-  /** limit을 검사하고 상한으로 줄인다. 1 미만은 인터페이스 계약 위반이라 COMMON_VALIDATION_FAILED로 실패한다. */
   private static int resolvePageSize(int limit) {
     if (limit < 1) {
       throw new BusinessException(
@@ -90,7 +89,6 @@ class SignalListServiceImpl implements SignalListService {
     return Math.min(limit, MAX_PAGE_SIZE);
   }
 
-  /** 전량 조회한 base를 type과 커서로 거른 뒤 한 페이지로 자른다. 페이지 조회의 공통 처리다. */
   private static SignalSummaryPage page(
       List<Signal> base, Collection<String> types, Cursor position, int pageSize) {
     boolean allTypes = types == null || types.isEmpty();

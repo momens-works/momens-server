@@ -62,18 +62,9 @@ class TaskDraftGenerationLedger {
   }
 
   /**
-   * 처리 대상 원장을 claim한다. lease가 만료된 {@code processing}을 <b>먼저</b> 회수하고, 남은 자리를 재시도 시각이 지난 {@code
-   * pending}으로 채운다.
+   * lease가 만료된 {@code processing}을 먼저 회수하고 남은 슬롯을 재시도 시각이 지난 {@code pending}으로 채운다.
    *
-   * <p>두 경로를 한 쿼리로 합치지 않은 이유는 각각 다른 부분 인덱스를 타기 때문이다. {@code OR}로 묶으면 둘 다 놓친다.
-   *
-   * <p><b>회수를 먼저 보는 이유는 기아를 막기 위해서다.</b> 신규를 먼저 보면 매 주기 {@code pending}이 슬롯을 모두 채우는 동안 만료 행이 한 번도
-   * 집히지 않고, 그대로 {@code apply_cutoff_at}을 지나면 두 쿼리 모두에서 빠져 영영 회수되지 않는다. "lease 만료 후 다음 주기가 회수한다"는
-   * lease 회수에 의한 복구 보장이 부하에 따라 깨지는 것이다.
-   *
-   * <p>반대 방향의 기아는 생기지 않는다. 만료 집합은 유한하고 자기 자신을 줄인다. 회수된 행은 {@code processing}이 되어 그 집합에서 빠지고, 회수마다
-   * 시도 횟수가 올라 결국 상한에서 종료된다. 새로 들어오는 것은 장애로 lease가 만료된 행뿐이다. 반면 {@code pending}은 사용자 요청으로 계속 유입되는 무한
-   * 스트림이라, 우선권을 주면 밀리는 쪽이 영원히 밀린다.
+   * <p>신규 pending이 계속 유입되어 만료 행의 회수가 밀리지 않도록 회수에 우선권을 준다. 각 상태의 부분 인덱스 조건에 맞춰 두 쿼리를 분리한다.
    */
   @Transactional
   public List<ClaimedGeneration> claimDue(int limit) {
@@ -127,15 +118,12 @@ class TaskDraftGenerationLedger {
   }
 
   /**
-   * 반영 창이 닫힌 미종료 원장을 종료로 닫는다.
+   * 반영 창이 닫힌 미종료 원장을 {@code deadline_exceeded}로 종료한다. 운영자가 명시적으로 닫는 {@code operationally_closed}와
+   * 구분한다.
    *
-   * <p>사유는 {@code operationally_closed}가 아니라 <b>{@code deadline_exceeded}</b>다. 전자는 운영자가 명시적으로 끝내는
-   * 경우이고, 이건 나이 상한을 넘겨 자동으로 닫히는 것이라 {@link #record}가 같은 상황에 이미 쓰는 사유와 같다.
+   * <p>JPA Auditing과 종료 지표를 적용하기 위해 행을 잠그고 엔티티를 변경한다. 처리 수를 제한해 적체가 커도 한 트랜잭션이 길어지지 않게 한다.
    *
-   * <p>bulk update가 아니라 행을 잠그고 엔티티를 바꾼다. bulk는 JPA Auditing을 우회해 {@code updated_at}이 멈추고(MOM-0819
-   * 코멘트 1번), 무엇보다 종료 지표가 이 경로만 비게 된다. 한 번에 처리할 수를 제한해 rollback 직후처럼 대상이 많을 때도 트랜잭션이 길어지지 않게 한다.
-   *
-   * @return 이번 주기에 닫은 수. 남은 것이 있으면 다음 주기가 이어서 처리한다
+   * @return 이번 주기에 닫은 수. 나머지는 다음 주기에 이어서 처리한다
    */
   @Transactional
   public int closeAbandoned(int limit) {
