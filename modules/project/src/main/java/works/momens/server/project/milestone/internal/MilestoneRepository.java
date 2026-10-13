@@ -14,7 +14,7 @@ interface MilestoneRepository extends JpaRepository<Milestone, UUID> {
   boolean existsByIdAndProjectIdAndDeletedAtIsNull(UUID id, UUID projectId);
 
   /**
-   * 워크스페이스와 프로젝트 생존 여부를 확인하기 위해 projects를 조인합니다. 소유자는 별도 배치 조회로 결합합니다.
+   * 워크스페이스 범위를 제한하고 프로젝트의 생존 여부를 확인하기 위해 projects를 조인합니다. 소유자는 별도 배치 조회로 결합합니다.
    *
    * <p>생성 시각 내림차순이며 레거시와 같이 동률 보조 키는 두지 않습니다.
    */

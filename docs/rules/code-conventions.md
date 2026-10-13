@@ -91,12 +91,12 @@
 
 ### 401 · 403
 
-- 인증/인가 거부 본문은 필터가 Standard 에러 shape로 자동 emit합니다. 컨트롤러는 401/403을 직접 처리하지 않습니다.
+- 보안 필터의 인증/인가 거부는 필터 핸들러가, 서비스의 `BusinessException`은 공통 예외 핸들러가 Standard 에러 shape로 응답합니다. 컨트롤러는 에러 본문을 직접 만들지 않습니다.
   - 인증 정보 없음 → `AUTH_UNAUTHORIZED` (401)
   - 토큰 무효·만료·형식 오류 → `AUTH_INVALID_TOKEN` (401)
   - 인가 거부 → `AUTH_FORBIDDEN` (403)
-- 요청자의 권한(RBAC)은 컨트롤러가 있는 `web`과 `mobile` 모듈의 조합 서비스에서 확인합니다(현재 사용자는 `userId`만 신뢰). 도메인 모듈의 쓰기 public API는 요청자의 권한을 확인하지 않으며, 호출하는 쪽에서 권한을 확인한 뒤 확정한 `workspaceId`를 전달받습니다.
-- 워크스페이스 권한 부족으로 `AUTH_FORBIDDEN`을 반환할 때 포함하는 `details`는 [서버 명세 > API 응답과 에러 코드](../spec/api-response-error-codes.md)의 「권한 details」 절을 따릅니다. `web` 모듈에서는 `WorkspaceAccessChecker`가 이 형식을 관리하며, 다른 클래스가 권한 거부 응답을 직접 생성하지 않는지는 `WebForbiddenResponseBoundaryTests`에서 검증한다.
+- 인가는 `web`·`mobile` 조합 서비스에서 확인하고, 도메인 쓰기 API에는 확인된 `workspaceId`를 전달하는 것을 기본 원칙으로 합니다. 현재 모든 경로가 이 구조는 아닙니다. 기존 memory 쓰기와 Signal action은 도메인 서비스에서 멤버십을 검사합니다. 호출자는 이 검사를 중복하거나 생략한다고 가정하지 말고 해당 API의 계약을 따라야 합니다. 인가 위치를 옮기는 작업은 별도 구현 변경입니다.
+- 권한 거부의 `details` 적용 범위와 기존 경로의 차이는 [서버 명세 > 권한 details](../spec/api-response-error-codes.md#권한-details)에서 관리합니다. `WebForbiddenResponseBoundaryTests`는 `web` 패키지에서 `WorkspaceAccessChecker` 외의 `AUTH_FORBIDDEN` 상수 접근만 검사하며, 위임받은 도메인의 응답까지 검증하지는 않습니다.
 
 ### 테스트 인증 주입
 

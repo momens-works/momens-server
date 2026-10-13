@@ -92,10 +92,11 @@ worker가 projection·소비 상태·재시도·DLQ를, `momens-retrieval`이 in
 - 사용자가 속한 워크스페이스를 조회할 때는 `membership`의 공개 계약으로 워크스페이스 ID를 확정한 뒤,
   `core`가 자신의 테이블을 조회합니다. `workspace_members`를 직접 조인하지 않습니다(MOM-0894).
 - 각 하위 도메인은 하나의 aggregate(`Workspace`, `WorkspaceMember`, `WorkspaceInvitation`,
-  `WorkspaceLabelSequence`)를 가지며, 트랜잭션 경계는 해당 aggregate 내부로 한정합니다. 예외는 라벨 발급 한 곳으로, 발급이
-  단일 문장(UPSERT)으로 호출자 트랜잭션에 참여한다(MANDATORY). 라벨이 INSERT되는 행에 동기
-  반환값으로 들어가고 실패 시 번호가 함께 되돌아가야 해서이고, 레거시 `BEFORE INSERT` 트리거와
-  같은 시맨틱을 유지하는 의도된 예외다.
+  `WorkspaceLabelSequence`)를 소유합니다. 저장 책임의 분리가 트랜잭션 분리를 뜻하지는 않습니다.
+  워크스페이스 생성은 owner 멤버십을 함께 저장하고, onboarding은 초기 프로젝트·메모리까지
+  같은 트랜잭션으로 묶어 전체 실패 시 함께 롤백합니다.
+- 라벨 발급은 단일 문장(UPSERT)으로 호출자 트랜잭션에 참여합니다(MANDATORY). 라벨을 사용하는
+  행의 저장이 실패하면 발급 번호도 함께 되돌립니다.
 
 ## project 하위 경계
 
@@ -130,10 +131,10 @@ capability의 물리 경계로 유지하고, 배포 단위도 나누지 않는�
   14회를 유지하기 위해 `MilestoneRepository`의 JPQL 조인을 persistence 예외로 허용한다. 엔티티 타입을
   Java 코드로 공유하거나 쓰기 경계를 넘기는 예외는 아니며, 통합 테스트가 workspace 격리와 project
   soft-delete 동작을 고정한다.
-- 하위 도메인마다 aggregate가 하나씩이고(`Project`, `Task`, `TaskUpdate`, `Milestone`, `Decision`, `Blocker`) 트랜잭션은 자기
-  aggregate 안에 닫힌다. 예외는 workspace 라벨 발급이 task/project 생성 트랜잭션에 참여하는 것과,
-  `minsu`가 연 트랜잭션에서 `TaskDraftApplier`로 `Task`를 변경하는 것이다([ADR-0015](../adr/0015-minsu-async-task-draft-generation.md)). 엔티티 간 참조는 JPA 연관이 아니라
-  식별자로 유지한다.
+- 하위 도메인마다 aggregate(`Project`, `Task`, `TaskUpdate`, `Milestone`, `Decision`, `Blocker`)의
+  저장 책임을 소유하며, 원자적 유스케이스에서는 호출자 트랜잭션에 참여한다. onboarding의 초기 프로젝트
+  생성, workspace 라벨 발급을 포함한 task/project 생성, `minsu`의 `TaskDraftApplier` 호출이 이에
+  해당한다([ADR-0015](../adr/0015-minsu-async-task-draft-generation.md)). 엔티티 간 참조는 JPA 연관이 아니라 식별자로 유지한다.
 
 ## outbox
 

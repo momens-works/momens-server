@@ -184,7 +184,12 @@ Bean Validation과 `FieldValidationException`을 통한 필드 단위 검증 실
 
 ## 권한 details
 
-권한이 부족해 `AUTH_FORBIDDEN`을 반환할 때는 `details.required_role`에 요청을 처리하는 데 필요한 최소 권한을 포함합니다.
+`web`의 `WorkspaceAccessChecker`가 워크스페이스 권한 부족으로 `AUTH_FORBIDDEN`을 반환할 때는
+`details.required_role`에 요청을 처리하는 데 필요한 최소 권한을 포함합니다. 모든 403 응답에 이 필드가 있는 것은 아닙니다.
+
+현재 memory 쓰기의 도메인 인가 거부는 `details`를 포함하지 않고, Signal action의 멤버십 거부는
+`details.signal_id`만 포함합니다. 이 경로들의 인가 위치와 응답 형식 통일은 별도 구현 작업이며,
+클라이언트는 `AUTH_FORBIDDEN` 코드만으로 `required_role`의 존재를 가정하면 안 됩니다.
 
 ```json
 {

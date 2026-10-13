@@ -10,7 +10,7 @@ dependencies {
     annotationProcessor platform(SpringBootPlugin.BOM_COORDINATES)
     testImplementation platform(SpringBootPlugin.BOM_COORDINATES)
 
-    // 공유 에러 계약·확장 마이그레이션·테스트 기반을 사용합니다. source_refs의 감사 필드는 별도로 매핑합니다.
+    // 공유 에러 계약·확장 마이그레이션·테스트 기반을 사용합니다.
     implementation project(':common')
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'

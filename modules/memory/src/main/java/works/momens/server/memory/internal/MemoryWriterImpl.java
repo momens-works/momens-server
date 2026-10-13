@@ -25,7 +25,7 @@ import works.momens.server.workspace.membership.WorkspaceMembershipReader;
  * 부분 UPDATE·후보 값 복사·행 잠금이 필요해 네이티브 SQL을 사용합니다. 새 행만 생성하는 {@link ConfirmedMemoryCreatorImpl}은 엔티티를
  * 사용합니다.
  *
- * <p>워크스페이스(404) → 멤버십(403) → 잠금 → 상태(409) 순서를 지켜 비멤버에게 후보 상태를 노출하지 않습니다.
+ * <p>후보·메모리 존재 및 소속 조회(404) → 멤버십(403) → 잠금 → 상태(409) 순서를 지켜 비멤버에게 후보 상태를 노출하지 않습니다.
  *
  * <p>검색 반영은 outbox를 소비하는 worker가 담당합니다. 공통 소비 기반은 MOM-0898, memory 투영·운영 검증은 MOM-0957 범위입니다. 레거시와
  * 같이 reject·merge·expire는 이벤트를 발행하지 않습니다.
