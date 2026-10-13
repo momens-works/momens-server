@@ -64,11 +64,18 @@
 Flyway의 `flyway_schema_history`와는 별개의 이력이라 한 DB에서 공존합니다.
 
 **이 서버가 마이그레이션 파일을 가진 객체의 DDL은 레거시와 worker가 쓰지 않습니다.** 경계는
-"이 리포에 그 객체를 만드는 파일이 있는가"이고, 겹치는 20개 테이블이 실제 동결 대상입니다
-(목록은 [부트스트랩 당시 목록](https://github.com/momens-works/momens-server/blob/93a8f733ffdfa5220348be321455ece5dd345d9e/docs/design/prod-schema-ownership-transfer.md#5-결정-3--레거시-마이그레이션-정책)). 기간 한정이 아니라 영구입니다.
+"이 리포에 그 객체를 만드는 파일이 있는가"입니다. 겹치는 **20개 테이블**은
+[부트스트랩 당시 목록](https://github.com/momens-works/momens-server/blob/93a8f733ffdfa5220348be321455ece5dd345d9e/docs/design/prod-schema-ownership-transfer.md#5-결정-3--레거시-마이그레이션-정책)이며
+현재 전체 목록이 아닙니다. 이후 추가된 migration도 확인하며 동결은 기간 한정이 아니라 영구입니다.
 
-바깥쪽은 각자 계속 소유합니다 — 레거시 전용(`oauth_*`, `decisions`, `retrieval_*`, `sync_states`)과
+바깥쪽은 각자 계속 소유합니다 — 레거시 전용(`oauth_*`, `retrieval_*`, `sync_states`)과
 worker 전용(`raw_source_events` 등)입니다. 이 서버는 그 객체들의 파일도 엔티티도 갖지 않습니다.
+
+`decisions`는 MOM-1017에서 서버의 [생성 migration](../../modules/project/src/main/resources/db/migration/V20261004103000__create_decisions.sql)과
+Decision 엔티티를 추가했으므로 레거시 전용 객체가 아닙니다. 다만 파일 존재가 운영 전환 완료를
+뜻하지는 않습니다. 기존 테이블의 DDL 소유권 전환·서버 DML 권한은 migration 주석대로 운영 전환 전에
+별도 확인하며, legacy writer 중단과 신규 writer 활성화는
+[이관 원장 H054](../design/legacy-product-api-migration/ledger.md#http-진입점-원장)를 따릅니다.
 
 동결에 강제 수단은 없습니다. 위반은 다음 배포의 `ddl-auto=validate`가 기동에서 사후에 잡는데,
 `validate`는 매핑된 컬럼의 존재와 타입만 보고 제약·기본값·UNIQUE는 보지 않으므로 완전하지 않습니다.

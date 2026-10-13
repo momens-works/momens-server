@@ -16,8 +16,8 @@ spring:
         # request body의 enum 필드에 숫자를 보내면 Jackson은 기본적으로 선언 순서에 해당하는 enum 상수로 변환합니다(0이면 첫 번째 상수).
         # 이 동작을 비활성화해 숫자 입력을 거부하고, `GlobalExceptionHandler`가 `COMMON_VALIDATION_FAILED`로 응답하도록 합니다.
         fail-on-numbers-for-enums: true
-  # 기본 TaskScheduler는 풀 크기가 1이라 모든 @Scheduled가 한 스레드에서 직렬 실행됩니다(MOM-0810
-  # 설계 11.3절). minsu drain은 claim 트랜잭션만 이 스레드에서 하고 LLM 호출은 자기 실행기로
+  # 기본 TaskScheduler는 풀 크기가 1이라 모든 @Scheduled가 한 스레드에서 직렬 실행됩니다(docs/prod-readiness-ledger.md의
+  # 「Minsu 활성화와 복구」 절). minsu drain은 claim 트랜잭션만 이 스레드에서 하고 LLM 호출은 자기 실행기로
   # 넘기지만, 그래도 notification의 1초 주기 push 폴링과 같은 스레드를 쓰면 서로를 밀어냅니다.
   # @Scheduled 빈이 다섯입니다: notification push 폴링, minsu drain, minsu 지표 스냅샷,
   # minsu 원장 종료, MCP 미사용 client 정리. 앞의 둘은 오래 블로킹합니다(drain은 배치의 wall-clock 상한까지, push는 FCM
@@ -83,7 +83,7 @@ momens:
   # dev/ingress 재검증 전에는 prod에서 활성화하지 않습니다.
   minsu:
     task-draft:
-      # provider 축: 모델 호출 자체가 활성인가(MOM-0810 설계 11.2절).
+      # provider 축: 모델 호출 자체가 활성인가(docs/prod-readiness-ledger.md의 「활성화와 rollback」 절).
       enabled: ${MOMENS_MINSU_TASK_DRAFT_ENABLED:false}
       # 원장 지표 스냅샷 주기(MOM-0821). gauge 콜백에서 DB를 조회하지 않고 이 주기로 집계 한 번을 돌려
       # 스냅샷을 갈아끼웁니다(docs/rules/observability.md). 이 지표가 잡는 것은 scheduler 정지와 lease
