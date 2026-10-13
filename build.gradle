@@ -8,8 +8,7 @@ allprojects {
     version = '0.1.0-SNAPSHOT'
 }
 
-// 루트의 build.gradle과 settings.gradle도 마지막 줄 개행과 공백 정리를 강제합니다.
-// java 블록은 .java만 다뤄서 gradle 파일이 검사에서 빠졌고, 리뷰에서 두 번 지적됐습니다(PR #41, #42).
+// Java 포맷 대상에서 빠지는 루트 Gradle 파일도 공백과 마지막 개행을 검사합니다.
 apply plugin: 'com.diffplug.spotless'
 
 spotless {

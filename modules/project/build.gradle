@@ -12,9 +12,8 @@ dependencies {
 
     // 공유 영속성 베이스(BaseEntity, JPA Auditing)와 공유 에러 계약.
     implementation project(':common')
-    // task 생성 시 workspace 범위 MOM 라벨을 LabelAllocator public API로 발급받습니다(MOM-62/MOM-37).
-    // 접근 범위(workspace 스코프) 자체는 여전히 호출하는 쪽이 멤버십을 한 번 조회해 넘깁니다(PR #42
-    // 리뷰). 이 런타임 의존은 projects/tasks 의 workspace FK 마이그레이션도 테스트 클래스패스에 올립니다.
+    // workspace 범위 라벨 발급과 멤버십 확인에 필요한 공개 API입니다.
+    // workspace 런타임 의존으로 FK 대상 마이그레이션도 테스트 클래스패스에 포함됩니다.
     implementation project(':workspace')
     // task 생성 시 task.created outbox 이벤트를 발행합니다(CO-6, ADR-0008).
     implementation project(':outbox')

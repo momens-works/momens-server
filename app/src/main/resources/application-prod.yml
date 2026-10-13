@@ -8,9 +8,7 @@ spring:
     password: ${DATABASE_PASSWORD}
   jpa:
     show-sql: false
-  # prod 스키마는 이 서버가 소유합니다(ADR-0019). 부트스트랩(MOM-0909)이 2026-09-04 에 적용돼
-  # 이력 42 건(심기 28 + 실행 14)이 prod 에 자리잡았고, 이 값이 정본이 됐습니다. 이제 배포마다
-  # Flyway 가 미적용 마이그레이션을 적용하고 ddl-auto=validate(공통)가 그 위에서 매핑을 검증합니다.
+  # prod 스키마는 이 서버가 소유합니다(ADR-0019). Flyway 적용 뒤 공통 ddl-auto=validate로 매핑을 검증합니다.
   flyway:
     enabled: true
 
