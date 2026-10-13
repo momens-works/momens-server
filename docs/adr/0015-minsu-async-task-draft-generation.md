@@ -182,6 +182,6 @@ convert 응답에서 LLM 지연이 빠져 동기 구간은 DB 쓰기만 남는�
 - 모바일 계약에 생성 상태 필드가 추가되고, 앱은 재조회로 결과를 확인해야 한다.
 - 복구 과정의 중복 LLM 실행과 그 비용이 남는다.
 
-세부 설계는 [MOM-0810 비동기 task draft 생성 설계](../design/minsu-async-task-draft-design.md)에
+세부 설계는 [MOM-0810 당시 비동기 task draft 생성 설계](https://github.com/momens-works/momens-server/blob/93a8f733ffdfa5220348be321455ece5dd345d9e/docs/design/minsu-async-task-draft-design.md)에
 있다. 운영 timeout·백오프·lease·deadline 값은 dev 재측정 후 확정하며, 그 전에는 prod에서
 비동기 생성을 활성화하지 않는다.

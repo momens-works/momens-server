@@ -48,7 +48,7 @@ worker가 projection·소비 상태·재시도·DLQ를, `momens-retrieval`이 in
   이를 workspace에 두면 역방향 의존이 생긴다.
 - Signal convert는 트랜잭션 밖에서 `minsu.prepare`, 안에서 `minsu.enroll`을 호출한다.
   minsu는 `TaskDraftApplier`와 outbox로 결과를 원자 반영한다. `project → minsu`는 순환이므로
-  두 원장을 읽는 조합은 표면이 맡는다([생성 계약](minsu-async-task-draft-design.md)).
+  두 원장을 읽는 조합은 표면이 맡는다([Minsu 생성·반영 경계](#minsu-생성반영-경계)).
 
 ## mcp — 미사용 OAuth client 정리
 
@@ -150,7 +150,11 @@ Signal·task 생성과 Signal 처리의 기본 이벤트 계약은 다음과 같
 | `signal.converted_to_task` | api-server | signal | `{ "task_id": "<task_id>" }` |
 | `signal.dismissed` | api-server | signal | `{}` |
 
-비동기 draft 반영 이벤트는 [비동기 설계](minsu-async-task-draft-design.md)를 따른다.
+비동기 draft가 실제로 바뀔 때만 task 변경·원장 종료와 같은 트랜잭션에 `task.draft_generated`를 남긴다.
+aggregate는 `task`, aggregate_id는 task ID, payload는 `{}`, 멱등키는
+`task.draft_generated:{task_id}`다. worker는 최신 task를 hydrate하며 원장 terminal을 기다리지 않는다.
+생성 성공이어도 값이 같거나 task를 바꾸지 않는 종료면 이벤트를 생략한다.
+worker-first 활성화 조건은 [운영 준비 대장](../prod-readiness-ledger.md#minsu-활성화와-복구)을 따른다.
 
 - `outbox_events` 엔티티·리포지토리·마이그레이션을 소유한다.
 - 쓰기 public API `OutboxAppender`: 호출자 트랜잭션에 합류해(`Propagation.MANDATORY`)
@@ -173,7 +177,7 @@ Signal·task 생성과 Signal 처리의 기본 이벤트 계약은 다음과 같
   같은 최종 값을 재요청하면 수정 이벤트를 생략하지만, HTTP 요청별 멱등성은 보장하지 않는다.
   A→B→C 뒤 B 요청을 다시 보내 실제로 B로 바뀌면 새 UUID의 이벤트가 발행된다.
 - 조회 public API `OutboxEventReader`(`readAfter`, `latestIdBefore`, `findById`)와
-  `OutboxEventView`([알림 전달](signal-push-demo-design.md#소비와-전달)). watermark 이후 event를 id
+  `OutboxEventView`([push 운영](../prod-readiness-ledger.md#signal-push-운영)). watermark 이후 event를 id
   오름차순으로 읽되 DB 시계 기준 안전 지연을 지나지 않은 첫 event에서 멈춘다(prefix-cap).
   watermark 등 소비 상태 관리는 이 모듈이 아니라 consumer가 소유한다.
 - `issued_by`는 이 서버가 발행하는 이벤트만 다루므로 `api-server`로 고정한다. worker가 발행하는
@@ -216,7 +220,54 @@ context의 `EntityRelationReader`·`EntityRelationWriter`는 연결을 조회·�
   consume → dispatch, consume·dispatch → device, dispatch → fcm 방향으로 협력한다.
   소비 replay의 중복 방지 기록은 dispatch가 소유하고 SDK 타입은 fcm 밖으로 노출하지 않는다.
   설치 HTTP는 mobile이 `PushDeviceRegistrar`에 위임한다. 전달·복구 계약은
-  [알림 전달](signal-push-demo-design.md)에 모은다.
+  [운영 준비 대장](../prod-readiness-ledger.md#signal-push-운영)에 모은다.
 - minsu의 draft는 준비·원장·실행·반영·상태 조회를, llm은 provider 중립 계약·설정·model 선택을
   소유한다. Google adapter는 llm 내부에 두고 다른 Gradle 모듈에는 root 공개 계약만 노출한다.
-  [생성 계약](minsu-async-task-draft-design.md)과 [ADR-0015](../adr/0015-minsu-async-task-draft-generation.md)를 따른다.
+  [아래 생성·반영 경계](#minsu-생성반영-경계)와 [ADR-0015](../adr/0015-minsu-async-task-draft-generation.md)를 따른다.
+
+### Dev Signal 생성 경계
+
+`signal.dev`는 `@DevOnly`와 dev 관리자 인가를 사용하며 prod에는 endpoint를 등록하지 않는다.
+source-ref·Signal·evidence·`signal.created`를 한 트랜잭션으로 저장한다. HTTP 성공은 commit이며
+push 성공을 기다리지 않는다. 전용 insert 경로를 사용하고 `@Immutable` 읽기 엔티티를 재사용하지 않는다.
+`DevSourceRefWriter`와 `OutboxAppender`는 호출자 트랜잭션에 참여한다.
+worker도 같은 backing과 빈 payload·`signal.created:{signal_id}` 멱등키를 사용하며 producer만 바뀐다.
+도구 제거는 MOM-0944가 소유하고, worker 입력의 `file` 등 proto 정합성 검증도 별도로 남는다.
+
+### Minsu 생성·반영 경계
+
+공개 API는 [SignalTaskDraftGenerator](../../modules/minsu/src/main/java/works/momens/server/minsu/SignalTaskDraftGenerator.java)의
+`prepare`·`enroll`과 `TaskDraftStatusReader`다. provider/model·prompt·SDK는 공개하지 않는다.
+
+- Signal 존재·권한·기존 action을 먼저 확인하고 dismiss·replay·충돌에서는 생성하지 않는다.
+  신규 convert만 쓰기 트랜잭션 밖에서 prepare하고 반환된 `PreparedTaskDraft`를 그대로 enroll한다.
+  모드 판정은 minsu가 한 번 수행하며 signal이 flag로 분기하지 않는다.
+- 동기 prepare는 생성/fallback, 비동기는 fallback만 준비한다. enroll은 동기 no-op을 포함해
+  `MANDATORY`이며 비동기 task·action·pending 원장·기존 outbox 두 건은 함께 commit한다.
+  원장 실패는 convert 전체 rollback이다. commit 뒤 응답 유실은 replay이며 재적재하지 않는다.
+  task·원장 unique는 동시 동기 요청의 중복 모델 호출까지 막지 않는다.
+- 입력은 Signal title/type/description/impact와 의미 있는 evidence target/change/impact다.
+  evidence는 sort_order·source_ref_id 순 최대 10건이며 저장/상세 API의 개수 제한이 아니다.
+  source 원문·snippet·URL·작성자·provider metadata·리소스 식별자는 모델에 넘기지 않는다.
+  description/impact/evidence가 모두 비면 title/type만으로 추론하지 않는다.
+- system instruction과 고정 필드 JSON을 분리하고 외부 문자열을 prompt에 보간하지 않는다.
+  출력 전체를 검증하며 role/priority가 무효면 전체 fallback으로 바꾼다. title은 trim 후 Java 길이
+  15 이하로 정규화하되 surrogate pair를 자르지 않으며 빈 모델 title은 Signal title로 대체한다.
+  fallback은 정규화된 Signal title·pm·medium이다. 생성 실패 자체는 새 public 5xx를 만들지 않는다.
+- convert 입력 snapshot과 **실제 저장한** title/role/priority baseline, 두 deadline을 원장에 저장한다.
+  실행 시 Signal 재조회나 baseline 재계산을 하지 않는다. description/impact는 무절단 저장하며
+  길이 CHECK를 추가하지 않는다(MOM-0817). terminal snapshot 정리는 MOM-0912 미결정이다.
+- `TaskDraftApplier`는 task row lock 후 세 baseline 값 모두 같을 때만 전체를 반영한다.
+  하나라도 다르면 user_edited, 삭제·미존재면 task_gone으로 원장만 닫는다. updated_at을 비교하지
+  않아 다른 필드 편집·원래 값으로 되돌린 편집은 감지하지 못한다.
+  task 변경·원장 종료·outbox는 같은 transaction manager에 참여하며 REQUIRES_NEW/조기 commit은 없다.
+  반영 후 token/deadline 조건 실패도 부분 commit하지 않는다.
+- 신규 응답은 enroll 결과로 비동기 fallback·generating 또는 동기 ready를 반환한다.
+  replay·상세는 **권한 → 원장 → task** 순서다. READ COMMITTED에서 ready를 읽은 뒤 최신 task를
+  읽으며 AI title·generating 조합은 허용한다. 격리 수준/조회 조립 변경 시 이 보장을 다시 검증한다.
+  원장 없음·completed·DB read deadline 초과는 ready이며 현재 flag로 과거 상태를 재해석하지 않는다.
+  앱 표시와 deadline 예외는 [모바일 명세](../spec/mobile-api.md), 복구는
+  [운영 준비 대장](../prod-readiness-ledger.md#minsu-활성화와-복구)을 따른다.
+
+스키마·상태 전이·잠금의 구현 정본은 [마이그레이션](../../modules/minsu/src/main/resources/db/migration/)과
+[TaskDraftGenerationLedger](../../modules/minsu/src/main/java/works/momens/server/minsu/draft/ledger/TaskDraftGenerationLedger.java)다.

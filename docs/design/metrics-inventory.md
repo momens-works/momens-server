@@ -7,7 +7,7 @@
 지표의 의미와 설계 배경은 표에 복제하지 않고 다음 문서를 따릅니다.
 
 - 인증 전환 지표: [ADR-0017](../adr/0017-transitional-legacy-session-token-acceptance.md)
-- Minsu 생성·원장 운영: [생성 계약의 관측](minsu-async-task-draft-design.md#관측)
+- Minsu 생성·원장 운영: [운영 준비 대장](../prod-readiness-ledger.md#minsu-활성화와-복구)
 
 ## Auth
 
@@ -51,3 +51,16 @@
 `momens.minsu.llm.generate.active`는 Micrometer의 기본 Observation handler가 자동으로 만드는
 companion 지표이며 첫 provider Observation이 시작될 때 등록됩니다. 현재 low-cardinality key가
 Observation 시작 뒤에 추가되므로 이 지표에는 커스텀 태그가 붙지 않습니다.
+
+### Minsu 관측 시 해석
+
+provider Observation은 lazy client 생성부터 응답까지 포함한다. provider에 진입하지 않은 fallback은
+요청 counter만 남긴다. metric/tag/span/event에 식별자·prompt·입력·응답 원문을 넣지 않는다.
+로그에도 source 원문·URL·credential·token을 남기지 않는다.
+
+- 미종료 건수/최대 나이, 만료 lease, deadline 초과, heartbeat와 지표 snapshot age를 함께 본다.
+  pending만 보면 processing에서 멈춘 작업을 놓친다.
+- retry_exhausted의 사유 구성비, user_edited, claim 대기·전체 생성 지연으로 품질과 속도를 판단한다.
+- provider 호출 수 / 종료 건수는 중복 실행 비용의 추정치이며 진행 중 작업이 분모에서 빠진다.
+- reclaim과 stale이 함께 오르면 lease 길이·갱신을 검토한다. 적재 실패율은 fail-closed 영향을 본다.
+- deadline 읽기 투영은 정상적으로 0이어야 한다. 경보 기준·구현은 **MOM-0832**에서 다룬다.

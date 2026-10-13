@@ -38,8 +38,6 @@ docs/
 - [상세설계 > 레거시 Product API 이관 전략](design/legacy-product-api-migration/strategy.md)
 - [상세설계 > 레거시 Product API 이관 원장](design/legacy-product-api-migration/ledger.md)
 - [상세설계 > 웹·MCP 컷오버 실행과 rollback runbook](design/legacy-product-api-migration/cutover.md)
-- [상세설계 > Signal push 전달 계약](design/signal-push-demo-design.md)
-- [상세설계 > Minsu task draft 생성 계약](design/minsu-async-task-draft-design.md)
 - [상세설계 > 지표 인벤토리](design/metrics-inventory.md)
 
 ## 제품 레벨 문서는 어디에?
