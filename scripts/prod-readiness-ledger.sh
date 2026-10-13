@@ -5,10 +5,6 @@
 # prod 유효 설정의 기본값 없는 환경변수가 대장 문서에 선언됐는지 검사하고, 반영되지 않은 선언이
 # 남은 릴리스를 차단한다. 규약은 docs/rules/configuration.md 를 본다.
 #
-# 스키마 구간은 없다. prod 스키마 주도권이 이 서버로 넘어오면서(ADR-0019) 마이그레이션의
-# `-- prod-schema:` 헤더와 그것을 검사하던 릴리스 게이트를 폐지했다. 잘못된 마이그레이션은
-# 이제 배포 시점에 Flyway가 막는다. 폐지 결정은 docs/adr/0019-prod-schema-ownership-transfer.md.
-#
 # 사용법:
 #   prod-readiness-ledger.sh --check          prod 필수 설정 선언을 검사한다
 #   prod-readiness-ledger.sh --release-check  미반영 필수 설정이 남아 있으면 실패한다

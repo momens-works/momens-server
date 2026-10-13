@@ -16,15 +16,8 @@ spring:
         # request body의 enum 필드에 숫자를 보내면 Jackson은 기본적으로 선언 순서에 해당하는 enum 상수로 변환합니다(0이면 첫 번째 상수).
         # 이 동작을 비활성화해 숫자 입력을 거부하고, `GlobalExceptionHandler`가 `COMMON_VALIDATION_FAILED`로 응답하도록 합니다.
         fail-on-numbers-for-enums: true
-  # 기본 TaskScheduler는 풀 크기가 1이라 모든 @Scheduled가 한 스레드에서 직렬 실행됩니다(docs/prod-readiness-ledger.md의
-  # 「Minsu 활성화와 복구」 절). minsu drain은 claim 트랜잭션만 이 스레드에서 하고 LLM 호출은 자기 실행기로
-  # 넘기지만, 그래도 notification의 1초 주기 push 폴링과 같은 스레드를 쓰면 서로를 밀어냅니다.
-  # @Scheduled 빈이 다섯입니다: notification push 폴링, minsu drain, minsu 지표 스냅샷,
-  # minsu 원장 종료, MCP 미사용 client 정리. 앞의 둘은 오래 블로킹합니다(drain은 배치의 wall-clock 상한까지, push는 FCM
-  # 발송까지). 풀이 그보다 작으면 뒤의 둘이 그만큼 밀리는데, 하필 drain이 느린 상황이 그 둘이
-  # 존재하는 이유라 관측이 필요한 순간에 관측이 멈춥니다. 빈 수보다 하나 크게 둔 것은 그 실패가
-  # 조용하기 때문입니다. 다른 모듈이 폴러를 하나 더 붙일 때 이 파일을 볼 사람이 minsu 담당자가
-  # 아닙니다(SchedulingConfig 참고).
+  # drain과 push 발송이 블로킹해도 지표 집계·원장 종료·MCP 정리가 지연되지 않도록 풀의 스레드 수를 확보합니다.
+  # @Scheduled 작업을 추가하면 풀 크기도 재검토합니다(SchedulingConfig).
   task:
     scheduling:
       pool:
@@ -62,12 +55,9 @@ momens:
     allowed-origins: ${MOMENS_MCP_ALLOWED_ORIGINS:}
   openapi:
     server-url: ${MOMENS_OPENAPI_SERVER_URL:http://localhost:8080}
-  # 웹 브라우저 cross-origin 허용(MOM-55). 허용 origin은 환경별로 주입합니다.
-  # 모바일은 Authorization 헤더로 호출하는 네이티브 클라이언트라 CORS 대상이 아닙니다.
+  # 브라우저 origin 허용 목록. 네이티브 모바일은 CORS 대상이 아닙니다.
   cors:
-    # env 이름은 레거시 momens-api 와 동일하게 CORS_ALLOWED_ORIGINS 를 씁니다(배포 설정 재사용).
-    # 내부 설정 키는 momens.cors.* 네임스페이스를 따르되, 외부 주입 env 만 레거시에 맞췄습니다.
-    # comma-separated 로 주입하고, 미설정 시 빈 목록(아무 origin 도 허용 안 함)입니다.
+    # 기존 배포와 호환되는 CORS_ALLOWED_ORIGINS를 쉼표 구분으로 받고, 미설정이면 모두 거부합니다.
     allowed-origins: ${CORS_ALLOWED_ORIGINS:}
   # signal.created 소비·FCM 발송(MOM-0690). 켜면 Firebase Admin SDK가 ADC로 초기화되므로
   # Workload Identity 또는 GOOGLE_APPLICATION_CREDENTIALS가 준비된 환경에서만 켭니다.
@@ -78,9 +68,7 @@ momens:
       firebase:
         # ADC 서비스 계정의 소속 프로젝트와 FCM 대상 프로젝트가 다를 수 있어 명시적으로 주입합니다.
         project-id: ${MOMENS_NOTIFICATION_PUSH_FIREBASE_PROJECT_ID:}
-  # Signal task draft 생성 기반(MOM-0805)과 convert-to-task 연동(MOM-0804). 기본 비활성이며 이때는
-  # 고정 fallback draft를 사용합니다. MOM-0806에서 로컬 측정 후 8초 timeout을 적용했지만,
-  # dev/ingress 재검증 전에는 prod에서 활성화하지 않습니다.
+  # 기본 비활성으로 고정 fallback을 사용합니다. timeout의 dev/ingress 재검증 전에는 prod에서 켜지 않습니다.
   minsu:
     task-draft:
       # provider 축: 모델 호출 자체가 활성인가(docs/prod-readiness-ledger.md의 「활성화와 rollback」 절).

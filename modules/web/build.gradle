@@ -12,8 +12,7 @@ dependencies {
 
     // 공유 에러 계약(BusinessException)과 현재 사용자 헬퍼(CurrentUser).
     implementation project(':common')
-    // 웹 진입 API는 도메인 모듈의 public API만 조합합니다(module-map 의존 방향, MOM-0850 설계).
-    // 워크스페이스 조회(H020, H022)는 workspace 하나만 조합합니다. capability가 늘어날 때마다 의존을 추가합니다.
+    // 웹 진입 API는 도메인 모듈의 public API를 조합합니다.
     implementation project(':workspace')
     implementation project(':project')
     implementation project(':context')
@@ -25,7 +24,6 @@ dependencies {
     implementation project(':auth')
     implementation project(':mcp')
 
-    // 워크스페이스 컨트롤러(presentation).
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     // 조합 서비스의 @Transactional(readOnly). 이 모듈은 엔티티가 없어 data-jpa 대신 tx만 둡니다(mobile 모듈 전례).
     implementation 'org.springframework:spring-tx'

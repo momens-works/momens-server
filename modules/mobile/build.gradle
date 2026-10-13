@@ -13,8 +13,6 @@ dependencies {
     // 공유 에러 계약(BusinessException)과 현재 사용자 헬퍼(CurrentUser).
     implementation project(':common')
     // 모바일 진입 API는 도메인 모듈의 public API만 조합합니다(module-map 의존 방향).
-    // bootstrap: user(내 프로필) + project(접근 가능한 목록) + workspace(멤버십 role 매핑).
-    // brief: signal(미처리 시그널 요약, MOM-67).
     implementation project(':user')
     implementation project(':project')
     implementation project(':workspace')
@@ -30,7 +28,6 @@ dependencies {
     // 모바일 인증 표면(MOM-0852)이 auth의 MobileAuthService public API에 위임합니다.
     implementation project(':auth')
 
-    // bootstrap 컨트롤러(presentation).
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     // 조합 서비스의 @Transactional(readOnly). 이 모듈은 엔티티가 없어 data-jpa 대신 tx만 둡니다.
     implementation 'org.springframework:spring-tx'

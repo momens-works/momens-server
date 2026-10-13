@@ -11,7 +11,6 @@ dependencies {
     testImplementation platform(SpringBootPlugin.BOM_COORDINATES)
     testAnnotationProcessor platform(SpringBootPlugin.BOM_COORDINATES)
 
-    // 기능/공유 모듈을 조립합니다.
     implementation project(':common')
     implementation project(':user')
     implementation project(':auth')
@@ -29,7 +28,6 @@ dependencies {
     implementation project(':minsu')
     implementation project(':web')
 
-    // Core (Boot BOM 관리, 버전 생략)
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -42,7 +40,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-opentelemetry'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
-    // Persistence / Migration (Boot BOM 관리)
     // Boot 4는 Flyway 자동구성을 spring-boot-flyway 모듈로 분리합니다. flyway-core 단독으로는
     // 자동 마이그레이션이 동작하지 않으므로 starter로 가져옵니다.
     implementation 'org.springframework.boot:spring-boot-starter-flyway'
@@ -55,13 +52,11 @@ dependencies {
     implementation libs.swagger.core.jakarta
     implementation libs.spring.dotenv
 
-    // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
 
-    // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation libs.spring.modulith.starter.test
@@ -77,9 +72,7 @@ dependencies {
     testImplementation libs.firebase.admin
 }
 
-// OpenAPI 스냅샷(docs/spec/openapi.json)은 커밋본과 실제 문서를 대조하는 계약 게이트입니다(MOM-0878).
-// test 는 비교만 하고, 파일을 쓰는 것은 아래 갱신 task 뿐입니다. 갱신을 이름 있는 명시적 행위로 두어
-// 계약 변경이 PR diff에 드러나게 합니다.
+// 테스트는 OpenAPI 스냅샷을 비교만 합니다. 계약 변경이 diff에 드러나도록 갱신은 별도 task로 수행합니다.
 def openApiSnapshotFile = rootProject.file('docs/spec/openapi.json')
 
 // 비교 경로(test)와 생성 경로(updateOpenApiSnapshot)가 같은 런타임 설정으로 돌아야 합니다. 설정이
