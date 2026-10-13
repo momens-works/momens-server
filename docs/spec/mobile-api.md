@@ -199,7 +199,9 @@ project는 모바일의 현재 context로 고정되어 있고, description·task
 정규화된 시그널 제목으로 최대 15자, `role`은 `pm`, `priority`는 `medium`)을 사용합니다.
 비동기 경로에서는 fallback으로 먼저 작업을 생성하고 후속 생성을 진행합니다. 생성 결과는
 `title`, `role`, `priority`가 초기 값과 같을 때만 반영하며, 생성 실패나 선행 편집 등으로
-반영되지 않을 수 있습니다. 생성된 title은 공백 포함 최대 15자이며, draft는 Signal backing에
+반영되지 않을 수 있습니다. 세 필드 중 하나라도 바뀌면 결과 전체를 폐기하며, 다른 필드만 편집하거나
+세 필드를 원래 값으로 되돌린 편집은 감지하지 못합니다. 원장 적재에 실패하면 작업 전환 전체가
+롤백됩니다. 생성된 title은 공백 포함 최대 15자이며, draft는 Signal backing에
 저장하지 않습니다.
 
 클라이언트는 title·role·priority를 선택하거나 전송하지 않습니다.
@@ -435,5 +437,14 @@ data payload:
 
 `notification_type`은 알림이 발생한 이유이고, `destination`은 클릭 시 이동할 화면입니다. 앱은 알림
 클릭 시 `signal_id`로 Signal 상세 화면을 엽니다. payload에는 Signal type이 없으므로
-상세 조회 후 type을 사용합니다. 설치·토큰의 운영 정책은
-[Signal push 설계](../design/signal-push-demo-design.md)를 따릅니다.
+상세 조회 후 type을 사용합니다.
+
+서버는 프로젝트명·Signal 제목을 임의로 자르지 않으며 말줄임과 foreground 표시는 앱/OS가 담당합니다.
+background/종료 상태의 시스템 표시를 위한 notification과 data payload를 함께 보냅니다.
+수신자는 Signal 생성 시점이 아닌 소비 시점의 workspace 구성원 전체이며 역할·생성자 여부로 제외하지
+않습니다. 한 사용자의 모든 활성 Android 설치로 보내고, 설치가 없으면 정상적으로 건너뜁니다.
+
+전달은 at-least-once입니다. FCM 성공 뒤 상태 기록 전에 서버가 종료되면 중복 알림이 올 수 있습니다.
+매 전송 직전 설치의 활성 상태·소유자를 다시 확인해 계정 이전 시 이전 사용자의 대기 알림을 취소합니다.
+동일 사용자의 token 갱신은 최신 token으로 재시도합니다. 등록 경합의 잔여 제약 위반은
+`409 COMMON_CONFLICT`입니다. 운영 한계와 복구는 [운영 준비 대장](../prod-readiness-ledger.md#signal-push-운영)을 따릅니다.
