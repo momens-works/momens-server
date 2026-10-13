@@ -119,11 +119,14 @@ Flyway가 만듭니다. 위 표는 **레거시가 만든 부분**에만 적용�
 충실도가 아니라 위 양방향 원칙이고, 인덱스는 「인덱스와 존재하는 환경」의 기준을 따릅니다. 파일은
 checksum 때문에 고치지 않으니 그 주석을 보고 되돌아가지 않도록 여기에 적어 둡니다.
 
-알려진 어긋남이 둘 있습니다. 둘 다 기록만 남기고 고치지 않습니다.
+MOM-0909에서 기록한 어긋남은 다음과 같습니다. 당시 조사 목록을 현재의 누락 목록으로 간주하지
+않으며, 변경을 검토할 때 후속 migration과 대상 환경의 실제 스키마를 함께 확인합니다.
 
-- prod에는 있으나 서버 파일이 만들지 않는 컬럼이 5개 있습니다 — `entity_relations`의 `metadata`·
+- 당시 조사에서는 prod에 있으나 서버 파일이 만들지 않는 컬럼 5개를 기록했습니다 — `entity_relations`의 `metadata`·
   `source_ref_ids`·`weight`, `source_refs.content_hash`, `workspace_members.onboarding_state`.
-  매핑하지 않아 `validate` 대상이 아닙니다([MOM-0909 조사 기록](https://github.com/momens-works/momens-server/blob/93a8f733ffdfa5220348be321455ece5dd345d9e/docs/design/prod-schema-ownership-transfer.md#26-미러가-재현하지-않는-prod-컬럼이-5개-있다)).
+  매핑하지 않아 `validate` 대상이 아니라는 조사였습니다([MOM-0909 조사 기록](https://github.com/momens-works/momens-server/blob/93a8f733ffdfa5220348be321455ece5dd345d9e/docs/design/prod-schema-ownership-transfer.md#26-미러가-재현하지-않는-prod-컬럼이-5개-있다)).
+  현재 서버 파일의 누락 목록은 아닙니다. `source_refs.content_hash`와 부분 UNIQUE 인덱스는
+  [add_source_ref_content_hash](../../modules/source/src/main/resources/db/migration/V20260823100000__add_source_ref_content_hash.sql)가 생성합니다.
 - `tasks.workspace_id`가 서버 파일에서는 `NOT NULL`이지만 레거시(`000006_fe_contract.sql`)에서는
   nullable입니다. 레거시가 백필하고 트리거로 채워 실제 `NULL` 행은 사실상 없고, `validate`도
   nullability를 보지 않습니다.

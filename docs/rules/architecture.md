@@ -48,8 +48,8 @@ Gradle 논리 경로는 `:user`, `:auth`처럼 평면으로 유지합니다.
 - bounded context는 모델과 언어의 의미가 달라질 때 보조 기준으로 사용합니다.
 - workflow는 1차 모듈 경계로 삼지 않습니다. 필요하면 각 capability의 public API만 조합하는
   얇은 orchestration module로 두며, orchestration module은 도메인 정책을 소유하지 않습니다.
-- 모듈별로 담당 영역을 나누지 않습니다. 각 모듈을 변경했을 때 어느 쪽에 영향을 미치는지는
-  [모듈 맵](../design/module-map.md)의 `영향 범위`에서 확인합니다.
+- 모듈별로 담당 영역을 나누지 않습니다. 모듈의 책임과 경계는 [모듈 맵](../design/module-map.md)에서,
+  변경 영향을 검토할 때 필요한 의존 관계는 각 모듈의 `build.gradle`에서 확인합니다.
 
 ## 모듈 내부 구조
 
