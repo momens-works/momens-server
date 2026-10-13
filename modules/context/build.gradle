@@ -10,7 +10,7 @@ dependencies {
     annotationProcessor platform(SpringBootPlugin.BOM_COORDINATES)
     testImplementation platform(SpringBootPlugin.BOM_COORDINATES)
 
-    // 공유 확장 마이그레이션과 테스트 기반을 사용합니다. EntityRelation은 전용 SQL로 쓰므로 BaseEntity를 상속하지 않습니다.
+    // 공유 확장 마이그레이션과 테스트 기반을 사용합니다.
     implementation project(':common')
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'

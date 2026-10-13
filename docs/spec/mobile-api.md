@@ -348,7 +348,7 @@ convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다�
 
 `id`는 source_ref의 식별자입니다. `source`는 원본 출처이며 화면 라벨은 앱이 생성합니다(위 Material 참고).
 `occurred_at`은 원본이 생성된 시각입니다. `summary`는 source_ref의 snippet이고, snippet이 없으면 본문(text)을
-대신 사용합니다. 이 규칙은 Signal 근거와 동일합니다. 원본에 값이 없으면 `title`, `summary`, `occurred_at`,
+대신 사용합니다. 원본에 값이 없으면 `title`, `summary`, `occurred_at`,
 `source_url`은 `null`로 반환합니다. 표시 순서는 연결이 생성된 시각의 내림차순입니다.
 
 `open_questions`와 `next_action`은 민수 산출물입니다. `open_questions[]`는 `task_open_questions`에서, `next_action`은

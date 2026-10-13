@@ -12,7 +12,7 @@ import works.momens.server.common.config.DevOnly;
 import works.momens.server.source.DevSourceRefWriter;
 
 /**
- * dev 전용 source_refs insert. {@code @Immutable} 읽기 엔티티({@code SourceRef})를 재사용하지 않는 전용 insert 경로다.
+ * dev 경로는 엔티티 대신 전용 JDBC INSERT로 source_refs를 저장합니다.
  *
  * <p>{@code source_object_type}과 {@code source_object_id}는 운영 환경에서 {@code NOT NULL}이고 기본값이 없으므로 서버가
  * 직접 저장한다. 데모에서는 연결된 외부 객체의 종류와 식별자를 알 수 없으므로 {@code source_object_type}에는 프로토 enum의 {@code
