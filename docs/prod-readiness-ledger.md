@@ -214,6 +214,11 @@ prod 활성화 전에는 다음을 확인한다. 이번 문서 정리가 완료�
 - dev 재측정으로 timeout·lease·deadline·동시성 검증: **MOM-0824**.
 - `task.draft_generated` worker 소비 배포와 E2E projection: **MOM-0823**.
 - `draft_status`를 처리하는 앱 배포.
+- 배포 담당자는 prod 활성화·배포 전에 사용하는 model의 공식 lifecycle과 종료 일정을 다시 확인하고
+  결과를 해당 배포 티켓·PR에 기록한다. 설계 당시 제공 기간을 현재 지원 보장으로 간주하지 않는다.
+- 새 model을 catalog에 추가할 때는 해당 model에 대한 prompt/schema 회귀 검증을 통과해야 한다.
+  기존 `SignalTaskDraftPromptTest`·`DefaultGoogleClientFactoryTest`는 prompt 구성과 SDK schema를
+  검증하지만 model을 입력받지 않으므로, 통과만으로 신규 model의 호환성 검증을 대신하지 않는다.
 - 데이터 레지던시 정책: model/location catalog는 기술적 호출 가능 목록이지 보안·법무 허용 목록이
   아니다. location 미지정 시 기본 global이 적용되므로 prod 허용 지역과 명시 강제 여부를 결정하기
   전에는 활성화하지 않는다.
