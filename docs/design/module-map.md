@@ -227,7 +227,8 @@ context의 `EntityRelationReader`·`EntityRelationWriter`는 연결을 조회·�
 
 ### Dev Signal 생성 경계
 
-`signal.dev`는 `@DevOnly`와 dev 관리자 인가를 사용하며 prod에는 endpoint를 등록하지 않는다.
+`signal.dev`는 `@DevOnly`를 통해 prod에는 endpoint를 등록하지 않는다. 호출 시 유효한 Bearer
+access token이 필요하지만 workspace 멤버십과 role은 별도로 검사하지 않는다.
 source-ref·Signal·evidence·`signal.created`를 한 트랜잭션으로 저장한다. HTTP 성공은 commit이며
 push 성공을 기다리지 않는다. 전용 insert 경로를 사용하고 `@Immutable` 읽기 엔티티를 재사용하지 않는다.
 `DevSourceRefWriter`와 `OutboxAppender`는 호출자 트랜잭션에 참여한다.
