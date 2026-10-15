@@ -52,7 +52,7 @@ class SecurityConfig {
     "/api/mobile/app-update"
   };
 
-  /** 공개 경로는 각 엔드포인트가 자격증명을 검증하며, stale Bearer 헤더가 있어도 컨트롤러에 도달해야 합니다. */
+  /** 만료된 Bearer 헤더가 공개 요청을 차단하지 않도록 Resource Server 필터를 적용하지 않습니다. */
   @Bean
   @Order(1)
   SecurityFilterChain publicSecurityFilterChain(HttpSecurity http) throws Exception {

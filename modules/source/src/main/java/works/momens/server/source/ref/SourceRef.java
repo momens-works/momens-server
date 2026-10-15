@@ -17,8 +17,8 @@ import works.momens.server.common.persistence.BaseEntity;
 /**
  * 사용자가 붙여넣은 링크는 엔티티로 저장하므로 읽기 전용으로 선언하지 않습니다.
  *
- * <p>감사 컬럼은 INSERT에 포함되므로 앱에서 채워야 합니다. null을 보내면 DB 기본값이 적용되지 않습니다. {@code metadata}는 빈 객체로 저장하며
- * 응답에서는 제외합니다.
+ * <p>감사 컬럼은 INSERT에 포함되므로 앱에서 채워야 합니다. null을 보내면 DB 기본값이 적용되지 않습니다. {@code metadata}는 수동 링크 생성 시 빈
+ * 객체로 저장합니다.
  */
 @Getter
 @Entity
