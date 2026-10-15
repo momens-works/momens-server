@@ -17,6 +17,7 @@ Use `origin/main` only when the user specifically asks for release/main comparis
    - `AGENTS.md`
    - `docs/rules/git.md`
    - `docs/rules/code-conventions.md`
+   - `docs/rules/documentation.md`
    - `docs/spec/api-response-error-codes.md` if API behavior changed
 2. Run the helper script:
 
@@ -44,7 +45,7 @@ Use `origin/main` only when the user specifically asks for release/main comparis
 4. Review for:
    - branch and commit convention drift
    - diff scope that does not match the linked Momens task
-   - missing docs updates
+   - docs and changed code comments against `docs/rules/documentation.md`
    - unsettled decisions that were silently resolved
    - secret or local-only file leakage
    - API response/error body compatibility
@@ -80,6 +81,9 @@ there. Do not rely on or reference any commit message examples or formatting des
 in this skill or any other agent documentation.
 
 ## Validation Commands
+
+For documentation and comment changes, also run the applicable checks in
+`docs/rules/documentation.md`.
 
 Prefer this order:
 

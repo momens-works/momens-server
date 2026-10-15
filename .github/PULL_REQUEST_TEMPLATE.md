@@ -61,4 +61,4 @@
 - [ ] PR 제목이 컨벤션(`[유형] 제목`)을 따릅니다.
 - [ ] 셀프 리뷰를 마쳤습니다.
 - [ ] 시크릿·`.env`·민감 값이 포함되지 않았습니다.
-- [ ] 필요한 문서(README / docs)를 갱신했습니다.
+- [ ] [문서·주석 기준](https://github.com/momens-works/momens-server/blob/develop/docs/rules/documentation.md)에 따라 필요한 설명을 갱신하고 정본·중복·이력 보존 위치를 확인했습니다.

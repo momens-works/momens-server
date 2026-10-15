@@ -235,6 +235,16 @@ subprojects {
         useJUnitPlatform()
     }
 
+    tasks.withType(Javadoc).configureEach {
+        // 주석 작성을 강제하지 않고 package-private 선언까지 참조 오류만 검사합니다.
+        options.addBooleanOption('Xdoclint:reference', true)
+        options.memberLevel = JavadocMemberLevel.PRIVATE
+    }
+
+    tasks.named('check') {
+        dependsOn tasks.named('javadoc')
+    }
+
     spotless {
         java {
             googleJavaFormat()
