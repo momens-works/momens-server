@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import works.momens.server.common.api.CommonErrorCode;
 
 /**
- * 웹의 권한 거부 본문을 {@code WorkspaceAccessChecker} 한 곳에서 생성하도록 검증합니다.
+ * web 패키지의 {@code AUTH_FORBIDDEN} 상수 접근을 {@code WorkspaceAccessChecker}로 제한합니다.
  *
  * <p>상수 선언을 분석하기 위해 common도 읽되 테스트 클래스는 제외합니다. mobile·signal·memory의 응답 통일은 이 검사 범위 밖의 후속 작업입니다.
  */
