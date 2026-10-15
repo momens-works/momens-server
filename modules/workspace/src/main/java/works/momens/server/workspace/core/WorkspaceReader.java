@@ -3,6 +3,7 @@ package works.momens.server.workspace.core;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 /**
  * workspace 모듈의 워크스페이스 조회 public API.

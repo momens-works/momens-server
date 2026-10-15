@@ -22,7 +22,7 @@ import works.momens.server.workspace.membership.WorkspaceRole;
 /**
  * 워크스페이스 조합 서비스입니다. 도메인 public API를 조합하며 정책은 소유하지 않습니다.
  *
- * <p>{@link WorkspaceReader}는 {@link Optional}을 반환하므로 조회 결과가 없을 때 사용할 에러는 해당 서비스에서 결정합니다. project
+ * <p>{@link WorkspaceReader}는 {@code Optional}을 반환하므로 조회 결과가 없을 때 사용할 에러는 해당 서비스에서 결정합니다. project
  * 모듈의 {@code ProjectReader}와 같은 방식입니다. 목록 조회는 멤버십 조인이 조회 대상을 제한하므로 별도의 권한 검사를 수행하지 않습니다.
  *
  * <p>생성 요청은 {@code onboarding} 모듈에 위임합니다. 워크스페이스와 함께 프로젝트와 메모리를 저장하므로 트랜잭션이 세 도메인 모듈에 걸쳐 있기 때문입니다.
