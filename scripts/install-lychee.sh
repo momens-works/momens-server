@@ -29,6 +29,7 @@ if [[ ! -x "$BINARY" ]]; then
   trap 'rm -rf -- "$DOWNLOAD_DIR"' EXIT
   ARCHIVE="lychee-${TARGET}.tar.gz"
   curl --fail --silent --show-error --location \
+    --retry 2 --retry-max-time 240 --connect-timeout 10 --max-time 120 \
     "https://github.com/lycheeverse/lychee/releases/download/lychee-v${VERSION}/${ARCHIVE}" \
     -o "${DOWNLOAD_DIR}/${ARCHIVE}"
   if command -v sha256sum >/dev/null 2>&1; then
