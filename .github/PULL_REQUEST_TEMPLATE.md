@@ -41,9 +41,10 @@
 ## 검증
 
 <!-- 실제로 무엇을 어떻게 확인했는지. 자동 검증과 수동 확인 모두. -->
-- [ ] `./gradlew spotlessCheck` 통과
-- [ ] `./gradlew test` 통과
+- [ ] `./gradlew check` 통과 (포맷·테스트·Javadoc)
 - [ ] `./gradlew bootJar` 통과
+- 문서 변경 시 `bash scripts/check-doc-links.sh`, 링크 검사 도구 변경 시
+  `bash scripts/check-doc-links-test.sh` 실행 결과:
 - 수동 확인:
 
 ## 리뷰 포인트

@@ -114,8 +114,7 @@ For documentation and comment changes, also run the applicable checks in
 Prefer this order:
 
 ```bash
-./gradlew spotlessCheck
-./gradlew test
+./gradlew check
 ./gradlew bootJar
 ```
 
