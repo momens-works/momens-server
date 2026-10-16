@@ -119,6 +119,7 @@ Topic-specific docs:
 - `docs/rules/` — standing project-wide rules
 - `docs/rules/architecture.md` — modular modulith and package direction
 - `docs/rules/git.md` — branch, commit, PR, and merge rules
+- `docs/rules/documentation.md` — documentation, comments, retention, and reference validation
 - `docs/rules/code-conventions.md` — coding style, Spring, DTO, logging, tests
 - `docs/rules/persistence.md` — DB, JPA, Flyway, time, identifiers
 - `docs/rules/configuration.md` — configuration and secrets
