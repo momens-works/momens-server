@@ -23,7 +23,8 @@
 
 ## 입력과 응답
 
-- 필수 문자열은 공백 제거 후 비어 있으면 오류다. 알 수 없는 필드, 잘못된 타입과 명시적 `null`은 오류다.
+- 필수 문자열은 공백 제거 후 비어 있으면 오류다. 알 수 없는 필드, 잘못된 타입은 오류다.
+  명시적 `null`은 마일스톤 수정의 설명·요약·목표 날짜에서만 삭제 입력으로 허용한다.
 - 작업 생성 기본값은 `backlog`·`medium`이다. MCP는 레거시의 대소문자 정규화와
   `progress`/`in-progress` → `in_progress`, `med` → `medium`을 유지한다.
 - 날짜는 실제 존재하는 `YYYY-MM-DD`, 마일스톤 `progress`는 0~100 정수다.
@@ -55,10 +56,13 @@
 | 작업 `assignee` | 유지 | 유지 | `none`, `unassign`, `unassigned` |
 | 작업 `milestone` | 유지 | 유지 | `none`, `remove`, `unassign`, `unassigned` |
 | 작업 `title`, `status`, `priority` | 유지 | 유지 | 없음 |
-| 마일스톤 문자열·목표 날짜 | 유지 | 유지 | 없음 |
+| 마일스톤 `description`, `summary`, `target_date` | 유지 | 삭제 | 없음 |
+| 마일스톤 `name`, `status`, `health_status` | 유지 | 유지 | 없음 |
 
 작업 설명·기한의 빈 문자열 삭제는 기존 Go MCP의 빈 문자열 무시와 다른 계약이다.
-마일스톤 설명·요약·목표 날짜 삭제는 MOM-1007에서 공통 command 계약을 확정한 뒤 연결한다.
+마일스톤 설명·요약·목표 날짜는 명시적 `null`로도 삭제할 수 있다. 빈 문자열은 공백 제거 후
+판단하며, 삭제된 값은 DB에 `NULL`로 저장한다. 공통 command는 각 필드의 변경 여부를 별도로
+전달하므로 필드 생략이 삭제로 바뀌지 않는다.
 
 ## 재시도와 트랜잭션
 

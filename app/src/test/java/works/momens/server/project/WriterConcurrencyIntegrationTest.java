@@ -540,7 +540,7 @@ class WriterConcurrencyIntegrationTest extends AbstractPostgresIntegrationTest {
   private void update(boolean milestone, UUID id, String name, String description) {
     if (milestone) {
       milestoneWriter.update(
-          new UpdateMilestoneCommand(id, name, description, null, null, null, null, null, null));
+          new UpdateMilestoneCommand(id, name, description, description != null, null, null, false, null, null, null, false, null));
     } else {
       taskWriter.patch(
           new PatchTaskCommand(

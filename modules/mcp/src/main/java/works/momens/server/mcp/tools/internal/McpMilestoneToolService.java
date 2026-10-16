@@ -59,11 +59,14 @@ class McpMilestoneToolService {
                 current.id(),
                 argument(args, "name"),
                 argument(args, "description"),
+                args.has("description"),
                 argument(args, "status"),
                 date(argument(args, "target_date"), "target_date"),
+                args.has("target_date"),
                 argument(args, "health_status"),
                 progress(args),
                 argument(args, "summary"),
+                args.has("summary"),
                 McpToolInputs.version(args)));
     return McpWriteToolText.updatedMilestone(milestone);
   }
