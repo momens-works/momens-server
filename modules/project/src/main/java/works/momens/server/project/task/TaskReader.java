@@ -1,5 +1,6 @@
 package works.momens.server.project.task;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -40,4 +41,15 @@ public interface TaskReader {
 
   /** 워크스페이스에 속한 태스크 저장값을 생성 시각 내림차순으로 조회합니다. */
   List<TaskSnapshot> listSnapshotsByWorkspaceId(UUID workspaceId);
+
+  /** 생성 시각·id 내림차순으로 cursor 이후 최대 limit개를 조회합니다. */
+  List<TaskSnapshot> listPage(
+      UUID workspaceId,
+      UUID projectId,
+      UUID assigneeId,
+      boolean unassignedOnly,
+      String status,
+      Instant before,
+      UUID beforeId,
+      int limit);
 }

@@ -1,10 +1,12 @@
 package works.momens.server.project.task.internal;
 
 import jakarta.persistence.LockModeType;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -65,4 +67,25 @@ interface TaskRepository extends JpaRepository<Task, UUID> {
       group by t.status
       """)
   List<StatusCount> countByStatus(UUID projectId, Collection<String> statuses);
+
+  @Query(
+      """
+      select t from Task t
+      where t.workspaceId = :workspaceId and t.deletedAt is null
+        and (:projectId is null or t.projectId = :projectId)
+        and (:assigneeId is null or t.assigneeId = :assigneeId)
+        and (:unassignedOnly = false or t.assigneeId is null)
+        and (:status is null or t.status = :status)
+        and (:beforeId is null or t.createdAt < :before or (t.createdAt = :before and t.id < :beforeId))
+      order by t.createdAt desc, t.id desc
+      """)
+  List<Task> findPage(
+      UUID workspaceId,
+      UUID projectId,
+      UUID assigneeId,
+      boolean unassignedOnly,
+      String status,
+      Instant before,
+      UUID beforeId,
+      Pageable pageable);
 }

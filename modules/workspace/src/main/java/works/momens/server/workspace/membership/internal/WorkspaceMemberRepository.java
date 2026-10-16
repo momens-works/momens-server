@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -44,4 +45,12 @@ interface WorkspaceMemberRepository extends JpaRepository<WorkspaceMember, Works
       @Param("userId") UUID userId,
       @Param("role") String role,
       @Param("now") Instant now);
+
+  @Query(
+      """
+      select m from WorkspaceMember m where m.workspaceId = :workspaceId
+        and (:afterId is null or m.createdAt > :after or (m.createdAt = :after and m.userId > :afterId))
+      order by m.createdAt asc, m.userId asc
+      """)
+  List<WorkspaceMember> findPage(UUID workspaceId, Instant after, UUID afterId, Pageable pageable);
 }

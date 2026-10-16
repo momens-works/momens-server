@@ -144,6 +144,7 @@ class McpWriteToolServiceTest {
             "list_members",
             "list_milestones",
             "list_projects",
+            "list_task_updates",
             "list_tasks",
             "list_tasks_v2",
             "update_milestone",
