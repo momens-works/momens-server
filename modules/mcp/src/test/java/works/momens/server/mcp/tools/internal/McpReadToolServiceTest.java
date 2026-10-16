@@ -1,6 +1,7 @@
 package works.momens.server.mcp.tools.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -18,6 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -105,7 +107,7 @@ class McpReadToolServiceTest {
             context.grantId(), userId, "client", workspaceId, Set.of(McpScope.TASKS_READ.value()));
     assertThat(service.list(limited))
         .extracting(McpToolDefinition::name)
-        .containsExactly("get_task", "list_tasks", "list_tasks_v2");
+        .containsExactly("get_task", "list_tasks", "list_tasks_v2", "list_task_updates");
   }
 
   @ParameterizedTest
@@ -116,7 +118,8 @@ class McpReadToolServiceTest {
         "list_milestones",
         "list_tasks",
         "list_tasks_v2",
-        "get_task"
+        "get_task",
+        "list_task_updates"
       })
   void revokedGrantBlocksEveryToolBeforeDomainReads(String name) {
     when(grants.findActive(context.grantId())).thenReturn(Optional.empty());
@@ -177,6 +180,10 @@ class McpReadToolServiceTest {
   @Test
   void filtersTasksAndDisplaysDetailActivities() {
     seed();
+    when(tasks.listPage(workspaceId, projectId, userId, false, "todo", null, null, 21))
+        .thenAnswer(inv -> tasks.listPage(workspaceId, null, null, false, null, null, null, 21));
+    when(tasks.listPage(workspaceId, null, userId, false, null, null, null, 21))
+        .thenAnswer(inv -> tasks.listPage(workspaceId, null, null, false, null, null, null, 21));
     assertThat(
             text(
                 call(
@@ -188,7 +195,8 @@ class McpReadToolServiceTest {
     assertThat(text(call("list_tasks", "{\"status\":\"unknown\"}"))).isEqualTo("No tasks match.");
     assertThat(text(call("get_task", "{\"task\":\" mom-0991 \"}")))
         .isEqualTo(
-            "MOM-0991 · Read tools\nstatus: todo · priority: medium · project: PRJ-0003 Sprint · milestone: Release · assignee: Alice · due: 2026-10-01\n\nDescription\n\nactivities (1):\n- [2026-09-27 03:04 UTC] comment · Alice: Comment");
+            "MOM-0991 · Read tools\nstatus: todo · priority: medium · project: PRJ-0003 Sprint · milestone: Release · assignee: Alice · due: 2026-10-01\n\nDescription\n\nTotal activities: 1\n1 activity(s):\n- [2026-09-27 03:04 UTC] comment · Alice: Comment\nTo read activities, call list_task_updates with task: "
+                + taskId);
     verify(tasks).findSnapshotByLabel(workspaceId, "MOM-0991");
   }
 
@@ -200,7 +208,7 @@ class McpReadToolServiceTest {
     UUID bobId = UUID.randomUUID();
     UUID missingId = UUID.randomUUID();
     UUID unnamedId = UUID.randomUUID();
-    when(updates.listByTaskId(taskId))
+    when(updates.listPage(taskId, null, null, 11))
         .thenReturn(
             List.of(
                 activity(userId, "comment", "First"),
@@ -218,8 +226,8 @@ class McpReadToolServiceTest {
                     unnamedId, "unnamed@example.com", missingName, null, null, now, now)));
 
     assertThat(text(call("get_task", "{\"task\":\"MOM-0991\"}")))
-        .endsWith(
-            "activities (6):"
+        .contains(
+            "6 activity(s):"
                 + "\n- [2026-09-27 03:04 UTC] comment · Alice: First"
                 + "\n- [2026-09-27 03:04 UTC] update · Bob: Progress"
                 + "\n- [2026-09-27 03:04 UTC] update · Alice: Again"
@@ -239,13 +247,13 @@ class McpReadToolServiceTest {
   @Test
   void preservesActivitiesWithoutAuthorIdsAndSkipsAuthorLookup() {
     seed();
-    when(updates.listByTaskId(taskId))
+    when(updates.listPage(taskId, null, null, 11))
         .thenReturn(
             List.of(activity(null, "comment", "Comment"), activity(null, "update", "Progress")));
 
     assertThat(text(call("get_task", "{\"task\":\"MOM-0991\"}")))
-        .endsWith(
-            "activities (2):"
+        .contains(
+            "2 activity(s):"
                 + "\n- [2026-09-27 03:04 UTC] comment · Unknown author: Comment"
                 + "\n- [2026-09-27 03:04 UTC] update · Unknown author: Progress");
     verify(users).getProfiles(List.of(userId));
@@ -257,111 +265,49 @@ class McpReadToolServiceTest {
         UUID.randomUUID(), workspaceId, projectId, taskId, authorId, body, kind, null, now, now);
   }
 
-  @Test
-  void taskFiltersExcludeNonMatchingProjectsAndAssigneesIndependently() {
-    seed();
-    TaskSnapshot matching = tasks.listSnapshotsByWorkspaceId(workspaceId).getFirst();
-    TaskSnapshot otherProject = taskWithAssignment("MOM-0992", UUID.randomUUID(), userId);
-    TaskSnapshot otherAssignee = taskWithAssignment("MOM-0993", projectId, UUID.randomUUID());
-    TaskSnapshot unassigned = taskWithAssignment("MOM-0994", projectId, null);
-    when(tasks.listSnapshotsByWorkspaceId(workspaceId))
-        .thenReturn(List.of(matching, otherProject, otherAssignee, unassigned));
-
-    assertThat(text(call("list_tasks", "{}")))
-        .contains("4 task(s):", "MOM-0991", "MOM-0992", "MOM-0993", "MOM-0994");
-    assertThat(text(call("list_tasks", "{\"project\":\"PRJ-0003\"}")))
-        .contains("3 task(s):", "MOM-0991", "MOM-0993", "MOM-0994")
-        .doesNotContain("MOM-0992");
-    assertThat(text(call("list_tasks", "{\"assignee\":\"me\"}")))
-        .contains("2 task(s):", "MOM-0991", "MOM-0992")
-        .doesNotContain("MOM-0993", "MOM-0994");
-    assertThat(text(call("list_tasks", "{\"project\":\"PRJ-0003\",\"assignee\":\"me\"}")))
-        .isEqualTo("1 task(s):\n- MOM-0991 · Read tools [todo] — PRJ-0003 Sprint");
-  }
-
   @ParameterizedTest
   @ValueSource(strings = {"none", "unassign", " UNASSIGNED "})
-  @DisplayName("v2 미할당 별칭은 미할당만 조회하고 기존 도구는 전체 조회를 유지한다")
   void v2UnassignedAliasesPreserveLegacyContract(String alias) {
-    seed();
-    TaskSnapshot assigned = tasks.listSnapshotsByWorkspaceId(workspaceId).getFirst();
-    when(tasks.listSnapshotsByWorkspaceId(workspaceId))
-        .thenReturn(List.of(assigned, taskWithAssignment("MOM-1003", projectId, null)));
     String args = mapper.createObjectNode().put("assignee", alias).toString();
-    assertThat(text(call("list_tasks_v2", args)))
-        .contains("1 task(s):", "MOM-1003")
-        .doesNotContain("MOM-0991");
-    assertThat(text(call("list_tasks", args))).contains("2 task(s):", "MOM-0991", "MOM-1003");
-    assertThat(text(call("list_tasks_v2", "{}"))).contains("2 task(s):", "MOM-0991", "MOM-1003");
-    assertThat(text(call("list_tasks_v2", "{\"assignee\":\"  \"}"))).contains("2 task(s):");
+    call("list_tasks_v2", args);
+    verify(tasks).listPage(workspaceId, null, null, true, null, null, null, 21);
+    call("list_tasks", args);
+    verify(tasks).listPage(workspaceId, null, null, false, null, null, null, 21);
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"me", " ALICE@example.com ", "alice", "Ali"})
-  @DisplayName("v2는 담당자 참조의 정규화와 특정 담당자 조회를 유지한다")
   void v2ResolvesMemberReferences(String reference) {
     seed();
-    TaskSnapshot assigned = tasks.listSnapshotsByWorkspaceId(workspaceId).getFirst();
-    when(tasks.listSnapshotsByWorkspaceId(workspaceId))
-        .thenReturn(List.of(assigned, taskWithAssignment("MOM-1003", projectId, null)));
-    for (String value : List.of(reference, userId.toString())) {
-      assertThat(
-              text(
-                  call(
-                      "list_tasks_v2",
-                      mapper.createObjectNode().put("assignee", value).toString())))
-          .contains("1 task(s):", "MOM-0991")
-          .doesNotContain("MOM-1003");
-    }
+    call("list_tasks_v2", mapper.createObjectNode().put("assignee", reference).toString());
+    verify(tasks).listPage(workspaceId, null, userId, false, null, null, null, 21);
   }
 
   @Test
-  @DisplayName("v2 프로젝트·담당자·상태 필터는 개별 및 조합으로 적용된다")
-  void v2FiltersIndependentlyAndTogether() {
-    seed();
-    TaskSnapshot assigned = tasks.listSnapshotsByWorkspaceId(workspaceId).getFirst();
-    TaskSnapshot done =
-        new TaskSnapshot(
-            UUID.randomUUID(),
-            workspaceId,
-            projectId,
-            null,
-            "MOM-1006",
-            "Done task",
-            null,
-            "done",
-            "medium",
-            "implementation",
-            null,
-            null,
-            now,
-            now);
-    when(tasks.listSnapshotsByWorkspaceId(workspaceId))
+  void resolvesMemberBeyondFirstBatchWithoutCollectingWholeWorkspace() {
+    List<WorkspaceMembershipDetail> first =
+        IntStream.range(0, 100)
+            .mapToObj(i -> new WorkspaceMembershipDetail(UUID.randomUUID(), "member", now, now))
+            .toList();
+    UUID target = UUID.randomUUID();
+    when(memberships.listPage(workspaceId, null, null, 100)).thenReturn(first);
+    when(memberships.listPage(workspaceId, now, first.getLast().userId(), 100))
+        .thenReturn(List.of(new WorkspaceMembershipDetail(target, "member", now, now)));
+    when(users.getProfiles(List.of(target)))
         .thenReturn(
-            List.of(
-                assigned,
-                taskWithAssignment("MOM-1003", projectId, null),
-                taskWithAssignment("MOM-1004", UUID.randomUUID(), null),
-                done));
-    assertThat(text(call("list_tasks_v2", "{\"project\":\"PRJ-0003\"}")))
-        .contains("3 task(s):", "MOM-0991", "MOM-1003", "MOM-1006")
-        .doesNotContain("MOM-1004");
-    assertThat(text(call("list_tasks_v2", "{\"status\":\" DONE \"}")))
-        .contains("1 task(s):", "MOM-1006")
-        .doesNotContain("MOM-0991", "MOM-1003", "MOM-1004");
-    assertThat(
-            text(
-                call(
-                    "list_tasks_v2",
-                    "{\"project\":\"PRJ-0003\",\"assignee\":\"none\",\"status\":\" TODO \"}")))
-        .contains("1 task(s):", "MOM-1003")
-        .doesNotContain("MOM-0991", "MOM-1004", "MOM-1006");
-    assertThat(
-            text(
-                call(
-                    "list_tasks_v2",
-                    "{\"project\":\"PRJ-0003\",\"assignee\":\"me\",\"status\":\"done\"}")))
-        .isEqualTo("No tasks match.");
+            List.of(new UserProfile(target, "target@example.com", "Target", null, null, now, now)));
+    call("list_tasks_v2", "{\"assignee\":\"Target\"}");
+    verify(tasks).listPage(workspaceId, null, target, false, null, null, null, 21);
+    verify(memberships).listPage(workspaceId, now, first.getLast().userId(), 100);
+  }
+
+  @Test
+  void pushesCombinedFiltersAndLimitToReader() {
+    seed();
+    call(
+        "list_tasks_v2",
+        "{\"project\":\"PRJ-0003\",\"assignee\":\"none\",\"status\":\" TODO \",\"limit\":3}");
+    verify(tasks).listPage(workspaceId, projectId, null, true, "todo", null, null, 4);
   }
 
   @ParameterizedTest
@@ -452,24 +398,6 @@ class McpReadToolServiceTest {
     verifyNoInteractions(projects, tasks, users);
   }
 
-  private TaskSnapshot taskWithAssignment(String label, UUID taskProjectId, UUID assigneeId) {
-    return new TaskSnapshot(
-        UUID.randomUUID(),
-        workspaceId,
-        taskProjectId,
-        null,
-        label,
-        "Other task",
-        null,
-        "todo",
-        "medium",
-        "implementation",
-        assigneeId,
-        null,
-        now,
-        now);
-  }
-
   @Test
   void taskLookupIsScopedBeforeReadingComments() {
     assertThat(call("get_task", "{\"task\":\"" + taskId + "\"}").path("isError").asBoolean())
@@ -482,9 +410,10 @@ class McpReadToolServiceTest {
   @ValueSource(booleans = {false, true})
   void rejectsTaskInDeletedProjectBeforeReadingComments(boolean useId) {
     seed();
-    TaskSnapshot task = tasks.listSnapshotsByWorkspaceId(workspaceId).getFirst();
+    TaskSnapshot task =
+        tasks.listPage(workspaceId, null, null, false, null, null, null, 21).getFirst();
     when(tasks.findSnapshotInWorkspace(workspaceId, taskId)).thenReturn(Optional.of(task));
-    when(projects.listDetailsByWorkspaceId(workspaceId)).thenReturn(List.of());
+    when(projects.listByIds(workspaceId, List.of(projectId))).thenReturn(List.of());
     String reference = useId ? taskId.toString() : "mom-0991";
 
     JsonNode result = call("get_task", "{\"task\":\"" + reference + "\"}");
@@ -515,7 +444,7 @@ class McpReadToolServiceTest {
   @Test
   void projectResolutionDoesNotLetLongInputMatchShortNameAndRejectsAmbiguity() {
     seed();
-    ProjectDetail first = projects.listDetailsByWorkspaceId(workspaceId).getFirst();
+    ProjectDetail first = projects.listByIds(workspaceId, List.of(projectId)).getFirst();
     ProjectDetail duplicate =
         new ProjectDetail(
             UUID.randomUUID(),
@@ -535,7 +464,10 @@ class McpReadToolServiceTest {
             null,
             now,
             now);
-    when(projects.listDetailsByWorkspaceId(workspaceId)).thenReturn(List.of(first, duplicate));
+    when(projects.findReferenceCandidates(eq(workspaceId), any(), anyString()))
+        .thenReturn(List.of(first, duplicate));
+    when(tasks.listPage(workspaceId, projectId, null, false, null, null, null, 21))
+        .thenAnswer(inv -> tasks.listPage(workspaceId, null, null, false, null, null, null, 21));
     assertThat(call("list_tasks", "{\"project\":\"Sprint\"}").path("isError").asBoolean()).isTrue();
     assertThat(call("list_tasks", "{\"project\":\"Sprint extended\"}").path("isError").asBoolean())
         .isTrue();
@@ -551,7 +483,7 @@ class McpReadToolServiceTest {
   @ValueSource(strings = {"Alice", "Ali"})
   void ambiguousAssigneeRequiresEmail(String reference) {
     UUID otherUserId = UUID.randomUUID();
-    when(memberships.listMembershipDetails(workspaceId))
+    when(memberships.listPage(workspaceId, null, null, 100))
         .thenReturn(
             List.of(
                 new WorkspaceMembershipDetail(userId, "member", now, now),
@@ -568,7 +500,7 @@ class McpReadToolServiceTest {
     assertThat(
             call("list_tasks", "{\"assignee\":\"alice@example.com\"}").path("isError").asBoolean())
         .isFalse();
-    verify(tasks).listSnapshotsByWorkspaceId(workspaceId);
+    verify(tasks).listPage(workspaceId, null, userId, false, null, null, null, 21);
   }
 
   @Test
@@ -591,13 +523,16 @@ class McpReadToolServiceTest {
             now,
             now);
     when(tasks.findSnapshotInWorkspace(workspaceId, taskId)).thenReturn(Optional.of(task));
-    when(tasks.listSnapshotsByWorkspaceId(workspaceId)).thenReturn(List.of(task));
-    when(updates.listByTaskId(taskId)).thenReturn(List.of());
+    when(tasks.listPage(workspaceId, null, null, false, null, null, null, 21))
+        .thenReturn(List.of(task));
+    when(updates.listPage(taskId, null, null, 11)).thenReturn(List.of());
     JsonNode detail = call("get_task", "{\"task\":\"" + taskId + "\"}");
     assertThat(detail.path("isError").asBoolean()).isFalse();
     assertThat(text(detail))
         .isEqualTo(
-            taskId + " · Read tools\nstatus: todo · priority: medium · project: PRJ-0003 Sprint");
+            taskId
+                + " · Read tools\nstatus: todo · priority: medium · project: PRJ-0003 Sprint\n\nTotal activities: 1\nNo activities.\nTo read activities, call list_task_updates with task: "
+                + taskId);
     assertThat(text(call("list_tasks", "{}")))
         .isEqualTo("1 task(s):\n- " + taskId + " · Read tools [todo] — PRJ-0003 Sprint");
     verifyNoInteractions(milestones, users);
@@ -644,15 +579,24 @@ class McpReadToolServiceTest {
             LocalDate.parse("2026-10-01"),
             now,
             now);
-    when(projects.listDetailsByWorkspaceId(workspaceId)).thenReturn(List.of(project));
-    when(tasks.listSnapshotsByWorkspaceId(workspaceId)).thenReturn(List.of(task));
+    when(projects.listByIds(workspaceId, List.of(projectId))).thenReturn(List.of(project));
+    when(projects.listPage(workspaceId, null, null, 21)).thenReturn(List.of(project));
+    when(projects.findReferenceCandidates(eq(workspaceId), any(), anyString()))
+        .thenReturn(List.of(project));
+    when(memberships.listPage(workspaceId, null, null, 21))
+        .thenAnswer(inv -> memberships.listPage(workspaceId, null, null, 100));
+    when(milestones.listPage(eq(workspaceId), any(), isNull(), isNull(), eq(21)))
+        .thenAnswer(inv -> milestones.listByIds(workspaceId, List.of(milestoneId)));
+    when(updates.countByTaskId(taskId)).thenReturn(1L);
+    when(tasks.listPage(workspaceId, null, null, false, null, null, null, 21))
+        .thenReturn(List.of(task));
     when(tasks.findSnapshotByLabel(workspaceId, "MOM-0991")).thenReturn(Optional.of(task));
-    when(memberships.listMembershipDetails(workspaceId))
+    when(memberships.listPage(workspaceId, null, null, 100))
         .thenReturn(List.of(new WorkspaceMembershipDetail(userId, "member", now, now)));
     when(users.getProfiles(List.of(userId)))
         .thenReturn(
             List.of(new UserProfile(userId, "alice@example.com", "Alice", null, null, now, now)));
-    when(milestones.listDetailsByWorkspaceId(workspaceId))
+    when(milestones.listByIds(workspaceId, List.of(milestoneId)))
         .thenReturn(
             List.of(
                 new MilestoneDetail(
@@ -669,7 +613,7 @@ class McpReadToolServiceTest {
                     null,
                     now,
                     now)));
-    when(updates.listByTaskId(taskId))
+    when(updates.listPage(taskId, null, null, 11))
         .thenReturn(
             List.of(
                 new TaskUpdateDetail(

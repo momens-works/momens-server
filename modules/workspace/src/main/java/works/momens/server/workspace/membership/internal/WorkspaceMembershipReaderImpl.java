@@ -1,9 +1,11 @@
 package works.momens.server.workspace.membership.internal;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.workspace.membership.UserWorkspaceMembership;
@@ -57,6 +59,23 @@ class WorkspaceMembershipReaderImpl implements WorkspaceMembershipReader {
   public List<UserWorkspaceMembership> listUserMemberships(UUID userId) {
     return workspaceMemberRepository.findByUserId(userId).stream()
         .map(member -> new UserWorkspaceMembership(member.getWorkspaceId(), member.getRole()))
+        .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<WorkspaceMembershipDetail> listPage(
+      UUID workspaceId, Instant after, UUID afterId, int limit) {
+    return workspaceMemberRepository
+        .findPage(workspaceId, after, afterId, PageRequest.of(0, limit))
+        .stream()
+        .map(
+            member ->
+                new WorkspaceMembershipDetail(
+                    member.getUserId(),
+                    member.getRole(),
+                    member.getCreatedAt(),
+                    member.getUpdatedAt()))
         .toList();
   }
 }

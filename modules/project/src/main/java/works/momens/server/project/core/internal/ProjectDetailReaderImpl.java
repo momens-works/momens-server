@@ -1,10 +1,13 @@
 package works.momens.server.project.core.internal;
 
+import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.project.core.ProjectDetail;
@@ -21,6 +24,13 @@ class ProjectDetailReaderImpl implements ProjectDetailReader {
   @Transactional(readOnly = true)
   public List<ProjectDetail> listDetailsByWorkspaceId(UUID workspaceId) {
     return withOwners(projectRepository.findDetailRowsByWorkspaceId(workspaceId));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<ProjectDetail> listPage(UUID workspaceId, Instant before, UUID beforeId, int limit) {
+    return withOwners(
+        projectRepository.findPage(workspaceId, before, beforeId, PageRequest.of(0, limit)));
   }
 
   /**
@@ -46,5 +56,22 @@ class ProjectDetailReaderImpl implements ProjectDetailReader {
     return rows.stream()
         .map(row -> row.toDetail(ownersByProjectId.getOrDefault(row.id(), List.of(row.ownerId()))))
         .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<ProjectDetail> listByIds(UUID workspaceId, Collection<UUID> ids) {
+    return ids.isEmpty()
+        ? List.of()
+        : withOwners(projectRepository.findRowsByIds(workspaceId, ids));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<ProjectDetail> findReferenceCandidates(
+      UUID workspaceId, UUID referenceId, String reference) {
+    return withOwners(
+        projectRepository.findReferenceCandidates(
+            workspaceId, referenceId, reference, PageRequest.of(0, 2)));
   }
 }

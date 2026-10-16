@@ -10,6 +10,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import jakarta.servlet.http.Cookie;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -17,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
@@ -30,10 +36,15 @@ import works.momens.server.auth.AccessTokenTestFactory;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.project.milestone.MilestoneReader;
 
-@SpringBootTest(properties = "momens.mcp.oauth.consent-uri=https://app.example.com/oauth/authorize")
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = "momens.mcp.oauth.consent-uri=https://app.example.com/oauth/authorize")
 @AutoConfigureMockMvc
 @DisplayName("MCP OAuth 인증 경계와 도구 호출 통합 테스트")
 class McpOAuthSecurityIntegrationTest extends AbstractPostgresIntegrationTest {
+  @Value("${local.server.port}")
+  int port;
+
   @Autowired MockMvc mvc;
   @Autowired ObjectMapper mapper;
   @Autowired JdbcTemplate jdbc;
@@ -193,7 +204,7 @@ class McpOAuthSecurityIntegrationTest extends AbstractPostgresIntegrationTest {
         projectId);
     mvc.perform(mcpRequest(token))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.result.tools.length()").value(12));
+        .andExpect(jsonPath("$.result.tools.length()").value(13));
     mvc.perform(toolRequest(token, "list_projects", Map.of()))
         .andExpect(status().isOk())
         .andExpect(
@@ -222,10 +233,34 @@ class McpOAuthSecurityIntegrationTest extends AbstractPostgresIntegrationTest {
         .andExpect(
             jsonPath("$.result.content[0].text")
                 .value(
-                    "MOM-0991 · Read tools\nstatus: todo · priority: medium · project: PRJ-0991 MCP project"));
+                    "MOM-0991 · Read tools\nstatus: todo · priority: medium · project: PRJ-0991 MCP project\n\nTotal activities: 0\nNo activities.\nTo read activities, call list_task_updates with task: "
+                        + taskId));
     mvc.perform(toolRequest(token, "get_task", Map.of("task", taskId.toString())))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result.isError").doesNotExist());
+
+    for (int i = 0; i < 12; i++) {
+      jdbc.update(
+          "INSERT INTO task_updates(id,workspace_id,project_id,task_id,body,kind,created_at) VALUES (?,?,?,?,?,'comment','2026-10-01')",
+          UUID.randomUUID(),
+          workspaceId,
+          projectId,
+          taskId,
+          "Page activity " + i);
+    }
+    String firstText =
+        httpTool(token, "list_task_updates", Map.of("task", taskId.toString(), "limit", 5));
+    assertThat(firstText).contains("Total activities: 12", "5 activity(s)");
+    String nextCursor = firstText.substring(firstText.lastIndexOf("cursor: ") + 8);
+    String secondText =
+        httpTool(
+            token,
+            "list_task_updates",
+            Map.of("task", taskId.toString(), "limit", 5, "cursor", nextCursor));
+    assertThat(secondText).contains("5 activity(s)");
+    assertThat(secondText.lines().filter(line -> line.startsWith("- ")).toList())
+        .doesNotContainAnyElementsOf(
+            firstText.lines().filter(line -> line.startsWith("- ")).toList());
 
     exerciseWriteTools(token, workspaceId, projectId, userId);
 
@@ -553,6 +588,50 @@ class McpOAuthSecurityIntegrationTest extends AbstractPostgresIntegrationTest {
         .andExpect(jsonPath("$.error").doesNotExist())
         .andExpect(jsonPath("$.result.isError").doesNotExist())
         .andExpect(jsonPath("$.result.content[0].type").value("text"));
+  }
+
+  private String httpTool(String token, String name, Map<String, ?> arguments) throws Exception {
+    String body =
+        mapper.writeValueAsString(
+            Map.of(
+                "jsonrpc",
+                "2.0",
+                "id",
+                7,
+                "method",
+                "tools/call",
+                "params",
+                Map.of(
+                    "name",
+                    name,
+                    "arguments",
+                    arguments,
+                    "_meta",
+                    Map.of(
+                        "io.modelcontextprotocol/protocolVersion",
+                        "2026-07-28",
+                        "io.modelcontextprotocol/clientCapabilities",
+                        Map.of()))));
+    try (HttpClient client =
+        HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()) {
+      HttpResponse<String> response =
+          client.send(
+              HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/mcp"))
+                  .timeout(Duration.ofSeconds(20))
+                  .header("Authorization", "Bearer " + token)
+                  .header("MCP-Protocol-Version", "2026-07-28")
+                  .header("Mcp-Method", "tools/call")
+                  .header("Mcp-Name", name)
+                  .header("Accept", "application/json, text/event-stream")
+                  .header("Content-Type", "application/json")
+                  .POST(HttpRequest.BodyPublishers.ofString(body))
+                  .build(),
+              HttpResponse.BodyHandlers.ofString());
+      assertThat(response.statusCode()).isEqualTo(200);
+      var result = mapper.readTree(response.body()).path("result");
+      assertThat(result.path("isError").asBoolean()).isFalse();
+      return result.path("content").get(0).path("text").asText();
+    }
   }
 
   private MockHttpServletRequestBuilder toolRequest(
