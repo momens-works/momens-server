@@ -13,6 +13,8 @@ public record McpWebProperties(@NotNull URI webBaseUri) {
   @AssertTrue(message = "web-base-uri must be an HTTPS origin or HTTP loopback origin")
   public boolean isWebBaseUriValid() {
     return webBaseUri != null
+        && (webBaseUri.getPort() == -1
+            || (webBaseUri.getPort() >= 1 && webBaseUri.getPort() <= 65535))
         && webBaseUri.getHost() != null
         && webBaseUri.getUserInfo() == null
         && webBaseUri.getQuery() == null

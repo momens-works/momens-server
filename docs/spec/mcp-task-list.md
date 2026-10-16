@@ -56,7 +56,8 @@
 workspace 내 작업·활성 프로젝트 확인을 통과한 응답에만 링크를 포함한다.
 
 기준 주소는 `momens.mcp.web-base-uri`(`MOMENS_MCP_WEB_BASE_URI`)로 지정한다.
-HTTPS origin 또는 로컬 HTTP loopback origin만 허용하고, 경로(`/` 제외)·query·fragment·userinfo는
+HTTPS origin을 사용하며, HTTP loopback은 local/test 프로필에서만 허용한다. dev/prod가 함께
+활성화되면 HTTPS를 요구한다. 명시한 포트는 1~65535만 허용하고, 경로(`/` 제외)·query·fragment·userinfo는
 허용하지 않는다. 요청 Host나 OAuth·초대 URL에서 주소를 유추하지 않는다.
 설정 누락·잘못된 주소는 기동 시 거부한다. 환경별 주입은 [로컬 개발](../local-development.md),
 prod 반영 여부는 [운영 준비 대장](../prod-readiness-ledger.md)을 따른다.
