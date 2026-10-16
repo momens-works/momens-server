@@ -347,20 +347,8 @@ class McpReadToolService {
   }
 
   private String getTask(McpAuthenticationContext context, String reference) {
-    Optional<UUID> id = McpToolReferences.uuid(reference);
-    Optional<TaskSnapshot> found =
-        id.isPresent()
-            ? tasks.findSnapshotInWorkspace(context.workspaceId(), id.get())
-            : tasks.findSnapshotByLabel(context.workspaceId(), reference.toUpperCase(Locale.ROOT));
-    TaskSnapshot task =
-        found.orElseThrow(
-            () -> new McpToolInputException("No task in this workspace: " + reference));
-    ProjectDetail project =
-        projects.listByIds(context.workspaceId(), List.of(task.projectId())).stream()
-            .filter(candidate -> candidate.id().equals(task.projectId()))
-            .findFirst()
-            .orElseThrow(
-                () -> new McpToolInputException("No task in this workspace: " + reference));
+    TaskSnapshot task = requireTask(context, reference);
+    ProjectDetail project = requireTaskProject(context, task, reference);
     String milestoneName =
         task.milestoneId() == null
             ? ""
@@ -379,18 +367,7 @@ class McpReadToolService {
                 .findFirst()
                 .orElse("");
     List<TaskUpdateDetail> activities = updates.listPage(task.id(), null, null, 11);
-    List<UUID> authorIds =
-        activities.stream()
-            .map(TaskUpdateDetail::authorId)
-            .filter(Objects::nonNull)
-            .distinct()
-            .toList();
-    Map<UUID, String> authorNames =
-        authorIds.isEmpty()
-            ? Map.of()
-            : users.getProfiles(authorIds).stream()
-                .filter(profile -> profile.name() != null && !profile.name().isBlank())
-                .collect(Collectors.toMap(UserProfile::id, UserProfile::name));
+    Map<UUID, String> authorNames = activityAuthors(activities);
     String detail =
         McpReadPage.clip(
             McpReadToolText.taskDetail(task, project, milestoneName, assigneeName), 12000);
@@ -405,28 +382,41 @@ class McpReadToolService {
 
   private String listTaskUpdates(
       McpAuthenticationContext context, String reference, McpReadPage page) {
-    TaskSnapshot task =
-        McpToolReferences.uuid(reference)
-            .flatMap(id -> tasks.findSnapshotInWorkspace(context.workspaceId(), id))
-            .or(
-                () ->
-                    tasks.findSnapshotByLabel(
-                        context.workspaceId(), reference.toUpperCase(Locale.ROOT)))
-            .orElseThrow(
-                () -> new McpToolInputException("No task in this workspace: " + reference));
-    if (projects.listByIds(context.workspaceId(), List.of(task.projectId())).stream()
-        .noneMatch(project -> project.id().equals(task.projectId()))) {
-      throw new McpToolInputException("No task in this workspace: " + reference);
-    }
+    TaskSnapshot task = requireTask(context, reference);
+    requireTaskProject(context, task, reference);
     List<TaskUpdateDetail> found =
         updates.listPage(task.id(), page.time(), page.id(), page.limit() + 1);
-    List<UUID> authorIds =
-        found.stream().map(TaskUpdateDetail::authorId).filter(Objects::nonNull).distinct().toList();
-    Map<UUID, String> names =
-        users.getProfiles(authorIds).stream()
+    return activityPage(task, found, activityAuthors(found), page);
+  }
+
+  private TaskSnapshot requireTask(McpAuthenticationContext context, String reference) {
+    Optional<UUID> id = McpToolReferences.uuid(reference);
+    return (id.isPresent()
+            ? tasks.findSnapshotInWorkspace(context.workspaceId(), id.get())
+            : tasks.findSnapshotByLabel(context.workspaceId(), reference.toUpperCase(Locale.ROOT)))
+        .orElseThrow(() -> new McpToolInputException("No task in this workspace: " + reference));
+  }
+
+  private ProjectDetail requireTaskProject(
+      McpAuthenticationContext context, TaskSnapshot task, String reference) {
+    return projects.listByIds(context.workspaceId(), List.of(task.projectId())).stream()
+        .filter(project -> project.id().equals(task.projectId()))
+        .findFirst()
+        .orElseThrow(() -> new McpToolInputException("No task in this workspace: " + reference));
+  }
+
+  private Map<UUID, String> activityAuthors(List<TaskUpdateDetail> activities) {
+    List<UUID> ids =
+        activities.stream()
+            .map(TaskUpdateDetail::authorId)
+            .filter(Objects::nonNull)
+            .distinct()
+            .toList();
+    return ids.isEmpty()
+        ? Map.of()
+        : users.getProfiles(ids).stream()
             .filter(profile -> profile.name() != null && !profile.name().isBlank())
             .collect(Collectors.toMap(UserProfile::id, UserProfile::name));
-    return activityPage(task, found, names, page);
   }
 
   private String activityPage(

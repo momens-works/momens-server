@@ -65,17 +65,12 @@ interface ProjectRepository extends JpaRepository<Project, UUID> {
 
   @Query(
       """
-      select new works.momens.server.project.core.internal.ProjectDetailRow(
-          p.id, p.workspaceId, p.label, p.name, p.description, p.status, p.ownerId,
-          p.targetDate, p.healthStatus, p.summary, p.unresolvedCount, p.vocSignalCount,
-          p.lastContextAt, p.metadata, p.createdAt, p.updatedAt)
+      select new works.momens.server.project.core.internal.ProjectReferenceRow(
+          p.id, p.label, p.name)
       from Project p
       where p.workspaceId = :workspaceId and p.deletedAt is null
-      and ((:referenceId is not null and p.id = :referenceId) or
-        (:referenceId is null and (lower(p.label) = lower(:reference) or locate(lower(:reference), lower(trim(p.name))) > 0)))
-      order by case when p.id = :referenceId or lower(p.label) = lower(:reference) then 0
-        when lower(trim(p.name)) = lower(:reference) then 1 else 2 end, p.id
+      and (:afterId is null or p.id > :afterId)
+      order by p.id asc
       """)
-  List<ProjectDetailRow> findReferenceCandidates(
-      UUID workspaceId, UUID referenceId, String reference, Pageable pageable);
+  List<ProjectReferenceRow> findReferencePage(UUID workspaceId, UUID afterId, Pageable pageable);
 }

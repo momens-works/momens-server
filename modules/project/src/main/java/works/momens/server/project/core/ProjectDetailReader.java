@@ -17,6 +17,6 @@ public interface ProjectDetailReader {
   /** 요청한 id에 한정하고 workspace와 소프트 삭제 조건을 적용합니다. */
   List<ProjectDetail> listByIds(UUID workspaceId, Collection<UUID> ids);
 
-  /** 참조 우선순위에 따라 최대 두 후보를 반환해 중복 이름을 판별합니다. */
+  /** 이름은 100행씩 Java 문자열 의미로 판정하고 최대 두 후보를 반환합니다. 총 조회량은 프로젝트 수에 비례합니다. */
   List<ProjectDetail> findReferenceCandidates(UUID workspaceId, UUID referenceId, String reference);
 }

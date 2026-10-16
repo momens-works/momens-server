@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -38,7 +40,7 @@ class McpReadPaginationIntegrationTest extends AbstractPostgresIntegrationTest {
   @Autowired McpGrantWriter grants;
   private final UUID workspaceId = UUID.randomUUID();
   private final UUID userId = UUID.randomUUID();
-  private final UUID projectId = UUID.randomUUID();
+  private final UUID projectId = UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff");
   private McpAuthenticationContext context;
 
   @BeforeEach
@@ -215,6 +217,50 @@ class McpReadPaginationIntegrationTest extends AbstractPostgresIntegrationTest {
                 .path("isError")
                 .asBoolean())
         .isTrue();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"\tMain\t", "\u2003Main\u3000", "Ma\u0131n"})
+  void projectNameMatchingPreservesJavaWhitespaceAndCaseAcrossPages(String exactName) {
+    jdbc.update("UPDATE projects SET name=? WHERE id=?", exactName, projectId);
+    task(UUID.randomUUID(), "MOM-5001", "todo", null);
+    jdbc.update(
+        "INSERT INTO milestones(id,project_id,name) VALUES (?,?,'Matched milestone')",
+        UUID.randomUUID(),
+        projectId);
+    // 정확 일치를 UUID 순서의 마지막 배치에 두어 후보 제한 전 판정과 배치 경계를 함께 검증합니다.
+    for (int i = 0; i < 105; i++) {
+      jdbc.update(
+          "INSERT INTO projects(id,workspace_id,name,owner_id) VALUES (?,?,?,?)",
+          new UUID(0L, i + 1),
+          workspaceId,
+          "Main extended " + i,
+          userId);
+    }
+    for (String tool : List.of("list_tasks", "list_tasks_v2", "list_milestones")) {
+      assertThat(text(call(tool, mapper.createObjectNode().put("project", "Main"))))
+          .contains(tool.equals("list_milestones") ? "Matched milestone" : "MOM-5001");
+    }
+    UUID duplicate = UUID.randomUUID();
+    jdbc.update(
+        "INSERT INTO projects(id,workspace_id,name,owner_id) VALUES (?,?,'Main',?)",
+        duplicate,
+        workspaceId,
+        userId);
+    for (String tool : List.of("list_tasks", "list_tasks_v2", "list_milestones")) {
+      JsonNode result = call(tool, mapper.createObjectNode().put("project", "Main"));
+      assertThat(result.path("isError").asBoolean()).isTrue();
+      assertThat(result.path("content").get(0).path("text").asText()).contains("several projects");
+    }
+    assertThat(text(call("list_tasks", mapper.createObjectNode().put("project", "prj-1004"))))
+        .contains("MOM-5001");
+    assertThat(
+            text(
+                call("list_tasks", mapper.createObjectNode().put("project", projectId.toString()))))
+        .contains("MOM-5001");
+    jdbc.update("UPDATE projects SET deleted_at=NOW() WHERE id=?", duplicate);
+    assertThat(text(call("list_tasks", mapper.createObjectNode().put("project", "Main"))))
+        .contains("MOM-5001");
   }
 
   private void task(UUID id, String label, String status, UUID assigneeId) {

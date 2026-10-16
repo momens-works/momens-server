@@ -1,8 +1,10 @@
 package works.momens.server.project.core.internal;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -70,8 +72,36 @@ class ProjectDetailReaderImpl implements ProjectDetailReader {
   @Transactional(readOnly = true)
   public List<ProjectDetail> findReferenceCandidates(
       UUID workspaceId, UUID referenceId, String reference) {
-    return withOwners(
-        projectRepository.findReferenceCandidates(
-            workspaceId, referenceId, reference, PageRequest.of(0, 2)));
+    if (referenceId != null) {
+      return listByIds(workspaceId, List.of(referenceId));
+    }
+    // DB의 trim/lower는 Java의 Unicode 공백·대소문자 비교와 다르므로 제한 전에 Java에서 판정합니다.
+    List<UUID> exact = new ArrayList<>();
+    List<UUID> partial = new ArrayList<>();
+    String lower = reference.toLowerCase(Locale.ROOT);
+    UUID afterId = null;
+    while (true) {
+      List<ProjectReferenceRow> batch =
+          projectRepository.findReferencePage(workspaceId, afterId, PageRequest.of(0, 100));
+      for (ProjectReferenceRow row : batch) {
+        if (reference.equalsIgnoreCase(row.label())) {
+          return listByIds(workspaceId, List.of(row.id()));
+        }
+        String name = row.name().strip();
+        if (name.equalsIgnoreCase(reference)) {
+          if (exact.size() < 2) {
+            exact.add(row.id());
+          }
+        } else if (partial.size() < 2 && name.toLowerCase(Locale.ROOT).contains(lower)) {
+          partial.add(row.id());
+        }
+      }
+      if (batch.size() < 100) {
+        break;
+      }
+      ProjectReferenceRow last = batch.getLast();
+      afterId = last.id();
+    }
+    return listByIds(workspaceId, exact.isEmpty() ? partial : exact);
   }
 }
