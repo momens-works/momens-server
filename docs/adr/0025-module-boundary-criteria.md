@@ -12,7 +12,7 @@
 
 기존 코드를 확인한 결과, Resend를 이용한 메일 발송 기능은 이미 구현되어 있었습니다. `modules/workspace`의 `workspace.email` 패키지에는 `EmailClient`, `ResendEmailClient`, `NoopEmailClient`, `EmailMessage`가 있으며, `app/src/main/resources/application.yml`의 `momens.workspace.invitation.email` 아래에 provider, 발신 주소, API key 설정이 정의되어 있습니다. 레거시 `momens-api`의 `internal/platform/email`을 이관한 결과이므로, MOM-1025에서 메일 발송 기반을 새로 구현할 필요는 없습니다.
 
-문제는 현재 구조에서 초대 이외의 기능이 메일 발송 구현을 사용할 수 없다는 점입니다. `workspace.email`은 `@ApplicationModule`로 선언되어 있으며, 공개 타입은 `InvitationEmailSender`와 `InvitationEmail`이 유일합니다. `InvitationEmailSender.send(InvitationEmail)`의 인자는 초대 토큰과 만료 시각을 포함하는 record이므로 다른 용도의 메일 발송에는 사용할 수 없습니다.
+문제는 현재 구조에서 초대 이외의 기능이 메일 발송 구현을 사용할 수 없다는 점입니다. `workspace.email`은 `@ApplicationModule`로 선언되어 있으며, 다른 모듈이 호출할 수 있는 메일 발송 계약은 `InvitationEmailSender.send(InvitationEmail)`뿐입니다. 이 계약의 인자는 초대 토큰과 만료 시각을 포함하는 record이므로 다른 용도의 메일 발송에는 사용할 수 없습니다. 즉, 현재 발송 계약은 초대 기능에 종속되어 있어 범용으로 사용하기 어렵습니다.
 
 다시 돌아와, 현재 모듈 구조를 기존에 정한 기준으로 설명할 수 있는지 먼저 확인해봤습니다.
 
@@ -53,7 +53,7 @@ Eric Evans의 『Domain-Driven Design Reference』(2015, CC BY 4.0)는 `Modules`
 
 현재 `workspace`, `project`, `signal`은 이미 이 기준에 부합합니다. 따라서 기존 규칙의 `capability`라는 표현을 원문의 취지에 맞게 수정합니다.
 
-### 제품의 핵심 도메인에 속하지 않는 Generic 영역은 분리해야 합니다
+### 제품의 핵심 도메인에 속하지 않는 기능은 비즈니스 모듈에서 분리해야 합니다
 
 Eric Evans의 『Domain-Driven Design Reference』에서는 `Generic Subdomains`, `Cohesive Mechanisms`, `Intention-Revealing Interfaces`를 통해 공통 기능을 분리하고 외부에 공개할 인터페이스를 설계하는 기준을 제시합니다. 메일 발송 기능을 현재 `workspace`에서 분리해야 하는 근거도 이 세 항목에서 찾을 수 있습니다.
 
@@ -61,7 +61,9 @@ Eric Evans의 『Domain-Driven Design Reference』에서는 `Generic Subdomains`
 
 > Identify cohesive subdomains that are not the motivation for your project. Factor out generic models of these subdomains and place them in separate modules. Leave no trace of your specialties in them.
 
-제품을 개발하는 주된 목적과 관계없는 응집된 하위 도메인은 별도 모듈로 분리하고, 해당 모듈에 제품 고유의 규칙이 포함되지 않도록 해야 한다는 의미입니다.
+제품을 개발하는 주된 목적과 관계없는 응집된 하위 도메인은 자체 경계를 갖도록 분리하고, 그 안에 제품 고유의 규칙이 포함되지 않도록 해야 한다는 의미입니다.
+
+다만 원문의 `module`은 논리적인 경계를 의미하며, 이 레포지토리의 Gradle 서브프로젝트와 반드시 일치하지는 않습니다. 같은 문헌의 `Segregated Core`에서는 유사한 분리 원칙을 `place them into other packages`라고 표현합니다. 물리적 모듈 경계를 Gradle 서브프로젝트로 정의한 것은 [ADR-0002](0002-gradle-multi-module-boundaries.md)이므로, 분리한 코드를 Gradle 모듈로 둘지 기존 모듈의 하위 패키지로 둘지는 이 근거만으로 결정할 수 없습니다.
 
 메일 발송 자체는 모먼스의 핵심 도메인이 아닙니다. 워크스페이스 초대와 로그인 기한 안내는 서로 다른 기능이지만, 메일을 발송하는 과정은 공통으로 필요합니다. 따라서 메일 발송은 특정 비즈니스 모듈에 종속되지 않도록 `workspace`에서 분리하는 것이 적절합니다.
 
@@ -77,7 +79,7 @@ Resend API 호출과 발송 과정의 오류 처리는 메일을 사용하는 �
 
 `ResendEmailClient`는 특정 provider에 종속된 구현을 나타내므로 공개 계약으로 적절하지 않습니다. 반면 `EmailSender`는 메일 발송이라는 목적을 나타내며, 추후 provider를 변경하더라도 호출하는 모듈의 계약을 유지할 수 있습니다.
 
-이 세 기준을 적용하면 **메일 발송은 `workspace`에서 분리하되, 초대 메일의 문구와 템플릿은 `workspace`에 남기는 구조**가 적절합니다. 분리한 모듈은 메일 발송만 담당하고, 각 비즈니스 모듈은 어떤 내용을 누구에게 보낼지 결정하도록 책임을 구분합니다.
+이 세 기준을 적용하면 **메일 발송 기능은 `workspace`에서 분리하고, 초대 메일의 문구와 템플릿은 `workspace`에 유지하는 방식**이 적절합니다. 분리한 코드는 메일 발송만 담당하고, 각 비즈니스 모듈은 발송 대상과 내용을 결정합니다. 분리한 코드의 구체적인 배치는 MOM-1025에서 판단합니다.
 
 ### 유사한 구조를 적용한 공개 사례가 있습니다
 
@@ -107,7 +109,13 @@ ADR-0001의 「결정 1. 모듈 경계 기준」에서 application module을 비
 
 > 모듈은 응집된 책임과 명확한 공개 계약을 기준으로 경계를 검토합니다. 제품 도메인과 공유 기술 기능에 같은 기준을 적용합니다. 모듈 이름은 팀에서 사용하는 도메인 용어로 정하고, 각 모듈은 다른 모듈과 독립적으로 이해할 수 있어야 합니다. 독립 모듈로 분리할지는 의존성과 변경 영향을 격리하는 이점과 관리 비용을 함께 고려해 판단하며, 구체적인 배치와 근거는 해당 PR에 기록합니다.
 
-**실행 및 조립 모듈, 클라이언트별 컨트롤러 모듈, orchestration module은 이 기준의 적용 대상이 아닙니다.** 도메인 모델을 소유하지 않기 때문입니다. orchestration module은 여러 모듈의 public API를 조합하는 역할만 담당하며, 자체 테이블이나 도메인 정책을 소유하지 않습니다. ADR-0001의 「결정 1」에서 정한 workflow 관련 규칙과 기술 계층을 모듈 경계로 삼지 않는다는 규칙은 그대로 유지합니다.
+**클라이언트별 컨트롤러 모듈의 HTTP 엔드포인트, orchestration module, 실행 및 조립 모듈은 이 기준의 적용 대상이 아닙니다.**
+
+클라이언트별 컨트롤러 모듈은 각 클라이언트가 HTTP 엔드포인트를 소유한다는 별도 결정에 따라 구성되었으므로, 엔드포인트의 배치는 이 기준으로 다시 검토하지 않습니다. 다만 해당 모듈이 자체 도메인을 함께 소유한다면 그 도메인은 검토 대상입니다. `mcp`는 MCP 권한 도메인과 `McpGrant` aggregate를 소유하며([ADR-0023](0023-mcp-oauth-migration-boundary-and-cutover.md)), 해당 도메인의 경계에도 이 기준을 적용합니다.
+
+orchestration module은 여러 모듈의 public API를 조합하는 역할만 담당하며, 자체 테이블이나 도메인 정책을 소유하지 않습니다. 실행 및 조립 모듈도 도메인 모델을 소유하지 않습니다.
+
+ADR-0001의 「결정 1」에서 정한 workflow 관련 규칙과 기술 계층을 모듈 경계로 삼지 않는다는 규칙은 그대로 유지합니다.
 
 `common`은 여러 모듈이 필요로 하는 최소한의 기반 타입과 보조 기능을 담습니다. 재사용 여부나 상태 유무만으로 `common` 배치를 결정하지 않습니다.
 
@@ -116,10 +124,10 @@ ADR-0001의 「결정 1. 모듈 경계 기준」에서 application module을 비
 | 제품 도메인 모듈            | 적용합니다     | `workspace`, `project`, `signal` 등 |
 | 공유 기술 기능             | 적용합니다     | `outbox`, 메일 발송                    |
 | orchestration module | 적용하지 않습니다 | `onboarding`                       |
-| 클라이언트별 컨트롤러 모듈       | 적용하지 않습니다 | `web`, `mobile`, `mcp`             |
+| 클라이언트별 컨트롤러 모듈의 HTTP 엔드포인트 | 적용하지 않습니다 | `web`, `mobile`, `mcp`             |
 | 실행 및 조립 모듈           | 적용하지 않습니다 | `app`                              |
 
-적용 대상이 아닌 세 유형은 도메인 모델을 소유하지 않기 때문입니다.
+클라이언트별 컨트롤러 모듈의 HTTP 엔드포인트는 별도 결정에 따라 배치가 정해져 있고, orchestration module과 실행 및 조립 모듈은 도메인 모델을 소유하지 않습니다. 컨트롤러 모듈이 함께 소유한 도메인은 적용 제외 대상이 아닙니다.
 
 기존 모듈의 배치 근거는 [모듈 맵](../design/module-map.md)의 「모듈 개요」에서 확인합니다. 이번 ADR을 작성하게 된 계기였던 `outbox`도 해당 표에 「호출자 트랜잭션에 참여하는 append-only 이벤트 기록과 조회」라는 책임이 명시되어 있습니다. 이 내용을 통해 `outbox`가 담당하는 응집된 책임을 확인할 수 있습니다. 새 모듈은 해당 PR에 배치 근거를 기록하고, 머지 후에는 모듈 맵에 책임을 명시해 유지합니다.
 
@@ -139,7 +147,7 @@ ADR-0001의 「결정 1. 모듈 경계 기준」에서 application module을 비
 
 메일 발송을 `notification`에 두는 방안은 ADR-0009와 무관합니다. ADR-0009는 `signal.created` 알림의 소비 주체를 worker와 api-server 중에서 정한 결정이며, api-server 내부의 어느 모듈이 소유할지는 후속 결정으로 남겨 두었습니다.
 
-이 방안을 지금 선택하지 않는 이유는 `notification`이 제품 기능과 발송 구현을 함께 담당하고 있어 책임이 더 넓어지기 때문입니다. 알림을 전달 행위 중심으로 재정의할지는 발송 채널이 늘어나는 시점에 별도 ADR에서 검토합니다.
+현재 `notification`은 제품 기능과 발송 구현을 함께 담당합니다. 해당 모듈에 메일 발송 기능을 배치할 경우의 의존 관계와 변경 비용은 MOM-1025에서 다른 대안과 함께 검토합니다.
 
 ## 대안
 
@@ -151,9 +159,9 @@ ADR-0001의 「결정 1. 모듈 경계 기준」에서 application module을 비
 
 메일과 푸시는 사용자에게 정보를 전달한다는 점에서 변경 사유가 유사하므로, 응집도 관점에서는 타당한 대안입니다.
 
-하지만 이 방안을 선택하려면 `notification`의 책임 범위를 함께 재정의해야 합니다. `notification`은 제품 기능과 발송 구현을 함께 담당하고 있어 변경 범위가 넓어집니다. 이러한 결정은 실제로 발송 채널이 늘어난 이후에 검토해도 됩니다.
+이 방안을 선택하려면 `notification`의 책임 범위를 함께 재정의해야 하므로 변경 범위가 넓어집니다. 이에 따른 비용은 MOM-1025에서 다른 대안과 함께 비교합니다.
 
-모듈 경계를 변경하는 비용은 상대적으로 크지만, 공개 계약을 유지하면서 구현 위치를 옮기는 비용은 작습니다. 따라서 현시점에서는 변경 범위가 큰 결정을 유보하기로 했습니다.
+모듈 경계를 변경하는 비용은 상대적으로 크지만, 공개 계약을 유지하면서 구현 위치를 옮기는 비용은 작습니다. 이러한 차이도 실제 배치를 판단할 때 고려합니다.
 
 **3. 기존 모듈 경계 기준을 유지하고 메일 발송만 예외로 처리하는 방안도 채택하지 않았습니다.**
 
@@ -173,4 +181,4 @@ ADR-0001의 「결정 1. 모듈 경계 기준」에서 application module을 비
 
 첫째, **모듈 경계의 적절성은 코드 리뷰에서 판단해야 합니다.** 개념의 응집도와 제품의 핵심 목적에 해당하는지 여부는 기계적으로 검증하기 어렵습니다. 모듈 간 의존 방향은 `ApplicationModules.verify()`로 검증하고, 구현 타입의 공개 범위는 package-private으로 제한하지만, 모듈 경계의 적절성은 코드 리뷰에서 확인해야 합니다.
 
-둘째, **`notification`의 책임 범위는 이번 결정 이후에도 별도 검토가 필요합니다.** 현재 `notification`은 제품 기능과 발송 구현을 함께 담당합니다. 발송 채널이 늘어나면 알림 모듈의 책임과 경계를 재검토합니다.
+둘째, **`notification`의 책임 범위는 이번 ADR에서 결정하지 않았습니다.** 현재 `notification`은 제품 기능과 발송 구현을 함께 담당합니다. 향후 모듈 경계를 변경할 필요가 생기면 책임이나 기존에 보장하던 동작이 달라지는지 확인한 뒤 ADR 작성 여부를 판단합니다.
