@@ -58,6 +58,7 @@ class McpReadToolService {
   private final MilestoneReader milestones;
   private final TaskReader tasks;
   private final TaskUpdateReader updates;
+  private final McpTaskLinks links;
   private final List<McpToolDefinition> definitions;
 
   McpReadToolService(
@@ -69,7 +70,8 @@ class McpReadToolService {
       ProjectReader projectAccess,
       MilestoneReader milestones,
       TaskReader tasks,
-      TaskUpdateReader updates)
+      TaskUpdateReader updates,
+      McpTaskLinks links)
       throws IOException {
     this.mapper = mapper;
     this.grants = grants;
@@ -80,6 +82,7 @@ class McpReadToolService {
     this.milestones = milestones;
     this.tasks = tasks;
     this.updates = updates;
+    this.links = links;
     try (InputStream input = new ClassPathResource("mcp/read-tools.json").getInputStream()) {
       List<McpToolDefinition> loaded = new ArrayList<>();
       for (JsonNode tool : mapper.readTree(input)) {
@@ -390,7 +393,7 @@ class McpReadToolService {
     Map<UUID, String> authorNames = activityAuthors(activities, 10);
     String detail =
         McpReadPage.clip(
-            McpReadToolText.taskDetail(task, project, milestoneName, assigneeName), 12000);
+            McpReadToolText.taskDetail(task, project, milestoneName, assigneeName, links.taskUrl(context.workspaceId(), task)), 12000);
     ObjectNode args = mapper.createObjectNode().put("task", task.id().toString()).put("limit", 10);
     McpReadPage page = McpReadPage.parse("list_task_updates", args, context);
     return detail

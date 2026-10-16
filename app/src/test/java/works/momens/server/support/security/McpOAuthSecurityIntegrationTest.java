@@ -233,7 +233,11 @@ class McpOAuthSecurityIntegrationTest extends AbstractPostgresIntegrationTest {
         .andExpect(
             jsonPath("$.result.content[0].text")
                 .value(
-                    "MOM-0991 · Read tools\nstatus: todo · priority: medium · project: PRJ-0991 MCP project\n\nTotal activities: 0\nNo activities.\nTo read activities, call list_task_updates with task: "
+                    "MOM-0991 · Read tools\nstatus: todo · priority: medium · project: PRJ-0991 MCP project\nurl: http://localhost:5173/"
+                        + workspaceId
+                        + "/projects/"
+                        + projectId
+                        + "?tab=tasks&task=MOM-0991\n\nTotal activities: 0\nNo activities.\nTo read activities, call list_task_updates with task: "
                         + taskId));
     mvc.perform(toolRequest(token, "get_task", Map.of("task", taskId.toString())))
         .andExpect(status().isOk())
@@ -416,28 +420,37 @@ class McpOAuthSecurityIntegrationTest extends AbstractPostgresIntegrationTest {
                 "SELECT updated_at FROM milestones WHERE id = ?", Object.class, milestoneId))
         .isEqualTo(milestoneUpdatedAt);
 
-    callWrite(
-        token,
-        "create_task",
-        Map.of(
-            "project",
-            "PRJ-0991",
-            "title",
-            "Write task",
-            "description",
-            "Description",
-            "due_date",
-            "2026-10-02",
-            "assignee",
-            "me",
-            "milestone",
-            milestoneId.toString()));
+    String createdText =
+        callWrite(
+            token,
+            "create_task",
+            Map.of(
+                "project",
+                "PRJ-0991",
+                "title",
+                "Write task",
+                "description",
+                "Description",
+                "due_date",
+                "2026-10-02",
+                "assignee",
+                "me",
+                "milestone",
+                milestoneId.toString()));
     UUID id =
         jdbc.queryForObject(
             "SELECT id FROM tasks WHERE project_id = ? AND title = 'Write task'",
             UUID.class,
             projectId);
     String label = jdbc.queryForObject("SELECT label FROM tasks WHERE id = ?", String.class, id);
+    String taskUrl =
+        "http://localhost:5173/"
+            + workspaceId
+            + "/projects/"
+            + projectId
+            + "?tab=tasks&task="
+            + label;
+    assertThat(createdText).endsWith("\nurl: " + taskUrl);
     assertThat(jdbc.queryForObject("SELECT status FROM tasks WHERE id = ?", String.class, id))
         .isEqualTo("backlog");
     assertThat(
@@ -446,10 +459,12 @@ class McpOAuthSecurityIntegrationTest extends AbstractPostgresIntegrationTest {
                 Integer.class,
                 id.toString()))
         .isEqualTo(1);
-    callWrite(
-        token,
-        "update_task",
-        Map.of("task", label.toLowerCase(), "status", "progress", "priority", "med"));
+    assertThat(
+            callWrite(
+                token,
+                "update_task",
+                Map.of("task", label.toLowerCase(), "status", "progress", "priority", "med")))
+        .endsWith("\nurl: " + taskUrl);
     assertThat(jdbc.queryForObject("SELECT description FROM tasks WHERE id = ?", String.class, id))
         .isEqualTo("Description");
     callWrite(
@@ -582,12 +597,17 @@ class McpOAuthSecurityIntegrationTest extends AbstractPostgresIntegrationTest {
         .isZero();
   }
 
-  private void callWrite(String token, String name, Map<String, ?> args) throws Exception {
-    mvc.perform(toolRequest(token, name, args))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.error").doesNotExist())
-        .andExpect(jsonPath("$.result.isError").doesNotExist())
-        .andExpect(jsonPath("$.result.content[0].type").value("text"));
+  private String callWrite(String token, String name, Map<String, ?> args) throws Exception {
+    String response =
+        mvc.perform(toolRequest(token, name, args))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.error").doesNotExist())
+            .andExpect(jsonPath("$.result.isError").doesNotExist())
+            .andExpect(jsonPath("$.result.content[0].type").value("text"))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    return mapper.readTree(response).path("result").path("content").get(0).path("text").asText();
   }
 
   private String httpTool(String token, String name, Map<String, ?> arguments) throws Exception {

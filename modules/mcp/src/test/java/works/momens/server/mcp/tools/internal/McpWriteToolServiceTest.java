@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.InputStream;
+import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -34,6 +35,7 @@ import tools.jackson.databind.node.ObjectNode;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.common.api.FieldValidationException;
+import works.momens.server.mcp.configuration.McpWebProperties;
 import works.momens.server.mcp.grant.McpGrantDetail;
 import works.momens.server.mcp.grant.McpGrantReader;
 import works.momens.server.mcp.grant.McpScope;
@@ -60,12 +62,17 @@ import works.momens.server.project.taskupdate.TaskUpdateReader;
 import works.momens.server.project.taskupdate.TaskUpdateWriter;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
+import works.momens.server.workspace.core.WorkspaceDetail;
+import works.momens.server.workspace.core.WorkspaceReader;
 import works.momens.server.workspace.membership.WorkspaceMembershipDetail;
 import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 import works.momens.server.workspace.membership.WorkspaceRole;
 
 @DisplayName("MCP 쓰기 도구 서비스 단위 테스트")
 class McpWriteToolServiceTest {
+  private final WorkspaceReader workspaces = mock(WorkspaceReader.class);
+  private final McpTaskLinks links =
+      new McpTaskLinks(new McpWebProperties(URI.create("https://app.example.com")), workspaces);
   private final ObjectMapper mapper = new ObjectMapper();
   private final McpGrantReader grants = mock(McpGrantReader.class);
   private final WorkspaceMembershipReader memberships = mock(WorkspaceMembershipReader.class);
@@ -94,13 +101,16 @@ class McpWriteToolServiceTest {
 
   @BeforeEach
   void setup() throws Exception {
+    when(workspaces.findById(workspaceId))
+        .thenReturn(
+            Optional.of(new WorkspaceDetail(workspaceId, "Momens", "momens", null, now, now)));
     writes =
         new McpWriteToolService(
             mapper,
             grants,
             memberships,
             new McpTaskToolService(
-                memberships, users, projects, milestones, tasks, taskWriter, updates),
+                memberships, users, projects, milestones, tasks, taskWriter, updates, links),
             new McpMilestoneToolService(projects, milestones, milestoneWriter));
     service =
         new McpToolService(
@@ -113,7 +123,8 @@ class McpWriteToolServiceTest {
                 mock(ProjectReader.class),
                 milestones,
                 tasks,
-                mock(TaskUpdateReader.class)),
+                mock(TaskUpdateReader.class),
+                links),
             writes,
             mapper);
     when(grants.findActive(context.grantId())).thenReturn(Optional.of(grant(context.scopes())));
@@ -262,7 +273,9 @@ class McpWriteToolServiceTest {
             .orElseThrow();
     assertThat(text(result))
         .isEqualTo(
-            "Created MOM-0993 · Write tools\nproject: PRJ-0003 Sprint · status: todo · priority: medium · milestone: Release · due: 2026-10-01");
+            "Created MOM-0993 · Write tools\nproject: PRJ-0003 Sprint · status: todo · priority: medium · milestone: Release · due: 2026-10-01\nurl: https://app.example.com/momens/projects/"
+                + projectId
+                + "?tab=tasks&task=MOM-0993");
     ArgumentCaptor<CreateTaskCommand> command = ArgumentCaptor.forClass(CreateTaskCommand.class);
     verify(taskWriter).create(command.capture());
     assertThat(command.getValue().workspaceId()).isEqualTo(workspaceId);
@@ -323,7 +336,11 @@ class McpWriteToolServiceTest {
   void omittedOptionalFieldsAreNotCleared() {
     seed();
     when(taskWriter.patch(any())).thenReturn(task());
-    call("update_task", "{\"task\":\"mom-0993\"}");
+    assertThat(text(call("update_task", "{\"task\":\"mom-0993\"}")))
+        .endsWith(
+            "\nurl: https://app.example.com/momens/projects/"
+                + projectId
+                + "?tab=tasks&task=MOM-0993");
     ArgumentCaptor<PatchTaskCommand> command = ArgumentCaptor.forClass(PatchTaskCommand.class);
     verify(taskWriter).patch(command.capture());
     assertThat(command.getValue().descriptionSet()).isFalse();
@@ -365,7 +382,7 @@ class McpWriteToolServiceTest {
       }
       assertThat(call(name, args.toString()).path("isError").asBoolean()).isTrue();
     }
-    verifyNoInteractions(taskWriter, updates);
+    verifyNoInteractions(taskWriter, updates, workspaces);
   }
 
   @Test
