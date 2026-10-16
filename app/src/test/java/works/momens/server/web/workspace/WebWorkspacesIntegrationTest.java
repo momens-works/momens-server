@@ -24,6 +24,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import works.momens.server.auth.AccessTokenTestFactory;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
+import works.momens.server.project.milestone.MilestoneWriter;
+import works.momens.server.project.milestone.UpdateMilestoneCommand;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
@@ -44,6 +46,7 @@ class WebWorkspacesIntegrationTest extends AbstractPostgresIntegrationTest {
   @Autowired private JdbcTemplate jdbcTemplate;
   @Autowired private EntityManagerFactory entityManagerFactory;
   @Autowired private WorkspaceSnapshotService workspaceSnapshotService;
+  @Autowired private MilestoneWriter milestoneWriter;
 
   @Test
   @DisplayName("멤버인 워크스페이스만 생성 시각 내림차순으로 응답한다")
@@ -304,6 +307,35 @@ class WebWorkspacesIntegrationTest extends AbstractPostgresIntegrationTest {
         .andExpect(jsonPath("$.task_contexts[0].task_id").value(taskId.toString()))
         .andExpect(jsonPath("$.task_contexts[0].memories[0].id").value(memoryId.toString()))
         .andExpect(jsonPath("$.task_contexts[0].source_refs[0].id").value(sourceRefId.toString()));
+  }
+
+  @Test
+  void snapshotReflectsClearedMilestoneFields() throws Exception {
+    UserProfile caller =
+        userService.findOrCreate("web-it-milestone-clear@momens.works", "홍길동", null);
+    UUID workspaceId = insertWorkspace("web-it-milestone-clear", null);
+    addMember(workspaceId, caller.id(), "owner");
+    UUID projectId = insertProject(workspaceId, caller.id());
+    UUID milestoneId = UUID.randomUUID();
+    jdbcTemplate.update(
+        "INSERT INTO milestones (id, project_id, name, description, summary, target_date, progress) "
+            + "VALUES (?, ?, '마일스톤', '설명', '요약', '2026-10-01', 45)",
+        milestoneId,
+        projectId);
+    milestoneWriter.update(
+        new UpdateMilestoneCommand(
+            milestoneId, null, null, true, null, null, true, null, 0, null, true));
+
+    mockMvc
+        .perform(
+            authorized(get("/api/workspaces/{workspaceId}/snapshot", workspaceId), caller.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.milestones[0].id").value(milestoneId.toString()))
+        .andExpect(jsonPath("$.milestones[0].name").value("마일스톤"))
+        .andExpect(jsonPath("$.milestones[0].description").doesNotExist())
+        .andExpect(jsonPath("$.milestones[0].summary").doesNotExist())
+        .andExpect(jsonPath("$.milestones[0].target_date").doesNotExist())
+        .andExpect(jsonPath("$.milestones[0].progress").value(0));
   }
 
   @Test
