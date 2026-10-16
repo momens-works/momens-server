@@ -2,7 +2,6 @@ package works.momens.server.mcp.tools.internal;
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 import works.momens.server.mcp.configuration.McpWebProperties;
@@ -11,7 +10,6 @@ import works.momens.server.workspace.core.WorkspaceReader;
 
 @Component
 @RequiredArgsConstructor
-@EnableConfigurationProperties(McpWebProperties.class)
 class McpTaskLinks {
   private final McpWebProperties properties;
   private final WorkspaceReader workspaces;
