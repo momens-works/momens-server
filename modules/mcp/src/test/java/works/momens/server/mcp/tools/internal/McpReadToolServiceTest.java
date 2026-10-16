@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -38,6 +39,7 @@ import works.momens.server.mcp.transport.McpAuthenticationContext;
 import works.momens.server.mcp.transport.McpToolDefinition;
 import works.momens.server.project.core.ProjectDetail;
 import works.momens.server.project.core.ProjectDetailReader;
+import works.momens.server.project.core.ProjectReader;
 import works.momens.server.project.milestone.MilestoneDetail;
 import works.momens.server.project.milestone.MilestoneReader;
 import works.momens.server.project.task.TaskReader;
@@ -57,6 +59,7 @@ class McpReadToolServiceTest {
   private final WorkspaceMembershipReader memberships = mock(WorkspaceMembershipReader.class);
   private final UserService users = mock(UserService.class);
   private final ProjectDetailReader projects = mock(ProjectDetailReader.class);
+  private final ProjectReader projectAccess = mock(ProjectReader.class);
   private final MilestoneReader milestones = mock(MilestoneReader.class);
   private final TaskReader tasks = mock(TaskReader.class);
   private final TaskUpdateReader updates = mock(TaskUpdateReader.class);
@@ -79,7 +82,15 @@ class McpReadToolServiceTest {
   void setup() throws Exception {
     service =
         new McpReadToolService(
-            mapper, grants, memberships, users, projects, milestones, tasks, updates);
+            mapper,
+            grants,
+            memberships,
+            users,
+            projects,
+            projectAccess,
+            milestones,
+            tasks,
+            updates);
     when(grants.findActive(context.grantId()))
         .thenReturn(Optional.of(grant(context.scopes().stream().toList())));
     when(memberships.roleOf(workspaceId, userId)).thenReturn(Optional.of(WorkspaceRole.MEMBER));
@@ -538,12 +549,136 @@ class McpReadToolServiceTest {
     verifyNoInteractions(milestones, users);
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"list_tasks", "list_tasks_v2", "list_milestones"})
+  void skipsLookaheadProjectButKeepsCursorAtLastDisplayedRow(String tool) {
+    seed();
+    UUID secondId = UUID.randomUUID();
+    UUID lookaheadProject = UUID.randomUUID();
+    if (tool.equals("list_milestones")) {
+      when(milestones.listPage(workspaceId, null, null, null, 3))
+          .thenReturn(
+              List.of(
+                  milestoneForProject(milestoneId, projectId),
+                  milestoneForProject(secondId, projectId),
+                  milestoneForProject(UUID.randomUUID(), lookaheadProject)));
+    } else {
+      when(tasks.listPage(workspaceId, null, null, false, null, null, null, 3))
+          .thenReturn(
+              List.of(
+                  taskForProject(taskId, projectId),
+                  taskForProject(secondId, projectId),
+                  taskForProject(UUID.randomUUID(), lookaheadProject)));
+    }
+    String output = text(call(tool, "{\"limit\":2}"));
+    assertThat(output)
+        .contains("2 " + (tool.equals("list_milestones") ? "milestone" : "task") + "(s)");
+    verify(projects).listByIds(workspaceId, List.of(projectId));
+    verifyNoMoreInteractions(projects);
+    var args =
+        mapper
+            .createObjectNode()
+            .put("limit", 2)
+            .put("cursor", output.substring(output.lastIndexOf("cursor: ") + 8));
+    assertThat(McpReadPage.parse(tool, args, context).id()).isEqualTo(secondId);
+  }
+
+  @Test
+  void skipsLookaheadMemberProfile() {
+    seed();
+    UUID lookaheadUser = UUID.randomUUID();
+    when(memberships.listPage(workspaceId, null, null, 2))
+        .thenReturn(
+            List.of(
+                new WorkspaceMembershipDetail(userId, "member", now, now),
+                new WorkspaceMembershipDetail(lookaheadUser, "member", now, now)));
+    String output = text(call("list_members", "{\"limit\":1}"));
+    assertThat(output)
+        .contains("1 member(s)", "Alice", "cursor:")
+        .doesNotContain(lookaheadUser.toString());
+    verify(users).getProfiles(List.of(userId));
+    verifyNoMoreInteractions(users);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"get_task", "list_task_updates"})
+  void skipsLookaheadActivityAuthor(String tool) {
+    seed();
+    int limit = tool.equals("get_task") ? 10 : 1;
+    List<TaskUpdateDetail> activities = new ArrayList<>();
+    for (int i = 0; i < limit; i++) {
+      activities.add(activity(userId, "comment", "Shown " + i));
+    }
+    activities.add(activity(UUID.randomUUID(), "comment", "Lookahead"));
+    when(updates.listPage(taskId, null, null, limit + 1)).thenReturn(activities);
+    String args = mapper.createObjectNode().put("task", "MOM-0991").toString();
+    if (tool.equals("list_task_updates")) {
+      args = mapper.createObjectNode().put("task", "MOM-0991").put("limit", limit).toString();
+    }
+    String output = text(call(tool, args));
+    assertThat(output).contains(limit + " activity(s)", "cursor:").doesNotContain("Lookahead");
+    verify(users, times(tool.equals("get_task") ? 2 : 1)).getProfiles(List.of(userId));
+    verifyNoMoreInteractions(users);
+    if (tool.equals("list_task_updates")) {
+      verify(projectAccess).workspaceIdOf(projectId);
+      verifyNoInteractions(projects);
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void activityListRejectsMissingOrForeignParentBeforeReadingActivities(boolean foreignWorkspace) {
+    seed();
+    when(projectAccess.workspaceIdOf(projectId))
+        .thenReturn(foreignWorkspace ? Optional.of(UUID.randomUUID()) : Optional.empty());
+    JsonNode result = call("list_task_updates", "{\"task\":\"MOM-0991\"}");
+    assertThat(result.path("isError").asBoolean()).isTrue();
+    assertThat(text(result)).isEqualTo("No task in this workspace: MOM-0991");
+    verifyNoInteractions(updates, projects, users);
+  }
+
+  private TaskSnapshot taskForProject(UUID id, UUID parentId) {
+    return new TaskSnapshot(
+        id,
+        workspaceId,
+        parentId,
+        null,
+        null,
+        "Task",
+        null,
+        "todo",
+        "medium",
+        "implementation",
+        null,
+        null,
+        now,
+        now);
+  }
+
+  private MilestoneDetail milestoneForProject(UUID id, UUID parentId) {
+    return new MilestoneDetail(
+        id,
+        parentId,
+        "Milestone",
+        null,
+        null,
+        "active",
+        List.of(),
+        "on_track",
+        0,
+        null,
+        null,
+        now,
+        now);
+  }
+
   private McpGrantDetail grant(List<String> scopes) {
     return new McpGrantDetail(
         context.grantId(), userId, "client", workspaceId, scopes, now, null, now);
   }
 
   private void seed() {
+    when(projectAccess.workspaceIdOf(projectId)).thenReturn(Optional.of(workspaceId));
     ProjectDetail project =
         new ProjectDetail(
             projectId,

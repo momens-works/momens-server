@@ -62,6 +62,15 @@ class McpReadPageTest {
             context.grantId(), context.userId(), "client", UUID.randomUUID(), Set.of());
     assertThatThrownBy(() -> McpReadPage.parse("list_tasks", args, other))
         .isInstanceOf(McpToolInputException.class);
+    var otherUser =
+        new McpAuthenticationContext(
+            context.grantId(),
+            UUID.randomUUID(),
+            context.clientId(),
+            context.workspaceId(),
+            context.scopes());
+    assertThatThrownBy(() -> McpReadPage.parse("list_tasks", args, otherUser))
+        .isInstanceOf(McpToolInputException.class);
     args.put("status", "done");
     assertThatThrownBy(() -> McpReadPage.parse("list_tasks", args, context))
         .isInstanceOf(McpToolInputException.class);
