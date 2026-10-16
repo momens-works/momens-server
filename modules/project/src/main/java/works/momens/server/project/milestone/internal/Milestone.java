@@ -78,21 +78,24 @@ class Milestone extends BaseEntity {
   void update(
       String name,
       String description,
+      boolean descriptionSet,
       String status,
       LocalDate targetDate,
+      boolean targetDateSet,
       String healthStatus,
       Integer progress,
-      String summary) {
+      String summary,
+      boolean summarySet) {
     if (name != null && !name.isEmpty()) {
       this.name = name;
     }
-    if (description != null && !description.isEmpty()) {
-      this.description = description;
+    if (descriptionSet) {
+      this.description = description == null || description.isEmpty() ? null : description;
     }
     if (status != null && !status.isEmpty()) {
       this.status = status;
     }
-    if (targetDate != null) {
+    if (targetDateSet) {
       this.targetDate = targetDate;
     }
     if (healthStatus != null && !healthStatus.isEmpty()) {
@@ -101,8 +104,8 @@ class Milestone extends BaseEntity {
     if (progress != null) {
       this.progress = progress;
     }
-    if (summary != null && !summary.isEmpty()) {
-      this.summary = summary;
+    if (summarySet) {
+      this.summary = summary == null || summary.isEmpty() ? null : summary;
     }
   }
 

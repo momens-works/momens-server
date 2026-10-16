@@ -448,10 +448,80 @@ class McpWriteToolServiceTest {
                 + milestoneId
                 + ").\nstatus: active · health: on_track · progress: 40% · target: 2026-10-01 · version: 0");
     verify(milestoneWriter)
-        .update(new UpdateMilestoneCommand(milestoneId, "", "", "", null, "", 40, "", null));
+        .update(
+            new UpdateMilestoneCommand(
+                milestoneId, "", "", false, "", null, false, "", 40, "", false, null));
     assertThat(text(call("delete_milestone", "{\"milestone\":\"" + milestoneId + "\"}")))
         .isEqualTo("Removed milestone Release (" + milestoneId + ").");
     verify(milestoneWriter).delete(milestoneId, null);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"null", "\"\""})
+  void explicitNullAndEmptyClearMilestoneFields(String value) {
+    seed();
+    when(milestoneWriter.update(any())).thenReturn(milestone(milestoneId, projectId, "Release"));
+    assertThat(
+            call(
+                    "update_milestone",
+                    "{\"milestone\":\"Release\",\"description\":"
+                        + value
+                        + ",\"summary\":"
+                        + value
+                        + ",\"target_date\":"
+                        + value
+                        + ",\"progress\":0}")
+                .path("isError")
+                .asBoolean())
+        .isFalse();
+    verify(milestoneWriter)
+        .update(
+            new UpdateMilestoneCommand(milestoneId, "", "", true, "", null, true, "", 0, "", true, null));
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "{\"description\":42}",
+        "{\"summary\":false}",
+        "{\"target_date\":[]}",
+        "{\"name\":null}",
+        "{\"status\":null}",
+        "{\"health_status\":null}"
+      })
+  void rejectsInvalidMilestoneFieldTypes(String fields) {
+    assertThat(
+            call("update_milestone", "{\"milestone\":\"Release\"," + fields.substring(1))
+                .path("isError")
+                .asBoolean())
+        .isTrue();
+    verifyNoInteractions(milestoneWriter);
+  }
+
+  @Test
+  void mapsMilestoneReplacementValues() {
+    seed();
+    when(milestoneWriter.update(any())).thenReturn(milestone(milestoneId, projectId, "Release"));
+    call(
+        "update_milestone",
+        """
+        {"milestone":"Release","description":"new description","summary":"new summary",
+         "target_date":"2026-11-01"}
+        """);
+    verify(milestoneWriter)
+        .update(
+            new UpdateMilestoneCommand(
+                milestoneId,
+                "",
+                "new description",
+                true,
+                "",
+                LocalDate.of(2026, 11, 1),
+                true,
+                "",
+                null,
+                "new summary",
+                true, null));
   }
 
   @ParameterizedTest
