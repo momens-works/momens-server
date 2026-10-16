@@ -24,6 +24,7 @@ import works.momens.server.mcp.transport.McpAuthenticationContext;
 import works.momens.server.mcp.transport.McpToolDefinition;
 import works.momens.server.project.core.ProjectDetail;
 import works.momens.server.project.core.ProjectDetailReader;
+import works.momens.server.project.core.ProjectReader;
 import works.momens.server.project.milestone.MilestoneDetail;
 import works.momens.server.project.milestone.MilestoneReader;
 import works.momens.server.project.task.TaskReader;
@@ -53,6 +54,7 @@ class McpReadToolService {
   private final WorkspaceMembershipReader memberships;
   private final UserService users;
   private final ProjectDetailReader projects;
+  private final ProjectReader projectAccess;
   private final MilestoneReader milestones;
   private final TaskReader tasks;
   private final TaskUpdateReader updates;
@@ -64,6 +66,7 @@ class McpReadToolService {
       WorkspaceMembershipReader memberships,
       UserService users,
       ProjectDetailReader projects,
+      ProjectReader projectAccess,
       MilestoneReader milestones,
       TaskReader tasks,
       TaskUpdateReader updates)
@@ -73,6 +76,7 @@ class McpReadToolService {
     this.memberships = memberships;
     this.users = users;
     this.projects = projects;
+    this.projectAccess = projectAccess;
     this.milestones = milestones;
     this.tasks = tasks;
     this.updates = updates;
@@ -196,7 +200,10 @@ class McpReadToolService {
     List<WorkspaceMembershipDetail> found =
         memberships.listPage(context.workspaceId(), page.time(), page.id(), page.limit() + 1);
     Map<UUID, UserProfile> profiles =
-        users.getProfiles(found.stream().map(WorkspaceMembershipDetail::userId).toList()).stream()
+        users
+            .getProfiles(
+                found.stream().limit(page.limit()).map(WorkspaceMembershipDetail::userId).toList())
+            .stream()
             .collect(Collectors.toMap(UserProfile::id, Function.identity()));
     return page.render(
         "member",
@@ -226,7 +233,11 @@ class McpReadToolService {
         projectIndex(
             projects.listByIds(
                 context.workspaceId(),
-                found.stream().map(MilestoneDetail::projectId).distinct().toList()));
+                found.stream()
+                    .limit(page.limit())
+                    .map(MilestoneDetail::projectId)
+                    .distinct()
+                    .toList()));
     return page.render(
         "milestone",
         "No milestones match.",
@@ -266,7 +277,11 @@ class McpReadToolService {
         projectIndex(
             projects.listByIds(
                 context.workspaceId(),
-                found.stream().map(TaskSnapshot::projectId).distinct().toList()));
+                found.stream()
+                    .limit(page.limit())
+                    .map(TaskSnapshot::projectId)
+                    .distinct()
+                    .toList()));
     return page.render(
         "task",
         "No tasks match.",
@@ -348,7 +363,12 @@ class McpReadToolService {
 
   private String getTask(McpAuthenticationContext context, String reference) {
     TaskSnapshot task = requireTask(context, reference);
-    ProjectDetail project = requireTaskProject(context, task, reference);
+    ProjectDetail project =
+        projects.listByIds(context.workspaceId(), List.of(task.projectId())).stream()
+            .filter(candidate -> candidate.id().equals(task.projectId()))
+            .findFirst()
+            .orElseThrow(
+                () -> new McpToolInputException("No task in this workspace: " + reference));
     String milestoneName =
         task.milestoneId() == null
             ? ""
@@ -367,7 +387,7 @@ class McpReadToolService {
                 .findFirst()
                 .orElse("");
     List<TaskUpdateDetail> activities = updates.listPage(task.id(), null, null, 11);
-    Map<UUID, String> authorNames = activityAuthors(activities);
+    Map<UUID, String> authorNames = activityAuthors(activities, 10);
     String detail =
         McpReadPage.clip(
             McpReadToolText.taskDetail(task, project, milestoneName, assigneeName), 12000);
@@ -383,10 +403,15 @@ class McpReadToolService {
   private String listTaskUpdates(
       McpAuthenticationContext context, String reference, McpReadPage page) {
     TaskSnapshot task = requireTask(context, reference);
-    requireTaskProject(context, task, reference);
+    if (projectAccess
+        .workspaceIdOf(task.projectId())
+        .filter(context.workspaceId()::equals)
+        .isEmpty()) {
+      throw new McpToolInputException("No task in this workspace: " + reference);
+    }
     List<TaskUpdateDetail> found =
         updates.listPage(task.id(), page.time(), page.id(), page.limit() + 1);
-    return activityPage(task, found, activityAuthors(found), page);
+    return activityPage(task, found, activityAuthors(found, page.limit()), page);
   }
 
   private TaskSnapshot requireTask(McpAuthenticationContext context, String reference) {
@@ -397,17 +422,10 @@ class McpReadToolService {
         .orElseThrow(() -> new McpToolInputException("No task in this workspace: " + reference));
   }
 
-  private ProjectDetail requireTaskProject(
-      McpAuthenticationContext context, TaskSnapshot task, String reference) {
-    return projects.listByIds(context.workspaceId(), List.of(task.projectId())).stream()
-        .filter(project -> project.id().equals(task.projectId()))
-        .findFirst()
-        .orElseThrow(() -> new McpToolInputException("No task in this workspace: " + reference));
-  }
-
-  private Map<UUID, String> activityAuthors(List<TaskUpdateDetail> activities) {
+  private Map<UUID, String> activityAuthors(List<TaskUpdateDetail> activities, int limit) {
     List<UUID> ids =
         activities.stream()
+            .limit(limit)
             .map(TaskUpdateDetail::authorId)
             .filter(Objects::nonNull)
             .distinct()

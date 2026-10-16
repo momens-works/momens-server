@@ -41,6 +41,7 @@ import works.momens.server.mcp.transport.McpAuthenticationContext;
 import works.momens.server.mcp.transport.McpToolDefinition;
 import works.momens.server.project.core.ProjectDetail;
 import works.momens.server.project.core.ProjectDetailReader;
+import works.momens.server.project.core.ProjectReader;
 import works.momens.server.project.milestone.CreateMilestoneCommand;
 import works.momens.server.project.milestone.MilestoneDetail;
 import works.momens.server.project.milestone.MilestoneReader;
@@ -109,6 +110,7 @@ class McpWriteToolServiceTest {
                 memberships,
                 users,
                 projects,
+                mock(ProjectReader.class),
                 milestones,
                 tasks,
                 mock(TaskUpdateReader.class)),

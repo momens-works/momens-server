@@ -4,7 +4,8 @@
 두 도구의 scope는 `mcp:tasks:read`이며, token·활성 grant·현재 workspace membership을 검증한다.
 
 입력 필드는 [도구 schema](../../modules/mcp/src/main/resources/mcp/read-tools.json),
-전환 결정과 검증 이력은 MOM-1003과 [PR #288](https://github.com/momens-works/momens-server/pull/288)을 참고한다.
+v2 전환 결정은 MOM-1003과 [PR #288](https://github.com/momens-works/momens-server/pull/288),
+페이지 분할의 판단 근거·검증 이력은 MOM-1004와 [PR #330](https://github.com/momens-works/momens-server/pull/330)을 참고한다.
 
 ## 입력 계약
 
@@ -60,6 +61,7 @@ cursor를 생략한다. 배포 후 클라이언트는 `tools/list`를 다시 읽
 `[truncated]`를 표시한다. cursor는 실제 표시한 마지막 항목의 다음부터 이어진다. 잘린 항목의
 본문을 이어 읽는 cursor는 제공하지 않으므로 원문은 웹 상세에서 확인한다. 전체 도구 텍스트는
 안내를 포함해 60,000바이트 이내다. 이 한도는 JSON 직렬화·전송 envelope의 바이트 수가 아니다.
+원문 조회와 문자열 조합·UTF-8 변환은 잘림 전에 수행하므로 서버 메모리 사용량의 상한도 아니다.
 
 프로젝트 UUID는 직접 조회한다. 프로젝트 이름·label은 이름과 식별자를 100행씩 읽어 Java의
 공백 제거·대소문자 비교로 판정한다. 정확·부분 일치 후보를 종류별 두 개까지 유지하고,
