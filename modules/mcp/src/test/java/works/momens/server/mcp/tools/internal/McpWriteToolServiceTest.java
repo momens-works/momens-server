@@ -490,12 +490,13 @@ class McpWriteToolServiceTest {
         "{\"health_status\":null}"
       })
   void rejectsInvalidMilestoneFieldTypes(String fields) {
-    assertThat(
-            call("update_milestone", "{\"milestone\":\"Release\"," + fields.substring(1))
-                .path("isError")
-                .asBoolean())
-        .isTrue();
-    verifyNoInteractions(milestoneWriter);
+    seed();
+    String field = mapper.readTree(fields).properties().iterator().next().getKey();
+    JsonNode result = call("update_milestone", "{\"milestone\":\"Release\"," + fields.substring(1));
+
+    assertThat(result.path("isError").asBoolean()).isTrue();
+    assertThat(text(result)).isEqualTo("Unknown argument or invalid argument type: " + field);
+    verifyNoInteractions(projects, milestones, milestoneWriter);
   }
 
   @Test
