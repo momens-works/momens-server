@@ -84,3 +84,23 @@ cursor를 생략한다. 배포 후 클라이언트는 `tools/list`를 다시 읽
 활동 수이며 후속 페이지에서도 COUNT를 다시 조회한다. 목록과 건수는 별도 조회이므로
 동시 작성·삭제 시 순간적으로 달라질 수 있다.
 태스크 또는 부모 프로젝트가 삭제됐거나 다른 workspace에 속하면 활동을 읽기 전에 거부한다.
+
+## 작업 상세 링크
+
+`get_task`·`create_task`·`update_task` 성공 텍스트는 `url: <절대 URL>` 행을 제공한다.
+기존 라벨·상태 정보와 text content 형식은 유지한다. `get_task`에서는 본문·활동보다 앞에
+링크를 표시한다. 목록 도구 두 개는 응답 크기를 늘리지 않도록 링크를 반복하지 않는다.
+목록에서 선택한 작업의 링크는 `get_task`로 얻는다. 목록 크기 제한·페이지 이동은
+위 계약을 따른다.
+
+웹 경로는 `/{workspaceSlug}/projects/{projectUUID}?tab=tasks&task={taskLabel}`이다.
+워크스페이스는 인증된 workspace의 현재 slug, 프로젝트는 UUID, 작업은 MOM-label을 사용한다.
+라벨이 null인 작업만 UUID로 대체한다. 각 경로 세그먼트와 query 값은 URI 인코딩한다.
+이 링크는 접근 권한을 부여하지 않으며 웹 로그인이 필요하다. scope·grant·membership 검증과
+workspace 내 작업·활성 프로젝트 확인을 통과한 응답에만 링크를 포함한다.
+
+기준 주소는 `momens.mcp.web-base-uri`(`MOMENS_MCP_WEB_BASE_URI`)로 지정한다.
+HTTPS origin 또는 로컬 HTTP loopback origin만 허용하고, 경로(`/` 제외)·query·fragment·userinfo는
+허용하지 않는다. 요청 Host나 OAuth·초대 URL에서 주소를 유추하지 않는다.
+설정 누락·잘못된 주소는 기동 시 거부한다. 환경별 주입은 [로컬 개발](../local-development.md),
+prod 반영 여부는 [운영 준비 대장](../prod-readiness-ledger.md)을 따른다.

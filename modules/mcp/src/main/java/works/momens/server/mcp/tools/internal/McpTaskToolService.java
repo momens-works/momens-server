@@ -38,6 +38,7 @@ class McpTaskToolService {
   private final TaskReader tasks;
   private final TaskWriter taskWriter;
   private final TaskUpdateWriter updates;
+  private final McpTaskLinks links;
 
   String createTask(McpAuthenticationContext context, JsonNode args) {
     ProjectDetail project =
@@ -59,7 +60,9 @@ class McpTaskToolService {
                 date(argument(args, "due_date"), "due_date"),
                 TaskOrigin.MANUAL,
                 null));
-    return McpWriteToolText.createdTask(task, project, milestoneName(context, task.milestoneId()));
+    return McpWriteToolText.createdTask(task, project, milestoneName(context, task.milestoneId()))
+        + "\nurl: "
+        + links.taskUrl(context.workspaceId(), task);
   }
 
   String updateTask(McpAuthenticationContext context, JsonNode args) {
@@ -86,7 +89,9 @@ class McpTaskToolService {
                 !assignee.isEmpty(),
                 date(argument(args, "due_date"), "due_date"),
                 args.has("due_date")));
-    return McpWriteToolText.updatedTask(task, milestoneName(context, task.milestoneId()));
+    return McpWriteToolText.updatedTask(task, milestoneName(context, task.milestoneId()))
+        + "\nurl: "
+        + links.taskUrl(context.workspaceId(), task);
   }
 
   String createComment(McpAuthenticationContext context, JsonNode args) {

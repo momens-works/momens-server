@@ -42,6 +42,7 @@ CI가 실제 Secret·ConfigMap의 존재나 값을 조회해 증명하지는 않
 | `MOMENS_AUTH_JWT_SECRET` | `secret` | `applied` |
 | `MOMENS_AUTH_WEB_FAILURE_REDIRECT_URI` | `configmap` | `applied` |
 | `MOMENS_AUTH_WEB_SUCCESS_REDIRECT_URI` | `configmap` | `applied` |
+| `MOMENS_MCP_WEB_BASE_URI` | `configmap` | `required` |
 <!-- END DECLARATION: prod-required-config -->
 
 ## 수기 prod 의무
