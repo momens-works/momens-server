@@ -9,6 +9,8 @@ spring:
     show-sql: true
 
 momens:
+  mcp:
+    web-base-uri: ${MOMENS_MCP_WEB_BASE_URI:http://localhost:5173}
   cors:
     # 로컬 웹 프론트의 localhost와 127.0.0.1 origin을 모두 허용합니다.
     allowed-origins: http://localhost:3000,http://127.0.0.1:3000

@@ -54,6 +54,7 @@ class McpReadToolService {
   private final MilestoneReader milestones;
   private final TaskReader tasks;
   private final TaskUpdateReader updates;
+  private final McpTaskLinks links;
   private final List<McpToolDefinition> definitions;
 
   McpReadToolService(
@@ -64,7 +65,8 @@ class McpReadToolService {
       ProjectDetailReader projects,
       MilestoneReader milestones,
       TaskReader tasks,
-      TaskUpdateReader updates)
+      TaskUpdateReader updates,
+      McpTaskLinks links)
       throws IOException {
     this.mapper = mapper;
     this.grants = grants;
@@ -74,6 +76,7 @@ class McpReadToolService {
     this.milestones = milestones;
     this.tasks = tasks;
     this.updates = updates;
+    this.links = links;
     try (InputStream input = new ClassPathResource("mcp/read-tools.json").getInputStream()) {
       List<McpToolDefinition> loaded = new ArrayList<>();
       for (JsonNode tool : mapper.readTree(input)) {
@@ -311,7 +314,13 @@ class McpReadToolService {
                 .filter(profile -> profile.name() != null && !profile.name().isBlank())
                 .collect(Collectors.toMap(UserProfile::id, UserProfile::name));
     return McpReadToolText.taskDetail(
-        task, project, milestoneName, assigneeName, activities, authorNames);
+        task,
+        project,
+        milestoneName,
+        assigneeName,
+        activities,
+        authorNames,
+        links.taskUrl(context.workspaceId(), task));
   }
 
   private static Map<UUID, ProjectDetail> projectIndex(List<ProjectDetail> found) {

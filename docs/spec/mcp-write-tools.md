@@ -31,6 +31,8 @@
   마일스톤 삭제는 `Removed milestone …` 텍스트 형식을 유지한다.
 - 결과는 `resultType: complete`, `content: [{type: text, text: …}]`다.
   `outputSchema`·`structuredContent`는 제공하지 않는다.
+- `create_task`·`update_task` 성공 텍스트에는 `url: <절대 URL>` 행이 추가된다.
+  링크 형식과 설정은 [작업 상세 링크](mcp-task-list.md#작업-상세-링크)를 따른다.
 - 예상 입력·권한·리소스 오류는 `isError: true`다. 미등록 도구·객체가 아닌 arguments는
   JSON-RPC `-32602`, 예상치 못한 내부 오류는 상세 없는 `-32603 Internal error`다.
   도메인 예외의 원문·details를 tool text로 전달하지 않는다.

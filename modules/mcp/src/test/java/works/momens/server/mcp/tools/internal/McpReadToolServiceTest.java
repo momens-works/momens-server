@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.InputStream;
+import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -29,6 +30,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
+import works.momens.server.mcp.configuration.McpWebProperties;
 import works.momens.server.mcp.grant.McpGrantDetail;
 import works.momens.server.mcp.grant.McpGrantReader;
 import works.momens.server.mcp.grant.McpScope;
@@ -45,11 +47,16 @@ import works.momens.server.project.taskupdate.TaskUpdateDetail;
 import works.momens.server.project.taskupdate.TaskUpdateReader;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
+import works.momens.server.workspace.core.WorkspaceDetail;
+import works.momens.server.workspace.core.WorkspaceReader;
 import works.momens.server.workspace.membership.WorkspaceMembershipDetail;
 import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 import works.momens.server.workspace.membership.WorkspaceRole;
 
 class McpReadToolServiceTest {
+  private final WorkspaceReader workspaces = mock(WorkspaceReader.class);
+  private final McpTaskLinks links =
+      new McpTaskLinks(new McpWebProperties(URI.create("https://app.example.com")), workspaces);
   private final ObjectMapper mapper = new ObjectMapper();
   private final McpGrantReader grants = mock(McpGrantReader.class);
   private final WorkspaceMembershipReader memberships = mock(WorkspaceMembershipReader.class);
@@ -75,9 +82,12 @@ class McpReadToolServiceTest {
 
   @BeforeEach
   void setup() throws Exception {
+    when(workspaces.findById(workspaceId))
+        .thenReturn(
+            Optional.of(new WorkspaceDetail(workspaceId, "Momens", "momens", null, now, now)));
     service =
         new McpReadToolService(
-            mapper, grants, memberships, users, projects, milestones, tasks, updates);
+            mapper, grants, memberships, users, projects, milestones, tasks, updates, links);
     when(grants.findActive(context.grantId()))
         .thenReturn(Optional.of(grant(context.scopes().stream().toList())));
     when(memberships.roleOf(workspaceId, userId)).thenReturn(Optional.of(WorkspaceRole.MEMBER));
@@ -188,7 +198,9 @@ class McpReadToolServiceTest {
     assertThat(text(call("list_tasks", "{\"status\":\"unknown\"}"))).isEqualTo("No tasks match.");
     assertThat(text(call("get_task", "{\"task\":\" mom-0991 \"}")))
         .isEqualTo(
-            "MOM-0991 · Read tools\nstatus: todo · priority: medium · project: PRJ-0003 Sprint · milestone: Release · assignee: Alice · due: 2026-10-01\n\nDescription\n\nactivities (1):\n- [2026-09-27 03:04 UTC] comment · Alice: Comment");
+            "MOM-0991 · Read tools\nstatus: todo · priority: medium · project: PRJ-0003 Sprint · milestone: Release · assignee: Alice · due: 2026-10-01\nurl: https://app.example.com/momens/projects/"
+                + projectId
+                + "?tab=tasks&task=MOM-0991\n\nDescription\n\nactivities (1):\n- [2026-09-27 03:04 UTC] comment · Alice: Comment");
     verify(tasks).findSnapshotByLabel(workspaceId, "MOM-0991");
   }
 
@@ -475,7 +487,7 @@ class McpReadToolServiceTest {
     assertThat(call("get_task", "{\"task\":\"" + taskId + "\"}").path("isError").asBoolean())
         .isTrue();
     verify(tasks).findSnapshotInWorkspace(workspaceId, taskId);
-    verifyNoInteractions(updates, projects, milestones, users);
+    verifyNoInteractions(updates, projects, milestones, users, workspaces);
   }
 
   @ParameterizedTest
@@ -491,7 +503,7 @@ class McpReadToolServiceTest {
 
     assertThat(result.path("isError").asBoolean()).isTrue();
     assertThat(text(result)).isEqualTo("No task in this workspace: " + reference);
-    verifyNoInteractions(updates, milestones, users);
+    verifyNoInteractions(updates, milestones, users, workspaces);
   }
 
   @Test
@@ -597,7 +609,11 @@ class McpReadToolServiceTest {
     assertThat(detail.path("isError").asBoolean()).isFalse();
     assertThat(text(detail))
         .isEqualTo(
-            taskId + " · Read tools\nstatus: todo · priority: medium · project: PRJ-0003 Sprint");
+            taskId
+                + " · Read tools\nstatus: todo · priority: medium · project: PRJ-0003 Sprint\nurl: https://app.example.com/momens/projects/"
+                + projectId
+                + "?tab=tasks&task="
+                + taskId);
     assertThat(text(call("list_tasks", "{}")))
         .isEqualTo("1 task(s):\n- " + taskId + " · Read tools [todo] — PRJ-0003 Sprint");
     verifyNoInteractions(milestones, users);

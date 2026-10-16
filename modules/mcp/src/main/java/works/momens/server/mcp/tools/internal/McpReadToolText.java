@@ -57,7 +57,8 @@ final class McpReadToolText {
       String milestone,
       String assignee,
       List<TaskUpdateDetail> updates,
-      Map<UUID, String> authorNames) {
+      Map<UUID, String> authorNames,
+      String url) {
     StringBuilder text =
         new StringBuilder(label(task))
             .append(" · ")
@@ -78,6 +79,7 @@ final class McpReadToolText {
     if (task.dueDate() != null) {
       text.append(" · due: ").append(task.dueDate());
     }
+    text.append("\nurl: ").append(url);
     if (task.description() != null && !task.description().isEmpty()) {
       text.append("\n\n").append(task.description());
     }

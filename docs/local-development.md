@@ -320,6 +320,12 @@ diff만 출력합니다.
 `MOMENS_MCP_CONSENT_URI`에 로컬 FE의 `/oauth/authorize` 절대 주소를 지정합니다.
 미설정 시 authorize는 `server_error`를 반환합니다.
 
+MCP 작업 상세 링크의 웹 origin은 `MOMENS_MCP_WEB_BASE_URI`로 별도 지정합니다.
+local 기본값은 FE 개발 서버의 `http://localhost:5173`이며 다른 포트를 사용하면 덮어씁니다.
+dev·prod에는 실제 웹 origin을 반드시 주입해야 합니다. 경로·query·fragment가 없는 HTTPS 주소를
+사용하며, HTTP loopback은 local/test 프로필에서만 허용합니다. dev/prod가 함께 활성화되면
+HTTPS가 필요합니다. 명시한 포트는 1~65535여야 합니다. OAuth consent URI 설정과는 독립적입니다.
+
 ## Figma 연결 설정 (MOM-1016)
 
 OAuth가 완료된 Figma 연결은 `PENDING`입니다. admin/owner가

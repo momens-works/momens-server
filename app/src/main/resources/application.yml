@@ -43,6 +43,7 @@ server:
 
 momens:
   mcp:
+    web-base-uri: ${MOMENS_MCP_WEB_BASE_URI}
     oauth:
       consent-uri: ${MOMENS_MCP_CONSENT_URI:}
       unused-client-cleanup:
