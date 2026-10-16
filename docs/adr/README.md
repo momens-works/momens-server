@@ -30,4 +30,4 @@
 | [0022](0022-column-value-set-ownership.md) | 컬럼 허용 값의 관리 기준과 도메인 enum의 역할 | Accepted |
 | [0023](0023-mcp-oauth-migration-boundary-and-cutover.md) | MCP OAuth 인가 서버 모듈 경계와 재연결 전환 | Accepted (grant 관리 HTTP 표면은 [0024](0024-mcp-grant-web-surface.md)로 대체) |
 | [0024](0024-mcp-grant-web-surface.md) | MCP grant 관리의 웹 HTTP 표면 분리 | Accepted |
-| [0025](0025-module-boundary-criteria.md) | 모듈 경계를 정하는 기준 | Proposed |
+| [0025](0025-module-boundary-criteria.md) | 모듈 경계를 정하는 기준 | Accepted |
