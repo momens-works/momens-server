@@ -1,10 +1,12 @@
 package works.momens.server.project.task.internal;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.project.core.ProjectReader;
@@ -101,5 +103,31 @@ class TaskReaderImpl implements TaskReader {
         task.getPriority(),
         task.getRole(),
         task.getCreatedAt());
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<TaskSnapshot> listPage(
+      UUID workspaceId,
+      UUID projectId,
+      UUID assigneeId,
+      boolean unassignedOnly,
+      String status,
+      Instant before,
+      UUID beforeId,
+      int limit) {
+    return taskRepository
+        .findPage(
+            workspaceId,
+            projectId,
+            assigneeId,
+            unassignedOnly,
+            status,
+            before,
+            beforeId,
+            PageRequest.of(0, limit))
+        .stream()
+        .map(TaskSnapshotMapper::toSnapshot)
+        .toList();
   }
 }

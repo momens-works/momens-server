@@ -2,7 +2,6 @@ package works.momens.server.mcp.tools.internal;
 
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import works.momens.server.project.core.ProjectDetail;
@@ -52,12 +51,7 @@ final class McpReadToolText {
   }
 
   static String taskDetail(
-      TaskSnapshot task,
-      ProjectDetail project,
-      String milestone,
-      String assignee,
-      List<TaskUpdateDetail> updates,
-      Map<UUID, String> authorNames) {
+      TaskSnapshot task, ProjectDetail project, String milestone, String assignee) {
     StringBuilder text =
         new StringBuilder(label(task))
             .append(" · ")
@@ -81,22 +75,19 @@ final class McpReadToolText {
     if (task.description() != null && !task.description().isEmpty()) {
       text.append("\n\n").append(task.description());
     }
-    if (!updates.isEmpty()) {
-      text.append("\n\nactivities (").append(updates.size()).append("):");
-      for (TaskUpdateDetail update : updates) {
-        text.append("\n- [")
-            .append(COMMENT_TIME.format(update.createdAt()))
-            .append(" UTC] ")
-            .append(update.kind())
-            .append(" · ")
-            .append(
-                update.authorId() == null
-                    ? "Unknown author"
-                    : authorNames.getOrDefault(update.authorId(), update.authorId().toString()))
-            .append(": ")
-            .append(update.body());
-      }
-    }
     return text.toString();
+  }
+
+  static String activity(TaskUpdateDetail update, Map<UUID, String> names) {
+    return "["
+        + COMMENT_TIME.format(update.createdAt())
+        + " UTC] "
+        + update.kind()
+        + " · "
+        + (update.authorId() == null
+            ? "Unknown author"
+            : names.getOrDefault(update.authorId(), update.authorId().toString()))
+        + ": "
+        + update.body();
   }
 }

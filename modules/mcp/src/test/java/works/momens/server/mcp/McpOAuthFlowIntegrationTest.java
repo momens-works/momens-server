@@ -55,6 +55,7 @@ import works.momens.server.mcp.grant.McpGrantWriter;
 import works.momens.server.mcp.transport.McpAuthenticationContext;
 import works.momens.server.mcp.transport.McpBearerTokenVerifier;
 import works.momens.server.project.core.ProjectDetailReader;
+import works.momens.server.project.core.ProjectReader;
 import works.momens.server.project.milestone.MilestoneReader;
 import works.momens.server.project.milestone.MilestoneWriter;
 import works.momens.server.project.task.TaskReader;
@@ -85,6 +86,7 @@ class McpOAuthFlowIntegrationTest extends AbstractPostgresIntegrationTest {
   @Autowired McpGrantWriter grants;
   @Autowired McpBearerTokenVerifier tokenVerifier;
   @MockitoBean ProjectDetailReader projects;
+  @MockitoBean ProjectReader projectAccess;
   @MockitoBean MilestoneReader milestones;
   @MockitoBean TaskReader tasks;
   @MockitoBean TaskWriter taskWriter;

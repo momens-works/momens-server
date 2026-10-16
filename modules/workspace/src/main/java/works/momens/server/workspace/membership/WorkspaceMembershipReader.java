@@ -1,5 +1,6 @@
 package works.momens.server.workspace.membership;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,4 +29,8 @@ public interface WorkspaceMembershipReader {
    * 매핑(MOM-60)에 사용합니다.
    */
   List<UserWorkspaceMembership> listUserMemberships(UUID userId);
+
+  /** 가입 시각·사용자 id 오름차순으로 cursor 이후 최대 limit개를 조회합니다. */
+  List<WorkspaceMembershipDetail> listPage(
+      UUID workspaceId, Instant after, UUID afterId, int limit);
 }

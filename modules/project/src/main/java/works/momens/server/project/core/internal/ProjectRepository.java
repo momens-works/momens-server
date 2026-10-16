@@ -1,10 +1,12 @@
 package works.momens.server.project.core.internal;
 
 import jakarta.persistence.LockModeType;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -33,4 +35,42 @@ interface ProjectRepository extends JpaRepository<Project, UUID> {
       order by p.createdAt desc
       """)
   List<ProjectDetailRow> findDetailRowsByWorkspaceId(@Param("workspaceId") UUID workspaceId);
+
+  @Query(
+      """
+      select new works.momens.server.project.core.internal.ProjectDetailRow(
+          p.id, p.workspaceId, p.label, p.name, p.description, p.status, p.ownerId,
+          p.targetDate, p.healthStatus, p.summary, p.unresolvedCount, p.vocSignalCount,
+          p.lastContextAt, p.metadata, p.createdAt, p.updatedAt)
+      from Project p
+      where p.workspaceId = :workspaceId and p.deletedAt is null
+      and (:beforeId is null or p.createdAt < :before or (p.createdAt = :before and p.id < :beforeId))
+      order by p.createdAt desc, p.id desc
+      """)
+  List<ProjectDetailRow> findPage(
+      UUID workspaceId, Instant before, UUID beforeId, Pageable pageable);
+
+  @Query(
+      """
+      select new works.momens.server.project.core.internal.ProjectDetailRow(
+          p.id, p.workspaceId, p.label, p.name, p.description, p.status, p.ownerId,
+          p.targetDate, p.healthStatus, p.summary, p.unresolvedCount, p.vocSignalCount,
+          p.lastContextAt, p.metadata, p.createdAt, p.updatedAt)
+      from Project p
+      where p.workspaceId = :workspaceId and p.deletedAt is null
+      and p.id in :ids
+      order by p.createdAt desc
+      """)
+  List<ProjectDetailRow> findRowsByIds(UUID workspaceId, Collection<UUID> ids);
+
+  @Query(
+      """
+      select new works.momens.server.project.core.internal.ProjectReferenceRow(
+          p.id, p.label, p.name)
+      from Project p
+      where p.workspaceId = :workspaceId and p.deletedAt is null
+      and (:afterId is null or p.id > :afterId)
+      order by p.id asc
+      """)
+  List<ProjectReferenceRow> findReferencePage(UUID workspaceId, UUID afterId, Pageable pageable);
 }
