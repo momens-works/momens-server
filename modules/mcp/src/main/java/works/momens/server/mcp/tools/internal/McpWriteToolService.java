@@ -131,9 +131,16 @@ class McpWriteToolService {
       JsonNode property = schema.get("properties").get(field.getKey());
       boolean valid =
           property != null
-              && (property.path("type").asText().equals("integer")
+              && (property.path("type").isTextual()
+                      && property.path("type").asText().equals("integer")
                   ? field.getValue().isIntegralNumber() && field.getValue().canConvertToInt()
-                  : field.getValue().isTextual());
+                  : field.getValue().isTextual()
+                      || (field.getValue().isNull()
+                          && property.path("type").isArray()
+                          && property
+                              .path("type")
+                              .valueStream()
+                              .anyMatch(type -> type.asText().equals("null"))));
       if (!valid) {
         throw new McpToolInputException(
             "Unknown argument or invalid argument type: " + field.getKey());

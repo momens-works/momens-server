@@ -359,19 +359,7 @@ class McpOAuthSecurityIntegrationTest extends AbstractPostgresIntegrationTest {
         jdbc.queryForObject(
             "SELECT updated_at FROM milestones WHERE id = ?", Object.class, milestoneId);
     callWrite(
-        token,
-        "update_milestone",
-        Map.of(
-            "milestone",
-            milestoneId.toString(),
-            "status",
-            "active",
-            "description",
-            "",
-            "summary",
-            "",
-            "target_date",
-            ""));
+        token, "update_milestone", Map.of("milestone", milestoneId.toString(), "status", "active"));
     assertThat(
             jdbc.queryForObject(
                 "SELECT description FROM milestones WHERE id = ?", String.class, milestoneId))
@@ -380,6 +368,29 @@ class McpOAuthSecurityIntegrationTest extends AbstractPostgresIntegrationTest {
             jdbc.queryForObject(
                 "SELECT updated_at FROM milestones WHERE id = ?", Object.class, milestoneId))
         .isEqualTo(milestoneUpdatedAt);
+
+    callWrite(
+        token,
+        "update_milestone",
+        Map.of(
+            "milestone",
+            milestoneId.toString(),
+            "description",
+            "",
+            "summary",
+            "",
+            "target_date",
+            ""));
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT description IS NULL AND summary IS NULL AND target_date IS NULL FROM milestones WHERE id = ?",
+                Boolean.class,
+                milestoneId))
+        .isTrue();
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT updated_at FROM milestones WHERE id = ?", Object.class, milestoneId))
+        .isNotEqualTo(milestoneUpdatedAt);
 
     callWrite(
         token,

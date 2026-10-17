@@ -141,16 +141,22 @@
           "description": "new milestone name"
         },
         "description": {
-          "type": "string",
-          "description": "new longer description"
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "new longer description; omit to keep, null or empty string to clear"
         },
         "status": {
           "type": "string",
           "description": "planned, active, completed, or missed"
         },
         "target_date": {
-          "type": "string",
-          "description": "new target date, YYYY-MM-DD"
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "new target date, YYYY-MM-DD; omit to keep, null or empty string to clear"
         },
         "health_status": {
           "type": "string",
@@ -161,8 +167,11 @@
           "description": "completion percentage from 0 to 100"
         },
         "summary": {
-          "type": "string",
-          "description": "new concise progress summary"
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "new concise progress summary; omit to keep, null or empty string to clear"
         }
       },
       "additionalProperties": false,
