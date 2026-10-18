@@ -393,7 +393,13 @@ class McpReadToolService {
     Map<UUID, String> authorNames = activityAuthors(activities, 10);
     String detail =
         McpReadPage.clip(
-            McpReadToolText.taskDetail(task, project, milestoneName, assigneeName, links.taskUrl(context.workspaceId(), task)), 12000);
+            McpReadToolText.taskDetail(
+                task,
+                project,
+                milestoneName,
+                assigneeName,
+                links.taskUrl(context.workspaceId(), task)),
+            12000);
     ObjectNode args = mapper.createObjectNode().put("task", task.id().toString()).put("limit", 10);
     McpReadPage page = McpReadPage.parse("list_task_updates", args, context);
     return detail
