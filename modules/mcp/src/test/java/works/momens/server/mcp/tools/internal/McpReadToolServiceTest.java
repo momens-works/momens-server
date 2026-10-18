@@ -100,7 +100,8 @@ class McpReadToolServiceTest {
             projectAccess,
             milestones,
             tasks,
-            updates, links);
+            updates,
+            links);
     when(grants.findActive(context.grantId()))
         .thenReturn(Optional.of(grant(context.scopes().stream().toList())));
     when(memberships.roleOf(workspaceId, userId)).thenReturn(Optional.of(WorkspaceRole.MEMBER));
