@@ -99,7 +99,7 @@ kotlinx.serialization 문서에서도 기본값이 없는 프로퍼티는 JSON�
 서버인 `momens-api`의 요청을 처리하고 있습니다.
 
 prod 환경에서는 신규 서버인 `momens-server`의 Flyway가 비활성화되어 있고, `ddl-auto: validate`입니다. 따라서
-엔티티 매핑에 대한 검증만 수행하고 있습니다. [당시 prod 운영 준비 대장](https://github.com/momens-works/momens-server/blob/93a8f733ffdfa5220348be321455ece5dd345d9e/docs/prod-schema-ledger.md) 기준으로 아직
+엔티티 매핑에 대한 검증만 수행하고 있습니다. [당시 prod 운영 준비 대장](https://github.com/momens-works/momens-server/blob/36a10c63c7928ec419ae6e21aed14f73680ca350/docs/prod-schema-ledger.md) 기준으로 아직
 반영되지 않은 스키마가 16건 존재합니다. 따라서 현재 상태로는 신규 서버를 prod 환경에서 정상 기동할 수
 없습니다. 이 작업은 MOM-0840에서 처리할 예정입니다.
 
