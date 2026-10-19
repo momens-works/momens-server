@@ -207,6 +207,80 @@ class WriterConcurrencyIntegrationTest extends AbstractPostgresIntegrationTest {
         .isEqualTo("AI 제목");
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"-0.5", "0.5", "1.5", "\"0\"", "9223372036854775808"})
+  void httpRejectsInvalidVersionWithoutChangingTask(String version) throws Exception {
+    UUID id = fixture(false);
+    UUID itemId = UUID.randomUUID();
+    jdbc.update(
+        "INSERT INTO task_checklist_items(id,task_id,title,completed,position) VALUES (?,?,'기준',false,0)",
+        itemId,
+        id);
+    String token = tokenFor(id);
+    String[] paths = {
+      "/api/tasks/" + id,
+      "/api/mobile/tasks/" + id,
+      "/api/mobile/tasks/" + id + "/checklist-items/" + itemId
+    };
+    String[] bodies = {
+      "{\"title\":\"changed\",\"version\":%s}",
+      "{\"title\":\"changed\",\"role\":\"backend\",\"priority\":\"medium\",\"status\":\"todo\",\"version\":%s}",
+      "{\"completed\":true,\"version\":%s}"
+    };
+    for (int index = 0; index < paths.length; index++) {
+      mvc.perform(
+              patch(paths[index])
+                  .header("Authorization", token)
+                  .header("API-Version", "1")
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content(bodies[index].formatted(version)))
+          .andExpect(status().isBadRequest())
+          .andExpect(jsonPath("$.error.code").value("COMMON_BAD_REQUEST"));
+    }
+    assertThat(jdbc.queryForObject("SELECT title FROM tasks WHERE id=?", String.class, id))
+        .isEqualTo("원래 이름");
+    assertThat(jdbc.queryForObject("SELECT version FROM tasks WHERE id=?", Long.class, id))
+        .isZero();
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT completed FROM task_checklist_items WHERE id=?", Boolean.class, itemId))
+        .isFalse();
+  }
+
+  @Test
+  void httpAcceptsExplicitNullVersionAcrossRequestBodies() throws Exception {
+    UUID id = fixture(false);
+    String token = tokenFor(id);
+    mvc.perform(
+            patch("/api/tasks/" + id)
+                .header("Authorization", token)
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"웹 수정\",\"version\":null}"))
+        .andExpect(status().isOk());
+    mvc.perform(
+            patch("/api/mobile/tasks/" + id)
+                .header("Authorization", token)
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"title\":\"모바일 수정\",\"role\":\"backend\",\"priority\":\"medium\",\"status\":\"todo\",\"version\":null}"))
+        .andExpect(status().isNoContent());
+    UUID itemId = UUID.randomUUID();
+    jdbc.update(
+        "INSERT INTO task_checklist_items(id,task_id,title,completed,position) VALUES (?,?,'기준',false,0)",
+        itemId,
+        id);
+    mvc.perform(
+            patch("/api/mobile/tasks/" + id + "/checklist-items/" + itemId)
+                .header("Authorization", token)
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"completed\":true,\"version\":null}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.version").value(3));
+  }
+
   @Test
   void webVersionIsOptionalButStaleAndNegativeVersionsAreRejected() throws Exception {
     UUID id = fixture(false);
