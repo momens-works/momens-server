@@ -4,6 +4,11 @@
 - 날짜: 2026-08-14
 - 작성자: jsshin8128
 
+> [PR #149의 머지 전 기록](https://github.com/momens-works/momens-server/pull/149#issuecomment-5468598126)에
+> 따라 Proposed로 보관한 제안입니다. 아래 「확정한다」는 표현만으로 설계 승인으로 해석하지
+> 않습니다. 결정 1~3의 승인 범위 확인은 MOM-1066에서, 보류한 모바일 진입 계약의 재검토는
+> MOM-0846에서 추적합니다. 승인 전에는 이 문서로 현행 API 계약을 변경하지 않습니다.
+
 ## 맥락
 
 `GET /api/mobile/bootstrap`은 앱 진입 시 필요한 사용자 정보와 프로젝트 목록을 내려주는 API입니다.
@@ -94,7 +99,7 @@ kotlinx.serialization 문서에서도 기본값이 없는 프로퍼티는 JSON�
 서버인 `momens-api`의 요청을 처리하고 있습니다.
 
 prod 환경에서는 신규 서버인 `momens-server`의 Flyway가 비활성화되어 있고, `ddl-auto: validate`입니다. 따라서
-엔티티 매핑에 대한 검증만 수행하고 있습니다. [prod 운영 준비 대장](../prod-schema-ledger.md) 기준으로 아직
+엔티티 매핑에 대한 검증만 수행하고 있습니다. [당시 prod 운영 준비 대장](https://github.com/momens-works/momens-server/blob/93a8f733ffdfa5220348be321455ece5dd345d9e/docs/prod-schema-ledger.md) 기준으로 아직
 반영되지 않은 스키마가 16건 존재합니다. 따라서 현재 상태로는 신규 서버를 prod 환경에서 정상 기동할 수
 없습니다. 이 작업은 MOM-0840에서 처리할 예정입니다.
 
