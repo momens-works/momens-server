@@ -41,7 +41,8 @@ public record UpdateTaskRequest(
                 "완료 기준 최종 목록으로 전체 교체합니다. 생략하거나 null로 보내면 빈 목록으로 처리해 기존 항목을 모두 삭제합니다. 0개에서 5개까지 허용합니다.")
         @Size(max = 5)
         @Valid
-        List<ChecklistItemRequest> checklistItems) {
+        List<ChecklistItemRequest> checklistItems,
+    @Schema(description = "조회한 작업 버전. 생략하면 요청 처리 중의 동시 변경만 검사합니다.", minimum = "0") Long version) {
 
   public UpdateTaskRequest {
     // 수정 화면은 완료기준을 항상 보내지만, 필드가 빠져도 빈 목록으로 다뤄 전체 교체가 안전하게 동작하도록 한다.

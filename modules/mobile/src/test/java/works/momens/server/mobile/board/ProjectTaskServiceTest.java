@@ -355,7 +355,8 @@ class ProjectTaskServiceTest {
                     TaskPriority.MEDIUM,
                     TaskStatus.TODO,
                     null,
-                    List.of()))
+                    List.of(),
+                    null))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(TaskErrorCode.TASK_NOT_FOUND);
@@ -378,7 +379,8 @@ class ProjectTaskServiceTest {
                     TaskPriority.MEDIUM,
                     TaskStatus.TODO,
                     null,
-                    List.of()))
+                    List.of(),
+                    null))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(CommonErrorCode.AUTH_FORBIDDEN);
@@ -401,7 +403,8 @@ class ProjectTaskServiceTest {
         TaskPriority.HIGH,
         TaskStatus.IN_PROGRESS,
         "수정한 목적",
-        items);
+        items,
+        null);
 
     ArgumentCaptor<UpdateTaskCommand> captor = ArgumentCaptor.forClass(UpdateTaskCommand.class);
     verify(taskWriter).update(captor.capture());
@@ -423,7 +426,8 @@ class ProjectTaskServiceTest {
 
     assertThatThrownBy(
             () ->
-                projectTaskService.toggleChecklistItem(TASK_ID, CALLER_ID, UUID.randomUUID(), true))
+                projectTaskService.toggleChecklistItem(
+                    TASK_ID, CALLER_ID, UUID.randomUUID(), true, null))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(TaskErrorCode.TASK_NOT_FOUND);
@@ -436,12 +440,12 @@ class ProjectTaskServiceTest {
         .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
     when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
         .thenReturn(Optional.of(WorkspaceRole.MEMBER));
-    when(taskWriter.toggleChecklistItem(TASK_ID, itemId, true))
+    when(taskWriter.toggleChecklistItem(TASK_ID, itemId, true, null))
         .thenReturn(
             detail(null, null, List.of(new TaskDetail.ChecklistItem(itemId, "완료기준", true))));
 
     MobileTaskDetail result =
-        projectTaskService.toggleChecklistItem(TASK_ID, CALLER_ID, itemId, true);
+        projectTaskService.toggleChecklistItem(TASK_ID, CALLER_ID, itemId, true, null);
 
     assertThat(result.checklistItems())
         .extracting(TaskDetail.ChecklistItem::completed)
@@ -471,7 +475,8 @@ class ProjectTaskServiceTest {
         description,
         checklistItems,
         openQuestions,
-        nextAction);
+        nextAction,
+        0L);
   }
 
   private static TaskSnapshot snapshot(
@@ -490,7 +495,8 @@ class ProjectTaskServiceTest {
         null,
         null,
         CREATED_AT,
-        CREATED_AT);
+        CREATED_AT,
+        0L);
   }
 
   private static UserProfile profile(UUID id, String name) {

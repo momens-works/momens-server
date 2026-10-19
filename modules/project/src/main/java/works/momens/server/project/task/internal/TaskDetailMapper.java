@@ -36,6 +36,7 @@ final class TaskDetailMapper {
         task.getDescription(),
         checklistItems,
         openQuestions,
-        task.getNextAction());
+        task.getNextAction(),
+        task.getVersion());
   }
 }

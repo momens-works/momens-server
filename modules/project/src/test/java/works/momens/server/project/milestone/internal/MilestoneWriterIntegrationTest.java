@@ -52,7 +52,8 @@ class MilestoneWriterIntegrationTest extends AbstractPostgresIntegrationTest {
                 LocalDate.of(2026, 10, 1),
                 "on_track",
                 60,
-                "요약"));
+                "요약",
+                null));
 
     assertThat(detail.name()).isEqualTo("새 마일스톤");
     assertThat(detail.description()).isEqualTo("설명");
@@ -74,14 +75,14 @@ class MilestoneWriterIntegrationTest extends AbstractPostgresIntegrationTest {
             () ->
                 milestoneWriter.update(
                     new UpdateMilestoneCommand(
-                        milestone.getId(), null, null, null, null, "unknown", null, null)))
+                        milestone.getId(), null, null, null, null, "unknown", null, null, null)))
         .isInstanceOf(FieldValidationException.class);
 
     assertThatThrownBy(
             () ->
                 milestoneWriter.update(
                     new UpdateMilestoneCommand(
-                        milestone.getId(), null, null, null, null, null, 101, null)))
+                        milestone.getId(), null, null, null, null, null, 101, null, null)))
         .isInstanceOf(FieldValidationException.class);
   }
 
@@ -94,7 +95,7 @@ class MilestoneWriterIntegrationTest extends AbstractPostgresIntegrationTest {
             () ->
                 milestoneWriter.update(
                     new UpdateMilestoneCommand(
-                        milestone.getId(), null, null, "unknown", null, null, null, null)))
+                        milestone.getId(), null, null, "unknown", null, null, null, null, null)))
         .isInstanceOf(FieldValidationException.class);
   }
 
@@ -103,7 +104,7 @@ class MilestoneWriterIntegrationTest extends AbstractPostgresIntegrationTest {
     Fixture fixture = newFixture("writer-delete");
     Milestone milestone = saveMilestone(fixture.projectId(), "삭제할 마일스톤");
 
-    milestoneWriter.delete(milestone.getId());
+    milestoneWriter.delete(milestone.getId(), null);
 
     entityManager.flush();
     entityManager.clear();

@@ -23,6 +23,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.ErrorResponseException;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,6 +44,15 @@ import works.momens.server.common.api.FieldValidationException;
 class GlobalExceptionHandlerTest {
 
   @Autowired private MockMvc mockMvc;
+
+  @Test
+  void optimisticConflictIs409WithoutInternalDetails() throws Exception {
+    mockMvc
+        .perform(get("/test/concurrent-modification"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.error.code").value("COMMON_CONCURRENT_MODIFICATION"))
+        .andExpect(content().string(not(containsString("private"))));
+  }
 
   @Test
   @DisplayName("BusinessException은 ErrorCode의 status·code·message와 details로 렌더링된다")
@@ -280,6 +290,10 @@ class GlobalExceptionHandlerTest {
 
   @RestController
   static class TestController {
+    @GetMapping("/test/concurrent-modification")
+    String concurrentModification() {
+      throw new ObjectOptimisticLockingFailureException("private entity", "private id");
+    }
 
     @GetMapping("/test/business")
     void business() {

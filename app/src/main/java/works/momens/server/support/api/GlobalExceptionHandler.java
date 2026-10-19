@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.convert.TypeDescriptor;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +48,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     log.warn("business error code={} status={}", errorCode.code(), errorCode.status());
     return ResponseEntity.status(errorCode.status())
         .body(ErrorResponse.of(errorCode.code(), e.getMessage(), e.getDetails()));
+  }
+
+  @ExceptionHandler(OptimisticLockingFailureException.class)
+  public ResponseEntity<ErrorResponse> handleConcurrentModification(
+      OptimisticLockingFailureException exception) {
+    return handleBusiness(new BusinessException(CommonErrorCode.COMMON_CONCURRENT_MODIFICATION));
   }
 
   @ExceptionHandler(Exception.class)

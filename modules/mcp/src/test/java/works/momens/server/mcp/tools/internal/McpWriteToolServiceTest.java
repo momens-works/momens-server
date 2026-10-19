@@ -28,6 +28,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.dao.OptimisticLockingFailureException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
@@ -273,7 +274,7 @@ class McpWriteToolServiceTest {
             .orElseThrow();
     assertThat(text(result))
         .isEqualTo(
-            "Created MOM-0993 · Write tools\nproject: PRJ-0003 Sprint · status: todo · priority: medium · milestone: Release · due: 2026-10-01\nurl: https://app.example.com/momens/projects/"
+            "Created MOM-0993 · Write tools\nproject: PRJ-0003 Sprint · status: todo · priority: medium · milestone: Release · due: 2026-10-01 · version: 0\nurl: https://app.example.com/momens/projects/"
                 + projectId
                 + "?tab=tasks&task=MOM-0993");
     ArgumentCaptor<CreateTaskCommand> command = ArgumentCaptor.forClass(CreateTaskCommand.class);
@@ -434,7 +435,7 @@ class McpWriteToolServiceTest {
         .isEqualTo(
             "Created milestone Release ("
                 + milestoneId
-                + ").\nproject: PRJ-0003 Sprint · status: active · target: 2026-10-01");
+                + ").\nproject: PRJ-0003 Sprint · status: active · target: 2026-10-01 · version: 0");
     ArgumentCaptor<CreateMilestoneCommand> create =
         ArgumentCaptor.forClass(CreateMilestoneCommand.class);
     verify(milestoneWriter).create(create.capture());
@@ -445,12 +446,12 @@ class McpWriteToolServiceTest {
         .isEqualTo(
             "Updated milestone Release ("
                 + milestoneId
-                + ").\nstatus: active · health: on_track · progress: 40% · target: 2026-10-01");
+                + ").\nstatus: active · health: on_track · progress: 40% · target: 2026-10-01 · version: 0");
     verify(milestoneWriter)
-        .update(new UpdateMilestoneCommand(milestoneId, "", "", "", null, "", 40, ""));
+        .update(new UpdateMilestoneCommand(milestoneId, "", "", "", null, "", 40, "", null));
     assertThat(text(call("delete_milestone", "{\"milestone\":\"" + milestoneId + "\"}")))
         .isEqualTo("Removed milestone Release (" + milestoneId + ").");
-    verify(milestoneWriter).delete(milestoneId);
+    verify(milestoneWriter).delete(milestoneId, null);
   }
 
   @ParameterizedTest
@@ -479,6 +480,10 @@ class McpWriteToolServiceTest {
         .patch(any());
     assertThat(text(call("update_task", "{\"task\":\"MOM-0993\"}")))
         .isEqualTo("Resource not found in this workspace.");
+    doThrow(new OptimisticLockingFailureException("private SQL")).when(taskWriter).patch(any());
+    assertThat(text(call("update_task", "{\"task\":\"MOM-0993\"}")))
+        .contains("Conflict:")
+        .doesNotContain("private");
     doThrow(new IllegalStateException("private SQL")).when(taskWriter).patch(any());
     assertThatThrownBy(() -> call("update_task", "{\"task\":\"MOM-0993\"}"))
         .isInstanceOf(IllegalStateException.class);
@@ -532,7 +537,8 @@ class McpWriteToolServiceTest {
         userId,
         LocalDate.parse("2026-10-01"),
         now,
-        now);
+        now,
+        0L);
   }
 
   private MilestoneDetail milestone(UUID id, UUID project, String name) {
@@ -549,7 +555,8 @@ class McpWriteToolServiceTest {
         null,
         null,
         now,
-        now);
+        now,
+        0L);
   }
 
   private McpGrantDetail grant(Set<String> scopes) {

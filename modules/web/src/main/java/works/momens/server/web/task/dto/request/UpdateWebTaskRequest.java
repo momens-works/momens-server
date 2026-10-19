@@ -10,6 +10,18 @@ import works.momens.server.project.task.TaskStatus;
 /** PATCH의 누락과 null을 구분하는 웹 task 요청입니다. */
 @Schema(description = "웹 작업 수정 요청")
 public final class UpdateWebTaskRequest {
+  private Long version;
+
+  @Schema(description = "조회한 작업 버전. 생략하면 요청 처리 중의 동시 변경만 검사합니다.", minimum = "0")
+  @JsonSetter("version")
+  public void setVersion(Long value) {
+    version = value;
+  }
+
+  public Long version() {
+    return version;
+  }
+
   private String title;
 
   private boolean titleSet;

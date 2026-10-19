@@ -135,7 +135,8 @@ class TaskUpdateServiceTest {
         null,
         LocalDate.parse("2026-08-31"),
         Instant.parse("2026-08-21T00:00:00Z"),
-        Instant.parse("2026-08-21T00:00:00Z"));
+        Instant.parse("2026-08-21T00:00:00Z"),
+        0L);
   }
 
   private static TaskUpdateDetail update() {

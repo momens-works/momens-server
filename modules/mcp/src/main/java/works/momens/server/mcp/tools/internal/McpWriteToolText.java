@@ -24,7 +24,9 @@ final class McpWriteToolText {
         + " · priority: "
         + task.priority()
         + (milestone.isEmpty() ? "" : " · milestone: " + milestone)
-        + (task.dueDate() == null ? "" : " · due: " + task.dueDate());
+        + (task.dueDate() == null ? "" : " · due: " + task.dueDate())
+        + " · version: "
+        + task.version();
   }
 
   static String updatedTask(TaskSnapshot task, String milestone) {
@@ -39,7 +41,9 @@ final class McpWriteToolText {
         + (!milestone.isEmpty()
             ? " · milestone: " + milestone
             : task.milestoneId() == null ? " · milestone: none" : "")
-        + (task.dueDate() == null ? "" : " · due: " + task.dueDate());
+        + (task.dueDate() == null ? "" : " · due: " + task.dueDate())
+        + " · version: "
+        + task.version();
   }
 
   static String createdMilestone(MilestoneDetail milestone, ProjectDetail project) {
@@ -53,7 +57,9 @@ final class McpWriteToolText {
         + " · status: "
         + milestone.status()
         + " · target: "
-        + date(milestone.targetDate());
+        + date(milestone.targetDate())
+        + " · version: "
+        + milestone.version();
   }
 
   static String updatedMilestone(MilestoneDetail milestone) {
@@ -69,7 +75,9 @@ final class McpWriteToolText {
         + " · progress: "
         + milestone.progress()
         + "% · target: "
-        + date(milestone.targetDate());
+        + date(milestone.targetDate())
+        + " · version: "
+        + milestone.version();
   }
 
   private static String date(LocalDate value) {

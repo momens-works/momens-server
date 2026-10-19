@@ -19,7 +19,8 @@ public record PatchTaskCommand(
     UUID assigneeId,
     boolean assigneeSet,
     LocalDate dueDate,
-    boolean dueDateSet) {
+    boolean dueDateSet,
+    Long version) {
 
   public PatchTaskCommand {
     if (titleSet && title == null) {

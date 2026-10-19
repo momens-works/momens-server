@@ -31,7 +31,7 @@ class TaskOutboxIntegrationTest extends AbstractPostgresIntegrationTest {
     taskWriter.patch(titlePatch(taskId, "두 번째"));
     taskWriter.patch(titlePatch(taskId, "세 번째"));
     taskWriter.patch(titlePatch(taskId, "세 번째"));
-    taskWriter.delete(taskId);
+    taskWriter.delete(taskId, null);
 
     List<String> keys =
         jdbcTemplate.queryForList(
@@ -115,6 +115,6 @@ class TaskOutboxIntegrationTest extends AbstractPostgresIntegrationTest {
   private PatchTaskCommand titlePatch(UUID taskId, String title) {
     return new PatchTaskCommand(
         taskId, title, true, null, false, null, false, null, false, null, false, null, false, null,
-        false);
+        false, null);
   }
 }

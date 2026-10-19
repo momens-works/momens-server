@@ -220,7 +220,8 @@ class McpOAuthSecurityIntegrationTest extends AbstractPostgresIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(
             jsonPath("$.result.content[0].text")
-                .value("1 task(s):\n- MOM-0991 · Read tools [todo] — PRJ-0991 MCP project"));
+                .value(
+                    "1 task(s):\n- MOM-0991 · Read tools [todo] · version: 0 — PRJ-0991 MCP project"));
     mvc.perform(toolRequest(token, "list_tasks_v2", Map.of("assignee", "none", "status", "todo")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result.isError").doesNotExist())
@@ -233,7 +234,7 @@ class McpOAuthSecurityIntegrationTest extends AbstractPostgresIntegrationTest {
         .andExpect(
             jsonPath("$.result.content[0].text")
                 .value(
-                    "MOM-0991 · Read tools\nstatus: todo · priority: medium · project: PRJ-0991 MCP project\nurl: http://localhost:5173/"
+                    "MOM-0991 · Read tools\nstatus: todo · priority: medium · version: 0 · project: PRJ-0991 MCP project\nurl: http://localhost:5173/"
                         + workspaceId
                         + "/projects/"
                         + projectId

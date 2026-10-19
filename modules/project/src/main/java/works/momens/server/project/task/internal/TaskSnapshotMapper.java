@@ -21,6 +21,7 @@ final class TaskSnapshotMapper {
         task.getAssigneeId(),
         task.getDueDate(),
         task.getCreatedAt(),
-        task.getUpdatedAt());
+        task.getUpdatedAt(),
+        task.getVersion());
   }
 }

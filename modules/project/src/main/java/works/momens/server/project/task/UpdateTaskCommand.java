@@ -19,7 +19,8 @@ public record UpdateTaskCommand(
     TaskPriority priority,
     TaskStatus status,
     String purpose,
-    List<ChecklistItemEdit> checklistItems) {
+    List<ChecklistItemEdit> checklistItems,
+    Long version) {
 
   /**
    * 완료기준 한 항목의 수정 입력. id가 있으면 기존 항목, 없으면 새 항목입니다. {@code completed}는 수정 화면이 저장한 완료 상태로, 기존 항목이면 이

@@ -67,7 +67,8 @@ class TaskReadControllerTest {
         null,
         LocalDate.parse("2026-08-31"),
         Instant.parse("2026-08-20T00:00:00Z"),
-        Instant.parse("2026-08-20T00:00:00Z"));
+        Instant.parse("2026-08-20T00:00:00Z"),
+        0L);
   }
 
   @TestConfiguration

@@ -101,7 +101,8 @@ class TaskWriteControllerTest {
             any(),
             anyBoolean(),
             any(),
-            anyBoolean()))
+            anyBoolean(),
+            isNull()))
         .thenReturn(task());
 
     mockMvc
@@ -130,13 +131,14 @@ class TaskWriteControllerTest {
             isNull(),
             eq(true),
             isNull(),
-            eq(false));
+            eq(false),
+            isNull());
     mockMvc
         .perform(
             delete("/api/tasks/{taskId}", TASK_ID).principal(principal).header("API-Version", "1"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.message").value("deleted"));
-    verify(taskWriteService).delete(TASK_ID, USER_ID);
+    verify(taskWriteService).delete(TASK_ID, USER_ID, null);
   }
 
   @Test
@@ -189,7 +191,8 @@ class TaskWriteControllerTest {
         null,
         LocalDate.parse("2026-08-31"),
         Instant.parse("2026-08-21T00:00:00Z"),
-        Instant.parse("2026-08-21T00:00:00Z"));
+        Instant.parse("2026-08-21T00:00:00Z"),
+        0L);
   }
 
   private static TaskUpdateDetail update() {

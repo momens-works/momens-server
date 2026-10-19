@@ -90,7 +90,8 @@ class McpWriteToolService {
           case "create_milestone" -> milestoneTools.createMilestone(context, arguments);
           case "update_milestone" -> milestoneTools.updateMilestone(context, arguments);
           case "delete_milestone" ->
-              milestoneTools.deleteMilestone(context, argument(arguments, "milestone"));
+              milestoneTools.deleteMilestone(
+                  context, argument(arguments, "milestone"), McpToolInputs.version(arguments));
           default -> throw new IllegalStateException("Unregistered write tool");
         };
     ObjectNode result = mapper.createObjectNode();
@@ -132,7 +133,10 @@ class McpWriteToolService {
       boolean valid =
           property != null
               && (property.path("type").asText().equals("integer")
-                  ? field.getValue().isIntegralNumber() && field.getValue().canConvertToInt()
+                  ? field.getValue().isIntegralNumber()
+                      && (field.getKey().equals("version")
+                          ? field.getValue().canConvertToLong()
+                          : field.getValue().canConvertToInt())
                   : field.getValue().isTextual());
       if (!valid) {
         throw new McpToolInputException(

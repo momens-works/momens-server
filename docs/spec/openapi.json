@@ -299,6 +299,12 @@
         "properties" : {
           "checklist" : {
             "$ref" : "#/components/schemas/ChecklistResponse"
+          },
+          "version" : {
+            "description" : "수정 충돌 확인용 버전",
+            "format" : "int64",
+            "minimum" : 0,
+            "type" : "integer"
           }
         }
       },
@@ -2017,6 +2023,10 @@
           "updated_at" : {
             "format" : "date-time",
             "type" : "string"
+          },
+          "version" : {
+            "format" : "int64",
+            "type" : "integer"
           }
         }
       },
@@ -2217,6 +2227,10 @@
           "updated_at" : {
             "format" : "date-time",
             "type" : "string"
+          },
+          "version" : {
+            "format" : "int64",
+            "type" : "integer"
           }
         }
       },
@@ -2625,6 +2639,12 @@
           "title" : {
             "description" : "제목",
             "type" : "string"
+          },
+          "version" : {
+            "description" : "수정 충돌 확인용 버전",
+            "format" : "int64",
+            "minimum" : 0,
+            "type" : "integer"
           }
         }
       },
@@ -2681,6 +2701,12 @@
             "description" : "완료 여부",
             "example" : true,
             "type" : "boolean"
+          },
+          "version" : {
+            "description" : "조회한 작업 버전. 생략하면 요청 처리 중의 동시 변경만 검사합니다.",
+            "format" : "int64",
+            "minimum" : 0,
+            "type" : "integer"
           }
         },
         "required" : [
@@ -2857,6 +2883,12 @@
             "maxLength" : 15,
             "minLength" : 0,
             "type" : "string"
+          },
+          "version" : {
+            "description" : "조회한 작업 버전. 생략하면 요청 처리 중의 동시 변경만 검사합니다.",
+            "format" : "int64",
+            "minimum" : 0,
+            "type" : "integer"
           }
         },
         "required" : [
@@ -2918,6 +2950,13 @@
           "title" : {
             "description" : "작업 제목. 빈 문자열은 기존 값을 유지하며 null은 허용하지 않습니다.",
             "type" : "string",
+            "writeOnly" : true
+          },
+          "version" : {
+            "description" : "조회한 작업 버전. 생략하면 요청 처리 중의 동시 변경만 검사합니다.",
+            "format" : "int64",
+            "minimum" : 0,
+            "type" : "integer",
             "writeOnly" : true
           }
         }
@@ -3060,7 +3099,7 @@
         }
       },
       "WebMilestoneResponse" : {
-        "description" : "웹 마일스톤 응답입니다. 필드 구성은 레거시 마일스톤 응답과 동일합니다.",
+        "description" : "웹 마일스톤 응답입니다. 수정 충돌 확인용 버전을 포함합니다.",
         "properties" : {
           "created_at" : {
             "format" : "date-time",
@@ -3111,6 +3150,12 @@
           "updated_at" : {
             "format" : "date-time",
             "type" : "string"
+          },
+          "version" : {
+            "description" : "수정 충돌 확인용 버전",
+            "format" : "int64",
+            "minimum" : 0,
+            "type" : "integer"
           }
         }
       },
@@ -3357,6 +3402,12 @@
             "example" : "2026-08-20T00:00:00Z",
             "format" : "date-time",
             "type" : "string"
+          },
+          "version" : {
+            "description" : "수정 충돌 확인용 버전",
+            "format" : "int64",
+            "minimum" : 0,
+            "type" : "integer"
           }
         }
       },
@@ -3880,6 +3931,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -4127,6 +4188,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -4374,6 +4445,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -4633,6 +4714,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -4882,6 +4973,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -5130,6 +5231,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -5394,6 +5505,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -5705,6 +5826,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -6001,6 +6132,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -6386,6 +6527,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -6630,6 +6781,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -6858,6 +7019,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -7094,6 +7265,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -7358,6 +7539,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -7613,6 +7804,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -7887,6 +8088,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -8141,6 +8352,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -8425,6 +8646,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -8688,6 +8919,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -8947,6 +9188,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -9184,6 +9435,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -9430,6 +9691,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -9705,6 +9976,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -9960,6 +10241,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -10225,6 +10516,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -10471,6 +10772,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -10725,6 +11036,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -10971,6 +11292,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -11227,6 +11558,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -11483,6 +11824,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -11749,6 +12100,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -12006,6 +12367,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -12292,6 +12663,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -12893,6 +13274,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -13149,6 +13540,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -13395,6 +13796,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -13649,6 +14060,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -14052,6 +14473,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -14354,6 +14785,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -14653,6 +15094,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -14899,6 +15350,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -14991,6 +15452,16 @@
             "schema" : {
               "format" : "uuid",
               "type" : "string"
+            }
+          },
+          {
+            "description" : "조회한 작업 버전. 생략하면 요청 처리 중의 동시 변경만 검사합니다.",
+            "in" : "query",
+            "name" : "version",
+            "required" : false,
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
             }
           },
           {
@@ -15145,6 +15616,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -15389,6 +15870,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -15643,6 +16134,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -15918,6 +16419,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -16164,6 +16675,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -16430,6 +16951,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -16704,6 +17235,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -16960,6 +17501,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -17226,6 +17777,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -17472,6 +18033,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -17726,6 +18297,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -17982,6 +18563,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -18208,6 +18799,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -18462,6 +19063,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -18707,6 +19318,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -18953,6 +19574,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -19227,6 +19858,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -19483,6 +20124,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -19767,6 +20418,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -20063,6 +20724,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -20349,6 +21020,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -20635,6 +21316,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -21141,6 +21832,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -21407,6 +22108,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -21701,6 +22412,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -21967,6 +22688,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -22213,6 +22944,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -22459,6 +23200,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",
@@ -22724,6 +23475,16 @@
             "content" : {
               "application/json" : {
                 "examples" : {
+                  "COMMON_CONCURRENT_MODIFICATION" : {
+                    "description" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요.",
+                    "summary" : "COMMON_CONCURRENT_MODIFICATION",
+                    "value" : {
+                      "error" : {
+                        "code" : "COMMON_CONCURRENT_MODIFICATION",
+                        "message" : "다른 변경 사항이 있습니다. 최신 내용을 확인한 후 다시 시도해 주세요."
+                      }
+                    }
+                  },
                   "COMMON_CONFLICT" : {
                     "description" : "요청이 현재 상태와 충돌합니다.",
                     "summary" : "COMMON_CONFLICT",

@@ -44,7 +44,8 @@ public record TaskDetailResponse(
                     + " 경우에만 뒤늦은 반영으로 한 번 더 바뀔 수 있습니다.",
             allowableValues = {"generating", "ready"},
             example = "ready")
-        String draftStatus) {
+        String draftStatus,
+    @Schema(description = "수정 충돌 확인용 버전", minimum = "0") long version) {
 
   @Schema(description = "담당자")
   public record AssigneeResponse(
@@ -111,7 +112,8 @@ public record TaskDetailResponse(
         materials,
         openQuestions,
         detail.nextAction(),
-        MobileDraftStatus.key(view.draftStatus()));
+        MobileDraftStatus.key(view.draftStatus()),
+        detail.version());
   }
 
   private static MaterialResponse toMaterial(MobileTaskDetail.Material material) {

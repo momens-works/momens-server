@@ -11,4 +11,5 @@ public record UpdateMilestoneCommand(
     LocalDate targetDate,
     String healthStatus,
     Integer progress,
-    String summary) {}
+    String summary,
+    Long version) {}

@@ -9,7 +9,8 @@ import works.momens.server.project.task.TaskDetail;
 /** 수정한 항목과 태스크 전체 완료 수를 함께 반환해 화면의 완료 헤더를 갱신합니다. */
 @Schema(description = "완료 기준 완료 상태 변경 응답")
 public record ChecklistToggleResponse(
-    @Schema(description = "완료 기준 요약") ChecklistResponse checklist) {
+    @Schema(description = "완료 기준 요약") ChecklistResponse checklist,
+    @Schema(description = "수정 충돌 확인용 버전", minimum = "0") long version) {
 
   @Schema(description = "완료 기준 요약")
   public record ChecklistResponse(
@@ -33,6 +34,7 @@ public record ChecklistToggleResponse(
             .orElseThrow(
                 () -> new IllegalStateException("완료 상태를 바꾼 완료기준 항목을 응답에서 찾지 못했습니다: " + itemId));
     ItemResponse item = new ItemResponse(changed.id(), changed.title(), changed.completed());
-    return new ChecklistToggleResponse(new ChecklistResponse(completedCount, items.size(), item));
+    return new ChecklistToggleResponse(
+        new ChecklistResponse(completedCount, items.size(), item), detail.version());
   }
 }

@@ -3,6 +3,7 @@ package works.momens.server.mobile.board;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -80,7 +81,8 @@ class TaskControllerTest {
                             OCCURRED_AT,
                             "https://figma.example/p")),
                     List.of(new TaskDetail.OpenQuestion(QUESTION_ID, "권한 거부 시 대체 흐름을 둘지 검토 필요")),
-                    "권한 거부 흐름을 PM과 확정한 뒤 화면 카피를 수정하세요.")));
+                    "권한 거부 흐름을 PM과 확정한 뒤 화면 카피를 수정하세요.",
+                    0L)));
 
     mockMvc
         .perform(get("/api/mobile/tasks/{taskId}", TASK_ID).principal(principal))
@@ -134,7 +136,8 @@ class TaskControllerTest {
                     List.of(),
                     List.of(),
                     List.of(),
-                    null)));
+                    null,
+                    0L)));
 
     mockMvc
         .perform(get("/api/mobile/tasks/{taskId}", TASK_ID).principal(principal))
@@ -181,7 +184,16 @@ class TaskControllerTest {
     ArgumentCaptor<List<ChecklistEdit>> captor = ArgumentCaptor.forClass(List.class);
     verify(projectTaskService)
         .updateTask(
-            eq(TASK_ID), eq(USER_ID), any(), any(), any(), any(), any(), any(), captor.capture());
+            eq(TASK_ID),
+            eq(USER_ID),
+            any(),
+            any(),
+            any(),
+            any(),
+            any(),
+            any(),
+            captor.capture(),
+            isNull());
     assertThat(captor.getValue()).extracting(ChecklistEdit::completed).containsExactly(true, false);
   }
 
@@ -277,7 +289,7 @@ class TaskControllerTest {
   void toggleChecklistItemReturnsChecklistSummary() throws Exception {
     UUID itemId = UUID.randomUUID();
     UUID otherId = UUID.randomUUID();
-    when(projectTaskService.toggleChecklistItem(TASK_ID, USER_ID, itemId, true))
+    when(projectTaskService.toggleChecklistItem(TASK_ID, USER_ID, itemId, true, null))
         .thenReturn(
             new MobileTaskDetail(
                 TASK_ID,
@@ -293,7 +305,8 @@ class TaskControllerTest {
                     new TaskDetail.ChecklistItem(otherId, "다른 기준", false)),
                 List.of(),
                 List.of(),
-                null));
+                null,
+                0L));
 
     mockMvc
         .perform(

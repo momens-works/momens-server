@@ -37,6 +37,11 @@ public abstract class BaseEntity implements Persistable<UUID> {
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
 
+  /** 자식 변경도 aggregate의 수정으로 기록할 때 호출합니다. */
+  protected void markUpdated() {
+    updatedAt = Instant.now();
+  }
+
   @Override
   public UUID getId() {
     return id;

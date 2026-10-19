@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -43,7 +44,14 @@ class McpToolService implements McpToolCatalog, McpToolExecutor {
       return writes.call(name, arguments, context);
     } catch (McpToolInputException exception) {
       return Optional.of(error(exception.getMessage()));
+    } catch (OptimisticLockingFailureException exception) {
+      return Optional.of(
+          error("Conflict: this item changed. Read the latest version before editing again."));
     } catch (BusinessException exception) {
+      if (exception.getErrorCode() == CommonErrorCode.COMMON_CONCURRENT_MODIFICATION) {
+        return Optional.of(
+            error("Conflict: this item changed. Read the latest version before editing again."));
+      }
       if (exception.getErrorCode() == CommonErrorCode.COMMON_VALIDATION_FAILED) {
         return Optional.of(error("Invalid value or reference for this tool."));
       }

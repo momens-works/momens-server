@@ -274,7 +274,7 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
                 List.of(new ChecklistItemEdit(null, "완료기준", false))));
     UUID itemId = seeded.checklistItems().get(0).id();
 
-    TaskDetail toggled = taskWriter.toggleChecklistItem(fixture.taskId(), itemId, true);
+    TaskDetail toggled = taskWriter.toggleChecklistItem(fixture.taskId(), itemId, true, null);
 
     assertThat(toggled.checklistItems().get(0).completed()).isTrue();
   }
@@ -284,7 +284,7 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
     Fixture fixture = newTask();
 
     assertThatThrownBy(
-            () -> taskWriter.toggleChecklistItem(fixture.taskId(), UUID.randomUUID(), true))
+            () -> taskWriter.toggleChecklistItem(fixture.taskId(), UUID.randomUUID(), true, null))
         .isInstanceOf(BusinessException.class)
         .extracting(exception -> ((BusinessException) exception).getErrorCode())
         .isEqualTo(TaskErrorCode.TASK_CHECKLIST_ITEM_NOT_FOUND);
@@ -381,7 +381,7 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
       String purpose,
       List<ChecklistItemEdit> checklistItems) {
     return new UpdateTaskCommand(
-        taskId, title, role, assigneeId, priority, status, purpose, checklistItems);
+        taskId, title, role, assigneeId, priority, status, purpose, checklistItems, null);
   }
 
   private record Fixture(UUID workspaceId, UUID projectId, UUID taskId) {}

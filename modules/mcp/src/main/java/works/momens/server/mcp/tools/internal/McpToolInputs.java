@@ -21,6 +21,17 @@ final class McpToolInputs {
     }
   }
 
+  static Long version(JsonNode args) {
+    JsonNode value = args.get("version");
+    if (value == null) {
+      return null;
+    }
+    if (!value.isIntegralNumber() || !value.canConvertToLong() || value.longValue() < 0) {
+      throw new McpToolInputException("version must be a non-negative integer");
+    }
+    return value.longValue();
+  }
+
   static String argument(JsonNode args, String name) {
     return args.path(name).asText("").strip();
   }

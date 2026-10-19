@@ -25,7 +25,8 @@ public record TaskDetail(
     String description,
     List<ChecklistItem> checklistItems,
     List<OpenQuestion> openQuestions,
-    String nextAction) {
+    String nextAction,
+    long version) {
 
   public record ChecklistItem(UUID id, String title, boolean completed) {}
 

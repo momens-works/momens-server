@@ -196,7 +196,7 @@ class McpReadToolServiceTest {
         .isEqualTo(
             "1 milestone(s):\n- Release ("
                 + milestoneId
-                + ") [active] · health: on_track · progress: 40% — PRJ-0003 Sprint · target: 2026-10-01");
+                + ") [active] · health: on_track · progress: 40% · version: 0 — PRJ-0003 Sprint · target: 2026-10-01");
   }
 
   @Test
@@ -211,13 +211,13 @@ class McpReadToolServiceTest {
                 call(
                     "list_tasks",
                     "{\"project\":\"sprint\",\"assignee\":\"me\",\"status\":\" TODO \"}")))
-        .isEqualTo("1 task(s):\n- MOM-0991 · Read tools [todo] — PRJ-0003 Sprint");
+        .isEqualTo("1 task(s):\n- MOM-0991 · Read tools [todo] · version: 0 — PRJ-0003 Sprint");
     assertThat(text(call("list_tasks", "{\"assignee\":\"ALICE@example.com\"}")))
         .contains("MOM-0991");
     assertThat(text(call("list_tasks", "{\"status\":\"unknown\"}"))).isEqualTo("No tasks match.");
     assertThat(text(call("get_task", "{\"task\":\" mom-0991 \"}")))
         .isEqualTo(
-            "MOM-0991 · Read tools\nstatus: todo · priority: medium · project: PRJ-0003 Sprint · milestone: Release · assignee: Alice · due: 2026-10-01\nurl: https://app.example.com/momens/projects/"
+            "MOM-0991 · Read tools\nstatus: todo · priority: medium · version: 0 · project: PRJ-0003 Sprint · milestone: Release · assignee: Alice · due: 2026-10-01\nurl: https://app.example.com/momens/projects/"
                 + projectId
                 + "?tab=tasks&task=MOM-0991\n\nDescription\n\nTotal activities: 1\n1 activity(s):\n- [2026-09-27 03:04 UTC] comment · Alice: Comment\nTo read activities, call list_task_updates with task: "
                 + taskId);
@@ -545,7 +545,8 @@ class McpReadToolServiceTest {
             null,
             null,
             now,
-            now);
+            now,
+            0L);
     when(tasks.findSnapshotInWorkspace(workspaceId, taskId)).thenReturn(Optional.of(task));
     when(tasks.listPage(workspaceId, null, null, false, null, null, null, 21))
         .thenReturn(List.of(task));
@@ -555,14 +556,15 @@ class McpReadToolServiceTest {
     assertThat(text(detail))
         .isEqualTo(
             taskId
-                + " · Read tools\nstatus: todo · priority: medium · project: PRJ-0003 Sprint\nurl: https://app.example.com/momens/projects/"
+                + " · Read tools\nstatus: todo · priority: medium · version: 0 · project: PRJ-0003 Sprint\nurl: https://app.example.com/momens/projects/"
                 + projectId
                 + "?tab=tasks&task="
                 + taskId
                 + "\n\nTotal activities: 1\nNo activities.\nTo read activities, call list_task_updates with task: "
                 + taskId);
     assertThat(text(call("list_tasks", "{}")))
-        .isEqualTo("1 task(s):\n- " + taskId + " · Read tools [todo] — PRJ-0003 Sprint");
+        .isEqualTo(
+            "1 task(s):\n- " + taskId + " · Read tools [todo] · version: 0 — PRJ-0003 Sprint");
     verifyNoInteractions(milestones, users);
   }
 
@@ -669,7 +671,8 @@ class McpReadToolServiceTest {
         null,
         null,
         now,
-        now);
+        now,
+        0L);
   }
 
   private MilestoneDetail milestoneForProject(UUID id, UUID parentId) {
@@ -686,7 +689,8 @@ class McpReadToolServiceTest {
         null,
         null,
         now,
-        now);
+        now,
+        0L);
   }
 
   private McpGrantDetail grant(List<String> scopes) {
@@ -730,7 +734,8 @@ class McpReadToolServiceTest {
             userId,
             LocalDate.parse("2026-10-01"),
             now,
-            now);
+            now,
+            0L);
     when(projects.listByIds(workspaceId, List.of(projectId))).thenReturn(List.of(project));
     when(projects.listPage(workspaceId, null, null, 21)).thenReturn(List.of(project));
     when(projects.findReferenceCandidates(eq(workspaceId), any(), anyString()))
@@ -764,7 +769,8 @@ class McpReadToolServiceTest {
                     null,
                     null,
                     now,
-                    now)));
+                    now,
+                    0L)));
     when(updates.listPage(taskId, null, null, 11))
         .thenReturn(
             List.of(

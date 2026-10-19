@@ -19,7 +19,8 @@ record MilestoneDetailRow(
     String summary,
     Instant lastContextAt,
     Instant createdAt,
-    Instant updatedAt) {
+    Instant updatedAt,
+    long version) {
 
   MilestoneDetail toDetail(List<UUID> ownerUserIds) {
     return new MilestoneDetail(
@@ -35,6 +36,7 @@ record MilestoneDetailRow(
         summary,
         lastContextAt,
         createdAt,
-        updatedAt);
+        updatedAt,
+        version);
   }
 }

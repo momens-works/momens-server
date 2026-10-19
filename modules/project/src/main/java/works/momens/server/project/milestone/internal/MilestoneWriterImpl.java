@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
+import works.momens.server.common.api.ExpectedVersion;
 import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.project.milestone.CreateMilestoneCommand;
 import works.momens.server.project.milestone.MilestoneDetail;
@@ -60,6 +61,7 @@ class MilestoneWriterImpl implements MilestoneWriter {
   @Transactional
   public MilestoneDetail update(UpdateMilestoneCommand command) {
     Milestone milestone = findMilestone(command.milestoneId());
+    ExpectedVersion.check(command.version(), milestone.getVersion());
     if (command.healthStatus() != null && !command.healthStatus().isEmpty()) {
       MilestoneHealthStatus.from(command.healthStatus())
           .orElseThrow(() -> FieldValidationException.forField(FIELD_HEALTH_STATUS));
@@ -86,13 +88,15 @@ class MilestoneWriterImpl implements MilestoneWriter {
 
   @Override
   @Transactional
-  public void delete(UUID milestoneId) {
-    findMilestone(milestoneId).delete();
+  public void delete(UUID milestoneId, Long version) {
+    Milestone milestone = findMilestone(milestoneId);
+    ExpectedVersion.check(version, milestone.getVersion());
+    milestone.delete();
   }
 
   private Milestone findMilestone(UUID milestoneId) {
     return milestoneRepository
-        .findByIdAndDeletedAtIsNull(milestoneId)
+        .findForMutation(milestoneId)
         .orElseThrow(
             () ->
                 new BusinessException(

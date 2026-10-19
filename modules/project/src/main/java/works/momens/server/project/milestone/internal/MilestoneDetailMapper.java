@@ -22,6 +22,7 @@ final class MilestoneDetailMapper {
         milestone.getSummary(),
         milestone.getLastContextAt(),
         milestone.getCreatedAt(),
-        milestone.getUpdatedAt());
+        milestone.getUpdatedAt(),
+        milestone.getVersion());
   }
 }

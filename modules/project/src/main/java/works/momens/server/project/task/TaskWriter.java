@@ -11,7 +11,7 @@ public interface TaskWriter {
 
   TaskSnapshot patch(PatchTaskCommand command);
 
-  TaskDetail toggleChecklistItem(UUID taskId, UUID itemId, boolean completed);
+  TaskDetail toggleChecklistItem(UUID taskId, UUID itemId, boolean completed, Long version);
 
-  void delete(UUID taskId);
+  void delete(UUID taskId, Long version);
 }

@@ -104,7 +104,8 @@ public record WorkspaceSnapshotResponse(
       String summary,
       Instant lastContextAt,
       Instant createdAt,
-      Instant updatedAt) {
+      Instant updatedAt,
+      long version) {
     static SnapshotMilestoneResponse from(MilestoneDetail milestone) {
       return new SnapshotMilestoneResponse(
           milestone.id(),
@@ -119,7 +120,8 @@ public record WorkspaceSnapshotResponse(
           milestone.summary(),
           milestone.lastContextAt(),
           milestone.createdAt(),
-          milestone.updatedAt());
+          milestone.updatedAt(),
+          milestone.version());
     }
   }
 
@@ -136,7 +138,8 @@ public record WorkspaceSnapshotResponse(
       UUID assigneeId,
       LocalDate dueDate,
       Instant createdAt,
-      Instant updatedAt) {
+      Instant updatedAt,
+      long version) {
     static SnapshotTaskResponse from(TaskSnapshot task) {
       return new SnapshotTaskResponse(
           task.id(),
@@ -150,7 +153,8 @@ public record WorkspaceSnapshotResponse(
           task.assigneeId(),
           task.dueDate(),
           task.createdAt(),
-          task.updatedAt());
+          task.updatedAt(),
+          task.version());
     }
   }
 
