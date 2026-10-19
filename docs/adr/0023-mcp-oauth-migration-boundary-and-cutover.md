@@ -1,8 +1,13 @@
 # 0023. MCP OAuth 인가 서버 모듈 경계와 재연결 전환
 
-- 상태: Accepted
+- 상태: Accepted (grant 관리 HTTP 표면은 [ADR-0024](0024-mcp-grant-web-surface.md)로 대체)
 - 날짜: 2026-09-23
 - 작성자: Kimgyuilli
+
+> 결정 1의 grant 관리 HTTP 표면 배치는 [ADR-0024](0024-mcp-grant-web-surface.md)로
+> 대체되었습니다. 웹 controller·DTO·요청자 권한 검사는 `:web`이, grant와 token family의
+> 조회·폐기 책임은 `:mcp`가 소유합니다. OAuth protocol·consent·MCP transport와 나머지
+> 결정은 유지합니다.
 
 ## 맥락
 

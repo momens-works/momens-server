@@ -1,8 +1,12 @@
 # 0011. Signal evidence와 task draft 생산·저장 계약
 
-- 상태: Accepted
+- 상태: Accepted (draft 생성 시점·저장·outbox 부분은 [ADR-0015](0015-minsu-async-task-draft-generation.md)로, prod 스키마 소유권은 [ADR-0019](0019-prod-schema-ownership-transfer.md)로 대체)
 - 날짜: 2026-07-11
 - 작성자: Kimgyuilli
+
+> 운영 공유 DB의 schema 변경을 `momens-api` 마이그레이션이 소유한다는 아래 결정은
+> [ADR-0019](0019-prod-schema-ownership-transfer.md)로 대체되었습니다. 현재 DDL 소유 범위는
+> 해당 ADR과 [데이터 규칙](../rules/persistence.md#레거시worker-ddl-동결)을 따릅니다.
 
 ## 맥락
 
