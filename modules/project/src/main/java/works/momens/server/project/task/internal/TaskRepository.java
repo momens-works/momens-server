@@ -14,6 +14,11 @@ import works.momens.server.project.task.TaskScope;
 
 interface TaskRepository extends JpaRepository<Task, UUID> {
 
+  /** 값이 바뀌지 않는 수정 요청도 커밋 시 읽은 버전을 검사합니다. */
+  @Lock(LockModeType.OPTIMISTIC)
+  @Query("select e from Task e where e.id = :id and e.deletedAt is null")
+  Optional<Task> findForMutation(UUID id);
+
   /** 상세용 단건 조회. 소프트 삭제된 태스크는 제외합니다. */
   Optional<Task> findByIdAndDeletedAtIsNull(UUID taskId);
 

@@ -211,7 +211,8 @@ class MinsuAsyncDraftApplyEndToEndIntegrationTest extends AbstractPostgresIntegr
             TaskPriority.MEDIUM,
             TaskStatus.TODO,
             null,
-            List.of()));
+            List.of(),
+            null));
   }
 
   private void awaitCompletion(UUID taskId) {

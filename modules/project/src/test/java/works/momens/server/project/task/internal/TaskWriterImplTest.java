@@ -144,7 +144,7 @@ class TaskWriterImplTest {
         Task.create(
             CreateTaskCommand.manual(projectId, workspaceId, "기존", TaskRole.PM, TaskPriority.HIGH),
             "MOM-0003");
-    when(taskRepository.findByIdAndDeletedAtIsNull(task.getId())).thenReturn(Optional.of(task));
+    when(taskRepository.findForMutation(task.getId())).thenReturn(Optional.of(task));
 
     taskWriter.patch(
         new PatchTaskCommand(
@@ -162,7 +162,8 @@ class TaskWriterImplTest {
             null,
             false,
             null,
-            false));
+            false,
+            null));
 
     assertThat(task.getTitle()).isEqualTo("기존");
     assertThat(task.getDescription()).isEqualTo("설명");
@@ -179,7 +180,7 @@ class TaskWriterImplTest {
         Task.create(
             CreateTaskCommand.manual(projectId, workspaceId, "기존", TaskRole.PM, TaskPriority.HIGH),
             "MOM-0004");
-    when(taskRepository.findByIdAndDeletedAtIsNull(task.getId())).thenReturn(Optional.of(task));
+    when(taskRepository.findForMutation(task.getId())).thenReturn(Optional.of(task));
     when(workspaceMembershipReader.roleOf(workspaceId, assigneeId)).thenReturn(Optional.empty());
 
     assertThatThrownBy(
@@ -193,7 +194,8 @@ class TaskWriterImplTest {
                         TaskPriority.HIGH,
                         TaskStatus.TODO,
                         null,
-                        List.of())))
+                        List.of(),
+                        null)))
         .isInstanceOf(BusinessException.class)
         .extracting(exception -> ((BusinessException) exception).getErrorCode())
         .isEqualTo(CommonErrorCode.COMMON_VALIDATION_FAILED);
@@ -203,7 +205,7 @@ class TaskWriterImplTest {
   @DisplayName("서로 다른 수정은 각각 발행하고 동일 상태 재요청은 건너뛴다")
   void updateEmitsEachChangeAndSkipsRetryWithSameState() {
     Task task = newTask();
-    when(taskRepository.findByIdAndDeletedAtIsNull(task.getId())).thenReturn(Optional.of(task));
+    when(taskRepository.findForMutation(task.getId())).thenReturn(Optional.of(task));
 
     taskWriter.update(updateCommand(task.getId(), "두 번째"));
     taskWriter.update(updateCommand(task.getId(), "세 번째"));
@@ -228,7 +230,7 @@ class TaskWriterImplTest {
   void patchEmitsForMilestoneAndDueDateButNotForNoOp() {
     Task task = newTask();
     UUID milestoneId = UUID.randomUUID();
-    when(taskRepository.findByIdAndDeletedAtIsNull(task.getId())).thenReturn(Optional.of(task));
+    when(taskRepository.findForMutation(task.getId())).thenReturn(Optional.of(task));
     when(milestoneDirectory.existsInProject(milestoneId, task.getProjectId())).thenReturn(true);
 
     taskWriter.patch(
@@ -247,7 +249,8 @@ class TaskWriterImplTest {
             null,
             false,
             null,
-            false));
+            false,
+            null));
     verify(outboxAppender, never())
         .appendWithIdempotencyKey(
             eq(task.getWorkspaceId()),
@@ -273,7 +276,8 @@ class TaskWriterImplTest {
             null,
             false,
             null,
-            false));
+            false,
+            null));
     taskWriter.patch(
         new PatchTaskCommand(
             task.getId(),
@@ -290,7 +294,8 @@ class TaskWriterImplTest {
             null,
             false,
             LocalDate.of(2026, 10, 3),
-            true));
+            true,
+            null));
     verify(outboxAppender, times(2))
         .appendWithIdempotencyKey(
             eq(task.getWorkspaceId()),
@@ -305,7 +310,7 @@ class TaskWriterImplTest {
   @DisplayName("역할만 바뀌어도 수정 이벤트를 발행한다")
   void updateEmitsWhenOnlyRoleChanges() {
     Task task = newTask();
-    when(taskRepository.findByIdAndDeletedAtIsNull(task.getId())).thenReturn(Optional.of(task));
+    when(taskRepository.findForMutation(task.getId())).thenReturn(Optional.of(task));
 
     taskWriter.update(
         new UpdateTaskCommand(
@@ -316,7 +321,8 @@ class TaskWriterImplTest {
             TaskPriority.HIGH,
             TaskStatus.TODO,
             null,
-            List.of()));
+            List.of(),
+            null));
 
     verify(outboxAppender)
         .appendWithIdempotencyKey(
@@ -332,11 +338,12 @@ class TaskWriterImplTest {
   @DisplayName("삭제 이벤트를 한 번 발행하고 재삭제는 발행하지 않는다")
   void deleteEmitsOnceAndRetryCannotEmit() {
     Task task = newTask();
-    when(taskRepository.findByIdAndDeletedAtIsNull(task.getId()))
+    when(taskRepository.findForMutation(task.getId()))
         .thenReturn(Optional.of(task), Optional.empty());
 
-    taskWriter.delete(task.getId());
-    assertThatThrownBy(() -> taskWriter.delete(task.getId())).isInstanceOf(BusinessException.class);
+    taskWriter.delete(task.getId(), null);
+    assertThatThrownBy(() -> taskWriter.delete(task.getId(), null))
+        .isInstanceOf(BusinessException.class);
 
     verify(outboxAppender)
         .append(task.getWorkspaceId(), "task", task.getId().toString(), "task.deleted", Map.of());
@@ -351,6 +358,14 @@ class TaskWriterImplTest {
 
   private UpdateTaskCommand updateCommand(UUID taskId, String title) {
     return new UpdateTaskCommand(
-        taskId, title, TaskRole.PM, null, TaskPriority.HIGH, TaskStatus.TODO, null, List.of());
+        taskId,
+        title,
+        TaskRole.PM,
+        null,
+        TaskPriority.HIGH,
+        TaskStatus.TODO,
+        null,
+        List.of(),
+        null);
   }
 }

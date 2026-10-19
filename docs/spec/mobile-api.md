@@ -380,7 +380,8 @@ convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다�
   `COMMON_VALIDATION_FAILED`입니다. 완료 기준 제목은 빈 문자열이거나 공백만으로 구성될 수 없습니다.
 - 상태의 허용 값·필수 필드·개수·글자 수 제한은 OpenAPI의 `UpdateTaskRequest`·`ChecklistItemRequest`를
   따릅니다. 상세 화면의 즉시 토글은 별도 엔드포인트를 사용합니다.
-- 동시 수정은 마지막 저장이 먼저 저장된 내용을 덮어씁니다. 낙관적 잠금은 없습니다.
+- 선택 버전과 낙관적 잠금으로 충돌을 검사합니다. 생략 시 보호 범위와 재조회 절차는
+  [태스크·마일스톤 수정 충돌](api-response-error-codes.md#태스크마일스톤-수정-충돌)을 따릅니다.
 
 MCP의 부분 수정은 생략한 필드를 유지하므로 이 API와 다릅니다
 ([MCP 생략·삭제 계약](mcp-write-tools.md#생략과-삭제)).

@@ -21,7 +21,8 @@ public record WebTaskResponse(
     @Schema(description = "담당자 식별자", nullable = true) UUID assigneeId,
     @Schema(description = "마감일", example = "2026-08-31", nullable = true) LocalDate dueDate,
     @Schema(description = "생성 시각(UTC)", example = "2026-08-20T00:00:00Z") Instant createdAt,
-    @Schema(description = "수정 시각(UTC)", example = "2026-08-20T00:00:00Z") Instant updatedAt) {
+    @Schema(description = "수정 시각(UTC)", example = "2026-08-20T00:00:00Z") Instant updatedAt,
+    @Schema(description = "수정 충돌 확인용 버전", minimum = "0") long version) {
   public static WebTaskResponse from(TaskSnapshot task) {
     return new WebTaskResponse(
         task.id(),
@@ -35,6 +36,7 @@ public record WebTaskResponse(
         task.assigneeId(),
         task.dueDate(),
         task.createdAt(),
-        task.updatedAt());
+        task.updatedAt(),
+        task.version());
   }
 }

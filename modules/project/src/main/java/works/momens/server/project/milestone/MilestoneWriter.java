@@ -9,5 +9,5 @@ public interface MilestoneWriter {
 
   MilestoneDetail update(UpdateMilestoneCommand command);
 
-  void delete(UUID milestoneId);
+  void delete(UUID milestoneId, Long version);
 }

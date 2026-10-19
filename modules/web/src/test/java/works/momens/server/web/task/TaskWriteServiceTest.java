@@ -88,7 +88,8 @@ class TaskWriteServiceTest {
         null,
         false,
         null,
-        false);
+        false,
+        null);
 
     ArgumentCaptor<PatchTaskCommand> captor = ArgumentCaptor.captor();
     verify(taskWriter).patch(captor.capture());
@@ -101,7 +102,7 @@ class TaskWriteServiceTest {
             () ->
                 service.update(
                     TASK_ID, USER_ID, null, false, null, false, null, true, null, false, null,
-                    false, null, false, null, false))
+                    false, null, false, null, false, null))
         .isInstanceOf(BusinessException.class);
   }
 }

@@ -25,10 +25,7 @@ class TaskDraftApplierImpl implements TaskDraftApplier {
    * 우회해 {@code tasks.updated_at}이 갱신되지 않고, 그러면 수정 테이블의 {@code updated_at}을 Auditing으로 관리하는
    * 규칙(persistence 규칙)과 어긋납니다. 잠금은 조건 검사와 갱신 사이에 사용자 편집이 끼어드는 것도 함께 막습니다.
    *
-   * <p><b>이 잠금은 편집과의 완전한 상호배제가 아닙니다.</b> {@code TaskWriterImpl.update}는 잠금 없이 읽으므로, 이 트랜잭션이 커밋되기
-   * <i>전에</i> task를 읽고 <i>후에</i> flush하는 편집은 방금 반영한 값을 그대로 덮습니다. 사용자 편집이 이긴다는 의도와는 맞지만, 호출자가 이미 발행한
-   * {@code task.draft_generated}는 아무도 읽지 못한 상태를 가리키게 됩니다. worker가 event를 받아 DB에서 다시 hydrate하므로
-   * projection 결과 자체는 정확해 이 창은 감수합니다. 잠금 범위를 이보다 넓게 읽지 마십시오.
+   * <p>일반 편집은 버전으로 충돌을 검사합니다. draft가 먼저 커밋되면 이전 버전을 읽은 편집은 충돌로 롤백됩니다.
    */
   @Override
   @Transactional(propagation = Propagation.MANDATORY)

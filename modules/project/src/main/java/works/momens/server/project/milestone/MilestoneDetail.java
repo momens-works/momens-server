@@ -25,4 +25,5 @@ public record MilestoneDetail(
     String summary,
     Instant lastContextAt,
     Instant createdAt,
-    Instant updatedAt) {}
+    Instant updatedAt,
+    long version) {}

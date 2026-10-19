@@ -115,6 +115,11 @@
     "inputSchema": {
       "type": "object",
       "properties": {
+        "version": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Version returned by the last read. Omit for compatibility; conflicts during the request are still detected."
+        },
         "milestone": {
           "type": "string",
           "description": "the milestone to remove: its exact name or id"
@@ -132,6 +137,11 @@
     "inputSchema": {
       "type": "object",
       "properties": {
+        "version": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Version returned by the last read. Omit for compatibility; conflicts during the request are still detected."
+        },
         "milestone": {
           "type": "string",
           "description": "the milestone to update: its exact name or id"
@@ -177,6 +187,11 @@
     "inputSchema": {
       "type": "object",
       "properties": {
+        "version": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Version returned by the last read. Omit for compatibility; conflicts during the request are still detected."
+        },
         "task": {
           "type": "string",
           "description": "the task to update: its MOM-label or id"

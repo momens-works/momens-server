@@ -92,7 +92,8 @@ class ProjectTaskControllerTest {
                 null,
                 null,
                 Instant.EPOCH,
-                Instant.EPOCH));
+                Instant.EPOCH,
+                0L));
 
     mockMvc
         .perform(
@@ -129,7 +130,8 @@ class ProjectTaskControllerTest {
                 null,
                 null,
                 Instant.EPOCH,
-                Instant.EPOCH));
+                Instant.EPOCH,
+                0L));
 
     mockMvc
         .perform(

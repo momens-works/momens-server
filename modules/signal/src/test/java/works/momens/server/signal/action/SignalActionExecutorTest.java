@@ -121,7 +121,8 @@ class SignalActionExecutorTest {
         null,
         null,
         Instant.EPOCH,
-        Instant.EPOCH);
+        Instant.EPOCH,
+        0L);
   }
 
   private record TestPreparedDraft(TaskDraft draft) implements PreparedTaskDraft {}

@@ -3,6 +3,7 @@ package works.momens.server.project.milestone.internal;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -19,6 +20,10 @@ import works.momens.server.project.milestone.MilestoneHealthStatus;
 @Table(name = "milestones")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 class Milestone extends BaseEntity {
+
+  @Version
+  @Column(nullable = false)
+  private long version;
 
   @Column(name = "project_id", nullable = false, columnDefinition = "uuid")
   private UUID projectId;

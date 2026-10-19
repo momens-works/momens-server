@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
+import works.momens.server.common.api.ExpectedVersion;
 import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.outbox.OutboxAppender;
 import works.momens.server.project.milestone.MilestoneDirectory;
@@ -50,6 +51,7 @@ class TaskWriterImpl implements TaskWriter {
     Task task = Task.create(command, label);
     taskRepository.save(task);
     appendCreatedEvent(task);
+    taskRepository.flush();
     return TaskSnapshotMapper.toSnapshot(task);
   }
 
@@ -57,6 +59,7 @@ class TaskWriterImpl implements TaskWriter {
   @Transactional
   public TaskDetail update(UpdateTaskCommand command) {
     Task task = findTask(command.taskId());
+    ExpectedVersion.check(command.version(), task.getVersion());
     TaskRowFields before = TaskRowFields.from(task);
     // 모바일은 편집 상태 전체를 보내므로, 기존 담당자는 재검증하지 않고 새 담당자만 검증한다.
     if (!Objects.equals(task.getAssigneeId(), command.assigneeId())) {
@@ -72,6 +75,7 @@ class TaskWriterImpl implements TaskWriter {
     validateChecklistItemIds(task, command.checklistItems());
     task.replaceChecklist(command.checklistItems());
     appendUpdatedEventIfChanged(task, before);
+    taskRepository.flush();
     return TaskDetailMapper.toDetail(task);
   }
 
@@ -79,6 +83,7 @@ class TaskWriterImpl implements TaskWriter {
   @Transactional
   public TaskSnapshot patch(PatchTaskCommand command) {
     Task task = findTask(command.taskId());
+    ExpectedVersion.check(command.version(), task.getVersion());
     TaskRowFields before = TaskRowFields.from(task);
     if (command.milestoneSet() || command.assigneeSet()) {
       validateReferences(
@@ -103,13 +108,15 @@ class TaskWriterImpl implements TaskWriter {
         command.dueDate(),
         command.dueDateSet());
     appendUpdatedEventIfChanged(task, before);
+    taskRepository.flush();
     return TaskSnapshotMapper.toSnapshot(task);
   }
 
   @Override
   @Transactional
-  public TaskDetail toggleChecklistItem(UUID taskId, UUID itemId, boolean completed) {
+  public TaskDetail toggleChecklistItem(UUID taskId, UUID itemId, boolean completed, Long version) {
     Task task = findTask(taskId);
+    ExpectedVersion.check(version, task.getVersion());
     TaskChecklistItem item =
         task.getChecklistItems().stream()
             .filter(candidate -> candidate.getId().equals(itemId))
@@ -119,14 +126,19 @@ class TaskWriterImpl implements TaskWriter {
                     new BusinessException(
                         TaskErrorCode.TASK_CHECKLIST_ITEM_NOT_FOUND,
                         Map.of("checklist_item_id", itemId.toString())));
-    item.changeCompleted(completed);
+    if (item.isCompleted() != completed) {
+      item.changeCompleted(completed);
+      task.checklistChanged();
+    }
+    taskRepository.flush();
     return TaskDetailMapper.toDetail(task);
   }
 
   @Override
   @Transactional
-  public void delete(UUID taskId) {
+  public void delete(UUID taskId, Long version) {
     Task task = findTask(taskId);
+    ExpectedVersion.check(version, task.getVersion());
     task.delete();
     outboxAppender.append(
         task.getWorkspaceId(), "task", taskId.toString(), EVENT_TASK_DELETED, Map.of());
@@ -166,7 +178,7 @@ class TaskWriterImpl implements TaskWriter {
 
   private Task findTask(UUID taskId) {
     return taskRepository
-        .findByIdAndDeletedAtIsNull(taskId)
+        .findForMutation(taskId)
         .orElseThrow(
             () ->
                 new BusinessException(

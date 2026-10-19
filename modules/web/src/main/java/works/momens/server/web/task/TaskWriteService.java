@@ -78,7 +78,8 @@ class TaskWriteService {
       UUID assigneeId,
       boolean assigneeSet,
       LocalDate dueDate,
-      boolean dueDateSet) {
+      boolean dueDateSet,
+      Long version) {
     requireTaskMember(taskId, userId);
     if (titleSet && title == null) {
       throw FieldValidationException.forField("title");
@@ -106,13 +107,14 @@ class TaskWriteService {
             assigneeId,
             assigneeSet,
             dueDate,
-            dueDateSet));
+            dueDateSet,
+            version));
   }
 
   @Transactional
-  void delete(UUID taskId, UUID userId) {
+  void delete(UUID taskId, UUID userId, Long version) {
     requireTaskMember(taskId, userId);
-    taskWriter.delete(taskId);
+    taskWriter.delete(taskId, version);
   }
 
   private UUID requireProject(UUID projectId) {

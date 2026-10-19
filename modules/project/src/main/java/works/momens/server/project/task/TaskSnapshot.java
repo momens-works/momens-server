@@ -19,4 +19,5 @@ public record TaskSnapshot(
     UUID assigneeId,
     LocalDate dueDate,
     Instant createdAt,
-    Instant updatedAt) {}
+    Instant updatedAt,
+    long version) {}

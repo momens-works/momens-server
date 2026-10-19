@@ -31,7 +31,8 @@ final class McpReadToolText {
         + task.title()
         + " ["
         + task.status()
-        + "]"
+        + "] · version: "
+        + task.version()
         + (project == null ? "" : " — " + projectName(project));
   }
 
@@ -45,7 +46,8 @@ final class McpReadToolText {
         + milestone.healthStatus()
         + " · progress: "
         + milestone.progress()
-        + "%"
+        + "% · version: "
+        + milestone.version()
         + (project == null ? "" : " — " + projectName(project))
         + (milestone.targetDate() == null ? "" : " · target: " + milestone.targetDate());
   }
@@ -59,7 +61,9 @@ final class McpReadToolText {
             .append("\nstatus: ")
             .append(task.status())
             .append(" · priority: ")
-            .append(task.priority());
+            .append(task.priority())
+            .append(" · version: ")
+            .append(task.version());
     if (project != null) {
       text.append(" · project: ").append(projectName(project));
     }

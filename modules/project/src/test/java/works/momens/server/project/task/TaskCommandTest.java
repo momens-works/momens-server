@@ -61,6 +61,7 @@ class TaskCommandTest {
         null,
         false,
         null,
-        false);
+        false,
+        null);
   }
 }

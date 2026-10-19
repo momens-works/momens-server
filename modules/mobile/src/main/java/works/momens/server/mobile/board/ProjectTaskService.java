@@ -116,7 +116,8 @@ class ProjectTaskService {
       TaskPriority priority,
       TaskStatus status,
       String purpose,
-      List<ChecklistEdit> checklistItems) {
+      List<ChecklistEdit> checklistItems,
+      Long version) {
     requireTaskMember(taskId, userId);
     List<UpdateTaskCommand.ChecklistItemEdit> items =
         checklistItems.stream()
@@ -127,14 +128,15 @@ class ProjectTaskService {
             .toList();
     // 저장만 하고 상세는 반환하지 않는다. 저장 후 최신 상태는 클라이언트가 상세 조회로 다시 읽는다.
     taskWriter.update(
-        new UpdateTaskCommand(taskId, title, role, assigneeId, priority, status, purpose, items));
+        new UpdateTaskCommand(
+            taskId, title, role, assigneeId, priority, status, purpose, items, version));
   }
 
   @Transactional
   public MobileTaskDetail toggleChecklistItem(
-      UUID taskId, UUID userId, UUID itemId, boolean completed) {
+      UUID taskId, UUID userId, UUID itemId, boolean completed, Long version) {
     requireTaskMember(taskId, userId);
-    TaskDetail updated = taskWriter.toggleChecklistItem(taskId, itemId, completed);
+    TaskDetail updated = taskWriter.toggleChecklistItem(taskId, itemId, completed, version);
     return toMobileDetail(updated);
   }
 
@@ -167,7 +169,8 @@ class ProjectTaskService {
         detail.checklistItems(),
         taskMaterialAssembler.getMaterials(detail.workspaceId(), detail.id()),
         detail.openQuestions(),
-        detail.nextAction());
+        detail.nextAction(),
+        detail.version());
   }
 
   private MobileTaskDetail.Assignee toAssignee(UUID assigneeId) {

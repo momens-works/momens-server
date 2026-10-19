@@ -63,13 +63,14 @@ class McpMilestoneToolService {
                 date(argument(args, "target_date"), "target_date"),
                 argument(args, "health_status"),
                 progress(args),
-                argument(args, "summary")));
+                argument(args, "summary"),
+                McpToolInputs.version(args)));
     return McpWriteToolText.updatedMilestone(milestone);
   }
 
-  String deleteMilestone(McpAuthenticationContext context, String reference) {
+  String deleteMilestone(McpAuthenticationContext context, String reference, Long version) {
     MilestoneDetail milestone = findMilestone(context, reference);
-    milestoneWriter.delete(milestone.id());
+    milestoneWriter.delete(milestone.id(), version);
     return "Removed milestone " + milestone.name() + " (" + milestone.id() + ").";
   }
 

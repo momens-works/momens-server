@@ -53,7 +53,8 @@ class TaskController implements TaskControllerDocs {
         request.priority(),
         request.status(),
         request.purpose(),
-        checklistItems);
+        checklistItems,
+        request.version());
   }
 
   @Override
@@ -65,7 +66,7 @@ class TaskController implements TaskControllerDocs {
       Principal principal) {
     MobileTaskDetail updated =
         projectTaskService.toggleChecklistItem(
-            taskId, CurrentUser.id(principal), itemId, request.completed());
+            taskId, CurrentUser.id(principal), itemId, request.completed(), request.version());
     return ChecklistToggleResponse.from(updated, itemId);
   }
 }

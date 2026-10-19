@@ -88,7 +88,8 @@ class McpTaskToolService {
                 resolveAssignee(context, assignee),
                 !assignee.isEmpty(),
                 date(argument(args, "due_date"), "due_date"),
-                args.has("due_date")));
+                args.has("due_date"),
+                McpToolInputs.version(args)));
     return McpWriteToolText.updatedTask(task, milestoneName(context, task.milestoneId()))
         + "\nurl: "
         + links.taskUrl(context.workspaceId(), task);

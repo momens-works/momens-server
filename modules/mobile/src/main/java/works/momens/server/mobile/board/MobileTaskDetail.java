@@ -30,7 +30,8 @@ public record MobileTaskDetail(
     List<TaskDetail.ChecklistItem> checklistItems,
     List<Material> materials,
     List<TaskDetail.OpenQuestion> openQuestions,
-    String nextAction) {
+    String nextAction,
+    long version) {
 
   /** 담당자 표시 정보. avatarUrl은 담당자의 구글 계정 프로필 이미지이고, 없으면 null입니다. */
   public record Assignee(UUID id, String name, String avatarUrl) {}

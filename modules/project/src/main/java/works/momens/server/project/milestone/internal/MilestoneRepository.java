@@ -1,5 +1,6 @@
 package works.momens.server.project.milestone.internal;
 
+import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -7,10 +8,15 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 interface MilestoneRepository extends JpaRepository<Milestone, UUID> {
+
+  @Lock(LockModeType.OPTIMISTIC)
+  @Query("select e from Milestone e where e.id = :id and e.deletedAt is null")
+  Optional<Milestone> findForMutation(UUID id);
 
   Optional<Milestone> findByIdAndDeletedAtIsNull(UUID id);
 
@@ -25,7 +31,7 @@ interface MilestoneRepository extends JpaRepository<Milestone, UUID> {
       """
       select new works.momens.server.project.milestone.internal.MilestoneDetailRow(
           m.id, m.projectId, m.name, m.description, m.targetDate, m.status,
-          m.healthStatus, m.progress, m.summary, m.lastContextAt, m.createdAt, m.updatedAt)
+          m.healthStatus, m.progress, m.summary, m.lastContextAt, m.createdAt, m.updatedAt, m.version)
       from Milestone m
       join Project p on p.id = m.projectId
       where p.workspaceId = :workspaceId
@@ -39,7 +45,7 @@ interface MilestoneRepository extends JpaRepository<Milestone, UUID> {
       """
       select new works.momens.server.project.milestone.internal.MilestoneDetailRow(
           m.id, m.projectId, m.name, m.description, m.targetDate, m.status,
-          m.healthStatus, m.progress, m.summary, m.lastContextAt, m.createdAt, m.updatedAt)
+          m.healthStatus, m.progress, m.summary, m.lastContextAt, m.createdAt, m.updatedAt, m.version)
       from Milestone m
       join Project p on p.id = m.projectId
       where p.workspaceId = :workspaceId
@@ -56,7 +62,7 @@ interface MilestoneRepository extends JpaRepository<Milestone, UUID> {
       """
       select new works.momens.server.project.milestone.internal.MilestoneDetailRow(
           m.id, m.projectId, m.name, m.description, m.targetDate, m.status,
-          m.healthStatus, m.progress, m.summary, m.lastContextAt, m.createdAt, m.updatedAt)
+          m.healthStatus, m.progress, m.summary, m.lastContextAt, m.createdAt, m.updatedAt, m.version)
       from Milestone m
       join Project p on p.id = m.projectId
       where p.workspaceId = :workspaceId

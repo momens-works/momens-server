@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 import works.momens.server.project.milestone.MilestoneDetail;
 
-@Schema(description = "웹 마일스톤 응답입니다. 필드 구성은 레거시 마일스톤 응답과 동일합니다.")
+@Schema(description = "웹 마일스톤 응답입니다. 수정 충돌 확인용 버전을 포함합니다.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record WebMilestoneResponse(
     UUID id,
@@ -23,7 +23,8 @@ public record WebMilestoneResponse(
     String summary,
     Instant lastContextAt,
     Instant createdAt,
-    Instant updatedAt) {
+    Instant updatedAt,
+    @Schema(description = "수정 충돌 확인용 버전", minimum = "0") long version) {
 
   public static WebMilestoneResponse from(MilestoneDetail milestone) {
     return new WebMilestoneResponse(
@@ -39,6 +40,7 @@ public record WebMilestoneResponse(
         milestone.summary(),
         milestone.lastContextAt(),
         milestone.createdAt(),
-        milestone.updatedAt());
+        milestone.updatedAt(),
+        milestone.version());
   }
 }

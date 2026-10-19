@@ -7,6 +7,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -37,6 +38,10 @@ import works.momens.server.project.task.UpdateTaskCommand;
 @Table(name = "tasks")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 class Task extends BaseEntity {
+
+  @Version
+  @Column(nullable = false)
+  private long version;
 
   @Column(name = "workspace_id", nullable = false, columnDefinition = "uuid")
   private UUID workspaceId;
@@ -167,6 +172,10 @@ class Task extends BaseEntity {
     }
   }
 
+  void checklistChanged() {
+    markUpdated();
+  }
+
   void delete() {
     this.deletedAt = Instant.now();
   }
@@ -218,6 +227,17 @@ class Task extends BaseEntity {
    * <p>{@code @OrderBy}는 조회 정렬만 하므로 순서(position)는 여기서 목록 인덱스대로 0부터 연속으로 직접 부여합니다.
    */
   void replaceChecklist(List<UpdateTaskCommand.ChecklistItemEdit> edits) {
+    List<UpdateTaskCommand.ChecklistItemEdit> current =
+        checklistItems.stream()
+            .map(
+                item ->
+                    new UpdateTaskCommand.ChecklistItemEdit(
+                        item.getId(), item.getTitle(), item.isCompleted()))
+            .toList();
+    if (current.equals(edits)) {
+      return;
+    }
+    checklistChanged();
     Map<UUID, TaskChecklistItem> existingById =
         checklistItems.stream().collect(Collectors.toMap(TaskChecklistItem::getId, item -> item));
     List<TaskChecklistItem> rebuilt = new ArrayList<>();

@@ -68,7 +68,10 @@ interface TaskWriteControllerDocs {
       value = TaskErrorCode.class,
       codes = {"TASK_NOT_FOUND"})
   @ApiException(CommonErrorCode.class)
-  WebMessageResponse delete(@Parameter(description = "작업 식별자") UUID taskId, Principal principal);
+  WebMessageResponse delete(
+      @Parameter(description = "작업 식별자") UUID taskId,
+      @Parameter(description = "조회한 작업 버전. 생략하면 요청 처리 중의 동시 변경만 검사합니다.") Long version,
+      Principal principal);
 
   @Operation(
       operationId = "createTaskUpdate",
