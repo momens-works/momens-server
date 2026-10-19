@@ -2703,10 +2703,13 @@
             "type" : "boolean"
           },
           "version" : {
-            "description" : "조회한 작업 버전. 생략하면 요청 처리 중의 동시 변경만 검사합니다.",
+            "description" : "조회한 작업 버전. 생략하거나 null이면 요청 처리 중의 동시 변경만 검사합니다.",
             "format" : "int64",
             "minimum" : 0,
-            "type" : "integer"
+            "type" : [
+              "integer",
+              "null"
+            ]
           }
         },
         "required" : [
@@ -2885,10 +2888,13 @@
             "type" : "string"
           },
           "version" : {
-            "description" : "조회한 작업 버전. 생략하면 요청 처리 중의 동시 변경만 검사합니다.",
+            "description" : "조회한 작업 버전. 생략하거나 null이면 요청 처리 중의 동시 변경만 검사합니다.",
             "format" : "int64",
             "minimum" : 0,
-            "type" : "integer"
+            "type" : [
+              "integer",
+              "null"
+            ]
           }
         },
         "required" : [
@@ -2953,10 +2959,13 @@
             "writeOnly" : true
           },
           "version" : {
-            "description" : "조회한 작업 버전. 생략하면 요청 처리 중의 동시 변경만 검사합니다.",
+            "description" : "조회한 작업 버전. 생략하거나 null이면 요청 처리 중의 동시 변경만 검사합니다.",
             "format" : "int64",
             "minimum" : 0,
-            "type" : "integer",
+            "type" : [
+              "integer",
+              "null"
+            ],
             "writeOnly" : true
           }
         }

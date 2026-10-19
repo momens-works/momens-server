@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import java.util.UUID;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import works.momens.server.common.api.ExpectedVersionDeserializer;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskStatus;
 
@@ -12,7 +14,11 @@ import works.momens.server.project.task.TaskStatus;
 public final class UpdateWebTaskRequest {
   private Long version;
 
-  @Schema(description = "조회한 작업 버전. 생략하면 요청 처리 중의 동시 변경만 검사합니다.", minimum = "0")
+  @Schema(
+      description = "조회한 작업 버전. 생략하거나 null이면 요청 처리 중의 동시 변경만 검사합니다.",
+      minimum = "0",
+      nullable = true)
+  @JsonDeserialize(using = ExpectedVersionDeserializer.class)
   @JsonSetter("version")
   public void setVersion(Long value) {
     version = value;
