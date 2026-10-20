@@ -76,14 +76,14 @@ class MilestoneWriterImpl implements MilestoneWriter {
 
     milestone.update(
         command.name(),
-        command.description(),
+        emptyToNull(command.description()),
         command.descriptionSet(),
         command.status(),
         command.targetDate(),
         command.targetDateSet(),
         command.healthStatus(),
         command.progress(),
-        command.summary(),
+        emptyToNull(command.summary()),
         command.summarySet());
     milestoneRepository.saveAndFlush(milestone);
     return MilestoneDetailMapper.toDetail(milestone, ownerUserIds(milestone.getId()));
