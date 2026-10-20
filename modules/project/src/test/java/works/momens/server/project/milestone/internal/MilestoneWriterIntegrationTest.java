@@ -57,7 +57,8 @@ class MilestoneWriterIntegrationTest extends AbstractPostgresIntegrationTest {
                 "on_track",
                 60,
                 "요약",
-                true, null));
+                true,
+                null));
 
     assertThat(detail.name()).isEqualTo("새 마일스톤");
     assertThat(detail.description()).isEqualTo("설명");
@@ -89,7 +90,8 @@ class MilestoneWriterIntegrationTest extends AbstractPostgresIntegrationTest {
                         "unknown",
                         null,
                         null,
-                        false, null)))
+                        false,
+                        null)))
         .isInstanceOf(FieldValidationException.class);
 
     assertThatThrownBy(
@@ -106,7 +108,8 @@ class MilestoneWriterIntegrationTest extends AbstractPostgresIntegrationTest {
                         null,
                         101,
                         null,
-                        false, null)))
+                        false,
+                        null)))
         .isInstanceOf(FieldValidationException.class);
   }
 
@@ -129,7 +132,8 @@ class MilestoneWriterIntegrationTest extends AbstractPostgresIntegrationTest {
                         null,
                         null,
                         null,
-                        false, null)))
+                        false,
+                        null)))
         .isInstanceOf(FieldValidationException.class);
   }
 
@@ -152,7 +156,8 @@ class MilestoneWriterIntegrationTest extends AbstractPostgresIntegrationTest {
                 null,
                 0,
                 clearedText,
-                true, null));
+                true,
+                null));
 
     assertThat(detail.description()).isNull();
     assertThat(detail.summary()).isNull();
@@ -174,7 +179,18 @@ class MilestoneWriterIntegrationTest extends AbstractPostgresIntegrationTest {
     MilestoneDetail omitted =
         milestoneWriter.update(
             new UpdateMilestoneCommand(
-                milestone.getId(), null, null, false, null, null, false, null, null, null, false, null));
+                milestone.getId(),
+                null,
+                null,
+                false,
+                null,
+                null,
+                false,
+                null,
+                null,
+                null,
+                false,
+                null));
     MilestoneDetail identical =
         milestoneWriter.update(
             new UpdateMilestoneCommand(
@@ -188,7 +204,8 @@ class MilestoneWriterIntegrationTest extends AbstractPostgresIntegrationTest {
                 milestone.getHealthStatus(),
                 60,
                 "요약",
-                true, null));
+                true,
+                null));
 
     assertThat(omitted.description()).isEqualTo("설명");
     assertThat(omitted.summary()).isEqualTo("요약");
@@ -203,7 +220,18 @@ class MilestoneWriterIntegrationTest extends AbstractPostgresIntegrationTest {
     MilestoneDetail detail =
         milestoneWriter.update(
             new UpdateMilestoneCommand(
-                milestone.getId(), null, null, true, null, null, false, null, null, null, false, null));
+                milestone.getId(),
+                null,
+                null,
+                true,
+                null,
+                null,
+                false,
+                null,
+                null,
+                null,
+                false,
+                null));
     assertThat(detail.description()).isNull();
     assertThat(detail.summary()).isEqualTo("요약");
     assertThat(detail.targetDate()).isEqualTo(LocalDate.of(2026, 10, 1));
