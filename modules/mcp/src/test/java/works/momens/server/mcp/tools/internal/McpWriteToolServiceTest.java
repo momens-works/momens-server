@@ -476,7 +476,8 @@ class McpWriteToolServiceTest {
         .isFalse();
     verify(milestoneWriter)
         .update(
-            new UpdateMilestoneCommand(milestoneId, "", "", true, "", null, true, "", 0, "", true, null));
+            new UpdateMilestoneCommand(
+                milestoneId, "", "", true, "", null, true, "", 0, "", true, null));
   }
 
   @ParameterizedTest
@@ -522,7 +523,8 @@ class McpWriteToolServiceTest {
                 "",
                 null,
                 "new summary",
-                true, null));
+                true,
+                null));
   }
 
   @ParameterizedTest
