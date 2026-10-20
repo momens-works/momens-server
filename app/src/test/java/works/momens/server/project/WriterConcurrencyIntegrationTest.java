@@ -68,6 +68,57 @@ class WriterConcurrencyIntegrationTest extends AbstractPostgresIntegrationTest {
 
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
+  @DisplayName("값이 바뀌지 않는 수정도 조회 후 다른 변경이 커밋되면 충돌한다")
+  void unchangedUpdateChecksVersionAtCommit(boolean milestone) throws Exception {
+    UUID id = fixture(milestone);
+    update(milestone, id, "원래 이름", null);
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT version FROM " + table(milestone) + " WHERE id=?", Long.class, id))
+        .isZero();
+
+    CountDownLatch unchangedFlushed = new CountDownLatch(1);
+    CountDownLatch releaseUnchanged = new CountDownLatch(1);
+    try (var executor = Executors.newSingleThreadExecutor()) {
+      var unchanged =
+          executor.submit(
+              () -> {
+                try {
+                  new TransactionTemplate(transactionManager)
+                      .executeWithoutResult(
+                          status -> {
+                            update(milestone, id, "원래 이름", null);
+                            entityManager.flush();
+                            unchangedFlushed.countDown();
+                            await(releaseUnchanged);
+                          });
+                  return "ok";
+                } catch (OptimisticLockingFailureException exception) {
+                  return "conflict";
+                }
+              });
+      try {
+        assertThat(unchangedFlushed.await(10, TimeUnit.SECONDS)).isTrue();
+        update(milestone, id, "다른 요청의 변경", null);
+      } finally {
+        releaseUnchanged.countDown();
+      }
+      assertThat(unchanged.get(15, TimeUnit.SECONDS)).isEqualTo("conflict");
+    }
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT " + nameColumn(milestone) + " FROM " + table(milestone) + " WHERE id=?",
+                String.class,
+                id))
+        .isEqualTo("다른 요청의 변경");
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT version FROM " + table(milestone) + " WHERE id=?", Long.class, id))
+        .isEqualTo(1L);
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
   @DisplayName("서로 다른 필드의 동시 수정도 충돌로 실패하고 먼저 커밋된 값을 유지한다")
   void independentFieldsConflict(boolean milestone) throws Exception {
     UUID id = fixture(milestone);
