@@ -196,6 +196,10 @@ H020·H022·H023 구현과 응답은
 [WebWorkspacesIntegrationTest](../../../app/src/test/java/works/momens/server/web/workspace/WebWorkspacesIntegrationTest.java)에서 확인한다.
 후보 비교·legacy trace·차등 비교 이력은 MOM-0850·0851·0856·0862·0877에 속한다.
 
+- H023 snapshot의 task·milestone과 H050 마일스톤 생성 응답은 레거시에 없는 `version`을
+  추가한다(MOM-1006). 조회 이후 수정 충돌을 검사하기 위한 의도된 차이이며
+  [수정 충돌 계약](../../spec/api-response-error-codes.md#태스크마일스톤-수정-충돌)을 따른다.
+  차등 비교는 `H023-owner`·`H050-member` golden으로 이 차이를 검증한다.
 - snapshot의 최상위 목록과 context 번들 목록은 비어도 `[]`다. 다른 nullable/빈 컬렉션의 생략은
   `WorkspaceSnapshotResponse`가 소유한다. project progress는 생략하고 milestone progress는 유지한다.
 - context는 살아 있는 응답 task와 교집합을 취한다. edge가 없으면 번들 자체가 없고, edge만 남고
