@@ -90,7 +90,7 @@ class Milestone extends BaseEntity {
       this.name = name;
     }
     if (descriptionSet) {
-      this.description = description == null || description.isEmpty() ? null : description;
+      this.description = description;
     }
     if (status != null && !status.isEmpty()) {
       this.status = status;
@@ -105,7 +105,7 @@ class Milestone extends BaseEntity {
       this.progress = progress;
     }
     if (summarySet) {
-      this.summary = summary == null || summary.isEmpty() ? null : summary;
+      this.summary = summary;
     }
   }
 
