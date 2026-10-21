@@ -19,7 +19,11 @@ import org.springframework.web.client.RestClient;
  * 빈을 추가하면 인증 기능이 동작하지 않습니다.
  */
 @Configuration
-@EnableConfigurationProperties({SourceOAuthProperties.class, FigmaWebhookProperties.class})
+@EnableConfigurationProperties({
+  SourceOAuthProperties.class,
+  FigmaWebhookProperties.class,
+  FigmaTokenRefreshProperties.class
+})
 class SourceOAuthConfig {
 
   private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(5);
@@ -62,6 +66,18 @@ class SourceOAuthConfig {
     requestFactory.setConnectTimeout(CONNECT_TIMEOUT);
     requestFactory.setReadTimeout(READ_TIMEOUT);
     return new FigmaWebhookClient(
+        RestClient.builder()
+            .baseUrl("https://api.figma.com")
+            .requestFactory(requestFactory)
+            .build());
+  }
+
+  @Bean
+  FigmaTokenRefreshClient figmaTokenRefreshClient() {
+    SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+    requestFactory.setConnectTimeout(CONNECT_TIMEOUT);
+    requestFactory.setReadTimeout(READ_TIMEOUT);
+    return new FigmaTokenRefreshClient(
         RestClient.builder()
             .baseUrl("https://api.figma.com")
             .requestFactory(requestFactory)
