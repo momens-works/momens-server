@@ -15,10 +15,10 @@ public interface SourceCredentialRepository extends JpaRepository<SourceCredenti
           + " and cr.expiresAt > :now and cr.expiresAt <= :until")
   List<String> findFigmaUsersExpiringBetween(Instant now, Instant until);
 
-  /** 워크스페이스와 연결 상태를 가리지 않습니다. 가장 최근에 갱신된 행이 먼저 옵니다. */
+  /** 워크스페이스와 연결 상태를 가리지 않습니다. OAuth 재연결과 같은 순서로 행을 갱신해 교착을 피하도록 연결 id 순으로 반환합니다. */
   @Query(
       "select cr from SourceCredential cr, SourceConnection c"
           + " where c.id = cr.connectionId and c.sourceType = 'FIGMA'"
-          + " and c.externalWorkspaceId = :figmaUserId order by cr.updatedAt desc")
+          + " and c.externalWorkspaceId = :figmaUserId order by cr.connectionId")
   List<SourceCredential> findFigmaByUser(String figmaUserId);
 }
