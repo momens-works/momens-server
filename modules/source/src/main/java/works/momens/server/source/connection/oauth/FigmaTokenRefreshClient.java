@@ -53,11 +53,15 @@ class FigmaTokenRefreshClient {
     if (!(accessToken instanceof String value) || value.isBlank()) {
       throw new RefreshFailedException(false, "invalid_response");
     }
+    // 만료 시각 없이 저장하면 갱신 대상에서 영구히 빠지고 configure도 만료로 보지 않습니다. 기존 token과 만료 시각을 유지해야 실제 만료 후
+    // 재연결을 요구할 수 있습니다.
+    Instant expiresAt = ProviderOAuthClient.expiresAt(body);
+    if (expiresAt == null) {
+      throw new RefreshFailedException(false, "invalid_response");
+    }
     Object tokenType = body.get("token_type");
     return new RefreshedToken(
-        value,
-        tokenType instanceof String type && !type.isBlank() ? type : null,
-        SourceInstallerImpl.expiresAt(body));
+        value, tokenType instanceof String type && !type.isBlank() ? type : null, expiresAt);
   }
 
   record RefreshedToken(String accessToken, String tokenType, Instant expiresAt) {}

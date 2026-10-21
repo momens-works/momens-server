@@ -2,6 +2,7 @@ package works.momens.server.source.connection.oauth;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -74,6 +75,19 @@ class ProviderOAuthClient {
             .retrieve()
             .body(BODY_TYPE);
     return body == null ? Map.of() : body;
+  }
+
+  static Instant expiresAt(Map<String, Object> tokenResponse) {
+    Object expiresIn = tokenResponse.get("expires_in");
+    if (expiresIn == null) {
+      return null;
+    }
+    try {
+      long seconds = Long.parseLong(String.valueOf(expiresIn).split("\\.")[0]);
+      return seconds <= 0 ? null : Instant.now().plusSeconds(seconds);
+    } catch (NumberFormatException e) {
+      return null;
+    }
   }
 
   private static Map<String, Object> jsonTokenBody(OAuthProvider provider, String code) {

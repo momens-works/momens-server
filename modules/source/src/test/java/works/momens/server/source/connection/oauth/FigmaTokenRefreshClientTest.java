@@ -139,8 +139,16 @@ class FigmaTokenRefreshClientTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"{}", "{\"access_token\":\" \"}", "{\"access_token\":7}", "not-json"})
-  @DisplayName("access token이 없는 성공 응답은 token을 노출하지 않고 일시적 실패로 분류한다")
+  @ValueSource(
+      strings = {
+        "{}",
+        "{\"access_token\":\" \"}",
+        "{\"access_token\":7}",
+        "{\"access_token\":\"private-access\"}",
+        "{\"access_token\":\"private-access\",\"expires_in\":0}",
+        "not-json"
+      })
+  @DisplayName("access token이나 만료 시각이 없는 성공 응답은 token을 노출하지 않고 일시적 실패로 분류한다")
   void classifiesMalformedResponseAsTransient(String body) {
     responseBody.set(body);
 
@@ -149,7 +157,8 @@ class FigmaTokenRefreshClientTest {
             RefreshFailedException.class,
             e -> {
               assertThat(e.reauthRequired()).isFalse();
-              assertThat(e.getMessage()).doesNotContain("private-refresh", "not-json");
+              assertThat(e.getMessage())
+                  .doesNotContain("private-refresh", "private-access", "not-json");
             });
   }
 

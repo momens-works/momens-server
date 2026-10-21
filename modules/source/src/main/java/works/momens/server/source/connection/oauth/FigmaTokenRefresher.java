@@ -1,6 +1,7 @@
 package works.momens.server.source.connection.oauth;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -111,7 +112,11 @@ class FigmaTokenRefresher {
       return;
     }
     // 재연결 시점에 따라 행마다 refresh token이 다를 수 있으므로 가장 최근에 저장된 값을 씁니다.
-    byte[] refreshTokenEnc = rows.getFirst().getRefreshTokenEnc();
+    byte[] refreshTokenEnc =
+        rows.stream()
+            .max(Comparator.comparing(SourceCredential::getUpdatedAt))
+            .orElseThrow()
+            .getRefreshTokenEnc();
     String refreshToken;
     try {
       refreshToken = encryptor.decrypt(refreshTokenEnc);

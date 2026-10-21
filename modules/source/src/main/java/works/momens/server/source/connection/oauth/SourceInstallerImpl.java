@@ -177,7 +177,8 @@ class SourceInstallerImpl implements SourceInstaller {
       return List.of(connection.getId());
     }
     return sourceConnectionRepository
-        .findBySourceTypeAndExternalWorkspaceId(OAuthProviderRegistry.FIGMA, identity.externalId())
+        .findBySourceTypeAndExternalWorkspaceIdOrderById(
+            OAuthProviderRegistry.FIGMA, identity.externalId())
         .stream()
         .map(SourceConnection::getId)
         .toList();
@@ -189,7 +190,7 @@ class SourceInstallerImpl implements SourceInstaller {
     byte[] refreshTokenEnc = tokenEncryptor.encrypt(stringOrNull(tokenResponse, "refresh_token"));
     String tokenType = stringOrNull(tokenResponse, "token_type");
     String scope = stringOrNull(tokenResponse, "scope");
-    Instant expiresAt = expiresAt(tokenResponse);
+    Instant expiresAt = ProviderOAuthClient.expiresAt(tokenResponse);
     SourceCredential credential =
         sourceCredentialRepository
             .findById(connectionId)
@@ -210,19 +211,6 @@ class SourceInstallerImpl implements SourceInstaller {
                         .expiresAt(expiresAt)
                         .build());
     sourceCredentialRepository.save(credential);
-  }
-
-  static Instant expiresAt(Map<String, Object> tokenResponse) {
-    Object expiresIn = tokenResponse.get("expires_in");
-    if (expiresIn == null) {
-      return null;
-    }
-    try {
-      long seconds = Long.parseLong(String.valueOf(expiresIn).split("\\.")[0]);
-      return seconds <= 0 ? null : Instant.now().plusSeconds(seconds);
-    } catch (NumberFormatException e) {
-      return null;
-    }
   }
 
   private static SourceConnectionDetail toDetail(SourceConnection connection) {
