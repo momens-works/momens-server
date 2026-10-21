@@ -345,8 +345,13 @@ OAuth가 완료된 Figma 연결은 `PENDING`입니다. admin/owner가
 설정을 보존하며, 동시 설정·비활성화·OAuth 재연결로 읽었던 상태가 바뀌면 409를 반환하고 이번 요청의
 webhook을 보상 삭제합니다. worker 통계·재동기화 시각은 충돌 기준에서 제외하고 갱신하지 않습니다.
 재활성화 시 `disabled_at`을 비웁니다. 만료·누락·빈 토큰은 `409 SOURCE_FIGMA_REAUTH_REQUIRED`를
-반환하며 재인증이 필요합니다. 자동 refresh는 하지 않습니다. Figma OAuth 재연결은 기존 설정과
-webhook ID를 보존하고 `PENDING`으로 전환합니다.
+반환하며 재인증이 필요합니다. Figma OAuth 재연결은 기존 설정과 webhook ID를 보존하고 `PENDING`으로
+전환합니다.
+
+서버는 만료까지 7일 이내로 남은 access token을 1시간마다 갱신합니다(MOM-1046). Figma는 앱·사용자당
+token을 하나만 유지하므로, 갱신과 OAuth 재연결은 같은 Figma 사용자의 모든 연결(다른 워크스페이스·비활성
+연결 포함)에 같은 token을 저장합니다. 이미 만료된 token은 갱신하지 않습니다. Figma가 갱신을 거부한
+연결(400·401·403)은 만료될 때까지 매 주기 경고 로그를 남기며 재시도하고, 만료 후에는 재연결이 필요합니다.
 
 Figma는 [팀당 webhook을 최대 20개로 제한](https://developers.figma.com/docs/rest-api/webhooks/)합니다.
 새 webhook을 먼저 만드는 방식이므로 대상 팀이 이미 한도를 채웠다면 재설정 등록이 실패합니다

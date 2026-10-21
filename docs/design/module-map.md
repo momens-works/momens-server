@@ -196,7 +196,8 @@ worker-first 활성화 조건은 [운영 준비 대장](../prod-readiness-ledger
 
 내부는 변경 이유로 두 nested 논리 모듈로 나눈다(MOM-0887). `connection`은 소스 연동
 (`source_connections`)과 자격 증명(`source_credentials`), 그리고 연동을 만드는 provider OAuth
-설치 흐름을 함께 소유한다. 자격 증명이 OAuth 콜백에서만 만들어지고 갱신되므로 둘을 같은 경계에 둔다.
+설치 흐름을 함께 소유한다. 자격 증명이 OAuth 콜백에서 만들어지고 콜백과 provider token 갱신에서만
+바뀌므로 둘을 같은 경계에 둔다.
 `ref`는 source-ref(`source_refs`)의 저장·조회·검증을 소유하고, 연동 없이 붙여넣은 주소도 다루므로
 `connection`에 의존하지 않는다. 두 경계 사이에는 코드 참조가 없다.
 
