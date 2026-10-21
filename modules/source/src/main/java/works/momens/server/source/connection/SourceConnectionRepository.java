@@ -77,6 +77,9 @@ public interface SourceConnectionRepository extends JpaRepository<SourceConnecti
           + " and c.sourceType = 'FIGMA' and c.externalWorkspaceId = :externalId order by c.createdAt")
   List<SourceConnection> findFigmaForReconnect(UUID workspaceId, String externalId);
 
+  List<SourceConnection> findBySourceTypeAndExternalWorkspaceId(
+      String sourceType, String externalWorkspaceId);
+
   List<SourceConnection> findByWorkspaceIdAndSourceTypeAndExternalWorkspaceIdOrderByCreatedAtAsc(
       UUID workspaceId, String sourceType, String externalWorkspaceId);
 }

@@ -74,7 +74,8 @@ class SourceInstallerImpl implements SourceInstaller {
         transactionTemplate.execute(
             status -> {
               SourceConnection connection = upsertConnection(state, provider, identity);
-              upsertCredential(connection.getId(), tokenResponse, accessToken);
+              credentialTargets(provider, identity, connection)
+                  .forEach(id -> upsertCredential(id, tokenResponse, accessToken));
               return toDetail(connection);
             });
     return new CompletedInstall(saved, properties.successRedirectUri());
@@ -166,6 +167,22 @@ class SourceInstallerImpl implements SourceInstaller {
     return sourceConnectionRepository.saveAndFlush(connection);
   }
 
+  /**
+   * Figma는 앱·사용자당 access token을 하나만 유지하므로 새 token을 받으면 같은 Figma 사용자의 다른 연결이 가진 token은 무효가 됩니다. 그래서
+   * 워크스페이스와 상태를 가리지 않고 그 사용자의 모든 연결에 같은 token을 저장합니다.
+   */
+  private List<UUID> credentialTargets(
+      OAuthProvider provider, ProviderIdentity identity, SourceConnection connection) {
+    if (!OAuthProviderRegistry.FIGMA.equals(provider.sourceType())) {
+      return List.of(connection.getId());
+    }
+    return sourceConnectionRepository
+        .findBySourceTypeAndExternalWorkspaceId(OAuthProviderRegistry.FIGMA, identity.externalId())
+        .stream()
+        .map(SourceConnection::getId)
+        .toList();
+  }
+
   private void upsertCredential(
       UUID connectionId, Map<String, Object> tokenResponse, String accessToken) {
     byte[] accessTokenEnc = tokenEncryptor.encrypt(accessToken);
@@ -195,7 +212,7 @@ class SourceInstallerImpl implements SourceInstaller {
     sourceCredentialRepository.save(credential);
   }
 
-  private static Instant expiresAt(Map<String, Object> tokenResponse) {
+  static Instant expiresAt(Map<String, Object> tokenResponse) {
     Object expiresIn = tokenResponse.get("expires_in");
     if (expiresIn == null) {
       return null;

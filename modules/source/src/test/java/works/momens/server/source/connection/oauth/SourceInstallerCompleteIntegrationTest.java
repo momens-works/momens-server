@@ -160,6 +160,62 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
         new TransactionTemplate(transactionManager));
   }
 
+  private SourceInstallerImpl figmaInstaller() {
+    SourceOAuthProperties properties = properties();
+    String base = "http://localhost:" + server.getAddress().getPort();
+    ProviderDefinition definition =
+        new ProviderDefinition(
+            OAuthProviderRegistry.FIGMA,
+            base + "/authorize",
+            base + "/token",
+            List.of(),
+            Map.of(),
+            TokenBodyFormat.FORM,
+            ClientAuthStyle.BASIC_HEADER,
+            null,
+            IdentityMethod.NONE,
+            ProviderIdentities::figma);
+    OAuthProviderRegistry registry =
+        new OAuthProviderRegistry(properties) {
+          @Override
+          Optional<OAuthProvider> find(String sourceType) {
+            return OAuthProviderRegistry.FIGMA.equals(OAuthStateSigner.normalize(sourceType))
+                ? Optional.of(
+                    new OAuthProvider(definition, "cid", "secret", properties.redirectUri()))
+                : Optional.empty();
+          }
+        };
+    return new SourceInstallerImpl(
+        registry,
+        signer(),
+        new ProviderOAuthClient(RestClient.builder().build()),
+        new TokenEncryptor(TOKEN_KEY),
+        connectionRepository,
+        credentialRepository,
+        properties,
+        new TransactionTemplate(transactionManager));
+  }
+
+  private UUID insertFigmaConnection(
+      UUID workspace, String status, String figmaUserId, String accessToken) {
+    UUID id = UUID.randomUUID();
+    jdbcTemplate.update(
+        "INSERT INTO source_connections (id, workspace_id, source_type, status,"
+            + " external_workspace_id, created_at, updated_at)"
+            + " VALUES (?, ?, 'FIGMA', ?, ?, NOW(), NOW())",
+        id,
+        workspace,
+        status,
+        figmaUserId);
+    if (accessToken != null) {
+      jdbcTemplate.update(
+          "INSERT INTO source_credentials (connection_id, access_token_enc) VALUES (?, ?)",
+          id,
+          new TokenEncryptor(TOKEN_KEY).encrypt(accessToken));
+    }
+    return id;
+  }
+
   private OAuthStateSigner signer() {
     return new OAuthStateSigner(SECRET, Duration.ofMinutes(10), Clock.fixed(NOW, ZoneOffset.UTC));
   }
@@ -287,6 +343,43 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
     assertThat(completed.connection().resyncRequestedAt()).isEqualTo(requestedAt);
     assertThat(completed.connection().updatedAt()).isEqualTo(workerUpdatedAt);
     assertThat(completed.connection().capturesReadCount()).isEqualTo(42);
+  }
+
+  @Test
+  @DisplayName("Figma 재연결은 같은 Figma 사용자의 모든 연결에 새 token을 저장한다")
+  void storesFigmaTokenOnEveryConnectionOfTheSameUser() {
+    UUID otherWorkspace = insertWorkspace();
+    try {
+      UUID elsewhere = insertFigmaConnection(otherWorkspace, "DISABLED", "figma-user", "old");
+      UUID duplicate = insertFigmaConnection(workspaceId, "ACTIVE", "figma-user", null);
+      UUID otherUser = insertFigmaConnection(workspaceId, "ACTIVE", "other-user", "other");
+      tokenBody.set(
+          "{\"access_token\":\"tok-1\",\"refresh_token\":\"ref-1\",\"user_id_string\":\"figma-user\"}");
+
+      CompletedInstall completed =
+          figmaInstaller()
+              .completeInstall(
+                  new CompleteInstallCommand(
+                      "code-1",
+                      signer()
+                          .sign(
+                              new OAuthState(
+                                  workspaceId, insertUser(), OAuthProviderRegistry.FIGMA))));
+
+      TokenEncryptor encryptor = new TokenEncryptor(TOKEN_KEY);
+      for (UUID id : List.of(completed.connection().id(), elsewhere, duplicate)) {
+        var credential = credentialRepository.findById(id).orElseThrow();
+        assertThat(encryptor.decrypt(credential.getAccessTokenEnc())).isEqualTo("tok-1");
+        assertThat(encryptor.decrypt(credential.getRefreshTokenEnc())).isEqualTo("ref-1");
+      }
+      assertThat(
+              encryptor.decrypt(
+                  credentialRepository.findById(otherUser).orElseThrow().getAccessTokenEnc()))
+          .isEqualTo("other");
+    } finally {
+      jdbcTemplate.update("DELETE FROM source_connections WHERE workspace_id = ?", otherWorkspace);
+      jdbcTemplate.update("DELETE FROM workspaces WHERE id = ?", otherWorkspace);
+    }
   }
 
   @Test
