@@ -50,7 +50,7 @@ class FigmaTokenRefresherIntegrationTest extends AbstractPostgresIntegrationTest
   private static final String TOKEN_KEY =
       Base64.getEncoder()
           .encodeToString("0123456789abcdef0123456789abcdef".getBytes(StandardCharsets.UTF_8));
-  private static final Instant NOW = Instant.now();
+  private static final Instant NOW = Instant.now().truncatedTo(ChronoUnit.MICROS);
 
   @Autowired SourceCredentialRepository credentials;
   @Autowired PlatformTransactionManager manager;
@@ -172,7 +172,7 @@ class FigmaTokenRefresherIntegrationTest extends AbstractPostgresIntegrationTest
 
     var row = credentials.findById(id).orElseThrow();
     assertThat(encryptor.decrypt(row.getAccessTokenEnc())).isEqualTo("old");
-    assertThat(row.getExpiresAt()).isEqualTo(days(3).truncatedTo(ChronoUnit.MICROS));
+    assertThat(row.getExpiresAt()).isEqualTo(days(3));
     assertThat(output.getOut())
         .contains(
             "Figma token refresh failed",
