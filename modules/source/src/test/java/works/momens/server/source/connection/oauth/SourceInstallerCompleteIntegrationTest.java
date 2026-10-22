@@ -354,7 +354,8 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
       UUID duplicate = insertFigmaConnection(workspaceId, "ACTIVE", "figma-user", null);
       UUID otherUser = insertFigmaConnection(workspaceId, "ACTIVE", "other-user", "other");
       tokenBody.set(
-          "{\"access_token\":\"tok-1\",\"refresh_token\":\"ref-1\",\"user_id_string\":\"figma-user\"}");
+          "{\"access_token\":\"tok-1\",\"refresh_token\":\"ref-1\",\"expires_in\":7776000,"
+              + "\"user_id_string\":\"figma-user\"}");
 
       CompletedInstall completed =
           figmaInstaller()
@@ -380,6 +381,31 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
       jdbcTemplate.update("DELETE FROM source_connections WHERE workspace_id = ?", otherWorkspace);
       jdbcTemplate.update("DELETE FROM workspaces WHERE id = ?", otherWorkspace);
     }
+  }
+
+  @Test
+  @DisplayName("Figma가 만료 시각 없이 token을 반환하면 저장하지 않고 502로 응답한다")
+  void rejectsFigmaTokenWithoutExpiry() {
+    UUID existing = insertFigmaConnection(workspaceId, "ACTIVE", "figma-user", "old");
+    tokenBody.set(
+        "{\"access_token\":\"tok-1\",\"refresh_token\":\"ref-1\",\"user_id_string\":\"figma-user\"}");
+
+    assertThatThrownBy(
+            () ->
+                figmaInstaller()
+                    .completeInstall(
+                        new CompleteInstallCommand(
+                            "code-1",
+                            signer()
+                                .sign(
+                                    new OAuthState(
+                                        workspaceId, insertUser(), OAuthProviderRegistry.FIGMA)))))
+        .isInstanceOf(BusinessException.class)
+        .hasFieldOrPropertyWithValue("errorCode", SourceErrorCode.SOURCE_OAUTH_EXCHANGE_FAILED);
+    assertThat(
+            new TokenEncryptor(TOKEN_KEY)
+                .decrypt(credentialRepository.findById(existing).orElseThrow().getAccessTokenEnc()))
+        .isEqualTo("old");
   }
 
   @Test

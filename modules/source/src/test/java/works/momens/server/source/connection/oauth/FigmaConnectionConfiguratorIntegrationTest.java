@@ -502,7 +502,14 @@ class FigmaConnectionConfiguratorIntegrationTest extends AbstractPostgresIntegra
         new OAuthStateSigner(properties.stateSecret(), properties.stateTtl(), Clock.systemUTC());
     var providerClient = mock(ProviderOAuthClient.class);
     when(providerClient.exchange(any(), anyString()))
-        .thenReturn(Map.of("access_token", "new-token", "user_id_string", "figma-user"));
+        .thenReturn(
+            Map.of(
+                "access_token",
+                "new-token",
+                "user_id_string",
+                "figma-user",
+                "expires_in",
+                7776000));
     var installer =
         new SourceInstallerImpl(
             new OAuthProviderRegistry(properties),
