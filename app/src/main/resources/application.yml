@@ -16,7 +16,7 @@ spring:
         # request body의 enum 필드에 숫자를 보내면 Jackson은 기본적으로 선언 순서에 해당하는 enum 상수로 변환합니다(0이면 첫 번째 상수).
         # 이 동작을 비활성화해 숫자 입력을 거부하고, `GlobalExceptionHandler`가 `COMMON_VALIDATION_FAILED`로 응답하도록 합니다.
         fail-on-numbers-for-enums: true
-  # drain과 push 발송이 블로킹해도 지표 집계·원장 종료·MCP 정리가 지연되지 않도록 풀의 스레드 수를 확보합니다.
+  # drain·push 발송·Figma token 갱신이 블로킹해도 지표 집계·원장 종료·MCP 정리가 지연되지 않도록 작업마다 스레드를 하나씩 확보합니다.
   # @Scheduled 작업을 추가하면 풀 크기도 재검토합니다(SchedulingConfig).
   task:
     scheduling:

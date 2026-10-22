@@ -68,14 +68,14 @@ class FigmaTokenRefresher {
     try {
       refreshDue();
     } catch (RuntimeException e) {
-      log.error("Figma token refresh run failed failureType={}", e.getClass().getSimpleName());
+      log.error("Figma token refresh run failed", e);
     }
   }
 
   /**
    * 실행 전체를 transaction 범위 advisory lock 하나로 감싸 한 주기에 한 인스턴스만 갱신합니다. 두 인스턴스가 같은 사용자를 갱신하면 Figma에서
    * 나중에 발급된 token과 DB에 나중에 저장된 token이 어긋날 수 있기 때문입니다. lock은 Figma 호출 동안에도 유지되며, 사용자별 저장은 별도
-   * transaction으로 commit해 한 사용자의 실패가 다른 사용자에게 번지지 않게 합니다.
+   * transaction으로 commit해 한 사용자의 저장 실패가 다른 사용자의 갱신을 막지 않게 합니다.
    *
    * <p>OAuth 재연결이나 configure와는 직렬화하지 않습니다. 같은 사용자의 갱신과 재연결이 1초 안팎의 구간에서 겹쳐야 어긋나며, 재연결을 다시 하면 회복됩니다.
    */
