@@ -506,6 +506,8 @@ class FigmaConnectionConfiguratorIntegrationTest extends AbstractPostgresIntegra
             Map.of(
                 "access_token",
                 "new-token",
+                "refresh_token",
+                "new-refresh",
                 "user_id_string",
                 "figma-user",
                 "expires_in",
