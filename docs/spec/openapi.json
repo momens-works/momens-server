@@ -21247,26 +21247,6 @@
                         "message" : "권한이 없습니다."
                       }
                     }
-                  },
-                  "WORKSPACE_INVITEE_NOT_FOUND" : {
-                    "description" : "초대할 사용자를 찾을 수 없습니다.",
-                    "summary" : "WORKSPACE_INVITEE_NOT_FOUND",
-                    "value" : {
-                      "error" : {
-                        "code" : "WORKSPACE_INVITEE_NOT_FOUND",
-                        "message" : "초대할 사용자를 찾을 수 없습니다."
-                      }
-                    }
-                  },
-                  "WORKSPACE_MEMBER_ROLE_CONFLICT" : {
-                    "description" : "이미 다른 권한으로 워크스페이스에 참여 중인 멤버입니다.",
-                    "summary" : "WORKSPACE_MEMBER_ROLE_CONFLICT",
-                    "value" : {
-                      "error" : {
-                        "code" : "WORKSPACE_MEMBER_ROLE_CONFLICT",
-                        "message" : "이미 다른 권한으로 워크스페이스에 참여 중인 멤버입니다."
-                      }
-                    }
                   }
                 }
               }
@@ -21284,6 +21264,16 @@
                       "error" : {
                         "code" : "COMMON_NOT_FOUND",
                         "message" : "요청한 리소스를 찾을 수 없습니다."
+                      }
+                    }
+                  },
+                  "WORKSPACE_INVITEE_NOT_FOUND" : {
+                    "description" : "초대할 사용자를 찾을 수 없습니다.",
+                    "summary" : "WORKSPACE_INVITEE_NOT_FOUND",
+                    "value" : {
+                      "error" : {
+                        "code" : "WORKSPACE_INVITEE_NOT_FOUND",
+                        "message" : "초대할 사용자를 찾을 수 없습니다."
                       }
                     }
                   },
@@ -21342,6 +21332,16 @@
                       "error" : {
                         "code" : "COMMON_CONFLICT",
                         "message" : "요청이 현재 상태와 충돌합니다."
+                      }
+                    }
+                  },
+                  "WORKSPACE_MEMBER_ROLE_CONFLICT" : {
+                    "description" : "이미 다른 권한으로 워크스페이스에 참여 중인 멤버입니다.",
+                    "summary" : "WORKSPACE_MEMBER_ROLE_CONFLICT",
+                    "value" : {
+                      "error" : {
+                        "code" : "WORKSPACE_MEMBER_ROLE_CONFLICT",
+                        "message" : "이미 다른 권한으로 워크스페이스에 참여 중인 멤버입니다."
                       }
                     }
                   }

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -26,7 +27,7 @@ import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
 /**
- * 워크스페이스 멤버 endpoint 세 개를 애플리케이션 실행 환경에서 검증하는 통합 테스트입니다(MOM-0864).
+ * 워크스페이스 멤버 관련 endpoint 4개를 애플리케이션 실행 환경에서 검증하는 통합 테스트입니다(MOM-0864).
  *
  * <p>실제 토큰과 PostgreSQL을 사용해 보안 필터 체인부터 응답 형식, 정렬 순서, 요청자의 역할에 따른 응답, 에러 코드까지 전체 흐름을 검증합니다. 사용자는
  * user 모듈의 public API로 생성하고, 워크스페이스와 멤버십은 생성 endpoint가 아직 없으므로 SQL로 직접 저장합니다.
@@ -260,6 +261,42 @@ class WebWorkspaceMembersIntegrationTest extends AbstractPostgresIntegrationTest
                 caller.id()))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.error.code").value("WORKSPACE_NOT_FOUND"));
+  }
+
+  @Test
+  @DisplayName("초대할 이메일에 해당하는 계정이 없으면 404를 반환한다")
+  void inviteReturnsNotFoundWhenInviteeHasNoAccount() throws Exception {
+    UUID workspaceId = insertWorkspace("web-members-invite-absent");
+    UserProfile admin = user("members-invite-absent-admin@momens.works", "관리자");
+    addMember(workspaceId, admin.id(), "admin");
+
+    mockMvc
+        .perform(
+            authorized(post("/api/workspaces/{id}/invite", workspaceId), admin.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"email\":\"members-invite-absent-target@momens.works\",\"role\":\"member\"}"))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.error.code").value("WORKSPACE_INVITEE_NOT_FOUND"));
+  }
+
+  @Test
+  @DisplayName("대상 멤버가 이미 다른 role로 참여 중이면 409를 반환한다")
+  void inviteReturnsConflictWhenMemberHasAnotherRole() throws Exception {
+    UUID workspaceId = insertWorkspace("web-members-invite-conflict");
+    UserProfile admin = user("members-invite-conflict-admin@momens.works", "관리자");
+    UserProfile target = user("members-invite-conflict-target@momens.works", "대상자");
+    addMember(workspaceId, admin.id(), "admin");
+    addMember(workspaceId, target.id(), "member");
+
+    mockMvc
+        .perform(
+            authorized(post("/api/workspaces/{id}/invite", workspaceId), admin.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"email\":\"members-invite-conflict-target@momens.works\",\"role\":\"admin\"}"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.error.code").value("WORKSPACE_MEMBER_ROLE_CONFLICT"));
   }
 
   private MockHttpServletRequestBuilder authorized(
