@@ -28,6 +28,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
@@ -383,12 +385,18 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
     }
   }
 
-  @Test
-  @DisplayName("Figma가 만료 시각 없이 token을 반환하면 저장하지 않고 502로 응답한다")
-  void rejectsFigmaTokenWithoutExpiry() {
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "{\"access_token\":\"tok-1\",\"refresh_token\":\"ref-1\",\"user_id_string\":\"figma-user\"}",
+        "{\"access_token\":\"tok-1\",\"expires_in\":7776000,\"user_id_string\":\"figma-user\"}",
+        "{\"access_token\":\"tok-1\",\"refresh_token\":\" \",\"expires_in\":7776000,"
+            + "\"user_id_string\":\"figma-user\"}"
+      })
+  @DisplayName("Figma가 만료 시각이나 refresh token 없이 token을 반환하면 저장하지 않고 502로 응답한다")
+  void rejectsFigmaTokenThatCannotBeRefreshed(String body) {
     UUID existing = insertFigmaConnection(workspaceId, "ACTIVE", "figma-user", "old");
-    tokenBody.set(
-        "{\"access_token\":\"tok-1\",\"refresh_token\":\"ref-1\",\"user_id_string\":\"figma-user\"}");
+    tokenBody.set(body);
 
     assertThatThrownBy(
             () ->

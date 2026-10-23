@@ -68,10 +68,14 @@ class SourceInstallerImpl implements SourceInstaller {
     if (accessToken.isBlank() || "null".equals(accessToken)) {
       throw exchangeFailed(provider, "empty access token");
     }
-    // 만료 시각이 없으면 Figma token 갱신 대상에서 영구히 빠지므로 저장하지 않습니다.
-    if (OAuthProviderRegistry.FIGMA.equals(provider.sourceType())
-        && ProviderOAuthClient.expiresAt(tokenResponse) == null) {
-      throw exchangeFailed(provider, "invalid expires_in");
+    // 만료 시각이나 refresh token이 없으면 Figma token을 다시 갱신할 수 없으므로 저장하지 않습니다. 저장하면 그 사용자의 모든 연결에 덮어씁니다.
+    if (OAuthProviderRegistry.FIGMA.equals(provider.sourceType())) {
+      if (ProviderOAuthClient.expiresAt(tokenResponse) == null) {
+        throw exchangeFailed(provider, "invalid expires_in");
+      }
+      if (stringOrNull(tokenResponse, "refresh_token") == null) {
+        throw exchangeFailed(provider, "empty refresh token");
+      }
     }
     ProviderIdentity identity = readIdentity(provider, tokenResponse);
 
