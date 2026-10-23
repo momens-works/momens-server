@@ -2,11 +2,16 @@ package works.momens.server.source.connection.oauth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
+import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
 import com.sun.net.httpserver.HttpServer;
+import com.zaxxer.hikari.HikariDataSource;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
@@ -59,6 +64,7 @@ class FigmaTokenRefresherIntegrationTest extends AbstractPostgresIntegrationTest
 
   private final TokenEncryptor encryptor = new TokenEncryptor(TOKEN_KEY);
   private final AtomicInteger status = new AtomicInteger(200);
+  private final AtomicInteger activeConnectionsDuringCall = new AtomicInteger(-1);
   private final List<String> requests = new CopyOnWriteArrayList<>();
   private final List<UUID> workspaces = new CopyOnWriteArrayList<>();
   private HttpServer server;
@@ -71,6 +77,15 @@ class FigmaTokenRefresherIntegrationTest extends AbstractPostgresIntegrationTest
         exchange -> {
           requests.add(
               new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+          try {
+            activeConnectionsDuringCall.set(
+                dataSource
+                    .unwrap(HikariDataSource.class)
+                    .getHikariPoolMXBean()
+                    .getActiveConnections());
+          } catch (SQLException e) {
+            throw new IllegalStateException(e);
+          }
           byte[] payload =
               "{\"access_token\":\"new-access\",\"token_type\":\"bearer\",\"expires_in\":7776000}"
                   .getBytes(StandardCharsets.UTF_8);
@@ -93,6 +108,10 @@ class FigmaTokenRefresherIntegrationTest extends AbstractPostgresIntegrationTest
   }
 
   private FigmaTokenRefresher refresher(String clientId) {
+    return refresher(clientId, credentials);
+  }
+
+  private FigmaTokenRefresher refresher(String clientId, SourceCredentialRepository repository) {
     var properties =
         new SourceOAuthProperties(
             "https://api.example/callback",
@@ -106,15 +125,14 @@ class FigmaTokenRefresherIntegrationTest extends AbstractPostgresIntegrationTest
     factory.setReadTimeout(Duration.ofSeconds(5));
     return new FigmaTokenRefresher(
         new OAuthProviderRegistry(properties),
-        credentials,
+        repository,
         encryptor,
         new FigmaTokenRefreshClient(
             RestClient.builder()
                 .baseUrl("http://localhost:" + server.getAddress().getPort())
                 .requestFactory(factory)
                 .build()),
-        new FigmaTokenRefreshProperties(Duration.ofDays(7)),
-        jdbc,
+        new FigmaTokenRefreshProperties(Duration.ofHours(1), Duration.ofDays(7)),
         manager);
   }
 
@@ -229,21 +247,41 @@ class FigmaTokenRefresherIntegrationTest extends AbstractPostgresIntegrationTest
   }
 
   @Test
-  @DisplayName("다른 인스턴스가 실행 중이면 이번 주기를 건너뛴다")
-  void skipsWhileAnotherRunHoldsTheLock() throws Exception {
+  @DisplayName("Figma를 호출하는 동안 DB 연결을 잡지 않는다")
+  void releasesDatabaseConnectionDuringFigmaCall() {
     credential(workspace(), "ACTIVE", "figma-user", "old", "ref", days(3), NOW);
-    try (Connection other = dataSource.getConnection()) {
-      other.setAutoCommit(false);
-      try (var lock =
-          other.prepareStatement(
-              "SELECT pg_advisory_xact_lock(hashtextextended('source.figma.token-refresh', 0))")) {
-        lock.execute();
-      }
-      refresher().refreshDue();
-      other.rollback();
-    }
+
+    refresher().refreshDue();
+
+    assertThat(requests).hasSize(1);
+    assertThat(activeConnectionsDuringCall).hasValue(0);
+  }
+
+  @Test
+  @DisplayName("대상 조회 뒤 다른 인스턴스가 이미 갱신한 사용자는 건너뛴다")
+  void skipsUserAlreadyRefreshedElsewhere() {
+    UUID id = credential(workspace(), "ACTIVE", "figma-user", "old", "ref", days(3), NOW);
+    SourceCredentialRepository interleaved =
+        mock(SourceCredentialRepository.class, delegatesTo(credentials));
+    doAnswer(
+            invocation -> {
+              var due =
+                  credentials.findFigmaUsersExpiringBetween(
+                      invocation.getArgument(0), invocation.getArgument(1));
+              jdbc.update(
+                  "UPDATE source_credentials SET expires_at = ? WHERE connection_id = ?",
+                  Timestamp.from(days(90)),
+                  id);
+              return due;
+            })
+        .when(interleaved)
+        .findFigmaUsersExpiringBetween(any(), any());
+
+    refresher("cid", interleaved).refreshDue();
 
     assertThat(requests).isEmpty();
+    assertThat(encryptor.decrypt(credentials.findById(id).orElseThrow().getAccessTokenEnc()))
+        .isEqualTo("old");
   }
 
   @Test
