@@ -149,8 +149,8 @@ momens:
         endpoint: ${MOMENS_SOURCE_FIGMA_WEBHOOK_ENDPOINT:}
         passcode: ${MOMENS_SOURCE_FIGMA_WEBHOOK_PASSCODE:}
       token-refresh:
-        interval: 1h
-        window: 7d
+        interval: ${MOMENS_SOURCE_FIGMA_TOKEN_REFRESH_INTERVAL:1h}
+        window: ${MOMENS_SOURCE_FIGMA_TOKEN_REFRESH_WINDOW:7d}
     oauth:
       redirect-uri: ${MOMENS_SOURCE_OAUTH_REDIRECT_URI:}
       success-redirect-uri: ${MOMENS_SOURCE_OAUTH_SUCCESS_REDIRECT_URI:}
