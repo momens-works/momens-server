@@ -221,6 +221,8 @@ Bean Validation과 `FieldValidationException`을 통한 필드 단위 검증 실
 - `500 Internal Server Error`: 서버 내부 오류.
 - `502 Bad Gateway`: 외부 API 또는 downstream 서비스 호출 실패.
 
+403은 요청자의 권한이 부족한 경우에 사용합니다. 요청에서 지정한 대상 리소스를 찾을 수 없으면 404를, 다른 리소스의 속성으로 전달한 참조 값이 유효하지 않으면 400을 사용합니다.
+
 ## 구현 시 체크리스트
 
 - 기존 Go API 이관인지, 신규/개편 API인지 먼저 결정합니다.
