@@ -126,7 +126,7 @@ Refresh token을 폐기합니다.
 
 마이페이지에 표시할 현재 로그인한 사용자의 계정 정보를 조회합니다.
 
-- 응답 필드는 `id`, `email`, `name`, `avatar_url`로 구성합니다. 프로필 사진이 없는 경우에도 `avatar_url` 필드를 생략하지 않고 `null`로 반환합니다.
+- 프로필 사진이 없는 경우에도 `avatar_url` 필드를 생략하지 않고 `null`로 반환합니다.
 - workspace와 project 조회에 의존하지 않으므로, 프로젝트 조회에 실패하더라도 계정 정보를 조회할 수 있습니다.
 - 인증 토큰은 유효하지만 해당 사용자가 삭제된 경우 `USER_NOT_FOUND`를 반환합니다. `GET /api/mobile/bootstrap`과 동일한 처리 방식입니다.
 
