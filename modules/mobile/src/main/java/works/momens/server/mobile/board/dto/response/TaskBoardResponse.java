@@ -10,7 +10,7 @@ import works.momens.server.mobile.board.MobileTaskGroup;
 public record TaskBoardResponse(
     @Schema(description = "화면 제목", example = "프로젝트 작업") String title,
     @Schema(description = "화면 안내 문구") String description,
-    @Schema(description = "상태 그룹 목록(todo, in_progress, done, backlog, cancelled 순서)")
+    @Schema(description = "상태별 태스크 그룹 목록(`in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서)")
         List<GroupResponse> groups) {
 
   private static final String BOARD_TITLE = "프로젝트 작업";

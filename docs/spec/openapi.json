@@ -2516,7 +2516,7 @@
             "type" : "string"
           },
           "groups" : {
-            "description" : "상태 그룹 목록(todo, in_progress, done, backlog, cancelled 순서)",
+            "description" : "상태별 태스크 그룹 목록(`in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서)",
             "items" : {
               "$ref" : "#/components/schemas/GroupResponse"
             },
@@ -10890,7 +10890,7 @@
     },
     "/api/mobile/projects/{projectId}/tasks" : {
       "get" : {
-        "description" : "작업을 todo, in_progress, done, backlog, cancelled 다섯 그룹으로 조회합니다. 수정 화면이 상태 5종을 모두 편집하므로 보드도 5종을 담습니다.",
+        "description" : "태스크를 `in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서로 그룹화해 반환합니다. 태스크 수정 화면에서 다섯 가지 상태를 모두 지원하므로 보드 조회 응답에도 모든 상태 그룹을 포함합니다.",
         "operationId" : "mobileGetTaskBoard",
         "parameters" : [
           {

@@ -330,7 +330,7 @@ id를 기준으로 하기 때문에, 페이지 사이에 시그널이 처리되�
 
 프로젝트 작업 보드를 조회합니다.
 
-보드는 todo, in_progress, done, backlog, cancelled 다섯 그룹을 순서대로 노출합니다. 다섯 그룹은 작업이 없어도 항상 포함하며 그때 tasks는 빈 배열입니다. 각 그룹의 count는 tasks 배열 길이와 같습니다. priority는 low, medium, high로 반환하고, 저장된 값이 레거시 전용인 urgent이면 high로 반환합니다(2026-07-06 가결정). material_count는 작업에 연결된 소스 수이고, 연결이 없으면 0입니다. 웹에서 만든 작업은 업무 역할이 없어 role을 null로 반환합니다(레거시와 공유하는 tasks에서 role은 nullable이고, 모바일 생성 API는 role을 필수로 받습니다).
+보드는 `in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서로 다섯 개의 상태 그룹을 노출합니다. 다섯 그룹은 작업이 없어도 항상 포함하며 그때 tasks는 빈 배열입니다. 각 그룹의 count는 tasks 배열 길이와 같습니다. priority는 low, medium, high로 반환하고, 저장된 값이 레거시 전용인 urgent이면 high로 반환합니다(2026-07-06 가결정). material_count는 작업에 연결된 소스 수이고, 연결이 없으면 0입니다. 웹에서 만든 작업은 업무 역할이 없어 role을 null로 반환합니다(레거시와 공유하는 tasks에서 role은 nullable이고, 모바일 생성 API는 role을 필수로 받습니다).
 
 ### POST /api/mobile/projects/{projectId}/tasks
 
