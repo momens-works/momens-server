@@ -108,16 +108,16 @@ class ProjectTaskServiceTest {
     assertThat(groups)
         .extracting(MobileTaskGroup::status)
         .containsExactly(
-            MobileTaskStatus.TODO,
             MobileTaskStatus.IN_PROGRESS,
+            MobileTaskStatus.TODO,
             MobileTaskStatus.DONE,
-            MobileTaskStatus.BACKLOG,
-            MobileTaskStatus.CANCELLED);
-    assertThat(groups.get(0).tasks()).extracting(MobileTaskCard::id).containsExactly(todoId);
-    assertThat(groups.get(1).tasks()).extracting(MobileTaskCard::id).containsExactly(inProgressId);
+            MobileTaskStatus.CANCELLED,
+            MobileTaskStatus.BACKLOG);
+    assertThat(groups.get(0).tasks()).extracting(MobileTaskCard::id).containsExactly(inProgressId);
+    assertThat(groups.get(1).tasks()).extracting(MobileTaskCard::id).containsExactly(todoId);
     assertThat(groups.get(2).tasks()).isEmpty();
-    assertThat(groups.get(3).tasks()).extracting(MobileTaskCard::id).containsExactly(backlogId);
-    assertThat(groups.get(4).tasks()).extracting(MobileTaskCard::id).containsExactly(cancelledId);
+    assertThat(groups.get(3).tasks()).extracting(MobileTaskCard::id).containsExactly(cancelledId);
+    assertThat(groups.get(4).tasks()).extracting(MobileTaskCard::id).containsExactly(backlogId);
   }
 
   @Test
