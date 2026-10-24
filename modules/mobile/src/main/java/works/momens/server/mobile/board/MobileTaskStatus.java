@@ -9,7 +9,7 @@ public enum MobileTaskStatus {
   IN_PROGRESS(TaskStatus.IN_PROGRESS, "진행 중"),
   TODO(TaskStatus.TODO, "할 일"),
   DONE(TaskStatus.DONE, "완료"),
-  CANCELLED(TaskStatus.CANCELLED, "취소됨"),
+  CANCELLED(TaskStatus.CANCELLED, "취소"),
   BACKLOG(TaskStatus.BACKLOG, "백로그");
 
   private final TaskStatus taskStatus;

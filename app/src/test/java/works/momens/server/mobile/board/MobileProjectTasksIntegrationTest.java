@@ -67,7 +67,7 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
         .andExpect(jsonPath("$.groups[2].label").value("완료"))
         .andExpect(jsonPath("$.groups[2].count").value(1))
         .andExpect(jsonPath("$.groups[3].group_key").value("cancelled"))
-        .andExpect(jsonPath("$.groups[3].label").value("취소됨"))
+        .andExpect(jsonPath("$.groups[3].label").value("취소"))
         .andExpect(jsonPath("$.groups[3].count").value(1))
         .andExpect(jsonPath("$.groups[4].group_key").value("backlog"))
         .andExpect(jsonPath("$.groups[4].label").value("백로그"))
