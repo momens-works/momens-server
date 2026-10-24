@@ -6,11 +6,11 @@ import works.momens.server.project.task.TaskStatus;
 
 /** 선언 순서가 보드 표시 순서입니다. 수정 가능한 모든 상태를 포함해 backlog·cancelled로 바꾼 태스크도 보드에 남깁니다. */
 public enum MobileTaskStatus {
-  TODO(TaskStatus.TODO, "할 일"),
   IN_PROGRESS(TaskStatus.IN_PROGRESS, "진행 중"),
+  TODO(TaskStatus.TODO, "할 일"),
   DONE(TaskStatus.DONE, "완료"),
-  BACKLOG(TaskStatus.BACKLOG, "백로그"),
-  CANCELLED(TaskStatus.CANCELLED, "취소됨");
+  CANCELLED(TaskStatus.CANCELLED, "취소됨"),
+  BACKLOG(TaskStatus.BACKLOG, "백로그");
 
   private final TaskStatus taskStatus;
   private final String label;
