@@ -108,16 +108,16 @@ class ProjectTaskServiceTest {
     assertThat(groups)
         .extracting(MobileTaskGroup::status)
         .containsExactly(
-            MobileTaskStatus.TODO,
             MobileTaskStatus.IN_PROGRESS,
+            MobileTaskStatus.TODO,
             MobileTaskStatus.DONE,
-            MobileTaskStatus.BACKLOG,
-            MobileTaskStatus.CANCELLED);
-    assertThat(groups.get(0).tasks()).extracting(MobileTaskCard::id).containsExactly(todoId);
-    assertThat(groups.get(1).tasks()).extracting(MobileTaskCard::id).containsExactly(inProgressId);
+            MobileTaskStatus.CANCELLED,
+            MobileTaskStatus.BACKLOG);
+    assertThat(groups.get(0).tasks()).extracting(MobileTaskCard::id).containsExactly(inProgressId);
+    assertThat(groups.get(1).tasks()).extracting(MobileTaskCard::id).containsExactly(todoId);
     assertThat(groups.get(2).tasks()).isEmpty();
-    assertThat(groups.get(3).tasks()).extracting(MobileTaskCard::id).containsExactly(backlogId);
-    assertThat(groups.get(4).tasks()).extracting(MobileTaskCard::id).containsExactly(cancelledId);
+    assertThat(groups.get(3).tasks()).extracting(MobileTaskCard::id).containsExactly(cancelledId);
+    assertThat(groups.get(4).tasks()).extracting(MobileTaskCard::id).containsExactly(backlogId);
   }
 
   @Test
@@ -127,7 +127,8 @@ class ProjectTaskServiceTest {
     when(taskReader.listTasksByStatus(eq(PROJECT_ID), any()))
         .thenReturn(List.of(new BoardTask(taskId, "긴급 태스크", "todo", "urgent", "pm", CREATED_AT)));
 
-    MobileTaskCard card = projectTaskService.getBoard(PROJECT_ID, CALLER_ID).get(0).tasks().get(0);
+    MobileTaskCard card =
+        cardsOf(projectTaskService.getBoard(PROJECT_ID, CALLER_ID), MobileTaskStatus.TODO).get(0);
 
     assertThat(card.priority()).isEqualTo("high");
     assertThat(card.role()).isEqualTo("pm");
@@ -146,7 +147,8 @@ class ProjectTaskServiceTest {
     when(taskMaterialAssembler.countMaterials(WORKSPACE_ID, List.of(linked, unlinked)))
         .thenReturn(Map.of(linked, 2));
 
-    List<MobileTaskCard> cards = projectTaskService.getBoard(PROJECT_ID, CALLER_ID).get(0).tasks();
+    List<MobileTaskCard> cards =
+        cardsOf(projectTaskService.getBoard(PROJECT_ID, CALLER_ID), MobileTaskStatus.TODO);
 
     assertThat(cards)
         .extracting(MobileTaskCard::id, MobileTaskCard::materialCount)
@@ -497,6 +499,15 @@ class ProjectTaskServiceTest {
         CREATED_AT,
         CREATED_AT,
         0L);
+  }
+
+  private static List<MobileTaskCard> cardsOf(
+      List<MobileTaskGroup> groups, MobileTaskStatus status) {
+    return groups.stream()
+        .filter(group -> group.status() == status)
+        .findFirst()
+        .orElseThrow()
+        .tasks();
   }
 
   private static UserProfile profile(UUID id, String name) {
