@@ -22,7 +22,7 @@ interface ProjectTaskControllerDocs {
       operationId = "mobileGetTaskBoard",
       summary = "프로젝트 작업 보드 조회",
       description =
-          "태스크를 `in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서로 그룹화해 반환합니다. 태스크 수정 화면에서 다섯 가지"
+          "작업을 `in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서로 그룹화해 반환합니다. 작업 수정 화면에서 다섯 가지"
               + " 상태를 모두 지원하므로 보드 조회 응답에도 모든 상태 그룹을 포함합니다.")
   @ApiResponse(
       responseCode = "200",
