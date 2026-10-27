@@ -383,6 +383,8 @@ convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다�
 `materials`는 작업에 직접 연결된 소스이며, 메모리까지 포함하는 웹의 연결된 컨텍스트와는 다릅니다.
 설명은 최대 300자이며, 모바일 작업 생성·수정 요청의 업무 역할은 필수입니다.
 
+마감일은 `due_date` 필드로 반환하며, 설정되지 않은 경우 `null`입니다. 날짜 표시 형식과 요일 계산은 모바일 앱에서 처리합니다.
+
 ### PATCH /api/mobile/tasks/{taskId}
 
 작업 수정 화면에서 편집한 필드를 저장합니다. 요청은 리소스 전체가 아니라 편집 가능한 필드 전체(title, role, assignee_id, priority, status, purpose, checklist_items)를 담고, 서버가 관리하는 필드(materials, open_questions, next_action)는 요청에 없어 그대로 유지합니다. title, role, priority, status는 항상 채워 보냅니다. title은 생성과 달리 빈 문자열을 허용하고, title을 빈 문자열로 보내면 상세 화면이 '새 작업'으로 표시합니다.

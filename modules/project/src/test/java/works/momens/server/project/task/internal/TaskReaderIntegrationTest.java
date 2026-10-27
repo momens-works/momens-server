@@ -156,6 +156,7 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
             TaskPriority.URGENT,
             TaskRole.BACKEND);
     setDetailColumns(taskId, "이번 범위의 화면 흐름을 정리한다", assigneeId);
+    setAssigneeAndDueDate(taskId, assigneeId, "2026-09-25");
     // position 역순으로 넣어 조회 순서가 삽입 순서가 아니라 position 기준임을 확인한다.
     insertChecklistItem(taskId, "두 번째 완료기준", true, 1);
     insertChecklistItem(taskId, "첫 번째 완료기준", false, 0);
@@ -169,6 +170,7 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     assertThat(detail.priority()).isEqualTo("urgent");
     assertThat(detail.role()).isEqualTo("backend");
     assertThat(detail.assigneeId()).isEqualTo(assigneeId);
+    assertThat(detail.dueDate()).isEqualTo(LocalDate.parse("2026-09-25"));
     assertThat(detail.description()).isEqualTo("이번 범위의 화면 흐름을 정리한다");
     assertThat(detail.checklistItems())
         .extracting(TaskDetail.ChecklistItem::title)
