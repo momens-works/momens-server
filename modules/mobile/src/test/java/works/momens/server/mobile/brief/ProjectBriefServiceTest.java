@@ -357,7 +357,7 @@ class ProjectBriefServiceTest {
   }
 
   private static BoardTask task(UUID id, String title, String priority, String createdAt) {
-    return new BoardTask(id, title, "todo", priority, "pm", Instant.parse(createdAt));
+    return new BoardTask(id, title, "todo", priority, "pm", null, null, Instant.parse(createdAt));
   }
 
   private static ProjectSnapshot snapshot() {

@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -66,6 +67,7 @@ class ProjectTaskServiceTest {
   private static final UUID CALLER_ID = UUID.randomUUID();
   private static final Instant CREATED_AT = Instant.parse("2026-07-01T00:00:00Z");
   private static final UUID TASK_ID = UUID.randomUUID();
+  private static final LocalDate DUE_DATE = LocalDate.of(2026, 9, 25);
 
   @Test
   void getBoardThrowsProjectNotFoundWhenProjectMissing() {
@@ -98,10 +100,13 @@ class ProjectTaskServiceTest {
     when(taskReader.listTasksByStatus(eq(PROJECT_ID), any()))
         .thenReturn(
             List.of(
-                new BoardTask(backlogId, "백로그 태스크", "backlog", "medium", "pm", CREATED_AT),
-                new BoardTask(todoId, "투두 태스크", "todo", "low", "frontend", CREATED_AT),
-                new BoardTask(inProgressId, "진행중 태스크", "in_progress", "medium", "pm", CREATED_AT),
-                new BoardTask(cancelledId, "취소 태스크", "cancelled", "high", "pm", CREATED_AT)));
+                new BoardTask(
+                    backlogId, "백로그 태스크", "backlog", "medium", "pm", null, null, CREATED_AT),
+                new BoardTask(todoId, "투두 태스크", "todo", "low", "frontend", null, null, CREATED_AT),
+                new BoardTask(
+                    inProgressId, "진행중 태스크", "in_progress", "medium", "pm", null, null, CREATED_AT),
+                new BoardTask(
+                    cancelledId, "취소 태스크", "cancelled", "high", "pm", null, null, CREATED_AT)));
 
     List<MobileTaskGroup> groups = projectTaskService.getBoard(PROJECT_ID, CALLER_ID);
 
@@ -121,11 +126,66 @@ class ProjectTaskServiceTest {
   }
 
   @Test
+  void getBoardFillsAssigneeFromProfilesInOneBatch() {
+    stubMember();
+    UUID assigned = UUID.randomUUID();
+    UUID sameAssignee = UUID.randomUUID();
+    UUID unassigned = UUID.randomUUID();
+    UUID assigneeId = UUID.randomUUID();
+    when(taskReader.listTasksByStatus(eq(PROJECT_ID), any()))
+        .thenReturn(
+            List.of(
+                new BoardTask(
+                    assigned,
+                    "담당자 있는 태스크",
+                    "todo",
+                    "medium",
+                    "pm",
+                    assigneeId,
+                    DUE_DATE,
+                    CREATED_AT),
+                new BoardTask(
+                    sameAssignee,
+                    "담당자가 같은 태스크",
+                    "todo",
+                    "medium",
+                    "pm",
+                    assigneeId,
+                    null,
+                    CREATED_AT),
+                new BoardTask(
+                    unassigned, "담당자 없는 태스크", "todo", "medium", "pm", null, null, CREATED_AT)));
+    when(userService.getProfiles(List.of(assigneeId)))
+        .thenReturn(
+            List.of(
+                new UserProfile(
+                    assigneeId,
+                    "board-assignee@momens.works",
+                    "홍길동",
+                    null,
+                    null,
+                    CREATED_AT,
+                    CREATED_AT)));
+
+    List<MobileTaskCard> cards =
+        cardsOf(projectTaskService.getBoard(PROJECT_ID, CALLER_ID), MobileTaskStatus.TODO);
+
+    assertThat(cards)
+        .extracting(MobileTaskCard::assignee, MobileTaskCard::dueDate)
+        .containsExactly(
+            tuple(new MobileTaskCard.Assignee(assigneeId, "홍길동"), DUE_DATE),
+            tuple(new MobileTaskCard.Assignee(assigneeId, "홍길동"), null),
+            tuple(null, null));
+  }
+
+  @Test
   void getBoardMapsUrgentToHigh() {
     stubMember();
     UUID taskId = UUID.randomUUID();
     when(taskReader.listTasksByStatus(eq(PROJECT_ID), any()))
-        .thenReturn(List.of(new BoardTask(taskId, "긴급 태스크", "todo", "urgent", "pm", CREATED_AT)));
+        .thenReturn(
+            List.of(
+                new BoardTask(taskId, "긴급 태스크", "todo", "urgent", "pm", null, null, CREATED_AT)));
 
     MobileTaskCard card =
         cardsOf(projectTaskService.getBoard(PROJECT_ID, CALLER_ID), MobileTaskStatus.TODO).get(0);
@@ -142,8 +202,9 @@ class ProjectTaskServiceTest {
     when(taskReader.listTasksByStatus(eq(PROJECT_ID), any()))
         .thenReturn(
             List.of(
-                new BoardTask(linked, "자료 있는 태스크", "todo", "medium", "pm", CREATED_AT),
-                new BoardTask(unlinked, "자료 없는 태스크", "todo", "medium", "pm", CREATED_AT)));
+                new BoardTask(linked, "자료 있는 태스크", "todo", "medium", "pm", null, null, CREATED_AT),
+                new BoardTask(
+                    unlinked, "자료 없는 태스크", "todo", "medium", "pm", null, null, CREATED_AT)));
     when(taskMaterialAssembler.countMaterials(WORKSPACE_ID, List.of(linked, unlinked)))
         .thenReturn(Map.of(linked, 2));
 

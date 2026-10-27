@@ -102,6 +102,8 @@ class TaskReaderImpl implements TaskReader {
         task.getStatus(),
         task.getPriority(),
         task.getRole(),
+        task.getAssigneeId(),
+        task.getDueDate(),
         task.getCreatedAt());
   }
 

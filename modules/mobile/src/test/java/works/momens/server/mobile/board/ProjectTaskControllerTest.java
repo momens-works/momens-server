@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.security.Principal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -41,6 +42,7 @@ class ProjectTaskControllerTest {
 
   private static final UUID USER_ID = UUID.fromString("5d2f7f3a-5db1-4f2c-8b9e-13607dd1f5e8");
   private static final UUID PROJECT_ID = UUID.fromString("30d9e9fe-f43b-4097-a88e-dc19f0a5b025");
+  private static final UUID ASSIGNEE_ID = UUID.fromString("9d4a5b1c-2e3f-4a5b-8c9d-0e1f2a3b4c5d");
   private final Principal principal = USER_ID::toString;
 
   @Test
@@ -51,7 +53,15 @@ class ProjectTaskControllerTest {
             List.of(
                 new MobileTaskGroup(
                     MobileTaskStatus.TODO,
-                    List.of(new MobileTaskCard(taskId, "투두 태스크", "frontend", "low", 2))),
+                    List.of(
+                        new MobileTaskCard(
+                            taskId,
+                            "투두 태스크",
+                            "frontend",
+                            new MobileTaskCard.Assignee(ASSIGNEE_ID, "홍길동"),
+                            "low",
+                            LocalDate.of(2026, 9, 25),
+                            2))),
                 new MobileTaskGroup(MobileTaskStatus.IN_PROGRESS, List.of()),
                 new MobileTaskGroup(MobileTaskStatus.DONE, List.of())));
 
@@ -68,6 +78,9 @@ class ProjectTaskControllerTest {
         .andExpect(jsonPath("$.groups[0].count").value(1))
         .andExpect(jsonPath("$.groups[0].tasks[0].id").value(taskId.toString()))
         .andExpect(jsonPath("$.groups[0].tasks[0].role").value("frontend"))
+        .andExpect(jsonPath("$.groups[0].tasks[0].assignee.id").value(ASSIGNEE_ID.toString()))
+        .andExpect(jsonPath("$.groups[0].tasks[0].assignee.name").value("홍길동"))
+        .andExpect(jsonPath("$.groups[0].tasks[0].due_date").value("2026-09-25"))
         .andExpect(jsonPath("$.groups[0].tasks[0].material_count").value(2))
         .andExpect(jsonPath("$.groups[1].tasks.length()").value(0));
   }

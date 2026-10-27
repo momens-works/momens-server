@@ -3,6 +3,7 @@ package works.momens.server.project.task.internal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import org.hibernate.exception.ConstraintViolationException;
@@ -112,8 +113,9 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
-  void listTasksByStatusReturnsNewestFirstWithRole() {
+  void listTasksByStatusReturnsNewestFirstWithStoredFields() {
     UUID ownerId = ProjectSeedSql.insertUser(entityManager, "order-owner@momens.works");
+    UUID assigneeId = ProjectSeedSql.insertUser(entityManager, "order-assignee@momens.works");
     UUID workspaceId = ProjectSeedSql.insertWorkspace(entityManager, "order");
     UUID projectId = ProjectSeedSql.insertProject(entityManager, workspaceId, ownerId);
 
@@ -126,11 +128,16 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     // 두 태스크의 created_at이 같으면 id 보조 정렬로 순서가 흔들리므로, 생성 시각을 다르게 고정해 정렬을 결정적으로 만든다.
     setCreatedAt(earlier, "2026-07-06T00:00:00Z");
     setCreatedAt(later, "2026-07-06T00:00:01Z");
+    setAssigneeAndDueDate(earlier, assigneeId, "2026-09-25");
 
     List<BoardTask> board = taskReader.listTasksByStatus(projectId, BOARD_STATUSES);
 
     assertThat(board).extracting(BoardTask::title).containsExactly("나중", "먼저");
     assertThat(board.get(1).role()).isEqualTo("backend");
+    assertThat(board.get(1).assigneeId()).isEqualTo(assigneeId);
+    assertThat(board.get(1).dueDate()).isEqualTo(LocalDate.parse("2026-09-25"));
+    assertThat(board.get(0).assigneeId()).isNull();
+    assertThat(board.get(0).dueDate()).isNull();
   }
 
   @Test
@@ -366,6 +373,18 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
                     null),
                 null))
         .getId();
+  }
+
+  private void setAssigneeAndDueDate(UUID taskId, UUID assigneeId, String dueDate) {
+    entityManager
+        .getEntityManager()
+        .createNativeQuery(
+            "UPDATE tasks SET assignee_id = ?1, due_date = CAST(?2 AS DATE) WHERE id = ?3")
+        .setParameter(1, assigneeId)
+        .setParameter(2, dueDate)
+        .setParameter(3, taskId)
+        .executeUpdate();
+    entityManager.clear();
   }
 
   private void setDetailColumns(UUID taskId, String description, UUID assigneeId) {

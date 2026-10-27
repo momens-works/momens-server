@@ -3,7 +3,9 @@ package works.momens.server.mobile.board;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -60,13 +62,14 @@ class ProjectTaskService {
     Map<UUID, Integer> materialCounts =
         taskMaterialAssembler.countMaterials(
             workspaceId, tasks.stream().map(BoardTask::id).toList());
+    Map<UUID, UserProfile> assignees = assigneeProfiles(tasks);
     Map<MobileTaskStatus, List<MobileTaskCard>> cardsByStatus =
         tasks.stream()
             .collect(
                 Collectors.groupingBy(
                     task -> MobileTaskStatus.of(storedStatus(task.status())),
                     Collectors.mapping(
-                        task -> toCard(task, materialCounts.getOrDefault(task.id(), 0)),
+                        task -> toCard(task, materialCounts.getOrDefault(task.id(), 0), assignees),
                         Collectors.toList())));
     return Arrays.stream(MobileTaskStatus.values())
         .map(status -> new MobileTaskGroup(status, cardsByStatus.getOrDefault(status, List.of())))
@@ -203,12 +206,31 @@ class ProjectTaskService {
     return TaskStatus.from(value).orElseThrow(IllegalStateException::new);
   }
 
-  private static MobileTaskCard toCard(BoardTask task, int materialCount) {
+  /**
+   * 카드에 표시할 담당자 이름을 조회하기 위해 user 모듈의 공개 계약을 한 번 호출합니다. 담당자가 지정된 카드가 없으면 호출하지 않습니다.
+   *
+   * <p>조회되지 않은 담당자 식별자는 결과에서 제외하며, 해당 카드의 담당자는 {@code null}로 반환합니다. 상세 조회와 달리 목록 조회에서는 특정 담당자 정보를
+   * 조회하지 못하더라도 전체 조회를 실패 처리하지 않습니다.
+   */
+  private Map<UUID, UserProfile> assigneeProfiles(List<BoardTask> tasks) {
+    List<UUID> assigneeIds =
+        tasks.stream().map(BoardTask::assigneeId).filter(Objects::nonNull).distinct().toList();
+    return assigneeIds.isEmpty()
+        ? Map.of()
+        : userService.getProfiles(assigneeIds).stream()
+            .collect(Collectors.toMap(UserProfile::id, Function.identity()));
+  }
+
+  private static MobileTaskCard toCard(
+      BoardTask task, int materialCount, Map<UUID, UserProfile> assignees) {
+    UserProfile assignee = task.assigneeId() == null ? null : assignees.get(task.assigneeId());
     return new MobileTaskCard(
         task.id(),
         task.title(),
         task.role(),
+        assignee == null ? null : new MobileTaskCard.Assignee(assignee.id(), assignee.name()),
         MobileTaskPriority.fromStored(task.priority()).key(),
+        task.dueDate(),
         materialCount);
   }
 }
