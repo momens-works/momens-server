@@ -2637,6 +2637,15 @@
             "example" : "ready",
             "type" : "string"
           },
+          "due_date" : {
+            "description" : "마감일. 미설정 시 null",
+            "example" : "2026-09-25",
+            "format" : "date",
+            "type" : [
+              "string",
+              "null"
+            ]
+          },
           "id" : {
             "description" : "작업 식별자",
             "format" : "uuid",

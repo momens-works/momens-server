@@ -168,6 +168,7 @@ class ProjectTaskService {
         detail.role(),
         toAssignee(detail.assigneeId()),
         MobileTaskPriority.fromStored(detail.priority()).key(),
+        detail.dueDate(),
         detail.description(),
         detail.checklistItems(),
         taskMaterialAssembler.getMaterials(detail.workspaceId(), detail.id()),

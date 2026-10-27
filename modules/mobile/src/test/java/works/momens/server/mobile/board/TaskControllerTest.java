@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.security.Principal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,8 @@ class TaskControllerTest {
   private static final UUID MATERIAL_ID = UUID.fromString("9f1c2b3a-4d5e-4f60-8a71-2b3c4d5e6f70");
   private static final Instant OCCURRED_AT = Instant.parse("2026-06-28T00:48:00Z");
   private static final UUID QUESTION_ID = UUID.fromString("3f2a1b4c-5d6e-4f70-8a91-b2c3d4e5f6a7");
+  private static final LocalDate DUE_DATE = LocalDate.of(2026, 9, 25);
+
   private final Principal principal = USER_ID::toString;
 
   @Test
@@ -68,6 +71,7 @@ class TaskControllerTest {
                     new MobileTaskDetail.Assignee(
                         assigneeId, "김규일", "https://lh3.googleusercontent.com/a/gyuil"),
                     "medium",
+                    DUE_DATE,
                     "이번 범위의 화면 흐름을 정리한다",
                     List.of(
                         new TaskDetail.ChecklistItem(doneItemId, "완료된 기준", true),
@@ -97,6 +101,7 @@ class TaskControllerTest {
         .andExpect(
             jsonPath("$.assignee.avatar_url").value("https://lh3.googleusercontent.com/a/gyuil"))
         .andExpect(jsonPath("$.priority").value("medium"))
+        .andExpect(jsonPath("$.due_date").value("2026-09-25"))
         .andExpect(jsonPath("$.purpose").value("이번 범위의 화면 흐름을 정리한다"))
         .andExpect(jsonPath("$.checklist.completed_count").value(1))
         .andExpect(jsonPath("$.checklist.total_count").value(2))
@@ -132,6 +137,7 @@ class TaskControllerTest {
                     "pm",
                     null,
                     "low",
+                    null,
                     null,
                     List.of(),
                     List.of(),
@@ -299,6 +305,7 @@ class TaskControllerTest {
                 "pm",
                 null,
                 "medium",
+                null,
                 null,
                 List.of(
                     new TaskDetail.ChecklistItem(itemId, "바꾼 기준", true),

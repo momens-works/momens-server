@@ -330,6 +330,7 @@ class ProjectTaskServiceTest {
             new MobileTaskDetail.Assignee(
                 assigneeId, "김규일", "https://lh3.googleusercontent.com/a/gyuil"));
     assertThat(result.priority()).isEqualTo("high");
+    assertThat(result.dueDate()).isEqualTo(DUE_DATE);
     assertThat(result.purpose()).isEqualTo("화면 흐름 정리");
     assertThat(result.checklistItems())
         .extracting(TaskDetail.ChecklistItem::title)
@@ -535,6 +536,7 @@ class ProjectTaskServiceTest {
         "urgent",
         "pm",
         assigneeId,
+        DUE_DATE,
         description,
         checklistItems,
         openQuestions,

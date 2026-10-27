@@ -2,6 +2,7 @@ package works.momens.server.mobile.board.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import works.momens.server.mobile.MobileDraftStatus;
@@ -32,6 +33,8 @@ public record TaskDetailResponse(
         String role,
     @Schema(description = "담당자. 미지정이면 null") AssigneeResponse assignee,
     @Schema(description = "우선순위. low/medium/high", example = "medium") String priority,
+    @Schema(description = "마감일. 미설정 시 null", example = "2026-09-25", nullable = true)
+        LocalDate dueDate,
     @Schema(description = "설명. 작성 전이면 null") String purpose,
     @Schema(description = "완료 기준") ChecklistResponse checklist,
     @Schema(description = "연결된 소스 목록. 연결된 소스가 없으면 빈 배열") List<MaterialResponse> materials,
@@ -107,6 +110,7 @@ public record TaskDetailResponse(
         detail.role(),
         assignee,
         detail.priority(),
+        detail.dueDate(),
         detail.purpose(),
         checklist,
         materials,
