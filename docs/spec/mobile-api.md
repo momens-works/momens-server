@@ -332,6 +332,10 @@ id를 기준으로 하기 때문에, 페이지 사이에 시그널이 처리되�
 
 보드는 `in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서로 다섯 개의 상태 그룹을 노출합니다. 다섯 그룹은 작업이 없어도 항상 포함하며 그때 tasks는 빈 배열입니다. 각 그룹의 count는 tasks 배열 길이와 같습니다. priority는 low, medium, high로 반환하고, 저장된 값이 레거시 전용인 urgent이면 high로 반환합니다(2026-07-06 가결정). material_count는 작업에 연결된 소스 수이고, 연결이 없으면 0입니다. 웹에서 만든 작업은 업무 역할이 없어 role을 null로 반환합니다(레거시와 공유하는 tasks에서 role은 nullable이고, 모바일 생성 API는 role을 필수로 받습니다).
 
+담당자 정보는 저장된 `assignee_id`를 기준으로 조회하며, 사용자 식별자와 이름을 반환합니다. 담당자가 지정되지 않은 경우 `assignee`는 `null`입니다. 태스크 카드에는 담당자 이름만 표시하므로 상세 조회와 달리 프로필 이미지는 반환하지 않습니다.
+
+마감일은 `due_date`로 반환하며, 설정되지 않은 경우 `null`입니다. 날짜 표시 형식과 요일 계산은 모바일 앱에서 처리합니다.
+
 ### POST /api/mobile/projects/{projectId}/tasks
 
 일반 작업을 생성합니다.
