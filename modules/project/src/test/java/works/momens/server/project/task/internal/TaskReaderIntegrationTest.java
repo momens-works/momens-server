@@ -128,7 +128,7 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     // 두 태스크의 created_at이 같으면 id 보조 정렬로 순서가 흔들리므로, 생성 시각을 다르게 고정해 정렬을 결정적으로 만든다.
     setCreatedAt(earlier, "2026-07-06T00:00:00Z");
     setCreatedAt(later, "2026-07-06T00:00:01Z");
-    setAssigneeAndDueDate(earlier, assigneeId, "2026-09-25");
+    setDetailColumns(earlier, null, assigneeId, "2026-09-25");
 
     List<BoardTask> board = taskReader.listTasksByStatus(projectId, BOARD_STATUSES);
 
@@ -155,8 +155,7 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
             TaskStatus.TODO,
             TaskPriority.URGENT,
             TaskRole.BACKEND);
-    setDetailColumns(taskId, "이번 범위의 화면 흐름을 정리한다", assigneeId);
-    setAssigneeAndDueDate(taskId, assigneeId, "2026-09-25");
+    setDetailColumns(taskId, "이번 범위의 화면 흐름을 정리한다", assigneeId, "2026-09-25");
     // position 역순으로 넣어 조회 순서가 삽입 순서가 아니라 position 기준임을 확인한다.
     insertChecklistItem(taskId, "두 번째 완료기준", true, 1);
     insertChecklistItem(taskId, "첫 번째 완료기준", false, 0);
@@ -377,25 +376,16 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
         .getId();
   }
 
-  private void setAssigneeAndDueDate(UUID taskId, UUID assigneeId, String dueDate) {
+  private void setDetailColumns(UUID taskId, String description, UUID assigneeId, String dueDate) {
     entityManager
         .getEntityManager()
         .createNativeQuery(
-            "UPDATE tasks SET assignee_id = ?1, due_date = CAST(?2 AS DATE) WHERE id = ?3")
-        .setParameter(1, assigneeId)
-        .setParameter(2, dueDate)
-        .setParameter(3, taskId)
-        .executeUpdate();
-    entityManager.clear();
-  }
-
-  private void setDetailColumns(UUID taskId, String description, UUID assigneeId) {
-    entityManager
-        .getEntityManager()
-        .createNativeQuery("UPDATE tasks SET description = ?1, assignee_id = ?2 WHERE id = ?3")
+            "UPDATE tasks SET description = ?1, assignee_id = ?2, due_date = CAST(?3 AS DATE)"
+                + " WHERE id = ?4")
         .setParameter(1, description)
         .setParameter(2, assigneeId)
-        .setParameter(3, taskId)
+        .setParameter(3, dueDate)
+        .setParameter(4, taskId)
         .executeUpdate();
     entityManager.clear();
   }
