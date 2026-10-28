@@ -11,16 +11,18 @@ import works.momens.server.mobile.board.MobileTaskGroup;
  * 태스크가 없는 상태 그룹도 빈 배열로 포함합니다. urgent는 high로 표시하며 웹 태스크의 role은 null일 수 있습니다.
  *
  * <p>담당자와 마감일이 지정되지 않은 경우 해당 필드는 {@code null}로 반환합니다.
+ *
+ * <p>부제는 화면에 표시하지 않습니다. 기존 앱의 응답 DTO에서 기본값이 없는 필수 필드로 선언되어 있으므로, 하위 호환성을 위해 필드를 유지하고 빈 문자열을 반환합니다.
  */
 @Schema(description = "프로젝트 작업 보드 응답")
 public record TaskBoardResponse(
-    @Schema(description = "화면 제목", example = "프로젝트 작업") String title,
-    @Schema(description = "화면 안내 문구") String description,
+    @Schema(description = "화면 제목", example = "프로젝트 태스크") String title,
+    @Schema(description = "화면에 표시하지 않는 부제. 하위 호환성을 위해 필드를 유지하며, 항상 빈 문자열을 반환합니다.")
+        String description,
     @Schema(description = "상태별 작업 그룹 목록(`in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서)")
         List<GroupResponse> groups) {
 
-  private static final String BOARD_TITLE = "프로젝트 작업";
-  private static final String BOARD_DESCRIPTION = "작업을 한눈에 확인하고 상세 내용을 확인하세요.";
+  private static final String BOARD_TITLE = "프로젝트 태스크";
 
   @Schema(description = "상태 그룹")
   public record GroupResponse(
@@ -50,7 +52,7 @@ public record TaskBoardResponse(
 
   public static TaskBoardResponse from(List<MobileTaskGroup> groups) {
     return new TaskBoardResponse(
-        BOARD_TITLE, BOARD_DESCRIPTION, groups.stream().map(TaskBoardResponse::toGroup).toList());
+        BOARD_TITLE, "", groups.stream().map(TaskBoardResponse::toGroup).toList());
   }
 
   private static GroupResponse toGroup(MobileTaskGroup group) {
