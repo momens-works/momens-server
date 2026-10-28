@@ -71,7 +71,7 @@ class ProjectTaskControllerTest {
                 .principal(principal)
                 .header("API-Version", "1"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.title").value("프로젝트 작업"))
+        .andExpect(jsonPath("$.title").value("프로젝트 태스크"))
         .andExpect(jsonPath("$.groups.length()").value(3))
         .andExpect(jsonPath("$.groups[0].group_key").value("todo"))
         .andExpect(jsonPath("$.groups[0].label").value("할 일"))

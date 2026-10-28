@@ -2512,7 +2512,7 @@
         "description" : "프로젝트 작업 보드 응답",
         "properties" : {
           "description" : {
-            "description" : "화면 안내 문구",
+            "description" : "화면에 표시하지 않는 부제. 하위 호환성을 위해 필드를 유지하며, 항상 빈 문자열을 반환합니다.",
             "type" : "string"
           },
           "groups" : {
@@ -2524,7 +2524,7 @@
           },
           "title" : {
             "description" : "화면 제목",
-            "example" : "프로젝트 작업",
+            "example" : "프로젝트 태스크",
             "type" : "string"
           }
         }
