@@ -56,9 +56,9 @@ Signal type에 따라 앱이 다음처럼 화면 라벨을 정합니다. 이 라
 
 ### Task
 
-입력의 허용 값은 OpenAPI의 `CreateTaskRequest`·`UpdateTaskRequest`를 따릅니다.
-응답에서 `urgent`를 `high`로 표시하고 웹 작업의 미지정 `role`을 `null`로 반환하는 차이는
-아래 작업 조회 절을 참고합니다.
+입력값의 허용 범위는 OpenAPI의 `CreateTaskRequest`와 `UpdateTaskRequest`를 따릅니다.
+
+웹 태스크에서 지정되지 않은 `role`을 `null`로 반환하는 동작은 아래 작업 조회 절을 참고합니다.
 
 ### Membership
 
@@ -288,9 +288,8 @@ cancelled를 분모에서 제외하는 기준은 기획이 확정했습니다. �
 결정한 정책이며(ADR-0013), 추후 기획 확정에 따라 변경될 수 있습니다.
 
 `priorities`의 원천은 작업입니다. `title`은 작업 제목이고, `task_id`로 작업 상세로
-이동할 수 있습니다. 정렬은 `priority`가 높은 순(high, medium, low)이고, 같으면 생성이 오래된 순입니다(생성 시각
-오름차순, 생성 시각까지 같으면 id 오름차순으로 순서를 고정합니다). 저장된 값이 web에서 사용하는 urgent이면 high와
-같은 순위로 정렬합니다. 상위 4개까지만 담습니다. 화면의 "현재 우선순위 · N" 헤더 숫자는 배열 길이로 계산하며,
+이동할 수 있습니다. `priority` 내림차순(urgent, high, medium, low)으로 정렬합니다. 우선순위가 같으면 생성 시각 오름차순으로
+정렬하고, 생성 시각까지 같으면 id 오름차순으로 정렬해 순서를 고정합니다. 최대 4개까지 반환합니다. 화면의 "현재 우선순위 · N" 헤더 숫자는 배열 길이로 계산하며,
 배열 길이와 항상 같은 값이라 별도 개수 필드를 두지 않습니다. 후보는 진행 중인 todo와 in_progress 상태의
 작업이고 backlog와 done, cancelled는 제외합니다.
 
@@ -330,7 +329,7 @@ id를 기준으로 하기 때문에, 페이지 사이에 시그널이 처리되�
 
 프로젝트 작업 보드를 조회합니다.
 
-보드는 `in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서로 다섯 개의 상태 그룹을 노출합니다. 다섯 그룹은 작업이 없어도 항상 포함하며 그때 tasks는 빈 배열입니다. 각 그룹의 count는 tasks 배열 길이와 같습니다. priority는 low, medium, high로 반환하고, 저장된 값이 레거시 전용인 urgent이면 high로 반환합니다(2026-07-06 가결정). material_count는 작업에 연결된 소스 수이고, 연결이 없으면 0입니다. 웹에서 만든 작업은 업무 역할이 없어 role을 null로 반환합니다(레거시와 공유하는 tasks에서 role은 nullable이고, 모바일 생성 API는 role을 필수로 받습니다).
+보드는 `in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서로 다섯 개의 상태 그룹을 노출합니다. 다섯 그룹은 작업이 없어도 항상 포함하며 그때 tasks는 빈 배열입니다. 각 그룹의 count는 tasks 배열 길이와 같습니다. `priority`는 저장값을 변환 없이 반환하며, 허용 값은 urgent, high, medium, low입니다. material_count는 작업에 연결된 소스 수이고, 연결이 없으면 0입니다. 웹에서 만든 작업은 업무 역할이 없어 role을 null로 반환합니다(레거시와 공유하는 tasks에서 role은 nullable이고, 모바일 생성 API는 role을 필수로 받습니다).
 
 담당자 정보는 저장된 `assignee_id`를 기준으로 조회하며, 사용자 식별자와 이름을 반환합니다. 담당자가 지정되지 않은 경우 `assignee`는 `null`입니다. 태스크 카드에는 담당자 이름만 표시하므로 상세 조회와 달리 프로필 이미지는 반환하지 않습니다.
 
@@ -341,7 +340,7 @@ id를 기준으로 하기 때문에, 페이지 사이에 시그널이 처리되�
 일반 작업을 생성합니다.
 
 생성된 작업은 `todo`로 시작합니다. 생성 제목은 빈 문자열이거나 공백만으로 구성될 수 없습니다. 그 외 입력 검증은 OpenAPI의 `CreateTaskRequest`를 따릅니다.
-입력의 `urgent`는 그대로 저장하고 응답에서는 `high`로 표시합니다. 담당자·설명·완료 기준은
+입력된 `urgent`는 변환 없이 저장하며, 응답에도 동일한 값을 반환합니다. 담당자·설명·완료 기준은
 생성 입력에 포함하지 않고 생성 후 수정합니다.
 
 ### GET /api/mobile/tasks/{taskId}
@@ -377,7 +376,7 @@ convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다�
 담당자가 지정되지 않았으면 `assignee`는 `null`, 설명을 아직 작성하지 않았으면 `purpose`는 `null`입니다. 웹에서 만든 작업은 업무 역할이 없어 `role`도 `null`입니다. 담당자는 저장된 `assignee_id`를 기준으로 조회합니다. 현재 민수 draft 생성 결과는 title, role, priority만 갱신하며 담당자를 자동 지정하지 않습니다. `assignee.avatar_url`은 담당자의 구글 계정 프로필 이미지이고, 없으면 `null`입니다.
 완료 기준이 없으면 `checklist`는 `completed_count` 0, `total_count` 0, `items` 빈 배열입니다.
 `status`는 저장된 5종(backlog, todo, in_progress, done, cancelled)을 그대로 반환하고(상세 상태 칩이 5종 노출),
-`priority`는 보드와 같이 저장된 urgent를 high로 반환합니다. `purpose`는 레거시 `tasks.description`에 매핑됩니다.
+`priority`는 보드 응답과 동일하게 저장값을 변환 없이 반환합니다. `purpose`는 레거시 `tasks.description`에 매핑됩니다.
 
 설명·소스·질문·다음 행동의 JSON 키는 각각 `purpose`, `materials`, `open_questions`, `next_action`입니다.
 `materials`는 작업에 직접 연결된 소스이며, 메모리까지 포함하는 웹의 연결된 컨텍스트와는 다릅니다.
