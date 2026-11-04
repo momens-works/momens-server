@@ -36,8 +36,8 @@ import works.momens.server.workspace.membership.WorkspaceMembershipReader;
  * 모바일 태스크 표면(보드 조회, 생성, 상세 조회)의 조합 서비스입니다. project(태스크 도메인), workspace(멤버십), user(프로필), minsu(draft
  * 생성 상태) public API를 조합하고 도메인 정책을 소유하지 않습니다.
  *
- * <p>보드 그룹 구성과 상세의 purpose 개명은 모바일 조합 규칙이므로 이 서비스가 소유하고, 저장 priority 해석(urgent를 high로 반환)은 {@link
- * MobileTaskPriority}가 소유합니다.
+ * <p>보드 그룹 구성과 상세의 purpose 개명은 모바일 조합 규칙이므로 이 서비스가 소유하고, 저장된 priority의 모바일 응답 표기는 {@link
+ * MobileTaskPriority}에서 관리합니다.
  *
  * <p>태스크 관련자료 목록과 개수는 {@link TaskMaterialAssembler}에 위임합니다.
  *
@@ -167,7 +167,7 @@ class ProjectTaskService {
         detail.status(),
         detail.role(),
         toAssignee(detail.assigneeId()),
-        MobileTaskPriority.fromStored(detail.priority()).key(),
+        MobileTaskPriority.key(detail.priority()),
         detail.dueDate(),
         detail.description(),
         detail.checklistItems(),
@@ -230,7 +230,7 @@ class ProjectTaskService {
         task.title(),
         task.role(),
         assignee == null ? null : new MobileTaskCard.Assignee(assignee.id(), assignee.name()),
-        MobileTaskPriority.fromStored(task.priority()).key(),
+        MobileTaskPriority.key(task.priority()),
         task.dueDate(),
         materialCount);
   }

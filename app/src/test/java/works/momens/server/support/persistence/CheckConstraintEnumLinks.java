@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import works.momens.server.mcp.grant.McpScope;
-import works.momens.server.mobile.MobileTaskPriority;
 import works.momens.server.notification.PushInstallationPlatform;
 import works.momens.server.project.blocker.BlockedEntityType;
 import works.momens.server.project.blocker.BlockerStatus;
@@ -101,11 +100,6 @@ final class CheckConstraintEnumLinks {
               "origin_type",
               storedValues(TaskOrigin.values(), TaskOrigin::value),
               IntendedDifference.NONE),
-          new EnumLink(
-              "tasks",
-              "priority",
-              storedValues(MobileTaskPriority.values(), MobileTaskPriority::key),
-              IntendedDifference.onlyInConstraint("모바일은 urgent를 high로 해석합니다", "urgent")),
           new EnumLink(
               "tasks",
               "priority",

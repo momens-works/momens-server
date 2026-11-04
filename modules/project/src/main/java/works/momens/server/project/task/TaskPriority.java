@@ -3,7 +3,7 @@ package works.momens.server.project.task;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Optional;
 
-/** 저장 우선순위입니다. 모바일의 urgent → high 표기 변환은 모바일 경계에서 처리합니다. */
+/** 저장되는 태스크 우선순위입니다. 화면 표시 순서는 조회하는 클라이언트 모듈에서 결정합니다. */
 public enum TaskPriority {
   LOW("low"),
   MEDIUM("medium"),

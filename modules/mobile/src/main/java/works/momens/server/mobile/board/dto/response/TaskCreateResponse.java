@@ -14,7 +14,7 @@ public record TaskCreateResponse(@Schema(description = "생성된 작업") TaskR
       @Schema(description = "프로젝트 식별자") UUID projectId,
       @Schema(description = "제목") String title,
       @Schema(description = "업무 역할. pm/design/backend/frontend 중 하나", example = "pm") String role,
-      @Schema(description = "우선순위. low/medium/high", example = "medium") String priority,
+      @Schema(description = "우선순위 (urgent/high/medium/low)", example = "medium") String priority,
       @Schema(description = "상태", example = "todo") String status) {}
 
   public static TaskCreateResponse from(TaskSnapshot created) {
@@ -24,7 +24,7 @@ public record TaskCreateResponse(@Schema(description = "생성된 작업") TaskR
             created.projectId(),
             created.title(),
             created.role(),
-            MobileTaskPriority.fromStored(created.priority()).key(),
+            MobileTaskPriority.key(created.priority()),
             created.status()));
   }
 }

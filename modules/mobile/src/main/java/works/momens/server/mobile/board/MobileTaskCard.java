@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * 보드 카드 한 장. {@code priority}는 모바일 응답용으로 urgent를 high로 바꾼 값이다.
+ * 모바일 보드의 태스크 카드입니다. {@code priority}에는 저장값을 변환 없이 사용합니다.
  *
  * <p>{@code assignee}는 담당자가 지정되지 않은 경우 {@code null}이며, {@code dueDate}는 마감일이 지정되지 않은 경우 {@code
  * null}입니다.

@@ -123,8 +123,8 @@ class ProjectTaskControllerTest {
   }
 
   @Test
-  @DisplayName("urgent로 태스크를 생성하면 그대로 저장하고 응답에서는 high로 표시합니다")
-  void createTaskAcceptsUrgentAndRespondsHigh() throws Exception {
+  @DisplayName("urgent로 태스크를 생성하면 응답에도 urgent가 그대로 반환됩니다")
+  void createTaskReturnsStoredUrgent() throws Exception {
     UUID taskId = UUID.randomUUID();
     when(projectTaskService.createTask(
             eq(PROJECT_ID), eq(USER_ID), eq("제목"), any(), eq(TaskPriority.URGENT)))
@@ -157,7 +157,7 @@ class ProjectTaskControllerTest {
         .andExpect(jsonPath("$.task.id").value(taskId.toString()))
         .andExpect(jsonPath("$.task.project_id").value(PROJECT_ID.toString()))
         .andExpect(jsonPath("$.task.status").value("todo"))
-        .andExpect(jsonPath("$.task.priority").value("high"));
+        .andExpect(jsonPath("$.task.priority").value("urgent"));
   }
 
   @Test

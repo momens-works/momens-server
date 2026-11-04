@@ -179,7 +179,7 @@ class ProjectTaskServiceTest {
   }
 
   @Test
-  void getBoardMapsUrgentToHigh() {
+  void getBoardReturnsStoredUrgent() {
     stubMember();
     UUID taskId = UUID.randomUUID();
     when(taskReader.listTasksByStatus(eq(PROJECT_ID), any()))
@@ -190,7 +190,7 @@ class ProjectTaskServiceTest {
     MobileTaskCard card =
         cardsOf(projectTaskService.getBoard(PROJECT_ID, CALLER_ID), MobileTaskStatus.TODO).get(0);
 
-    assertThat(card.priority()).isEqualTo("high");
+    assertThat(card.priority()).isEqualTo("urgent");
     assertThat(card.role()).isEqualTo("pm");
   }
 
@@ -308,7 +308,7 @@ class ProjectTaskServiceTest {
   }
 
   @Test
-  void getTaskDetailJoinsAssigneeProfileAndMapsUrgentToHigh() {
+  void getTaskDetailJoinsAssigneeProfileAndReturnsStoredUrgent() {
     UUID assigneeId = UUID.randomUUID();
     when(taskReader.findScope(TASK_ID))
         .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
@@ -329,7 +329,7 @@ class ProjectTaskServiceTest {
         .isEqualTo(
             new MobileTaskDetail.Assignee(
                 assigneeId, "김규일", "https://lh3.googleusercontent.com/a/gyuil"));
-    assertThat(result.priority()).isEqualTo("high");
+    assertThat(result.priority()).isEqualTo("urgent");
     assertThat(result.dueDate()).isEqualTo(DUE_DATE);
     assertThat(result.purpose()).isEqualTo("화면 흐름 정리");
     assertThat(result.checklistItems())
@@ -374,7 +374,7 @@ class ProjectTaskServiceTest {
 
     MobileTaskDetail result = projectTaskService.getTaskDetail(TASK_ID, CALLER_ID).detail();
 
-    // 민수 산출물은 모바일 표기 매핑 없이 그대로 내려간다(priority의 urgent→high 매핑과 대비).
+    // 민수 산출물은 모바일 응답 표기 변환 없이 그대로 반환합니다.
     assertThat(result.openQuestions())
         .containsExactly(new TaskDetail.OpenQuestion(questionId, "권한 거부 시 대체 흐름을 둘지 검토 필요"));
     assertThat(result.nextAction()).isEqualTo("권한 거부 흐름을 PM과 확정하세요.");

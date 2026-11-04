@@ -59,8 +59,8 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
         .andExpect(jsonPath("$.groups[1].label").value("할 일"))
         .andExpect(jsonPath("$.groups[1].count").value(1))
         .andExpect(jsonPath("$.groups[1].tasks[0].title").value("긴급 투두"))
-        // 레거시에만 있는 urgent는 모바일 표기에서 high로 내린다.
-        .andExpect(jsonPath("$.groups[1].tasks[0].priority").value("high"))
+        // 저장된 urgent를 변환 없이 반환합니다.
+        .andExpect(jsonPath("$.groups[1].tasks[0].priority").value("urgent"))
         .andExpect(jsonPath("$.groups[1].tasks[0].role").value("frontend"))
         .andExpect(jsonPath("$.groups[1].tasks[0].material_count").value(0))
         .andExpect(jsonPath("$.groups[2].group_key").value("done"))
