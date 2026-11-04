@@ -56,11 +56,12 @@ class ProjectBriefService {
   private static final List<String> PRIORITY_STATUSES = List.of("todo", "in_progress");
 
   /**
-   * 우선순위 정렬. priority 높은 순이고, 같으면 생성 오래된 순, 생성 시각까지 같으면 id 순으로 고정합니다. id 비교는 canonical hex 문자열로
-   * 합니다. PostgreSQL uuid 정렬(바이트 순서)과 같아서 저장소 정렬과 어긋나지 않습니다(signal 커서와 같은 이유).
+   * 우선순위 정렬 기준입니다. {@link MobileTaskPriority}에 정의된 표시 순서에 따라 urgent를 가장 먼저 배치합니다. 우선순위가 같으면 생성 시각
+   * 오름차순으로 정렬하고, 생성 시각까지 같으면 id 오름차순으로 정렬합니다. id 비교는 canonical hex 문자열로 합니다. PostgreSQL uuid 정렬(바이트
+   * 순서)과 같아서 저장소 정렬과 어긋나지 않습니다(signal 커서와 같은 이유).
    */
   private static final Comparator<BoardTask> PRIORITY_ORDER =
-      Comparator.comparing((BoardTask task) -> MobileTaskPriority.fromStored(task.priority()))
+      Comparator.comparing(BoardTask::priority, MobileTaskPriority.displayOrder())
           .thenComparing(BoardTask::createdAt)
           .thenComparing(task -> task.id().toString());
 

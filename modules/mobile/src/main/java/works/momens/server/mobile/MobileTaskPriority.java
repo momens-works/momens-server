@@ -1,38 +1,35 @@
 package works.momens.server.mobile;
 
-import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import works.momens.server.project.task.TaskPriority;
 
 /**
- * 저장된 urgent는 앱 지원 전까지 high로 표시합니다. enum 선언 순서는 우선순위 정렬에도 사용합니다. 알 수 없는 저장값은 기본값으로 숨기지 않고 실패시킵니다.
+ * 모바일 응답의 우선순위 표기와 화면 표시 순서를 관리합니다. 허용 값 집합은 {@link TaskPriority}에서 관리하므로 중복 선언하지 않습니다.
+ *
+ * <p>저장값을 변환 없이 응답에 사용하며, 허용되지 않은 저장값은 기본값으로 대체하지 않고 예외를 발생시킵니다.
+ *
+ * <p>{@code DISPLAY_ORDER}는 브리프의 현재 우선순위 정렬에 사용하는 표시 순서입니다. enum 선언 순서가 변경되어도 정렬 결과가 유지되도록 별도 목록으로
+ * 정의합니다.
  */
-public enum MobileTaskPriority {
-  HIGH(TaskPriority.HIGH),
-  MEDIUM(TaskPriority.MEDIUM),
-  LOW(TaskPriority.LOW);
+public final class MobileTaskPriority {
 
-  private final TaskPriority taskPriority;
+  private static final List<TaskPriority> DISPLAY_ORDER =
+      List.of(TaskPriority.URGENT, TaskPriority.HIGH, TaskPriority.MEDIUM, TaskPriority.LOW);
 
-  MobileTaskPriority(TaskPriority taskPriority) {
-    this.taskPriority = taskPriority;
+  private MobileTaskPriority() {}
+
+  public static String key(String storedPriority) {
+    return from(storedPriority).value();
   }
 
-  public String key() {
-    return taskPriority.value();
+  public static Comparator<String> displayOrder() {
+    return Comparator.comparingInt(storedPriority -> DISPLAY_ORDER.indexOf(from(storedPriority)));
   }
 
-  /** 저장된 priority 문자열을 해석합니다. urgent는 high로 취급합니다. */
-  public static MobileTaskPriority fromStored(String storedPriority) {
-    TaskPriority stored =
-        TaskPriority.from(storedPriority)
-            .orElseThrow(
-                () -> new IllegalStateException("저장된 priority가 허용된 값이 아닙니다: " + storedPriority));
-    if (stored == TaskPriority.URGENT) {
-      return HIGH;
-    }
-    return Arrays.stream(values())
-        .filter(priority -> priority.taskPriority == stored)
-        .findFirst()
-        .orElseThrow();
+  private static TaskPriority from(String storedPriority) {
+    return TaskPriority.from(storedPriority)
+        .orElseThrow(
+            () -> new IllegalStateException("저장된 priority가 허용된 값이 아닙니다: " + storedPriority));
   }
 }

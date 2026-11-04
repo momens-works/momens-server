@@ -27,7 +27,7 @@ public record UpdateTaskRequest(
         @NotNull
         TaskRole role,
     @Schema(description = "담당자 식별자. 생략하거나 null로 보내면 기존 담당자를 해제합니다.") UUID assigneeId,
-    @Schema(description = "우선순위. urgent도 그대로 저장하며 응답에서는 high로 표시합니다.", example = "medium") @NotNull
+    @Schema(description = "우선순위 (urgent/high/medium/low 중 하나)", example = "medium") @NotNull
         TaskPriority priority,
     @Schema(
             description =

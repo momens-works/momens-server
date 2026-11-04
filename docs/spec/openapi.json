@@ -684,7 +684,7 @@
         "description" : "일반 작업 생성 요청",
         "properties" : {
           "priority" : {
-            "description" : "우선순위. urgent도 그대로 저장하며 응답에서는 high로 표시합니다.",
+            "description" : "우선순위 (urgent/high/medium/low 중 하나)",
             "enum" : [
               "low",
               "medium",
@@ -2569,7 +2569,7 @@
             "type" : "integer"
           },
           "priority" : {
-            "description" : "우선순위. low/medium/high",
+            "description" : "우선순위 (urgent/high/medium/low)",
             "example" : "low",
             "type" : "string"
           },
@@ -2673,7 +2673,7 @@
             "type" : "array"
           },
           "priority" : {
-            "description" : "우선순위. low/medium/high",
+            "description" : "우선순위 (urgent/high/medium/low)",
             "example" : "medium",
             "type" : "string"
           },
@@ -2720,7 +2720,7 @@
             "type" : "string"
           },
           "priority" : {
-            "description" : "우선순위. low/medium/high",
+            "description" : "우선순위 (urgent/high/medium/low)",
             "example" : "medium",
             "type" : "string"
           },
@@ -2904,7 +2904,7 @@
             "type" : "array"
           },
           "priority" : {
-            "description" : "우선순위. urgent도 그대로 저장하며 응답에서는 high로 표시합니다.",
+            "description" : "우선순위 (urgent/high/medium/low 중 하나)",
             "enum" : [
               "low",
               "medium",

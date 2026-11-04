@@ -32,7 +32,7 @@ public record TaskDetailResponse(
             nullable = true)
         String role,
     @Schema(description = "담당자. 미지정이면 null") AssigneeResponse assignee,
-    @Schema(description = "우선순위. low/medium/high", example = "medium") String priority,
+    @Schema(description = "우선순위 (urgent/high/medium/low)", example = "medium") String priority,
     @Schema(description = "마감일. 미설정 시 null", example = "2026-09-25", nullable = true)
         LocalDate dueDate,
     @Schema(description = "설명. 작성 전이면 null") String purpose,

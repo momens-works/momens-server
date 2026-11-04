@@ -8,7 +8,7 @@ import works.momens.server.mobile.board.MobileTaskCard;
 import works.momens.server.mobile.board.MobileTaskGroup;
 
 /**
- * 태스크가 없는 상태 그룹도 빈 배열로 포함합니다. urgent는 high로 표시하며 웹 태스크의 role은 null일 수 있습니다.
+ * 태스크가 없는 상태 그룹도 빈 배열로 반환합니다. 웹 태스크의 role은 null일 수 있습니다.
  *
  * <p>담당자와 마감일이 지정되지 않은 경우 해당 필드는 {@code null}로 반환합니다.
  *
@@ -41,7 +41,7 @@ public record TaskBoardResponse(
               nullable = true)
           String role,
       @Schema(description = "담당자 정보. 미지정 시 null") AssigneeResponse assignee,
-      @Schema(description = "우선순위. low/medium/high", example = "low") String priority,
+      @Schema(description = "우선순위 (urgent/high/medium/low)", example = "low") String priority,
       @Schema(description = "마감일. 미설정 시 null", example = "2026-09-25", nullable = true)
           LocalDate dueDate,
       @Schema(description = "연결된 소스 수") int materialCount) {}
