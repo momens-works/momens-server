@@ -22,12 +22,12 @@ class OpenApiVersionDefaultCustomizerTest {
   }
 
   @Test
-  void preservesAbsentDefault() {
+  void fillsAbsentDefault() {
     StringSchema schema = new StringSchema();
 
     customize(schema);
 
-    assertThat(schema.getDefault()).isNull();
+    assertThat(schema.getDefault()).isEqualTo("1");
   }
 
   private void customize(StringSchema schema) {

@@ -67,7 +67,8 @@ public class OpenApiConfig {
 
   @Bean
   public OpenApiCustomizer apiVersionDefaultCustomizer() {
-    // Spring MVC는 기본 버전 1을 1.0.0으로 정규화하지만, 헤더의 정본 표기는 1이다.
+    // springdoc 3.2.0부터 API-Version 헤더 스키마에 default가 자동 생성되지 않으므로,
+    // 이 커스터마이저에서 기본값을 1로 직접 설정합니다.
     return openApi ->
         openApi.getPaths().values().stream()
             .flatMap(path -> path.readOperations().stream())
@@ -78,7 +79,6 @@ public class OpenApiConfig {
                 parameter ->
                     "API-Version".equals(parameter.getName()) && "header".equals(parameter.getIn()))
             .map(Parameter::getSchema)
-            .filter(schema -> schema.getDefault() != null)
             .forEach(schema -> schema.setDefault("1"));
   }
 
