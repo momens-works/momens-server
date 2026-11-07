@@ -57,12 +57,17 @@ class TaskWriterImplTest {
     TaskSnapshot created =
         taskWriter.create(
             CreateTaskCommand.manual(
-                projectId, workspaceId, "권한 요청 점검", TaskRole.BACKEND, TaskPriority.HIGH));
+                projectId,
+                workspaceId,
+                "권한 요청 점검",
+                TaskStatus.BACKLOG,
+                TaskRole.BACKEND,
+                TaskPriority.HIGH));
 
     ArgumentCaptor<Task> captor = ArgumentCaptor.forClass(Task.class);
     verify(taskRepository).save(captor.capture());
     Task saved = captor.getValue();
-    assertThat(saved.getStatus()).isEqualTo("todo");
+    assertThat(saved.getStatus()).isEqualTo("backlog");
     assertThat(saved.getPriority()).isEqualTo("high");
     assertThat(saved.getRole()).isEqualTo("backend");
     assertThat(created.id()).isEqualTo(saved.getId());
@@ -80,7 +85,7 @@ class TaskWriterImplTest {
   }
 
   @Test
-  void createDefaultsMissingPriorityAndKeepsSignalOrigin() {
+  void createKeepsSignalStatusAndOriginAndDefaultsMissingPriority() {
     UUID projectId = UUID.randomUUID();
     UUID workspaceId = UUID.randomUUID();
     UUID signalId = UUID.randomUUID();
@@ -89,8 +94,9 @@ class TaskWriterImplTest {
     TaskSnapshot created =
         taskWriter.create(
             CreateTaskCommand.fromSignal(
-                projectId, workspaceId, "제목", TaskRole.PM, null, signalId));
+                projectId, workspaceId, "제목", TaskStatus.IN_PROGRESS, TaskRole.PM, null, signalId));
 
+    assertThat(created.status()).isEqualTo("in_progress");
     assertThat(created.priority()).isEqualTo("medium");
     verify(outboxAppender)
         .append(
@@ -142,7 +148,8 @@ class TaskWriterImplTest {
     UUID workspaceId = UUID.randomUUID();
     Task task =
         Task.create(
-            CreateTaskCommand.manual(projectId, workspaceId, "기존", TaskRole.PM, TaskPriority.HIGH),
+            CreateTaskCommand.manual(
+                projectId, workspaceId, "기존", TaskStatus.TODO, TaskRole.PM, TaskPriority.HIGH),
             "MOM-0003");
     when(taskRepository.findForMutation(task.getId())).thenReturn(Optional.of(task));
 
@@ -178,7 +185,8 @@ class TaskWriterImplTest {
     UUID assigneeId = UUID.randomUUID();
     Task task =
         Task.create(
-            CreateTaskCommand.manual(projectId, workspaceId, "기존", TaskRole.PM, TaskPriority.HIGH),
+            CreateTaskCommand.manual(
+                projectId, workspaceId, "기존", TaskStatus.TODO, TaskRole.PM, TaskPriority.HIGH),
             "MOM-0004");
     when(taskRepository.findForMutation(task.getId())).thenReturn(Optional.of(task));
     when(workspaceMembershipReader.roleOf(workspaceId, assigneeId)).thenReturn(Optional.empty());
@@ -352,7 +360,12 @@ class TaskWriterImplTest {
   private Task newTask() {
     return Task.create(
         CreateTaskCommand.manual(
-            UUID.randomUUID(), UUID.randomUUID(), "첫 번째", TaskRole.PM, TaskPriority.HIGH),
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            "첫 번째",
+            TaskStatus.TODO,
+            TaskRole.PM,
+            TaskPriority.HIGH),
         "MOM-0005");
   }
 
