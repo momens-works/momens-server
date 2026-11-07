@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.tuple;
 
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -39,6 +40,7 @@ class UserServiceIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
+  @DisplayName("기존 사용자를 조회하면 이름을 유지하고 프로필 이미지를 갱신한다")
   void findOrCreateReusesExistingUserAndPreservesName() {
     UserProfile first = userService.findOrCreate("same@momens.works", "이전", null);
 
