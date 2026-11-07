@@ -131,6 +131,29 @@ class OpenApiRequestExampleTest extends AbstractPostgresIntegrationTest {
     assertThat(json.path("evidence").size()).as("evidence 3건이 그대로 실려야 한다").isEqualTo(3);
   }
 
+  @Test
+  void devSignalEvidenceDetailsPermitExplicitNull() throws Exception {
+    String body =
+        mockMvc
+            .perform(get("/api/v3/api-docs"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    JsonNode properties =
+        new ObjectMapper()
+            .readTree(body)
+            .path("components")
+            .path("schemas")
+            .path("CreateDevSignalEvidenceDetails")
+            .path("properties");
+    for (String field : List.of("target", "change", "impact")) {
+      List<String> types = new ArrayList<>();
+      properties.path(field).path("type").forEach(type -> types.add(type.asString()));
+      assertThat(types).as(field).containsExactlyInAnyOrder("string", "null");
+    }
+  }
+
   private JsonNode findParameter(JsonNode operation, String name) {
     for (JsonNode parameter : operation.path("parameters")) {
       if (name.equals(parameter.path("name").asString())) {

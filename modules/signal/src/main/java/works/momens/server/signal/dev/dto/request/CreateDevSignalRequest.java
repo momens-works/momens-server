@@ -43,8 +43,8 @@ public record CreateDevSignalRequest(
 
     @Schema(name = "CreateDevSignalEvidenceDetails", description = "근거의 대상·변화·영향(각 공백 포함 30자 이하)")
     public record Details(
-        @Schema(description = "대상") @Size(max = 30) String target,
-        @Schema(description = "변화") @Size(max = 30) String change,
-        @Schema(description = "영향") @Size(max = 30) String impact) {}
+        @Schema(description = "대상", nullable = true) @Size(max = 30) String target,
+        @Schema(description = "변화", nullable = true) @Size(max = 30) String change,
+        @Schema(description = "영향", nullable = true) @Size(max = 30) String impact) {}
   }
 }

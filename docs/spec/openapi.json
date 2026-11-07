@@ -533,19 +533,28 @@
             "description" : "변화",
             "maxLength" : 30,
             "minLength" : 0,
-            "type" : "string"
+            "type" : [
+              "string",
+              "null"
+            ]
           },
           "impact" : {
             "description" : "영향",
             "maxLength" : 30,
             "minLength" : 0,
-            "type" : "string"
+            "type" : [
+              "string",
+              "null"
+            ]
           },
           "target" : {
             "description" : "대상",
             "maxLength" : 30,
             "minLength" : 0,
-            "type" : "string"
+            "type" : [
+              "string",
+              "null"
+            ]
           }
         }
       },
