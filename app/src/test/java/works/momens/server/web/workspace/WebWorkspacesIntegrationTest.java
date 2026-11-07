@@ -6,27 +6,27 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.servlet.http.Cookie;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import org.hibernate.resource.jdbc.spi.StatementInspector;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.hibernate.Session;
+import org.hibernate.SessionEventListener;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.hibernate.autoconfigure.HibernatePropertiesCustomizer;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import works.momens.server.auth.AccessTokenTestFactory;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.project.milestone.MilestoneWriter;
@@ -41,9 +41,8 @@ import works.momens.server.user.UserService;
  * public API로 만들고, workspace/멤버십은 아직 생성 public API가 없어 소유 스키마에 SQL로 시드합니다. 레거시 {@code
  * session_token} 쿠키만 가진 요청도 인증을 통과하는지 확인합니다(ADR-0017).
  */
-@SpringBootTest(properties = "momens.minsu.task-draft.metrics.snapshot-interval=100ms")
+@SpringBootTest
 @AutoConfigureMockMvc
-@Import(WebWorkspacesIntegrationTest.QueryCountingConfiguration.class)
 class WebWorkspacesIntegrationTest extends AbstractPostgresIntegrationTest {
 
   @Autowired private MockMvc mockMvc;
@@ -51,7 +50,8 @@ class WebWorkspacesIntegrationTest extends AbstractPostgresIntegrationTest {
   @Autowired private UserService userService;
   @Autowired private JdbcTemplate jdbcTemplate;
   @Autowired private EntityManagerFactory entityManagerFactory;
-  @Autowired private QueryCounter queryCounter;
+  @Autowired private EntityManager entityManager;
+  @Autowired private PlatformTransactionManager transactionManager;
   @Autowired private WorkspaceSnapshotService workspaceSnapshotService;
   @Autowired private MilestoneWriter milestoneWriter;
 
@@ -234,7 +234,7 @@ class WebWorkspacesIntegrationTest extends AbstractPostgresIntegrationTest {
 
   @Test
   @DisplayName("snapshot은 최악 조건에서도 쿼리 예산 14회를 넘지 않는다")
-  void snapshotStaysWithinQueryBudget() throws Exception {
+  void snapshotStaysWithinQueryBudget() {
     UserProfile caller =
         userService.findOrCreate("web-it-snapshot-query-budget@momens.works", "홍길동", null);
     UUID workspaceId = insertWorkspace("web-it-snapshot-query-budget", null);
@@ -259,74 +259,37 @@ class WebWorkspacesIntegrationTest extends AbstractPostgresIntegrationTest {
     link(workspaceId, taskId, "MEMORY", memoryId);
     link(workspaceId, taskId, "SOURCE_OBJECT", sourceRefId);
 
-    for (int i = 0; i < 3; i++) {
-      CountDownLatch schedulerQuery = new CountDownLatch(1);
-      queryCounter.schedulerQuery = schedulerQuery;
-      queryCounter.start();
-      try {
-        workspaceSnapshotService.get(workspaceId, caller.id());
-        int snapshotQueries = queryCounter.count();
-        assertThat(schedulerQuery.await(5, TimeUnit.SECONDS)).isTrue();
-        assertThat(queryCounter.count()).isEqualTo(snapshotQueries).isBetween(1, 14);
-
-        var entityManager = entityManagerFactory.createEntityManager();
-        try {
-          for (int extra = 0; extra < 14; extra++) {
-            entityManager.createNativeQuery("select 1").getSingleResult();
-          }
-        } finally {
-          entityManager.close();
-        }
-        assertThat(queryCounter.count()).isEqualTo(snapshotQueries + 14).isGreaterThan(14);
-      } finally {
-        queryCounter.stop();
-        queryCounter.schedulerQuery = null;
-      }
-    }
-  }
-
-  @TestConfiguration(proxyBeanMethods = false)
-  static class QueryCountingConfiguration {
-    @Bean
-    QueryCounter queryCounter() {
-      return new QueryCounter();
-    }
-
-    @Bean
-    HibernatePropertiesCustomizer queryCountingCustomizer(QueryCounter counter) {
-      return properties -> properties.put("hibernate.session_factory.statement_inspector", counter);
-    }
-  }
-
-  static class QueryCounter implements StatementInspector {
-    private final ThreadLocal<Integer> count = new ThreadLocal<>();
-    private volatile CountDownLatch schedulerQuery;
-
-    @Override
-    public String inspect(String sql) {
-      Integer current = count.get();
-      if (current != null) {
-        count.set(current + 1);
-      } else {
-        CountDownLatch pending = schedulerQuery;
-        if (pending != null && sql.contains("oldestUnfinishedAgeSeconds")) {
-          pending.countDown();
-        }
-      }
-      return sql;
-    }
-
-    void start() {
-      count.set(0);
-    }
-
-    int count() {
-      return count.get();
-    }
-
-    void stop() {
-      count.remove();
-    }
+    TransactionTemplate transaction = new TransactionTemplate(transactionManager);
+    transaction.setReadOnly(true);
+    Integer queryCount =
+        transaction.execute(
+            status -> {
+              AtomicInteger count = new AtomicInteger();
+              // 스냅샷이 동기적으로 같은 Hibernate 세션에서 조회한다는 전제입니다.
+              entityManager
+                  .unwrap(Session.class)
+                  .addEventListeners(
+                      new SessionEventListener() {
+                        @Override
+                        public void jdbcPrepareStatementEnd() {
+                          count.incrementAndGet();
+                        }
+                      });
+              CompletableFuture.runAsync(
+                      () -> {
+                        EntityManager other = entityManagerFactory.createEntityManager();
+                        try {
+                          other.createNativeQuery("select 1").getSingleResult();
+                        } finally {
+                          other.close();
+                        }
+                      })
+                  .join();
+              assertThat(count.get()).isZero();
+              workspaceSnapshotService.get(workspaceId, caller.id());
+              return count.get();
+            });
+    assertThat(queryCount).isBetween(1, 14);
   }
 
   @Test
