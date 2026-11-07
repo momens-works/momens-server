@@ -17,8 +17,9 @@ public interface UserService {
    * <p>이메일로 조회된 사용자에게 이미 다른 로그인 수단이 연결되어 있는 경우 {@link
    * UserErrorCode#USER_EMAIL_LINKED_TO_ANOTHER_IDENTITY}로 요청을 거부합니다(ADR-0016).
    *
-   * <p>이메일 기반으로 기존 사용자를 연결하는 로직은 외부 신원과 이메일 검증이 완료된 경우에만 동작합니다. 기존 사용자의 이름은 유지하고 프로필 이미지는 전달된 값으로
-   * 갱신합니다.
+   * <p>이메일 기반으로 기존 사용자를 연결하는 로직은 외부 신원과 이메일 검증이 완료된 경우에만 동작합니다.
+   *
+   * <p>기존 사용자의 이름은 유지하고 프로필 이미지는 전달된 값으로 갱신합니다.
    */
   UserProfile findOrCreateByIdentity(
       String provider, String providerUserId, String email, String name, String avatarUrl);
@@ -31,7 +32,10 @@ public interface UserService {
    */
   UserProfile findOrCreate(String email, String name, String avatarUrl);
 
-  /** email로 사용자 프로필을 조회합니다. 없으면 빈 {@link Optional}을 돌려줍니다. 읽기만 하므로 기존 프로필을 바꾸지 않습니다. */
+  /**
+   * email로 사용자 프로필을 조회합니다. 없으면 빈 {@link Optional}을 돌려줍니다. 읽기만 하므로 {@link #findOrCreate}와 달리 기존 프로필을
+   * 바꾸지 않습니다.
+   */
   Optional<UserProfile> findByEmail(String email);
 
   /** 사용자 프로필 조회. 없으면 {@link UserErrorCode#USER_NOT_FOUND}. */

@@ -83,7 +83,7 @@ class UserServiceImpl implements UserService {
         .getUserId();
   }
 
-  /** 로그인 시점의 최신 프로필을 반영합니다. 이메일은 충돌 시 건너뛰므로 별도 쿼리로 처리합니다. */
+  /** 로그인 시점의 프로필 이미지와 이메일을 반영합니다. 이메일은 충돌 시 건너뜁니다. */
   private UserProfile refreshProfile(UUID userId, String email, String avatarUrl) {
     User user = userRepository.findById(userId).orElseThrow(() -> notFound(userId));
     user.refreshLoginProfile(avatarUrl);
