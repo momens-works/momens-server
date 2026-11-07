@@ -59,7 +59,9 @@ public final class UpdateWebTaskRequest {
 
   private boolean dueDateSet;
 
-  @Schema(description = "작업 제목. 빈 문자열은 기존 값을 유지하며 null은 허용하지 않습니다.")
+  @Schema(
+      description = "작업 제목. 빈 문자열은 기존 값을 유지하며 null은 허용하지 않습니다.",
+      maxLength = TaskPolicy.TITLE_MAX_LENGTH)
   @JsonSetter("title")
   public void setTitle(String value) {
     title = value;
