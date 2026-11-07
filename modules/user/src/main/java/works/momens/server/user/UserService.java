@@ -18,6 +18,8 @@ public interface UserService {
    * UserErrorCode#USER_EMAIL_LINKED_TO_ANOTHER_IDENTITY}로 요청을 거부합니다(ADR-0016).
    *
    * <p>이메일 기반으로 기존 사용자를 연결하는 로직은 외부 신원과 이메일 검증이 완료된 경우에만 동작합니다.
+   *
+   * <p>기존 사용자의 이름은 유지하고 프로필 이미지는 전달된 값으로 갱신합니다.
    */
   UserProfile findOrCreateByIdentity(
       String provider, String providerUserId, String email, String name, String avatarUrl);
@@ -25,7 +27,8 @@ public interface UserService {
   /**
    * 로그인 수단 없이 이메일을 기준으로 사용자를 조회하거나 생성합니다.
    *
-   * <p>dev 전용 토큰 발급처럼 외부 신원을 사용하지 않는 경로에서 호출됩니다. 이 메서드로 생성된 사용자에는 로그인 수단이 연결되지 않습니다(ADR-0016).
+   * <p>dev 전용 토큰 발급처럼 외부 신원을 사용하지 않는 경로에서 호출됩니다. 이 메서드로 생성된 사용자에는 로그인 수단이 연결되지 않습니다(ADR-0016). 기존
+   * 사용자의 이름은 유지하고 프로필 이미지는 전달된 값으로 갱신합니다.
    */
   UserProfile findOrCreate(String email, String name, String avatarUrl);
 

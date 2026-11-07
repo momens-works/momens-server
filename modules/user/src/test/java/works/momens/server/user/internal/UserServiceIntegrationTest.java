@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.tuple;
 
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -39,7 +40,8 @@ class UserServiceIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
-  void findOrCreateReusesExistingUserAndRefreshesProfile() {
+  @DisplayName("기존 사용자를 조회하면 이름을 유지하고 프로필 이미지를 갱신한다")
+  void findOrCreateReusesExistingUserAndPreservesName() {
     UserProfile first = userService.findOrCreate("same@momens.works", "이전", null);
 
     // 로그인 요청마다 별도의 트랜잭션을 사용합니다.
@@ -52,7 +54,7 @@ class UserServiceIntegrationTest extends AbstractPostgresIntegrationTest {
     UserProfile second = userService.findOrCreate("same@momens.works", "변경", "https://a/y.png");
 
     assertThat(second.id()).isEqualTo(first.id());
-    assertThat(second.name()).isEqualTo("변경");
+    assertThat(second.name()).isEqualTo("이전");
     assertThat(second.avatarUrl()).isEqualTo("https://a/y.png");
 
     userRepository.deleteById(second.id());

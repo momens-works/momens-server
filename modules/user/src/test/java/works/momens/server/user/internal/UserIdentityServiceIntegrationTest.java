@@ -59,38 +59,49 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
   }
 
   @Test
-  @DisplayName("같은 sub으로 재로그인하면 동일한 users.id가 유지된다")
+  @DisplayName("같은 sub으로 재로그인하면 사용자 ID와 직접 수정한 이름이 유지된다")
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
   void keepsSameUserOnRelogin() {
     UserProfile first =
         userService.findOrCreateByIdentity(
             UserService.PROVIDER_GOOGLE, "sub-relogin", "relogin@momens.works", "이전", null);
+    try {
+      userService.updateProfile(first.id(), "직접 수정", null);
 
-    UserProfile second =
-        userService.findOrCreateByIdentity(
-            UserService.PROVIDER_GOOGLE,
-            "sub-relogin",
-            "relogin@momens.works",
-            "변경",
-            "https://a/y.png");
+      UserProfile second =
+          userService.findOrCreateByIdentity(
+              UserService.PROVIDER_GOOGLE,
+              "sub-relogin",
+              "relogin@momens.works",
+              "변경",
+              "https://a/y.png");
 
-    assertThat(second.id()).isEqualTo(first.id());
-    assertThat(second.name()).isEqualTo("변경");
-    assertThat(second.avatarUrl()).isEqualTo("https://a/y.png");
+      assertThat(second.id()).isEqualTo(first.id());
+      assertThat(second.name()).isEqualTo("직접 수정");
+      assertThat(second.avatarUrl()).isEqualTo("https://a/y.png");
+      assertThat(userService.getProfile(first.id()).name()).isEqualTo("직접 수정");
+    } finally {
+      new TransactionTemplate(transactionManager)
+          .executeWithoutResult(status -> userRepository.deleteById(first.id()));
+    }
   }
 
   @Test
-  @DisplayName("이메일이 변경되더라도 sub이 동일하면 동일 사용자로 식별하고 이메일을 갱신한다")
+  @DisplayName("이메일이 변경되어도 동일 사용자의 수정한 이름을 유지하고 이메일을 갱신한다")
   void keepsSameUserWhenEmailChanges() {
     UserProfile first =
         userService.findOrCreateByIdentity(
             UserService.PROVIDER_GOOGLE, "sub-email", "before@momens.works", "홍길동", null);
+    userService.updateProfile(first.id(), "직접 수정", null);
 
     UserProfile second =
         userService.findOrCreateByIdentity(
-            UserService.PROVIDER_GOOGLE, "sub-email", "after@momens.works", "홍길동", null);
+            UserService.PROVIDER_GOOGLE, "sub-email", "after@momens.works", "구글 이름", null);
 
     assertThat(second.id()).isEqualTo(first.id());
     assertThat(second.email()).isEqualTo("after@momens.works");
+    assertThat(second.name()).isEqualTo("직접 수정");
+    assertThat(userService.getProfile(first.id()).name()).isEqualTo("직접 수정");
   }
 
   @Test
@@ -103,7 +114,7 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
             UserService.PROVIDER_GOOGLE, "sub-legacy", "legacy@momens.works", "홍길동", null);
 
     assertThat(linked.id()).isEqualTo(existing.id());
-    assertThat(linked.name()).isEqualTo("홍길동");
+    assertThat(linked.name()).isEqualTo("기존");
     assertThat(
             userIdentityRepository
                 .findByProviderAndProviderUserId(UserService.PROVIDER_GOOGLE, "sub-legacy")
