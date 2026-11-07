@@ -1,17 +1,17 @@
 package works.momens.server.minsu.draft.generation;
 
-final class TaskTitleNormalizer {
+import works.momens.server.project.task.TaskTitlePolicy;
 
-  static final int MAX_LENGTH = 15;
+final class TaskTitleNormalizer {
 
   private TaskTitleNormalizer() {}
 
   static String normalize(String title) {
     String normalized = title == null ? "" : title.trim();
-    if (normalized.length() <= MAX_LENGTH) {
+    if (normalized.length() <= TaskTitlePolicy.MAX_LENGTH) {
       return normalized;
     }
-    int end = MAX_LENGTH;
+    int end = TaskTitlePolicy.MAX_LENGTH;
     if (Character.isHighSurrogate(normalized.charAt(end - 1))
         && Character.isLowSurrogate(normalized.charAt(end))) {
       end--;

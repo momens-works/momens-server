@@ -20,6 +20,7 @@ import works.momens.server.minsu.llm.ModelSelection;
 import works.momens.server.minsu.llm.ModelSelectionPolicy;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
+import works.momens.server.project.task.TaskTitlePolicy;
 
 /**
  * 한 번의 생성 시도. 동기 요청 경로와 비동기 실행 경로가 <b>같은</b> 코드를 쓴다.
@@ -127,7 +128,7 @@ class TaskDraftAttempt {
     String rawTitle = generated.title();
     boolean titleFallback = rawTitle == null || rawTitle.isBlank();
     String title = TaskTitleNormalizer.normalize(titleFallback ? input.title() : rawTitle);
-    boolean truncated = !titleFallback && rawTitle.trim().length() > TaskTitleNormalizer.MAX_LENGTH;
+    boolean truncated = !titleFallback && rawTitle.trim().length() > TaskTitlePolicy.MAX_LENGTH;
     GenerationOutcome outcome =
         titleFallback
             ? GenerationOutcome.GENERATED_TITLE_FALLBACK

@@ -44,6 +44,7 @@ import works.momens.server.minsu.llm.ModelSelection;
 import works.momens.server.minsu.llm.ModelSelectionPolicy;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
+import works.momens.server.project.task.TaskTitlePolicy;
 
 class DefaultSignalTaskDraftGeneratorTest {
 
@@ -89,24 +90,24 @@ class DefaultSignalTaskDraftGeneratorTest {
 
   @Test
   void truncatesTitleWithoutSplittingSurrogatePair() {
+    String head = "가".repeat(TaskTitlePolicy.MAX_LENGTH - 1);
     CapturingClient client =
-        responding(
-            success("{\"title\":\"12345678901234😀끝\",\"role\":\"pm\",\"priority\":\"low\"}"));
+        responding(success("{\"title\":\"" + head + "😀끝\",\"role\":\"pm\",\"priority\":\"low\"}"));
 
     TaskDraft result = generator(client, true, true).prepare(input()).draft();
 
-    assertThat(result.title()).isEqualTo("12345678901234").hasSizeLessThanOrEqualTo(15);
+    assertThat(result.title()).isEqualTo(head).hasSizeLessThanOrEqualTo(TaskTitlePolicy.MAX_LENGTH);
   }
 
   @Test
   void stripsTrailingSpaceAfterTruncatingTitle() {
+    String head = "가".repeat(TaskTitlePolicy.MAX_LENGTH - 1);
     CapturingClient client =
-        responding(
-            success("{\"title\":\"12345678901234 A\",\"role\":\"pm\",\"priority\":\"low\"}"));
+        responding(success("{\"title\":\"" + head + " A\",\"role\":\"pm\",\"priority\":\"low\"}"));
 
     TaskDraft result = generator(client, true, true).prepare(input()).draft();
 
-    assertThat(result.title()).isEqualTo("12345678901234").doesNotEndWith(" ");
+    assertThat(result.title()).isEqualTo(head).doesNotEndWith(" ");
   }
 
   @Test
@@ -119,7 +120,7 @@ class DefaultSignalTaskDraftGeneratorTest {
     TaskDraft result = generator(client, true, true).prepare(input).draft();
 
     assertThat(result)
-        .isEqualTo(new TaskDraft("123456789012345", TaskRole.DESIGN, TaskPriority.MEDIUM));
+        .isEqualTo(new TaskDraft("12345678901234567890", TaskRole.DESIGN, TaskPriority.MEDIUM));
   }
 
   @Test
