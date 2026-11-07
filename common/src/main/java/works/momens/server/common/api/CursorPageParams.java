@@ -1,7 +1,5 @@
 package works.momens.server.common.api;
 
-import java.util.Map;
-
 /**
  * cursor pagination 요청의 {@code cursor}와 {@code limit} query parameter를 해석한 결과입니다.
  *
@@ -24,8 +22,7 @@ public record CursorPageParams(String cursor, int pageSize) {
       return new CursorPageParams(position, defaultPageSize);
     }
     if (limit < 0) {
-      throw new BusinessException(
-          CommonErrorCode.COMMON_VALIDATION_FAILED, Map.of("limit", limit.toString()));
+      throw FieldValidationException.forField("limit");
     }
     return new CursorPageParams(position, limit);
   }

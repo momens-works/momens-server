@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
+import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.project.core.ProjectErrorCode;
 import works.momens.server.project.core.ProjectReader;
 import works.momens.server.signal.SignalListService;
@@ -147,8 +148,7 @@ class SignalListServiceImpl implements SignalListService {
         }
         return new Cursor(Instant.parse(parts[0]), UUID.fromString(parts[1]));
       } catch (RuntimeException e) {
-        throw new BusinessException(
-            CommonErrorCode.COMMON_VALIDATION_FAILED, Map.of("cursor", cursor));
+        throw FieldValidationException.forField("cursor");
       }
     }
 
