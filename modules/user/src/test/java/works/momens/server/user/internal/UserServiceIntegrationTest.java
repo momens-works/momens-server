@@ -39,7 +39,7 @@ class UserServiceIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
-  void findOrCreateReusesExistingUserAndRefreshesProfile() {
+  void findOrCreateReusesExistingUserAndPreservesName() {
     UserProfile first = userService.findOrCreate("same@momens.works", "이전", null);
 
     // 로그인 요청마다 별도의 트랜잭션을 사용합니다.
@@ -52,7 +52,7 @@ class UserServiceIntegrationTest extends AbstractPostgresIntegrationTest {
     UserProfile second = userService.findOrCreate("same@momens.works", "변경", "https://a/y.png");
 
     assertThat(second.id()).isEqualTo(first.id());
-    assertThat(second.name()).isEqualTo("변경");
+    assertThat(second.name()).isEqualTo("이전");
     assertThat(second.avatarUrl()).isEqualTo("https://a/y.png");
 
     userRepository.deleteById(second.id());

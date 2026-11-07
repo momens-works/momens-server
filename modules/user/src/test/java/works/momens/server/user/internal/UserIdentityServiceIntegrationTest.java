@@ -64,6 +64,7 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
     UserProfile first =
         userService.findOrCreateByIdentity(
             UserService.PROVIDER_GOOGLE, "sub-relogin", "relogin@momens.works", "이전", null);
+    userService.updateProfile(first.id(), "직접 수정", null);
 
     UserProfile second =
         userService.findOrCreateByIdentity(
@@ -74,8 +75,9 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
             "https://a/y.png");
 
     assertThat(second.id()).isEqualTo(first.id());
-    assertThat(second.name()).isEqualTo("변경");
+    assertThat(second.name()).isEqualTo("직접 수정");
     assertThat(second.avatarUrl()).isEqualTo("https://a/y.png");
+    assertThat(userService.getProfile(first.id()).name()).isEqualTo("직접 수정");
   }
 
   @Test
@@ -103,7 +105,7 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
             UserService.PROVIDER_GOOGLE, "sub-legacy", "legacy@momens.works", "홍길동", null);
 
     assertThat(linked.id()).isEqualTo(existing.id());
-    assertThat(linked.name()).isEqualTo("홍길동");
+    assertThat(linked.name()).isEqualTo("기존");
     assertThat(
             userIdentityRepository
                 .findByProviderAndProviderUserId(UserService.PROVIDER_GOOGLE, "sub-legacy")
