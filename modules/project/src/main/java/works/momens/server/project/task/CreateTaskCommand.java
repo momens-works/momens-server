@@ -44,13 +44,18 @@ public record CreateTaskCommand(
   }
 
   public static CreateTaskCommand manual(
-      UUID projectId, UUID workspaceId, String title, TaskRole role, TaskPriority priority) {
+      UUID projectId,
+      UUID workspaceId,
+      String title,
+      TaskStatus status,
+      TaskRole role,
+      TaskPriority priority) {
     return new CreateTaskCommand(
         projectId,
         workspaceId,
         title,
         null,
-        TaskStatus.TODO,
+        status,
         role,
         priority,
         null,
@@ -64,6 +69,7 @@ public record CreateTaskCommand(
       UUID projectId,
       UUID workspaceId,
       String title,
+      TaskStatus status,
       TaskRole role,
       TaskPriority priority,
       UUID signalId) {
@@ -72,7 +78,7 @@ public record CreateTaskCommand(
         workspaceId,
         title,
         null,
-        TaskStatus.TODO,
+        status,
         role,
         priority,
         null,

@@ -12,6 +12,7 @@ import works.momens.server.minsu.TaskDraft;
 import works.momens.server.outbox.OutboxAppender;
 import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.TaskSnapshot;
+import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.signal.SignalActionResult;
 import works.momens.server.signal.SignalReader;
@@ -52,6 +53,7 @@ class SignalActionExecutor {
                 signal.projectId(),
                 signal.workspaceId(),
                 draft.title(),
+                TaskStatus.TODO,
                 draft.role(),
                 draft.priority(),
                 signal.id()));

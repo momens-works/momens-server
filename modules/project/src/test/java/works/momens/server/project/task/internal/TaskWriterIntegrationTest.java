@@ -365,7 +365,12 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
             .saveAndFlush(
                 Task.create(
                     CreateTaskCommand.manual(
-                        projectId, workspaceId, "초기 제목", TaskRole.PM, TaskPriority.MEDIUM),
+                        projectId,
+                        workspaceId,
+                        "초기 제목",
+                        TaskStatus.TODO,
+                        TaskRole.PM,
+                        TaskPriority.MEDIUM),
                     null))
             .getId();
     return new Fixture(workspaceId, projectId, taskId);
