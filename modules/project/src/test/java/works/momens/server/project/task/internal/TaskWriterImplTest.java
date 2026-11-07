@@ -85,7 +85,7 @@ class TaskWriterImplTest {
   }
 
   @Test
-  void createDefaultsMissingPriorityAndKeepsSignalOrigin() {
+  void createKeepsSignalStatusAndOriginAndDefaultsMissingPriority() {
     UUID projectId = UUID.randomUUID();
     UUID workspaceId = UUID.randomUUID();
     UUID signalId = UUID.randomUUID();
