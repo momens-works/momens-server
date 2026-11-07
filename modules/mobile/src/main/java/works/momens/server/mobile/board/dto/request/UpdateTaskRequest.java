@@ -9,17 +9,17 @@ import java.util.List;
 import java.util.UUID;
 import tools.jackson.databind.annotation.JsonDeserialize;
 import works.momens.server.common.api.ExpectedVersionDeserializer;
+import works.momens.server.project.task.TaskPolicy;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskStatus;
-import works.momens.server.project.task.TaskTitlePolicy;
 
 /** 편집 상태 전체를 저장하므로 생략한 선택 필드는 삭제됩니다. 생성과 달리 빈 제목을 허용해 앱에서 새 작업으로 표시합니다. */
 @Schema(description = "작업 수정 요청")
 public record UpdateTaskRequest(
     @Schema(description = "태스크 제목. 필수 필드이며 빈 문자열을 허용합니다. 공백 포함 최대 70자.", example = "1차 와이어프레임")
         @NotNull
-        @Size(max = TaskTitlePolicy.MAX_LENGTH)
+        @Size(max = TaskPolicy.TITLE_MAX_LENGTH)
         String title,
     @Schema(
             description =
