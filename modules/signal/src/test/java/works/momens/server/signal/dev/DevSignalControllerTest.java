@@ -70,6 +70,25 @@ class DevSignalControllerTest {
   }
 
   @Test
+  @DisplayName("근거 상세의 명시적 null을 허용한다")
+  void acceptsNullEvidenceDetailsFields() throws Exception {
+    when(devSignalWriter.create(eq(PROJECT_ID), any())).thenReturn(UUID.randomUUID());
+
+    mockMvc
+        .perform(
+            post("/api/dev/projects/{projectId}/signals", PROJECT_ID)
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"type":"risk","title":"제목","description":"설명",
+                     "evidence":[{"source_type":"slack",
+                                  "details":{"target":null,"change":null,"impact":null}}]}
+                    """))
+        .andExpect(status().isCreated());
+  }
+
+  @Test
   @DisplayName("허용하지 않은 Signal type은 400으로 거부한다")
   void rejectsUnknownType() throws Exception {
     mockMvc
