@@ -13,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
-import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.common.api.ExpectedVersion;
 import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.outbox.OutboxAppender;
@@ -169,9 +168,7 @@ class TaskWriterImpl implements TaskWriter {
             Map.of("checklist_item_id", edit.id().toString()));
       }
       if (!seenIds.add(edit.id())) {
-        throw new BusinessException(
-            CommonErrorCode.COMMON_VALIDATION_FAILED,
-            Map.of("checklist_item_id", edit.id().toString()));
+        throw FieldValidationException.forField("checklist_items");
       }
     }
   }
