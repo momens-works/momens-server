@@ -10,6 +10,8 @@ import java.util.UUID;
  * assigneeId}는 담당자를 지정하면 값이, 비우면 null이 들어옵니다. 화면이 항상 전체를 보내기 때문에 null은 담당자 비우기 하나로만 해석합니다. {@code
  * checklistItems}는 완료기준 최종 목록이고, {@code purpose}는 저장 시 {@code description} 컬럼에 매핑됩니다. role,
  * priority, status는 각 호출 모듈의 요청 DTO에서 enum 타입으로 validation하며, 이 모듈은 저장을 책임집니다.
+ *
+ * <p>이 record에서 제목 길이를 직접 검증하며, 최대 길이를 초과하면 저장 전에 거부합니다.
  */
 public record UpdateTaskCommand(
     UUID taskId,
@@ -21,6 +23,10 @@ public record UpdateTaskCommand(
     String purpose,
     List<ChecklistItemEdit> checklistItems,
     Long version) {
+
+  public UpdateTaskCommand {
+    TaskPolicy.requireTitleWithinLimit(title);
+  }
 
   /**
    * 완료기준 한 항목의 수정 입력. id가 있으면 기존 항목, 없으면 새 항목입니다. {@code completed}는 수정 화면이 저장한 완료 상태로, 기존 항목이면 이

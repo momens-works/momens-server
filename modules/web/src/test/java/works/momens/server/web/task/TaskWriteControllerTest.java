@@ -30,6 +30,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.servlet.config.annotation.ApiVersionConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import works.momens.server.project.task.TaskPolicy;
 import works.momens.server.project.task.TaskSnapshot;
 import works.momens.server.project.taskupdate.TaskUpdateDetail;
 import works.momens.server.project.taskupdate.TaskUpdateKind;
@@ -79,6 +80,30 @@ class TaskWriteControllerTest {
                   .content("{\"title\":\"웹 태스크\",\"status\":\"" + status + "\"}"))
           .andExpect(status().isBadRequest());
     }
+    verifyNoInteractions(taskWriteService);
+  }
+
+  @Test
+  void rejectsTitleOverMaxLengthOnCreateAndUpdate() throws Exception {
+    String overMaxLength = "가".repeat(TaskPolicy.TITLE_MAX_LENGTH + 1);
+
+    mockMvc
+        .perform(
+            post("/api/projects/{projectId}/tasks", PROJECT_ID)
+                .principal(principal)
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"" + overMaxLength + "\"}"))
+        .andExpect(status().isBadRequest());
+    mockMvc
+        .perform(
+            patch("/api/tasks/{taskId}", TASK_ID)
+                .principal(principal)
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"" + overMaxLength + "\"}"))
+        .andExpect(status().isBadRequest());
+
     verifyNoInteractions(taskWriteService);
   }
 

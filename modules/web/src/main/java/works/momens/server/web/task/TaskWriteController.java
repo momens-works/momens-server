@@ -1,5 +1,6 @@
 package works.momens.server.web.task;
 
+import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +34,7 @@ class TaskWriteController implements TaskWriteControllerDocs {
   @ResponseStatus(HttpStatus.CREATED)
   public WebTaskResponse create(
       @PathVariable UUID projectId,
-      @RequestBody CreateWebTaskRequest request,
+      @Valid @RequestBody CreateWebTaskRequest request,
       Principal principal) {
     return WebTaskResponse.from(
         taskWriteService.create(
@@ -50,7 +51,9 @@ class TaskWriteController implements TaskWriteControllerDocs {
 
   @PatchMapping(path = "/tasks/{taskId}", version = "1")
   public WebTaskResponse update(
-      @PathVariable UUID taskId, @RequestBody UpdateWebTaskRequest request, Principal principal) {
+      @PathVariable UUID taskId,
+      @Valid @RequestBody UpdateWebTaskRequest request,
+      Principal principal) {
     return WebTaskResponse.from(
         taskWriteService.update(
             taskId,

@@ -1,14 +1,18 @@
 package works.momens.server.web.task.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.UUID;
+import works.momens.server.project.task.TaskPolicy;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskStatus;
 
 @Schema(description = "웹 작업 생성 요청")
 public record CreateWebTaskRequest(
-    @Schema(description = "작업 제목", requiredMode = Schema.RequiredMode.REQUIRED) String title,
+    @Schema(description = "작업 제목", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Size(max = TaskPolicy.TITLE_MAX_LENGTH)
+        String title,
     @Schema(description = "작업 설명") String description,
     @Schema(description = "작업 상태. 생략하면 backlog를 사용합니다.") TaskStatus status,
     @Schema(description = "마일스톤 식별자", format = "uuid") UUID milestoneId,

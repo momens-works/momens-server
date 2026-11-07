@@ -2,10 +2,12 @@ package works.momens.server.web.task.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonSetter;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.UUID;
 import tools.jackson.databind.annotation.JsonDeserialize;
 import works.momens.server.common.api.ExpectedVersionDeserializer;
+import works.momens.server.project.task.TaskPolicy;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskStatus;
 
@@ -28,6 +30,7 @@ public final class UpdateWebTaskRequest {
     return version;
   }
 
+  @Size(max = TaskPolicy.TITLE_MAX_LENGTH)
   private String title;
 
   private boolean titleSet;
