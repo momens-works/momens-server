@@ -383,7 +383,9 @@ class MobileProjectBriefIntegrationTest extends AbstractPostgresIntegrationTest 
                 .header("Authorization", "Bearer " + accessTokens.issueAccessToken(jinsu.id()))
                 .header("API-Version", "1"))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"));
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("cursor"))
+        .andExpect(jsonPath("$.error.details.fields[0].reason").value("invalid value"));
   }
 
   @Test

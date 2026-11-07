@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
+import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.notification.PushDeviceRegistrar;
 import works.momens.server.notification.PushInstallationPlatform;
 
@@ -36,8 +37,8 @@ class PushDeviceRegistrarImpl implements PushDeviceRegistrar {
       String firebaseInstallationId,
       String fcmRegistrationToken,
       PushInstallationPlatform platform) {
-    requireNotBlank(firebaseInstallationId);
-    requireNotBlank(fcmRegistrationToken);
+    requireNotBlank(firebaseInstallationId, "firebaseInstallationId");
+    requireNotBlank(fcmRegistrationToken, "fcm_registration_token");
     lockRegistrationLedger();
     try {
       registerLocked(userId, firebaseInstallationId, fcmRegistrationToken, platform);
@@ -85,7 +86,7 @@ class PushDeviceRegistrarImpl implements PushDeviceRegistrar {
   @Override
   @Transactional
   public void unregister(UUID userId, String firebaseInstallationId) {
-    requireNotBlank(firebaseInstallationId);
+    requireNotBlank(firebaseInstallationId, "firebaseInstallationId");
     lockRegistrationLedger();
     boolean unregistered =
         pushInstallationRepository
@@ -112,9 +113,9 @@ class PushDeviceRegistrarImpl implements PushDeviceRegistrar {
         REGISTRATION_LOCK_NAME);
   }
 
-  private static void requireNotBlank(String value) {
+  private static void requireNotBlank(String value, String field) {
     if (value == null || value.isBlank()) {
-      throw new BusinessException(CommonErrorCode.COMMON_VALIDATION_FAILED);
+      throw FieldValidationException.forField(field);
     }
   }
 }
