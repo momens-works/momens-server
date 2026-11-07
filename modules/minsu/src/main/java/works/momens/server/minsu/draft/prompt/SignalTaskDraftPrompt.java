@@ -46,6 +46,7 @@ public final class SignalTaskDraftPrompt {
     this.json = json;
     this.systemInstruction =
         loadInstruction()
+            .replace("{{titleMaxLength}}", String.valueOf(TaskTitlePolicy.MAX_LENGTH))
             .replace(
                 "{{roleMeanings}}",
                 meanings(TaskRole.values(), TaskRole::value, SignalTaskDraftPrompt::roleMeaning))
