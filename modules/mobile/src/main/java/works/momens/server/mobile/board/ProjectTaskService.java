@@ -81,7 +81,7 @@ class ProjectTaskService {
       UUID projectId, UUID userId, String title, TaskRole role, TaskPriority priority) {
     UUID workspaceId = requireProjectMember(projectId, userId);
     return taskWriter.create(
-        CreateTaskCommand.manual(projectId, workspaceId, title, role, priority));
+        CreateTaskCommand.manual(projectId, workspaceId, title, TaskStatus.TODO, role, priority));
   }
 
   /**

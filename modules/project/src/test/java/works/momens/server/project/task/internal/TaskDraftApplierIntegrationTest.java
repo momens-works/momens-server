@@ -139,7 +139,12 @@ class TaskDraftApplierIntegrationTest extends AbstractPostgresIntegrationTest {
         taskRepository.saveAndFlush(
             Task.create(
                 CreateTaskCommand.manual(
-                    projectId, workspaceId, "초기 제목", TaskRole.PM, TaskPriority.MEDIUM),
+                    projectId,
+                    workspaceId,
+                    "초기 제목",
+                    TaskStatus.TODO,
+                    TaskRole.PM,
+                    TaskPriority.MEDIUM),
                 null));
     // description은 builder에 없어 수정 경로로 채운다. 반영이 건드리지 않는 필드를 확인하려면 값이 있어야 한다.
     task.update("초기 제목", TaskRole.PM, TaskPriority.MEDIUM, TaskStatus.TODO, "초기 목적", null);

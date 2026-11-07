@@ -271,7 +271,8 @@ class MobileSignalsIntegrationTest extends AbstractPostgresIntegrationTest {
     // priority는 medium입니다.
     assertThat(
             jdbcTemplate.queryForMap(
-                "SELECT role, priority FROM tasks WHERE project_id = ?", project))
+                "SELECT status, role, priority FROM tasks WHERE project_id = ?", project))
+        .containsEntry("status", "todo")
         .containsEntry("role", "pm")
         .containsEntry("priority", "medium");
 
