@@ -203,6 +203,7 @@ project는 모바일의 현재 context로 고정되어 있고, description·task
 ### POST /api/mobile/signals/{signalId}/actions/convert-to-task
 
 시그널을 원탭으로 작업에 등록합니다. 요청 body는 없습니다.
+생성된 작업은 `todo`로 시작합니다.
 
 동기 경로에서는 서버 내 `minsu` 모듈이 생성한 task draft(`title`, `role`, `priority`)로 작업을
 만듭니다. 생성 비활성·설정 무효·입력 부족·생성 실패·출력 무효 시에는 fallback(`title`은
