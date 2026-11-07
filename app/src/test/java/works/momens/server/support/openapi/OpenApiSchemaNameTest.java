@@ -2,31 +2,27 @@ package works.momens.server.support.openapi;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.tngtech.archunit.core.importer.ClassFileImporter;
-import com.tngtech.archunit.core.importer.ImportOption;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
+/** 스냅샷 일치만으로는 서로 다른 DTO가 하나의 스키마로 합쳐진 오류를 감지할 수 없다. */
 class OpenApiSchemaNameTest {
   @Test
-  void dtoRecordsHaveDistinctSchemaNames() {
+  void apiModelsHaveDistinctSchemaNames() {
     Map<String, List<Class<?>>> names =
-        new ClassFileImporter()
-                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
-                .importPackages("works.momens.server")
-                .stream()
-                .map(javaClass -> javaClass.reflect())
-                .filter(
-                    type ->
-                        type.getPackageName().contains(".dto.")
-                            && (type.isRecord() || type.isAnnotationPresent(Schema.class)))
-                .collect(Collectors.groupingBy(OpenApiSchemaNameTest::schemaName));
+        MainSourceClasses.imported().stream()
+            .map(javaClass -> javaClass.reflect())
+            .filter(
+                type ->
+                    type.isAnnotationPresent(Schema.class)
+                        || (type.getPackageName().contains(".dto.") && type.isRecord()))
+            .collect(Collectors.groupingBy(OpenApiSchemaNameTest::schemaName));
 
     assertThat(names.entrySet().stream().filter(entry -> entry.getValue().size() > 1).toList())
-        .as("DTO record의 OpenAPI 스키마 이름이 중복됩니다")
+        .as("API 모델의 OpenAPI 스키마 이름이 중복됩니다")
         .isEmpty();
   }
 
