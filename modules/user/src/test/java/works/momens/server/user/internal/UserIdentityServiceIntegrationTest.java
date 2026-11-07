@@ -59,7 +59,7 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
   }
 
   @Test
-  @DisplayName("같은 sub으로 재로그인하면 동일한 users.id가 유지된다")
+  @DisplayName("같은 sub으로 재로그인하면 사용자 ID와 직접 수정한 이름이 유지된다")
   void keepsSameUserOnRelogin() {
     UserProfile first =
         userService.findOrCreateByIdentity(
