@@ -12,7 +12,7 @@ public record ChecklistToggleResponse(
     @Schema(description = "완료 기준 요약") ChecklistResponse checklist,
     @Schema(description = "수정 충돌 확인용 버전", minimum = "0") long version) {
 
-  @Schema(description = "완료 기준 요약")
+  @Schema(name = "ChecklistToggleChecklist", description = "완료 기준 요약")
   public record ChecklistResponse(
       @Schema(description = "완료된 항목 수") int completedCount,
       @Schema(description = "전체 항목 수") int totalCount,

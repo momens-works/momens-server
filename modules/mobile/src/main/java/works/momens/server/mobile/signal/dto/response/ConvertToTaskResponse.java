@@ -29,6 +29,7 @@ public record ConvertToTaskResponse(Task task, Signal signal) {
               example = "generating")
           String draftStatus) {}
 
+  @Schema(name = "ConvertToTaskSignal")
   public record Signal(UUID id, String action) {}
 
   public static ConvertToTaskResponse from(SignalActionResult result) {

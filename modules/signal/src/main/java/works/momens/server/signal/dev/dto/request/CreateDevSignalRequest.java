@@ -41,7 +41,7 @@ public record CreateDevSignalRequest(
       @Schema(description = "원천 발생 시각(ISO-8601)") Instant occurredAt,
       @Schema(description = "근거의 대상·변화·영향") @Valid Details details) {
 
-    @Schema(description = "근거의 대상·변화·영향(각 공백 포함 30자 이하)")
+    @Schema(name = "CreateDevSignalEvidenceDetails", description = "근거의 대상·변화·영향(각 공백 포함 30자 이하)")
     public record Details(
         @Schema(description = "대상") @Size(max = 30) String target,
         @Schema(description = "변화") @Size(max = 30) String change,

@@ -11,6 +11,7 @@ import works.momens.server.signal.SignalActionResult;
 @Schema(description = "dismiss 처리 결과")
 public record DismissResponse(Signal signal) {
 
+  @Schema(name = "DismissSignal")
   public record Signal(UUID id, String action) {}
 
   public static DismissResponse from(SignalActionResult result) {
