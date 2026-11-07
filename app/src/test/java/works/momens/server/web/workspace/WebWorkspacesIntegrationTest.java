@@ -6,13 +6,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.servlet.http.Cookie;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.UUID;
-import org.hibernate.SessionFactory;
-import org.hibernate.stat.Statistics;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.hibernate.Session;
+import org.hibernate.SessionEventListener;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +25,8 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import works.momens.server.auth.AccessTokenTestFactory;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.project.milestone.MilestoneWriter;
@@ -45,6 +50,8 @@ class WebWorkspacesIntegrationTest extends AbstractPostgresIntegrationTest {
   @Autowired private UserService userService;
   @Autowired private JdbcTemplate jdbcTemplate;
   @Autowired private EntityManagerFactory entityManagerFactory;
+  @Autowired private EntityManager entityManager;
+  @Autowired private PlatformTransactionManager transactionManager;
   @Autowired private WorkspaceSnapshotService workspaceSnapshotService;
   @Autowired private MilestoneWriter milestoneWriter;
 
@@ -252,13 +259,37 @@ class WebWorkspacesIntegrationTest extends AbstractPostgresIntegrationTest {
     link(workspaceId, taskId, "MEMORY", memoryId);
     link(workspaceId, taskId, "SOURCE_OBJECT", sourceRefId);
 
-    Statistics statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
-    statistics.setStatisticsEnabled(true);
-    statistics.clear();
-
-    workspaceSnapshotService.get(workspaceId, caller.id());
-
-    assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(14);
+    TransactionTemplate transaction = new TransactionTemplate(transactionManager);
+    transaction.setReadOnly(true);
+    Integer queryCount =
+        transaction.execute(
+            status -> {
+              AtomicInteger count = new AtomicInteger();
+              // 스냅샷이 동기적으로 같은 Hibernate 세션에서 조회한다는 전제입니다.
+              entityManager
+                  .unwrap(Session.class)
+                  .addEventListeners(
+                      new SessionEventListener() {
+                        @Override
+                        public void jdbcPrepareStatementEnd() {
+                          count.incrementAndGet();
+                        }
+                      });
+              CompletableFuture.runAsync(
+                      () -> {
+                        EntityManager other = entityManagerFactory.createEntityManager();
+                        try {
+                          other.createNativeQuery("select 1").getSingleResult();
+                        } finally {
+                          other.close();
+                        }
+                      })
+                  .join();
+              assertThat(count.get()).isZero();
+              workspaceSnapshotService.get(workspaceId, caller.id());
+              return count.get();
+            });
+    assertThat(queryCount).isBetween(1, 14);
   }
 
   @Test
