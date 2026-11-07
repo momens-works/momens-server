@@ -148,6 +148,16 @@ Request/response DTO는 `record`를 기본으로 하고 `@Schema`로 문서화�
 - 주요 필드에는 `description`, `example`, `nullable`을 명시합니다.
 - validation annotation과 `@Schema` 설명이 서로 어긋나지 않게 합니다.
 
+### 스키마 이름 충돌
+
+서로 다른 DTO가 같은 스키마 이름을 사용하면 springdoc이 하나의 스키마로 합칠 수 있습니다.
+충돌할 때는 `@Schema(name = "...")`으로 고유한 이름을 지정하고 기존 클라이언트에 미치는
+영향을 확인합니다. 스냅샷 일치 테스트만으로는 생성된 문서와 실제 DTO의 불일치를 보장할 수 없습니다.
+
+`OpenApiSchemaNameTest`는 main 소스의 `@Schema` 타입과 `.dto.` 패키지의 record를 검사합니다.
+API에 노출되지 않는 `@Schema` 타입도 검사하며, `.dto.` 밖에 있고 `@Schema`가 없는 모델은
+검사하지 않습니다. 그런 모델을 추가할 때는 이름 충돌 여부를 별도로 확인합니다.
+
 ### Property 이름(snake_case)
 
 런타임 wire format은 `app`의 `application.yml`에 있는
