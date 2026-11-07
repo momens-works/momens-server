@@ -12,6 +12,8 @@ import java.util.UUID;
  * <p>{@code origin}은 사람이 직접 만든 태스크({@link TaskOrigin#MANUAL})와 Signal을 수용해 만든 태스크({@link
  * TaskOrigin#SIGNAL})를 구분합니다(CO-6). {@code SIGNAL}은 {@code originSignalId}가 반드시 있어야 하고, {@code
  * MANUAL}은 반드시 없어야 합니다 — 이 불변식은 생성 시점에 강제하며 조용히 기본값으로 채우지 않습니다.
+ *
+ * <p>이 record에서 제목 길이를 직접 검증하며, 최대 길이를 초과하면 저장 전에 거부합니다. 요청 DTO의 검증을 거치지 않는 쓰기 경로에도 동일한 규칙을 적용합니다.
  */
 public record CreateTaskCommand(
     UUID projectId,
@@ -28,6 +30,7 @@ public record CreateTaskCommand(
     UUID originSignalId) {
 
   public CreateTaskCommand {
+    TaskPolicy.requireTitleWithinLimit(title);
     if (status == null) {
       throw new IllegalArgumentException("status는 필수입니다.");
     }

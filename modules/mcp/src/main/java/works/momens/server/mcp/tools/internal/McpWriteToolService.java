@@ -149,6 +149,13 @@ class McpWriteToolService {
         throw new McpToolInputException(
             "Unknown argument or invalid argument type: " + field.getKey());
       }
+      JsonNode maxLength = property.path("maxLength");
+      if (maxLength.isIntegralNumber()
+          && field.getValue().isTextual()
+          && field.getValue().asText().length() > maxLength.asInt()) {
+        throw new McpToolInputException(
+            field.getKey() + " must be at most " + maxLength.asInt() + " characters");
+      }
     }
     for (JsonNode field : schema.path("required")) {
       if (argument(arguments, field.asText()).isEmpty()) {

@@ -888,6 +888,8 @@
           },
           "title" : {
             "description" : "작업 제목",
+            "maxLength" : 70,
+            "minLength" : 0,
             "type" : "string"
           }
         },

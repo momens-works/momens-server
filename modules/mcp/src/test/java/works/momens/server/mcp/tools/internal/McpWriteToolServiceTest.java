@@ -52,6 +52,7 @@ import works.momens.server.project.milestone.MilestoneWriter;
 import works.momens.server.project.milestone.UpdateMilestoneCommand;
 import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.PatchTaskCommand;
+import works.momens.server.project.task.TaskPolicy;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskReader;
 import works.momens.server.project.task.TaskSnapshot;
@@ -255,6 +256,39 @@ class McpWriteToolServiceTest {
   void invalidShapeCannotReachWriter(String args) {
     assertThat(call("create_task", args).path("isError").asBoolean()).isTrue();
     verifyNoInteractions(projects, taskWriter);
+  }
+
+  @Test
+  @DisplayName("최대 길이를 초과한 제목은 writer 호출 전에 거부한다")
+  void titleOverMaxLengthCannotReachWriter() {
+    String overMaxLength = "가".repeat(TaskPolicy.TITLE_MAX_LENGTH + 1);
+    ObjectNode create = mapper.createObjectNode().put("project", "p").put("title", overMaxLength);
+    ObjectNode update =
+        mapper.createObjectNode().put("task", "MOM-0993").put("title", overMaxLength);
+
+    assertThat(call("create_task", create.toString()).path("isError").asBoolean()).isTrue();
+    assertThat(call("update_task", update.toString()).path("isError").asBoolean()).isTrue();
+    verifyNoInteractions(projects, taskWriter);
+  }
+
+  @Test
+  @DisplayName("쓰기 도구 schema의 제목 최대 길이가 서버 상수와 일치한다")
+  void writeToolSchemaDeclaresTaskPolicyTitleMaxLength() throws Exception {
+    try (InputStream input = new ClassPathResource("mcp/write-tools.json").getInputStream()) {
+      JsonNode tools = mapper.readTree(input);
+      for (String name : List.of("create_task", "update_task")) {
+        JsonNode title =
+            tools
+                .valueStream()
+                .filter(tool -> tool.path("name").asText().equals(name))
+                .findFirst()
+                .orElseThrow()
+                .path("inputSchema")
+                .path("properties")
+                .path("title");
+        assertThat(title.path("maxLength").asInt()).isEqualTo(TaskPolicy.TITLE_MAX_LENGTH);
+      }
+    }
   }
 
   @Test

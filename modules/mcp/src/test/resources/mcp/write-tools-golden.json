@@ -75,6 +75,7 @@
         },
         "title": {
           "type": "string",
+          "maxLength": 70,
           "description": "the task title"
         },
         "description": {
@@ -207,6 +208,7 @@
         },
         "title": {
           "type": "string",
+          "maxLength": 70,
           "description": "new title"
         },
         "description": {
