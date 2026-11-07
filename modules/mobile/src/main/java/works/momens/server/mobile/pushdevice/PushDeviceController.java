@@ -2,6 +2,7 @@ package works.momens.server.mobile.pushdevice;
 
 import jakarta.validation.Valid;
 import java.security.Principal;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import works.momens.server.common.api.CurrentUser;
+import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.mobile.pushdevice.dto.request.RegisterPushDeviceRequest;
 import works.momens.server.notification.PushDeviceRegistrar;
 
@@ -30,17 +32,24 @@ class PushDeviceController implements PushDeviceControllerDocs {
       @PathVariable String firebaseInstallationId,
       @Valid @RequestBody RegisterPushDeviceRequest request,
       Principal principal) {
+    UUID userId = CurrentUser.id(principal);
+    validateInstallationId(firebaseInstallationId);
     pushDeviceRegistrar.register(
-        CurrentUser.id(principal),
-        firebaseInstallationId,
-        request.fcmRegistrationToken(),
-        request.platform());
+        userId, firebaseInstallationId, request.fcmRegistrationToken(), request.platform());
   }
 
   @Override
   @DeleteMapping(path = "/{firebaseInstallationId}", version = "1")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void unregister(@PathVariable String firebaseInstallationId, Principal principal) {
-    pushDeviceRegistrar.unregister(CurrentUser.id(principal), firebaseInstallationId);
+    UUID userId = CurrentUser.id(principal);
+    validateInstallationId(firebaseInstallationId);
+    pushDeviceRegistrar.unregister(userId, firebaseInstallationId);
+  }
+
+  private static void validateInstallationId(String firebaseInstallationId) {
+    if (firebaseInstallationId.isBlank()) {
+      throw FieldValidationException.forField("firebaseInstallationId");
+    }
   }
 }
