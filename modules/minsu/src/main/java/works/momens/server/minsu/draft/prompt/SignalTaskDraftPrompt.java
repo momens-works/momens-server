@@ -12,9 +12,9 @@ import works.momens.server.minsu.SignalTaskDraftInput;
 import works.momens.server.minsu.draft.json.MinsuJson;
 import works.momens.server.minsu.llm.LlmRequest;
 import works.momens.server.minsu.llm.LlmResponseField;
+import works.momens.server.project.task.TaskPolicy;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
-import works.momens.server.project.task.TaskTitlePolicy;
 
 @Component
 public final class SignalTaskDraftPrompt {
@@ -31,7 +31,7 @@ public final class SignalTaskDraftPrompt {
   private static final List<LlmResponseField> RESPONSE_FIELDS =
       List.of(
           new LlmResponseField(
-              "title", "공백 포함 최대 " + TaskTitlePolicy.MAX_LENGTH + "자의 한국어 실행 항목", List.of()),
+              "title", "공백 포함 최대 " + TaskPolicy.TITLE_MAX_LENGTH + "자의 한국어 실행 항목", List.of()),
           new LlmResponseField(
               "role", null, Arrays.stream(TaskRole.values()).map(TaskRole::value).toList()),
           new LlmResponseField(
@@ -46,7 +46,7 @@ public final class SignalTaskDraftPrompt {
     this.json = json;
     this.systemInstruction =
         loadInstruction()
-            .replace("{{titleMaxLength}}", String.valueOf(TaskTitlePolicy.MAX_LENGTH))
+            .replace("{{titleMaxLength}}", String.valueOf(TaskPolicy.TITLE_MAX_LENGTH))
             .replace(
                 "{{roleMeanings}}",
                 meanings(TaskRole.values(), TaskRole::value, SignalTaskDraftPrompt::roleMeaning))

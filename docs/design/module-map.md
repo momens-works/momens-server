@@ -257,7 +257,7 @@ worker도 같은 backing과 빈 payload·`signal.created:{signal_id}` 멱등키�
   description/impact/evidence가 모두 비면 title/type만으로 추론하지 않는다.
 - system instruction과 고정 필드 JSON을 분리하고 외부 문자열을 prompt에 보간하지 않는다.
   출력 전체를 검증하며 role/priority가 무효면 전체 fallback으로 바꾼다. title은 trim 후 Java 길이
-  15 이하로 정규화하되 surrogate pair를 자르지 않으며 빈 모델 title은 Signal title로 대체한다.
+  70 이하로 정규화하되 surrogate pair를 자르지 않으며 빈 모델 title은 Signal title로 대체한다.
   fallback은 정규화된 Signal title·pm·medium이다. 생성 실패 자체는 새 public 5xx를 만들지 않는다.
 - convert 입력 snapshot과 **실제 저장한** title/role/priority baseline, 두 deadline을 원장에 저장한다.
   실행 시 Signal 재조회나 baseline 재계산을 하지 않는다. description/impact는 무절단 저장하며

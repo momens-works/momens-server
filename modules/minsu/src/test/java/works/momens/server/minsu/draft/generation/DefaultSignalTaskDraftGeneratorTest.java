@@ -42,9 +42,9 @@ import works.momens.server.minsu.llm.LlmTimeoutException;
 import works.momens.server.minsu.llm.MinsuLlmProperties;
 import works.momens.server.minsu.llm.ModelSelection;
 import works.momens.server.minsu.llm.ModelSelectionPolicy;
+import works.momens.server.project.task.TaskPolicy;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
-import works.momens.server.project.task.TaskTitlePolicy;
 
 class DefaultSignalTaskDraftGeneratorTest {
 
@@ -90,18 +90,20 @@ class DefaultSignalTaskDraftGeneratorTest {
 
   @Test
   void truncatesTitleWithoutSplittingSurrogatePair() {
-    String head = "가".repeat(TaskTitlePolicy.MAX_LENGTH - 1);
+    String head = "가".repeat(TaskPolicy.TITLE_MAX_LENGTH - 1);
     CapturingClient client =
         responding(success("{\"title\":\"" + head + "😀끝\",\"role\":\"pm\",\"priority\":\"low\"}"));
 
     TaskDraft result = generator(client, true, true).prepare(input()).draft();
 
-    assertThat(result.title()).isEqualTo(head).hasSizeLessThanOrEqualTo(TaskTitlePolicy.MAX_LENGTH);
+    assertThat(result.title())
+        .isEqualTo(head)
+        .hasSizeLessThanOrEqualTo(TaskPolicy.TITLE_MAX_LENGTH);
   }
 
   @Test
   void stripsTrailingSpaceAfterTruncatingTitle() {
-    String head = "가".repeat(TaskTitlePolicy.MAX_LENGTH - 1);
+    String head = "가".repeat(TaskPolicy.TITLE_MAX_LENGTH - 1);
     CapturingClient client =
         responding(success("{\"title\":\"" + head + " A\",\"role\":\"pm\",\"priority\":\"low\"}"));
 

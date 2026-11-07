@@ -30,7 +30,7 @@ import org.springframework.web.servlet.config.annotation.ApiVersionConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import works.momens.server.minsu.DraftStatus;
 import works.momens.server.project.task.TaskDetail;
-import works.momens.server.project.task.TaskTitlePolicy;
+import works.momens.server.project.task.TaskPolicy;
 
 /**
  * 태스크 상세 컨트롤러가 경로 변수와 Principal을 조합 서비스에 전달하고 명세의 snake_case 응답 형식(checklist 카운트 파생 포함)을 내는지 검증합니다.
@@ -246,7 +246,7 @@ class TaskControllerTest {
 
   @Test
   void updateTaskRejectsTitleOverMaxLength() throws Exception {
-    String title = "가".repeat(TaskTitlePolicy.MAX_LENGTH + 1);
+    String title = "가".repeat(TaskPolicy.TITLE_MAX_LENGTH + 1);
     mockMvc
         .perform(
             patch("/api/mobile/tasks/{taskId}", TASK_ID)
