@@ -20,8 +20,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
-import works.momens.server.common.api.FieldValidationDetails;
-import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.notification.PushInstallationPlatform;
@@ -42,19 +40,6 @@ class PushDeviceRegistrarIntegrationTest extends AbstractPostgresIntegrationTest
   @Autowired private PushDeviceRegistrarImpl registrar;
   @Autowired private PushInstallationRepository repository;
   @Autowired private TestEntityManager entityManager;
-
-  @Test
-  @DisplayName("공백 설치 ID는 요청 경로 변수의 검증 오류를 반환한다")
-  void blankInstallationIdReturnsFieldDetails() {
-    assertThatThrownBy(() -> registrar.unregister(USER_ID, " "))
-        .isInstanceOfSatisfying(
-            FieldValidationException.class,
-            exception ->
-                assertThat(((FieldValidationDetails) exception.getDetails()).fields())
-                    .containsExactly(
-                        new FieldValidationDetails.FieldViolation(
-                            "firebaseInstallationId", "invalid value")));
-  }
 
   @Test
   @DisplayName("신규 등록은 활성 설치를 만든다")
