@@ -294,11 +294,29 @@
           }
         }
       },
+      "ChecklistToggleChecklist" : {
+        "description" : "완료 기준 요약",
+        "properties" : {
+          "completed_count" : {
+            "description" : "완료된 항목 수",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "item" : {
+            "$ref" : "#/components/schemas/ItemResponse"
+          },
+          "total_count" : {
+            "description" : "전체 항목 수",
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }
+      },
       "ChecklistToggleResponse" : {
         "description" : "완료 기준 완료 상태 변경 응답",
         "properties" : {
           "checklist" : {
-            "$ref" : "#/components/schemas/ChecklistResponse"
+            "$ref" : "#/components/schemas/ChecklistToggleChecklist"
           },
           "version" : {
             "description" : "수정 충돌 확인용 버전",
@@ -426,10 +444,21 @@
         "description" : "convert-to-task 처리 결과",
         "properties" : {
           "signal" : {
-            "$ref" : "#/components/schemas/Signal"
+            "$ref" : "#/components/schemas/ConvertToTaskSignal"
           },
           "task" : {
             "$ref" : "#/components/schemas/Task"
+          }
+        }
+      },
+      "ConvertToTaskSignal" : {
+        "properties" : {
+          "action" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
           }
         }
       },
@@ -496,6 +525,29 @@
           "rationale",
           "title"
         ]
+      },
+      "CreateDevSignalEvidenceDetails" : {
+        "description" : "근거의 대상·변화·영향(각 공백 포함 30자 이하)",
+        "properties" : {
+          "change" : {
+            "description" : "변화",
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "impact" : {
+            "description" : "영향",
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "target" : {
+            "description" : "대상",
+            "maxLength" : 30,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        }
       },
       "CreateDevSignalRequest" : {
         "description" : "dev 데모용 Signal 생성 요청",
@@ -876,32 +928,6 @@
           "name"
         ]
       },
-      "Details" : {
-        "description" : "근거의 대상·변화·영향. signal_evidence가 소유하며 각 값은 공백 포함 30자 이하입니다.",
-        "properties" : {
-          "change" : {
-            "maxLength" : 30,
-            "type" : [
-              "string",
-              "null"
-            ]
-          },
-          "impact" : {
-            "maxLength" : 30,
-            "type" : [
-              "string",
-              "null"
-            ]
-          },
-          "target" : {
-            "maxLength" : 30,
-            "type" : [
-              "string",
-              "null"
-            ]
-          }
-        }
-      },
       "DevTokenRequest" : {
         "description" : "dev 전용 토큰 발급 요청",
         "properties" : {
@@ -935,7 +961,18 @@
         "description" : "dismiss 처리 결과",
         "properties" : {
           "signal" : {
-            "$ref" : "#/components/schemas/Signal"
+            "$ref" : "#/components/schemas/DismissSignal"
+          }
+        }
+      },
+      "DismissSignal" : {
+        "properties" : {
+          "action" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
           }
         }
       },
@@ -960,7 +997,7 @@
         "description" : "근거 한 건",
         "properties" : {
           "details" : {
-            "$ref" : "#/components/schemas/Details"
+            "$ref" : "#/components/schemas/CreateDevSignalEvidenceDetails"
           },
           "occurred_at" : {
             "description" : "원천 발생 시각(ISO-8601)",
@@ -998,7 +1035,7 @@
       "EvidenceResponse" : {
         "properties" : {
           "details" : {
-            "$ref" : "#/components/schemas/Details"
+            "$ref" : "#/components/schemas/SignalEvidenceDetails"
           },
           "occurred_at" : {
             "format" : "date-time",
@@ -1163,6 +1200,24 @@
           "workspace_id" : {
             "description" : "워크스페이스 식별자",
             "format" : "uuid",
+            "type" : "string"
+          }
+        }
+      },
+      "ItemResponse" : {
+        "description" : "완료 기준 항목",
+        "properties" : {
+          "completed" : {
+            "description" : "완료 여부",
+            "type" : "boolean"
+          },
+          "id" : {
+            "description" : "항목 식별자",
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "title" : {
+            "description" : "항목 제목",
             "type" : "string"
           }
         }
@@ -1634,17 +1689,6 @@
           "resolving_memory_id"
         ]
       },
-      "Signal" : {
-        "properties" : {
-          "action" : {
-            "type" : "string"
-          },
-          "id" : {
-            "format" : "uuid",
-            "type" : "string"
-          }
-        }
-      },
       "SignalDetailResponse" : {
         "description" : "시그널 상세 응답",
         "properties" : {
@@ -1675,6 +1719,32 @@
           },
           "type" : {
             "type" : "string"
+          }
+        }
+      },
+      "SignalEvidenceDetails" : {
+        "description" : "근거의 대상·변화·영향. signal_evidence가 소유하며 각 값은 공백 포함 30자 이하입니다.",
+        "properties" : {
+          "change" : {
+            "maxLength" : 30,
+            "type" : [
+              "string",
+              "null"
+            ]
+          },
+          "impact" : {
+            "maxLength" : 30,
+            "type" : [
+              "string",
+              "null"
+            ]
+          },
+          "target" : {
+            "maxLength" : 30,
+            "type" : [
+              "string",
+              "null"
+            ]
           }
         }
       },
