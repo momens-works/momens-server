@@ -2,6 +2,7 @@ package works.momens.server.mobile.board;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -123,6 +124,38 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
                 .content("{\"title\":\"  \",\"role\":\"pm\",\"priority\":\"medium\"}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"));
+  }
+
+  @Test
+  void duplicateChecklistIdsReturnRequestField() throws Exception {
+    UserProfile user =
+        userService.findOrCreate("tasks-duplicate-checklist@momens.works", "사용자", null);
+    UUID workspace = insertWorkspace("tasks-duplicate-checklist");
+    addMember(workspace, user.id(), "owner");
+    UUID project = insertProject(workspace, user.id(), "tasks-duplicate-checklist");
+    UUID task = insertTask(workspace, project, "작업", "todo", "medium", "pm");
+    UUID item = UUID.randomUUID();
+    jdbcTemplate.update(
+        "INSERT INTO task_checklist_items(id, task_id, title, completed, position) VALUES (?, ?, '기준', false, 0)",
+        item,
+        task);
+    String body =
+        """
+        {"title":"작업","role":"pm","priority":"medium","status":"todo",
+         "checklist_items":[{"id":"%s","title":"기준"},{"id":"%s","title":"중복"}]}
+        """
+            .formatted(item, item);
+
+    mockMvc
+        .perform(
+            patch("/api/mobile/tasks/{taskId}", task)
+                .header("Authorization", "Bearer " + accessTokens.issueAccessToken(user.id()))
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("checklist_items"));
   }
 
   @Test

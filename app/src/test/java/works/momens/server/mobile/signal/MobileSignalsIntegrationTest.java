@@ -101,6 +101,29 @@ class MobileSignalsIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
+  @DisplayName("잘못된 목록 limit과 cursor는 해당 필드의 검증 오류를 반환한다")
+  void invalidPaginationReturnsFieldDetails() throws Exception {
+    UserProfile user = userService.findOrCreate("signals-invalid-page@momens.works", "사용자", null);
+    UUID workspace = insertWorkspace("signals-invalid-page");
+    addMember(workspace, user.id(), "owner");
+    UUID project = insertProject(workspace, user.id(), "signals-invalid-page");
+    String token = accessTokens.issueAccessToken(user.id());
+
+    for (String[] param : new String[][] {{"limit", "-1"}, {"cursor", "invalid"}}) {
+      mockMvc
+          .perform(
+              get("/api/mobile/projects/{projectId}/signals", project)
+                  .param(param[0], param[1])
+                  .header("Authorization", "Bearer " + token)
+                  .header("API-Version", "1"))
+          .andExpect(status().isBadRequest())
+          .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+          .andExpect(jsonPath("$.error.details.fields[0].field").value(param[0]))
+          .andExpect(jsonPath("$.error.details.fields[0].reason").value("invalid value"));
+    }
+  }
+
+  @Test
   @DisplayName("workspace 멤버가 아니면 AUTH_FORBIDDEN을 반환한다")
   void returnsForbiddenWhenCallerIsNotWorkspaceMember() throws Exception {
     UserProfile gyuil =
