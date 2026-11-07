@@ -206,12 +206,12 @@ project는 모바일의 현재 context로 고정되어 있고, description·task
 
 동기 경로에서는 서버 내 `minsu` 모듈이 생성한 task draft(`title`, `role`, `priority`)로 작업을
 만듭니다. 생성 비활성·설정 무효·입력 부족·생성 실패·출력 무효 시에는 fallback(`title`은
-정규화된 시그널 제목으로 최대 15자, `role`은 `pm`, `priority`는 `medium`)을 사용합니다.
+정규화된 시그널 제목이며, 최대 70자, `role`은 `pm`, `priority`는 `medium`)을 사용합니다.
 비동기 경로에서는 fallback으로 먼저 작업을 생성하고 후속 생성을 진행합니다. 생성 결과는
 `title`, `role`, `priority`가 초기 값과 같을 때만 반영하며, 생성 실패나 선행 편집 등으로
 반영되지 않을 수 있습니다. 세 필드 중 하나라도 바뀌면 결과 전체를 폐기하며, 다른 필드만 편집하거나
 세 필드를 원래 값으로 되돌린 편집은 감지하지 못합니다. 원장 적재에 실패하면 작업 전환 전체가
-롤백됩니다. 생성된 title은 공백 포함 최대 15자이며, draft는 Signal backing에
+롤백됩니다. 생성된 title은 공백 포함 최대 70자이며, draft는 Signal backing에
 저장하지 않습니다.
 
 클라이언트는 title·role·priority를 선택하거나 전송하지 않습니다.

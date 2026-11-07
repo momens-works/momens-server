@@ -27,6 +27,7 @@ import org.springframework.web.servlet.config.annotation.ApiVersionConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskSnapshot;
+import works.momens.server.project.task.TaskTitlePolicy;
 
 /**
  * 컨트롤러가 경로 변수와 요청 body, Principal을 조합 서비스에 전달하고 명세의 snake_case 응답 형식을 내는지 검증합니다. 검증 실패의 에러 응답 형식은
@@ -173,8 +174,8 @@ class ProjectTaskControllerTest {
   }
 
   @Test
-  void createTaskRejectsTitleOverFifteen() throws Exception {
-    String sixteenChars = "가".repeat(16);
+  void createTaskRejectsTitleOverMaxLength() throws Exception {
+    String overMaxLength = "가".repeat(TaskTitlePolicy.MAX_LENGTH + 1);
     mockMvc
         .perform(
             post("/api/mobile/projects/{projectId}/tasks", PROJECT_ID)
@@ -182,7 +183,9 @@ class ProjectTaskControllerTest {
                 .header("API-Version", "1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"title\":\"" + sixteenChars + "\",\"role\":\"pm\",\"priority\":\"medium\"}"))
+                    "{\"title\":\""
+                        + overMaxLength
+                        + "\",\"role\":\"pm\",\"priority\":\"medium\"}"))
         .andExpect(status().isBadRequest());
   }
 
