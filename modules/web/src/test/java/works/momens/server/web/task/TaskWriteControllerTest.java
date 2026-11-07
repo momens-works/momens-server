@@ -84,6 +84,51 @@ class TaskWriteControllerTest {
   }
 
   @Test
+  @DisplayName("최대 길이와 같은 제목은 생성과 수정에서 모두 받아들인다")
+  void acceptsTitleAtMaxLengthOnCreateAndUpdate() throws Exception {
+    String atMaxLength = "가".repeat(TaskPolicy.TITLE_MAX_LENGTH);
+    when(taskWriteService.create(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(task());
+    when(taskWriteService.update(
+            any(),
+            any(),
+            any(),
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            isNull()))
+        .thenReturn(task());
+
+    mockMvc
+        .perform(
+            post("/api/projects/{projectId}/tasks", PROJECT_ID)
+                .principal(principal)
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"" + atMaxLength + "\"}"))
+        .andExpect(status().isCreated());
+    mockMvc
+        .perform(
+            patch("/api/tasks/{taskId}", TASK_ID)
+                .principal(principal)
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"" + atMaxLength + "\"}"))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("최대 길이를 초과한 제목은 생성과 수정에서 모두 거부한다")
   void rejectsTitleOverMaxLengthOnCreateAndUpdate() throws Exception {
     String overMaxLength = "가".repeat(TaskPolicy.TITLE_MAX_LENGTH + 1);
 

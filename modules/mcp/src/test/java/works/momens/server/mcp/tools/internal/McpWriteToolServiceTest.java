@@ -259,6 +259,21 @@ class McpWriteToolServiceTest {
   }
 
   @Test
+  @DisplayName("최대 길이와 같은 제목은 writer까지 전달한다")
+  void titleAtMaxLengthReachesWriter() {
+    seed();
+    when(taskWriter.create(any())).thenReturn(task());
+    String atMaxLength = "가".repeat(TaskPolicy.TITLE_MAX_LENGTH);
+    ObjectNode create =
+        mapper.createObjectNode().put("project", "prj-0003").put("title", atMaxLength);
+
+    assertThat(call("create_task", create.toString()).path("isError").asBoolean()).isFalse();
+    ArgumentCaptor<CreateTaskCommand> command = ArgumentCaptor.forClass(CreateTaskCommand.class);
+    verify(taskWriter).create(command.capture());
+    assertThat(command.getValue().title()).isEqualTo(atMaxLength);
+  }
+
+  @Test
   @DisplayName("최대 길이를 초과한 제목은 writer 호출 전에 거부한다")
   void titleOverMaxLengthCannotReachWriter() {
     String overMaxLength = "가".repeat(TaskPolicy.TITLE_MAX_LENGTH + 1);
