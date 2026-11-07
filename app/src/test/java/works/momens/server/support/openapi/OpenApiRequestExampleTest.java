@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -132,6 +133,7 @@ class OpenApiRequestExampleTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
+  @DisplayName("dev Signal 근거 상세 스키마는 명시적 null을 허용한다")
   void devSignalEvidenceDetailsPermitExplicitNull() throws Exception {
     String body =
         mockMvc
