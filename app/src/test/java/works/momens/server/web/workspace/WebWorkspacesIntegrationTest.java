@@ -233,8 +233,8 @@ class WebWorkspacesIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
-  @DisplayName("snapshot은 최악 조건에서도 쿼리 예산 14회를 넘지 않는다")
-  void snapshotStaysWithinQueryBudget() {
+  @DisplayName("snapshot은 최악 조건에서 쿼리 예산 14회를 정확히 사용한다")
+  void snapshotUsesExactQueryBudget() {
     UserProfile caller =
         userService.findOrCreate("web-it-snapshot-query-budget@momens.works", "홍길동", null);
     UUID workspaceId = insertWorkspace("web-it-snapshot-query-budget", null);
@@ -289,7 +289,7 @@ class WebWorkspacesIntegrationTest extends AbstractPostgresIntegrationTest {
               workspaceSnapshotService.get(workspaceId, caller.id());
               return count.get();
             });
-    assertThat(queryCount).isBetween(1, 14);
+    assertThat(queryCount).isEqualTo(14);
   }
 
   @Test
