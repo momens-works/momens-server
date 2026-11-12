@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.time.LocalDate;
 import works.momens.server.project.task.TaskPolicy;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
@@ -21,4 +22,9 @@ public record CreateTaskRequest(
         @NotNull
         TaskRole role,
     @Schema(description = "우선순위 (urgent/high/medium/low 중 하나)", example = "medium") @NotNull
-        TaskPriority priority) {}
+        TaskPriority priority,
+    @Schema(
+            description = "마감일(YYYY-MM-DD). 생략하거나 null로 전달하면 마감일 없이 생성합니다.",
+            example = "2026-09-25",
+            nullable = true)
+        LocalDate dueDate) {}

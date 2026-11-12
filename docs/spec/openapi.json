@@ -744,6 +744,15 @@
       "CreateTaskRequest" : {
         "description" : "일반 작업 생성 요청",
         "properties" : {
+          "due_date" : {
+            "description" : "마감일(YYYY-MM-DD). 생략하거나 null로 전달하면 마감일 없이 생성합니다.",
+            "example" : "2026-09-25",
+            "format" : "date",
+            "type" : [
+              "string",
+              "null"
+            ]
+          },
           "priority" : {
             "description" : "우선순위 (urgent/high/medium/low 중 하나)",
             "enum" : [
@@ -2983,6 +2992,15 @@
             "maxItems" : 5,
             "minItems" : 0,
             "type" : "array"
+          },
+          "due_date" : {
+            "description" : "마감일(YYYY-MM-DD). 생략하거나 null로 전달하면 기존 마감일을 삭제합니다.",
+            "example" : "2026-09-25",
+            "format" : "date",
+            "type" : [
+              "string",
+              "null"
+            ]
           },
           "priority" : {
             "description" : "우선순위 (urgent/high/medium/low 중 하나)",

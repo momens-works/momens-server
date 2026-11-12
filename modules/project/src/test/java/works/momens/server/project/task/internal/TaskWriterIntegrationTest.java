@@ -367,7 +367,8 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
                         "초기 제목",
                         TaskStatus.TODO,
                         TaskRole.PM,
-                        TaskPriority.MEDIUM),
+                        TaskPriority.MEDIUM,
+                        null),
                     null))
             .getId();
     return new Fixture(workspaceId, projectId, taskId);
@@ -383,7 +384,7 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
       String purpose,
       List<ChecklistItemEdit> checklistItems) {
     return new UpdateTaskCommand(
-        taskId, title, role, assigneeId, priority, status, purpose, checklistItems, null);
+        taskId, title, role, assigneeId, priority, null, status, purpose, checklistItems, null);
   }
 
   private record Fixture(UUID workspaceId, UUID projectId, UUID taskId) {}

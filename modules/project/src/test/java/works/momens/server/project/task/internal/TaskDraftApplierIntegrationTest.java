@@ -78,7 +78,8 @@ class TaskDraftApplierIntegrationTest extends AbstractPostgresIntegrationTest {
     // priority 하나만 달라진 경우다. 필드별로 나눠 일치하는 것만 반영하면 사용자가 판단한 priority를
     // 전제로 쓰이지 않은 AI title이 함께 남아 draft가 사람과 모델의 혼합물이 된다.
     UUID taskId = newTask();
-    reload(taskId).update("초기 제목", TaskRole.PM, TaskPriority.HIGH, TaskStatus.TODO, "초기 목적", null);
+    reload(taskId)
+        .update("초기 제목", TaskRole.PM, TaskPriority.HIGH, TaskStatus.TODO, "초기 목적", null, null);
     entityManager.flush();
 
     TaskDraftApplyResult result =
@@ -144,10 +145,11 @@ class TaskDraftApplierIntegrationTest extends AbstractPostgresIntegrationTest {
                     "초기 제목",
                     TaskStatus.TODO,
                     TaskRole.PM,
-                    TaskPriority.MEDIUM),
+                    TaskPriority.MEDIUM,
+                    null),
                 null));
     // description은 builder에 없어 수정 경로로 채운다. 반영이 건드리지 않는 필드를 확인하려면 값이 있어야 한다.
-    task.update("초기 제목", TaskRole.PM, TaskPriority.MEDIUM, TaskStatus.TODO, "초기 목적", null);
+    task.update("초기 제목", TaskRole.PM, TaskPriority.MEDIUM, TaskStatus.TODO, "초기 목적", null, null);
     entityManager.flush();
     return task.getId();
   }

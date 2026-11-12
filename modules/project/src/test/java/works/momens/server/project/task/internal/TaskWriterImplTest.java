@@ -62,7 +62,8 @@ class TaskWriterImplTest {
                 "권한 요청 점검",
                 TaskStatus.BACKLOG,
                 TaskRole.BACKEND,
-                TaskPriority.HIGH));
+                TaskPriority.HIGH,
+                null));
 
     ArgumentCaptor<Task> captor = ArgumentCaptor.forClass(Task.class);
     verify(taskRepository).save(captor.capture());
@@ -149,7 +150,13 @@ class TaskWriterImplTest {
     Task task =
         Task.create(
             CreateTaskCommand.manual(
-                projectId, workspaceId, "기존", TaskStatus.TODO, TaskRole.PM, TaskPriority.HIGH),
+                projectId,
+                workspaceId,
+                "기존",
+                TaskStatus.TODO,
+                TaskRole.PM,
+                TaskPriority.HIGH,
+                null),
             "MOM-0003");
     when(taskRepository.findForMutation(task.getId())).thenReturn(Optional.of(task));
 
@@ -186,7 +193,13 @@ class TaskWriterImplTest {
     Task task =
         Task.create(
             CreateTaskCommand.manual(
-                projectId, workspaceId, "기존", TaskStatus.TODO, TaskRole.PM, TaskPriority.HIGH),
+                projectId,
+                workspaceId,
+                "기존",
+                TaskStatus.TODO,
+                TaskRole.PM,
+                TaskPriority.HIGH,
+                null),
             "MOM-0004");
     when(taskRepository.findForMutation(task.getId())).thenReturn(Optional.of(task));
     when(workspaceMembershipReader.roleOf(workspaceId, assigneeId)).thenReturn(Optional.empty());
@@ -199,6 +212,7 @@ class TaskWriterImplTest {
                     TaskRole.PM,
                     assigneeId,
                     TaskPriority.HIGH,
+                    null,
                     TaskStatus.TODO,
                     null,
                     List.of(),
@@ -326,6 +340,7 @@ class TaskWriterImplTest {
             TaskRole.BACKEND,
             null,
             TaskPriority.HIGH,
+            null,
             TaskStatus.TODO,
             null,
             List.of(),
@@ -364,7 +379,8 @@ class TaskWriterImplTest {
             "첫 번째",
             TaskStatus.TODO,
             TaskRole.PM,
-            TaskPriority.HIGH),
+            TaskPriority.HIGH,
+            null),
         "MOM-0005");
   }
 
@@ -375,6 +391,7 @@ class TaskWriterImplTest {
         TaskRole.PM,
         null,
         TaskPriority.HIGH,
+        null,
         TaskStatus.TODO,
         null,
         List.of(),

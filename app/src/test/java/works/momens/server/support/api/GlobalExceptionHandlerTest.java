@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.annotation.JsonValue;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -153,6 +154,19 @@ class GlobalExceptionHandlerTest {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
         .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @Test
+  @DisplayName("날짜 필드에 변환할 수 없는 문자열이 전달되면 COMMON_VALIDATION_FAILED와 해당 필드 이름을 응답합니다.")
+  void rendersValidationFailureForUnparsableDateValue() throws Exception {
+    mockMvc
+        .perform(
+            post("/test/date")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"due_date\":\"2026-13-01\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("due_date"));
   }
 
   @Test
@@ -314,6 +328,9 @@ class GlobalExceptionHandlerTest {
     @PostMapping("/test/enum")
     void enumBody(@RequestBody EnumRequest request) {}
 
+    @PostMapping("/test/date")
+    void dateBody(@RequestBody DateRequest request) {}
+
     @GetMapping("/test/field-validation")
     void fieldValidation() {
       throw FieldValidationException.forField(
@@ -350,6 +367,8 @@ class GlobalExceptionHandlerTest {
     record AcronymRequest(@NotBlank String userIDToken) {}
 
     record EnumRequest(TestLevel testLevel) {}
+
+    record DateRequest(LocalDate dueDate) {}
 
     enum TestLevel {
       LOW("low");

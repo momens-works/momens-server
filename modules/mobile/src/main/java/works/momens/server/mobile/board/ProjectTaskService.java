@@ -1,5 +1,6 @@
 package works.momens.server.mobile.board;
 
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -78,10 +79,16 @@ class ProjectTaskService {
 
   @Transactional
   public TaskSnapshot createTask(
-      UUID projectId, UUID userId, String title, TaskRole role, TaskPriority priority) {
+      UUID projectId,
+      UUID userId,
+      String title,
+      TaskRole role,
+      TaskPriority priority,
+      LocalDate dueDate) {
     UUID workspaceId = requireProjectMember(projectId, userId);
     return taskWriter.create(
-        CreateTaskCommand.manual(projectId, workspaceId, title, TaskStatus.TODO, role, priority));
+        CreateTaskCommand.manual(
+            projectId, workspaceId, title, TaskStatus.TODO, role, priority, dueDate));
   }
 
   /**
@@ -116,6 +123,7 @@ class ProjectTaskService {
       TaskRole role,
       UUID assigneeId,
       TaskPriority priority,
+      LocalDate dueDate,
       TaskStatus status,
       String purpose,
       List<ChecklistEdit> checklistItems,
@@ -129,7 +137,7 @@ class ProjectTaskService {
     // 저장만 하고 상세는 반환하지 않는다. 저장 후 최신 상태는 클라이언트가 상세 조회로 다시 읽는다.
     taskWriter.update(
         new UpdateTaskCommand(
-            taskId, title, role, assigneeId, priority, status, purpose, items, version));
+            taskId, title, role, assigneeId, priority, dueDate, status, purpose, items, version));
   }
 
   @Transactional

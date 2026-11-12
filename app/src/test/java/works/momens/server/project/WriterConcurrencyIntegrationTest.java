@@ -219,6 +219,7 @@ class WriterConcurrencyIntegrationTest extends AbstractPostgresIntegrationTest {
                             TaskRole.BACKEND,
                             null,
                             TaskPriority.MEDIUM,
+                            null,
                             TaskStatus.TODO,
                             "설명",
                             List.of(),

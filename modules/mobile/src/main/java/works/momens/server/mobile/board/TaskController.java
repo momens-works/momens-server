@@ -51,6 +51,7 @@ class TaskController implements TaskControllerDocs {
         request.role(),
         request.assigneeId(),
         request.priority(),
+        request.dueDate(),
         request.status(),
         request.purpose(),
         checklistItems,

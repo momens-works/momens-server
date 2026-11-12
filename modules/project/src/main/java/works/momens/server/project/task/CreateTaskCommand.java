@@ -52,7 +52,8 @@ public record CreateTaskCommand(
       String title,
       TaskStatus status,
       TaskRole role,
-      TaskPriority priority) {
+      TaskPriority priority,
+      LocalDate dueDate) {
     return new CreateTaskCommand(
         projectId,
         workspaceId,
@@ -63,7 +64,7 @@ public record CreateTaskCommand(
         priority,
         null,
         null,
-        null,
+        dueDate,
         TaskOrigin.MANUAL,
         null);
   }

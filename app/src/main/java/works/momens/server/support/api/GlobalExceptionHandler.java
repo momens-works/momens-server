@@ -1,5 +1,6 @@
 package works.momens.server.support.api;
 
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -76,8 +77,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
   }
 
   /**
-   * 요청 본문의 enum 필드에 허용하지 않는 값이 들어오면 {@code COMMON_VALIDATION_FAILED}와 해당 필드 이름을 응답합니다. JSON 형식 오류처럼
-   * 그 밖의 이유로 본문을 읽지 못한 경우에는 기존과 같이 {@code COMMON_BAD_REQUEST}를 응답합니다.
+   * 요청 본문의 enum 또는 날짜 필드에 전달된 문자열을 해당 타입으로 변환할 수 없는 경우 {@code COMMON_VALIDATION_FAILED}와 오류가 발생한 필드
+   * 이름을 응답합니다. JSON 형식 오류처럼 그 밖의 이유로 본문을 읽지 못한 경우에는 기존과 같이 {@code COMMON_BAD_REQUEST}를 응답합니다.
    */
   @Override
   protected ResponseEntity<Object> handleHttpMessageNotReadable(
@@ -87,7 +88,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
       WebRequest request) {
     if (ex.getCause() instanceof InvalidFormatException cause
         && cause.getTargetType() != null
-        && cause.getTargetType().isEnum()) {
+        && (cause.getTargetType().isEnum() || cause.getTargetType() == LocalDate.class)) {
       FieldValidationDetails.FieldViolation field =
           new FieldValidationDetails.FieldViolation(
               jsonFieldName(cause), FieldValidationException.DEFAULT_REASON);
