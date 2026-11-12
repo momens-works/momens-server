@@ -34,7 +34,7 @@ class PushDeviceValidationIntegrationTest extends AbstractPostgresIntegrationTes
         .perform(delete(path).header("Authorization", token).header("API-Version", "1"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
-        .andExpect(jsonPath("$.error.details.fields[0].field").value("firebaseInstallationId"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("firebase_installation_id"))
         .andExpect(jsonPath("$.error.details.fields[0].reason").value("invalid value"));
 
     mockMvc
@@ -46,7 +46,7 @@ class PushDeviceValidationIntegrationTest extends AbstractPostgresIntegrationTes
                 .content("{\"fcm_registration_token\":\"token\",\"platform\":\"android\"}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
-        .andExpect(jsonPath("$.error.details.fields[0].field").value("firebaseInstallationId"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("firebase_installation_id"))
         .andExpect(jsonPath("$.error.details.fields[0].reason").value("invalid value"));
   }
 }

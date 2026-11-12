@@ -49,7 +49,7 @@ class PushDeviceController implements PushDeviceControllerDocs {
 
   private static void validateInstallationId(String firebaseInstallationId) {
     if (firebaseInstallationId.isBlank()) {
-      throw FieldValidationException.forField("firebaseInstallationId");
+      throw FieldValidationException.forField("firebase_installation_id");
     }
   }
 }
