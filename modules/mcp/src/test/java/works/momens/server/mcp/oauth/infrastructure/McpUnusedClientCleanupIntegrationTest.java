@@ -157,15 +157,13 @@ class McpUnusedClientCleanupIntegrationTest extends AbstractPostgresIntegrationT
     CountDownLatch release = new CountDownLatch(1);
     try (var executor = Executors.newSingleThreadExecutor()) {
       var save =
-          executor.submit(
-              () ->
-                  new TransactionTemplate(transactionManager)
-                      .executeWithoutResult(
-                          status -> {
-                            authorizations.save(authorization(client));
-                            saved.countDown();
-                            waitFor(release);
-                          }));
+          executor.submit(() ->
+              new TransactionTemplate(transactionManager)
+                  .executeWithoutResult(status -> {
+                    authorizations.save(authorization(client));
+                    saved.countDown();
+                    waitFor(release);
+                  }));
       try {
         assertThat(saved.await(5, TimeUnit.SECONDS)).isTrue();
         assertThat(cleanup.deleteUnusedClients()).isZero();
@@ -190,48 +188,40 @@ class McpUnusedClientCleanupIntegrationTest extends AbstractPostgresIntegrationT
     AtomicInteger authorizingPid = new AtomicInteger();
     try (var executor = Executors.newFixedThreadPool(2)) {
       var deletion =
-          executor.submit(
-              () ->
-                  new TransactionTemplate(transactionManager)
-                      .executeWithoutResult(
-                          status -> {
-                            assertThat(repository.lockUnusedBefore(NOW, 100))
-                                .contains(client.getId());
-                            assertThat(repository.deleteIfUnused(client.getId())).isEqualTo(1);
-                            deleted.countDown();
-                            waitFor(release);
-                          }));
+          executor.submit(() ->
+              new TransactionTemplate(transactionManager)
+                  .executeWithoutResult(status -> {
+                    assertThat(repository.lockUnusedBefore(NOW, 100)).contains(client.getId());
+                    assertThat(repository.deleteIfUnused(client.getId())).isEqualTo(1);
+                    deleted.countDown();
+                    waitFor(release);
+                  }));
       try {
         assertThat(deleted.await(5, TimeUnit.SECONDS)).isTrue();
         assertThat(cleanup.deleteUnusedClients()).isZero();
         var save =
-            executor.submit(
-                () ->
-                    assertThatThrownBy(
-                            () ->
-                                new TransactionTemplate(transactionManager)
-                                    .executeWithoutResult(
-                                        status -> {
-                                          authorizingPid.set(
-                                              jdbc.queryForObject(
-                                                  "SELECT pg_backend_pid()", Integer.class));
-                                          authorizations.save(authorization(client));
-                                        }))
-                        .isInstanceOfSatisfying(
-                            OAuth2AuthenticationException.class,
-                            exception ->
-                                assertThat(exception.getError().getErrorCode())
-                                    .isEqualTo("invalid_client")));
+            executor.submit(() ->
+                assertThatThrownBy(() ->
+                        new TransactionTemplate(transactionManager)
+                            .executeWithoutResult(status -> {
+                              authorizingPid.set(
+                                  jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                              authorizations.save(authorization(client));
+                            }))
+                    .isInstanceOfSatisfying(
+                        OAuth2AuthenticationException.class,
+                        exception ->
+                            assertThat(exception.getError().getErrorCode())
+                                .isEqualTo("invalid_client")));
         await()
             .atMost(Duration.ofSeconds(5))
-            .untilAsserted(
-                () ->
-                    assertThat(
-                            jdbc.queryForObject(
-                                "SELECT count(*) FROM pg_locks WHERE pid = ? AND NOT granted",
-                                Long.class,
-                                authorizingPid.get()))
-                        .isPositive());
+            .untilAsserted(() ->
+                assertThat(
+                        jdbc.queryForObject(
+                            "SELECT count(*) FROM pg_locks WHERE pid = ? AND NOT granted",
+                            Long.class,
+                            authorizingPid.get()))
+                    .isPositive());
         release.countDown();
         deletion.get(5, TimeUnit.SECONDS);
         save.get(5, TimeUnit.SECONDS);
@@ -303,34 +293,30 @@ class McpUnusedClientCleanupIntegrationTest extends AbstractPostgresIntegrationT
         lock.execute();
       }
       var deletion =
-          executor.submit(
-              () ->
-                  new TransactionTemplate(transactionManager)
-                      .execute(
-                          status -> {
-                            cleanupPid.set(
-                                jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
-                            assertThat(
-                                    jdbc.queryForList(
-                                        pausedQuery,
-                                        String.class,
-                                        Timestamp.from(NOW.minus(Duration.ofHours(24))),
-                                        key,
-                                        100))
-                                .contains(client.getId());
-                            return repository.deleteIfUnused(client.getId());
-                          }));
+          executor.submit(() ->
+              new TransactionTemplate(transactionManager)
+                  .execute(status -> {
+                    cleanupPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                    assertThat(
+                            jdbc.queryForList(
+                                pausedQuery,
+                                String.class,
+                                Timestamp.from(NOW.minus(Duration.ofHours(24))),
+                                key,
+                                100))
+                        .contains(client.getId());
+                    return repository.deleteIfUnused(client.getId());
+                  }));
       try {
         await()
             .atMost(Duration.ofSeconds(5))
-            .untilAsserted(
-                () ->
-                    assertThat(
-                            jdbc.queryForObject(
-                                "SELECT count(*) FROM pg_locks WHERE pid = ? AND locktype = 'advisory' AND NOT granted",
-                                Long.class,
-                                cleanupPid.get()))
-                        .isEqualTo(1));
+            .untilAsserted(() ->
+                assertThat(
+                        jdbc.queryForObject(
+                            "SELECT count(*) FROM pg_locks WHERE pid = ? AND locktype = 'advisory' AND NOT granted",
+                            Long.class,
+                            cleanupPid.get()))
+                    .isEqualTo(1));
         new TransactionTemplate(transactionManager)
             .executeWithoutResult(status -> authorizations.save(authorization(client)));
       } finally {

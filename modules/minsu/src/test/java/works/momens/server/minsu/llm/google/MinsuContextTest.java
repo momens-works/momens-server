@@ -47,21 +47,19 @@ class MinsuContextTest {
             "momens.minsu.llm.model=gemini-3.5-flash-lite",
             "momens.minsu.llm.google.project=test-project",
             "momens.minsu.llm.google.location=global")
-        .run(
-            context -> {
-              assertThat(context).hasNotFailed();
-              TaskDraft draft =
-                  context
-                      .getBean(SignalTaskDraftGenerator.class)
-                      .prepare(new SignalTaskDraftInput("시그널 제목", "risk", "설명", null, List.of()))
-                      .draft();
+        .run(context -> {
+          assertThat(context).hasNotFailed();
+          TaskDraft draft =
+              context
+                  .getBean(SignalTaskDraftGenerator.class)
+                  .prepare(new SignalTaskDraftInput("시그널 제목", "risk", "설명", null, List.of()))
+                  .draft();
 
-              assertThat(draft)
-                  .isEqualTo(new TaskDraft("시그널 제목", TaskRole.PM, TaskPriority.MEDIUM));
-              assertThat(context.getBean(FailingGoogleClientFactory.class).calls).hasValue(1);
-              assertThat(context.getBean(MinsuLlmProperties.class).timeout())
-                  .isEqualTo(Duration.ofSeconds(8));
-            });
+          assertThat(draft).isEqualTo(new TaskDraft("시그널 제목", TaskRole.PM, TaskPriority.MEDIUM));
+          assertThat(context.getBean(FailingGoogleClientFactory.class).calls).hasValue(1);
+          assertThat(context.getBean(MinsuLlmProperties.class).timeout())
+              .isEqualTo(Duration.ofSeconds(8));
+        });
   }
 
   @ParameterizedTest
@@ -76,23 +74,22 @@ class MinsuContextTest {
             "momens.minsu.llm.google.project=test-project",
             "momens.minsu.llm.google.location=global",
             property + "=" + value)
-        .run(
-            context -> {
-              assertThat(context).hasNotFailed();
-              context
-                  .getBean(SignalTaskDraftGenerator.class)
-                  .prepare(new SignalTaskDraftInput("시그널 제목", "risk", "설명", null, List.of()))
-                  .draft();
+        .run(context -> {
+          assertThat(context).hasNotFailed();
+          context
+              .getBean(SignalTaskDraftGenerator.class)
+              .prepare(new SignalTaskDraftInput("시그널 제목", "risk", "설명", null, List.of()))
+              .draft();
 
-              assertThat(context.getBean(FailingGoogleClientFactory.class).calls).hasValue(0);
-              assertThat(
-                      context
-                          .getBean(MeterRegistry.class)
-                          .get("momens.minsu.llm.config.valid")
-                          .gauge()
-                          .value())
-                  .isZero();
-            });
+          assertThat(context.getBean(FailingGoogleClientFactory.class).calls).hasValue(0);
+          assertThat(
+                  context
+                      .getBean(MeterRegistry.class)
+                      .get("momens.minsu.llm.config.valid")
+                      .gauge()
+                      .value())
+              .isZero();
+        });
   }
 
   private static Stream<Arguments> invalidConfiguration() {

@@ -55,17 +55,16 @@ class WorkspaceOnboardingImpl implements WorkspaceOnboarding {
   public WorkspaceDetail createWorkspace(CreateWorkspaceCommand command) {
     WorkspaceDetail workspace = workspaceCreator.create(command);
     ProjectDetail welcomeProject = createWelcomeProject(workspace.id(), command.requesterId());
-    STARTER_MEMORIES.forEach(
-        memory ->
-            confirmedMemoryCreator.create(
-                new CreateConfirmedMemoryCommand(
-                    workspace.id(),
-                    command.requesterId(),
-                    memory.memoryType(),
-                    memory.title(),
-                    memory.body(),
-                    List.of(welcomeProject.id()),
-                    SEEDED_METADATA)));
+    STARTER_MEMORIES.forEach(memory ->
+        confirmedMemoryCreator.create(
+            new CreateConfirmedMemoryCommand(
+                workspace.id(),
+                command.requesterId(),
+                memory.memoryType(),
+                memory.title(),
+                memory.body(),
+                List.of(welcomeProject.id()),
+                SEEDED_METADATA)));
     return workspace;
   }
 

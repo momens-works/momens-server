@@ -44,12 +44,11 @@ final class McpRegisteredClientConverter
         .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
         .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
         .redirectUris(redirectUris -> redirectUris.addAll(registration.getRedirectUris()))
-        .scopes(
-            scopes -> {
-              for (McpScope scope : McpScope.values()) {
-                scopes.add(scope.value());
-              }
-            })
+        .scopes(scopes -> {
+          for (McpScope scope : McpScope.values()) {
+            scopes.add(scope.value());
+          }
+        })
         .clientSettings(
             ClientSettings.builder()
                 .requireProofKey(true)

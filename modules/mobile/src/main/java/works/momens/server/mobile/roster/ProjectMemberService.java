@@ -35,11 +35,10 @@ class ProjectMemberService {
     UUID workspaceId =
         projectReader
             .workspaceIdOf(projectId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        ProjectErrorCode.PROJECT_NOT_FOUND,
-                        Map.of("project_id", projectId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    ProjectErrorCode.PROJECT_NOT_FOUND,
+                    Map.of("project_id", projectId.toString())));
     // 멤버 목록은 한 번만 조회하고, 요청자의 접근 권한 확인과 응답 구성에 동일한 조회 결과를 사용합니다.
     // 요청자의 멤버십을 별도로 조회하면 READ COMMITTED에서는 각 SQL 문 실행 시 최신 커밋을 확인하므로,
     // 두 조회 사이에 멤버십이 회수된 사용자가 멤버 목록을 조회할 수 있습니다.

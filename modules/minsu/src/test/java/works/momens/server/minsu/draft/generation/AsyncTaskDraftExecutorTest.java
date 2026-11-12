@@ -48,13 +48,12 @@ class AsyncTaskDraftExecutorTest {
   void preservesInputOrder() {
     executor = executor();
     when(attempt.run(any(), any(), any()))
-        .thenAnswer(
-            invocation -> {
-              SignalTaskDraftInput input = invocation.getArgument(0);
-              return new TaskDraftAttempt.Result(
-                  new TaskDraft(input.title(), TaskRole.PM, TaskPriority.MEDIUM),
-                  GenerationOutcome.GENERATED);
-            });
+        .thenAnswer(invocation -> {
+          SignalTaskDraftInput input = invocation.getArgument(0);
+          return new TaskDraftAttempt.Result(
+              new TaskDraft(input.title(), TaskRole.PM, TaskPriority.MEDIUM),
+              GenerationOutcome.GENERATED);
+        });
 
     List<AsyncGenerationResult> results = executor.executeAll(List.of(input("첫째"), input("둘째")));
 

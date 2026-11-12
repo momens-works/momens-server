@@ -71,31 +71,28 @@ class WorkspaceInvitationAcceptorImpl implements WorkspaceInvitationAcceptor {
     WorkspaceRole role =
         AssignableWorkspaceRole.from(invitation.getRole())
             .map(AssignableWorkspaceRole::workspaceRole)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        MembershipErrorCode.WORKSPACE_INVALID_ROLE,
-                        Map.of("role", invitation.getRole())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    MembershipErrorCode.WORKSPACE_INVALID_ROLE,
+                    Map.of("role", invitation.getRole())));
     invitation.markAccepted(now);
     repository.flush();
 
     WorkspaceMembershipDetail membership =
         membershipWriter
             .addIfAbsent(new AddMembershipCommand(invitation.getWorkspaceId(), user.id(), role))
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        MembershipErrorCode.WORKSPACE_MEMBER_ALREADY_EXISTS,
-                        Map.of("user_id", user.id().toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    MembershipErrorCode.WORKSPACE_MEMBER_ALREADY_EXISTS,
+                    Map.of("user_id", user.id().toString())));
 
     WorkspaceDetail workspace =
         workspaceReader
             .findById(invitation.getWorkspaceId())
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        WorkspaceErrorCode.WORKSPACE_NOT_FOUND,
-                        Map.of("workspace_id", invitation.getWorkspaceId().toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    WorkspaceErrorCode.WORKSPACE_NOT_FOUND,
+                    Map.of("workspace_id", invitation.getWorkspaceId().toString())));
     return new AcceptedInvitation(workspace, membership);
   }
 
@@ -103,9 +100,8 @@ class WorkspaceInvitationAcceptorImpl implements WorkspaceInvitationAcceptor {
       WorkspaceInvitation invitation, String userEmail, Instant now) {
     InvitationStatus stored =
         InvitationStatus.from(invitation.getStatus())
-            .orElseThrow(
-                () ->
-                    new BusinessException(InvitationErrorCode.INVITATION_INVALID_TOKEN, Map.of()));
+            .orElseThrow(() ->
+                new BusinessException(InvitationErrorCode.INVITATION_INVALID_TOKEN, Map.of()));
     switch (stored) {
       case PENDING -> {}
       case ACCEPTED ->

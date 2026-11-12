@@ -67,12 +67,11 @@ class SignalConvertConcurrencyIntegrationTest extends AbstractPostgresIntegratio
 
     CyclicBarrier barrier = new CyclicBarrier(CONCURRENT_REQUESTS);
     when(taskDraftGenerator.prepare(any()))
-        .thenAnswer(
-            invocation -> {
-              barrier.await(10, TimeUnit.SECONDS);
-              TaskDraft draft = new TaskDraft("이탈 가능성 점검", TaskRole.PM, TaskPriority.MEDIUM);
-              return (PreparedTaskDraft) () -> draft;
-            });
+        .thenAnswer(invocation -> {
+          barrier.await(10, TimeUnit.SECONDS);
+          TaskDraft draft = new TaskDraft("이탈 가능성 점검", TaskRole.PM, TaskPriority.MEDIUM);
+          return (PreparedTaskDraft) () -> draft;
+        });
     Callable<SignalActionResult> convert =
         () -> signalActionService.convertToTask(signal, jinsu.id());
     ExecutorService pool = Executors.newFixedThreadPool(CONCURRENT_REQUESTS);

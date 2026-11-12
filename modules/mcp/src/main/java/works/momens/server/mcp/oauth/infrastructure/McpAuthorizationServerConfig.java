@@ -110,70 +110,56 @@ class McpAuthorizationServerConfig {
             server ->
                 server
                     .tokenGenerator(new McpTokenGenerator(clock))
-                    .clientAuthentication(
-                        client ->
-                            client
-                                .authenticationConverter(publicClients)
-                                .authenticationProvider(publicClients)
-                                .errorResponseHandler(errors))
-                    .authorizationEndpoint(
-                        endpoint ->
-                            endpoint
-                                .errorResponseHandler(errors)
-                                .authenticationProviders(
-                                    providers -> {
-                                      providers.removeIf(
-                                          provider ->
-                                              provider
-                                                  instanceof
-                                                  OAuth2AuthorizationConsentAuthenticationProvider);
-                                      providers.forEach(
-                                          provider -> {
-                                            if (provider
-                                                instanceof
-                                                OAuth2AuthorizationCodeRequestAuthenticationProvider
-                                                    authorization) {
-                                              authorization.setAuthenticationValidator(
-                                                  new McpAuthorizationRequestValidator(
-                                                      endpoints.resourceUri().toString()));
-                                            }
-                                          });
-                                    })
-                                .authorizationResponseHandler(
-                                    (request, response, authentication) ->
-                                        response.sendRedirect(
-                                            (String) authentication.getDetails())))
-                    .tokenEndpoint(
-                        endpoint ->
-                            endpoint
-                                .errorResponseHandler(errors)
-                                .accessTokenRequestConverter(
-                                    request -> {
-                                      String grant = request.getParameter("grant_type");
-                                      if (!"authorization_code".equals(grant)
-                                          && !"refresh_token".equals(grant)) {
-                                        throw new OAuth2AuthenticationException(
-                                            "unsupported_grant_type");
-                                      }
-                                      return null;
-                                    })
-                                .authenticationProviders(
-                                    providers -> providers.replaceAll(tokenProvider)))
-                    .tokenRevocationEndpoint(
-                        endpoint ->
-                            endpoint
-                                .errorResponseHandler(errors)
-                                .authenticationProviders(
-                                    providers -> providers.replaceAll(tokenProvider)))
-                    .clientRegistrationEndpoint(
-                        registration ->
-                            registration
-                                .openRegistrationAllowed(true)
-                                .errorResponseHandler(new McpClientRegistrationErrorHandler())
-                                .authenticationProviders(
-                                    providers ->
-                                        providers.forEach(
-                                            provider -> customizeRegistration(provider, clock)))))
+                    .clientAuthentication(client ->
+                        client
+                            .authenticationConverter(publicClients)
+                            .authenticationProvider(publicClients)
+                            .errorResponseHandler(errors))
+                    .authorizationEndpoint(endpoint ->
+                        endpoint
+                            .errorResponseHandler(errors)
+                            .authenticationProviders(providers -> {
+                              providers.removeIf(provider ->
+                                  provider
+                                      instanceof OAuth2AuthorizationConsentAuthenticationProvider);
+                              providers.forEach(provider -> {
+                                if (provider
+                                    instanceof
+                                    OAuth2AuthorizationCodeRequestAuthenticationProvider
+                                        authorization) {
+                                  authorization.setAuthenticationValidator(
+                                      new McpAuthorizationRequestValidator(
+                                          endpoints.resourceUri().toString()));
+                                }
+                              });
+                            })
+                            .authorizationResponseHandler((request, response, authentication) ->
+                                response.sendRedirect((String) authentication.getDetails())))
+                    .tokenEndpoint(endpoint ->
+                        endpoint
+                            .errorResponseHandler(errors)
+                            .accessTokenRequestConverter(request -> {
+                              String grant = request.getParameter("grant_type");
+                              if (!"authorization_code".equals(grant)
+                                  && !"refresh_token".equals(grant)) {
+                                throw new OAuth2AuthenticationException("unsupported_grant_type");
+                              }
+                              return null;
+                            })
+                            .authenticationProviders(
+                                providers -> providers.replaceAll(tokenProvider)))
+                    .tokenRevocationEndpoint(endpoint ->
+                        endpoint
+                            .errorResponseHandler(errors)
+                            .authenticationProviders(
+                                providers -> providers.replaceAll(tokenProvider)))
+                    .clientRegistrationEndpoint(registration ->
+                        registration
+                            .openRegistrationAllowed(true)
+                            .errorResponseHandler(new McpClientRegistrationErrorHandler())
+                            .authenticationProviders(providers ->
+                                providers.forEach(
+                                    provider -> customizeRegistration(provider, clock)))))
         // MCP clients register openly without an initial access token. Ignoring bearer tokens
         // keeps Momens user tokens out of this chain's resource-server authentication.
         .oauth2ResourceServer(resourceServer -> resourceServer.bearerTokenResolver(request -> null))

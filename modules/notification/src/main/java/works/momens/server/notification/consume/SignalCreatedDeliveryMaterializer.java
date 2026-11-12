@@ -61,12 +61,11 @@ class SignalCreatedDeliveryMaterializer {
   private NotificationConsumerOffset lockOrSeed() {
     return offsetRepository
         .lockByName(CONSUMER_NAME)
-        .orElseGet(
-            () -> {
-              offsetRepository.seedIgnoringConflict(
-                  CONSUMER_NAME, outboxEventReader.latestIdBefore(SAFETY_LAG));
-              return offsetRepository.lockByName(CONSUMER_NAME).orElseThrow();
-            });
+        .orElseGet(() -> {
+          offsetRepository.seedIgnoringConflict(
+              CONSUMER_NAME, outboxEventReader.latestIdBefore(SAFETY_LAG));
+          return offsetRepository.lockByName(CONSUMER_NAME).orElseThrow();
+        });
   }
 
   private boolean materializeOne(OutboxEventView event) {
@@ -83,23 +82,19 @@ class SignalCreatedDeliveryMaterializer {
     return signalReader
         .findLive(signalId)
         .map(signal -> materializeRecipients(event.id(), signal))
-        .orElseGet(
-            () -> {
-              log.warn(
-                  "signal.created의 Signal이 없어 건너뜀 outboxEventId={} signalId={}",
-                  event.id(),
-                  signalId);
-              return false;
-            });
+        .orElseGet(() -> {
+          log.warn(
+              "signal.created의 Signal이 없어 건너뜀 outboxEventId={} signalId={}", event.id(), signalId);
+          return false;
+        });
   }
 
   private boolean materializeRecipients(long outboxEventId, SignalReader.Snapshot signal) {
     List<UUID> memberIds = workspaceMembershipReader.listMemberUserIds(signal.workspaceId());
     List<PushDispatcher.Recipient> recipients =
         pushInstallationDirectory.findActiveAndroid(memberIds).stream()
-            .map(
-                installation ->
-                    new PushDispatcher.Recipient(installation.id(), installation.userId()))
+            .map(installation ->
+                new PushDispatcher.Recipient(installation.id(), installation.userId()))
             .toList();
     pushDispatcher.enqueue(outboxEventId, recipients);
     log.info(

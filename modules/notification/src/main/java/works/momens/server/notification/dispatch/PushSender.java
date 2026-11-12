@@ -79,20 +79,18 @@ class PushSender {
     return outboxEventReader
         .findById(outboxEventId)
         .flatMap(event -> signalReader.findLive(UUID.fromString(event.aggregateId())))
-        .flatMap(
-            signal ->
-                projectReader
-                    .findSnapshot(signal.projectId())
-                    .map(
-                        project ->
-                            new PushMessage(
-                                project.name() + "에 새 시그널이 발견되었습니다.",
-                                signal.title(),
-                                Map.of(
-                                    "notification_type", "signal_created",
-                                    "destination", "signal_detail",
-                                    "signal_id", signal.id().toString(),
-                                    "project_id", signal.projectId().toString(),
-                                    "workspace_id", signal.workspaceId().toString()))));
+        .flatMap(signal ->
+            projectReader
+                .findSnapshot(signal.projectId())
+                .map(project ->
+                    new PushMessage(
+                        project.name() + "에 새 시그널이 발견되었습니다.",
+                        signal.title(),
+                        Map.of(
+                            "notification_type", "signal_created",
+                            "destination", "signal_detail",
+                            "signal_id", signal.id().toString(),
+                            "project_id", signal.projectId().toString(),
+                            "workspace_id", signal.workspaceId().toString()))));
   }
 }

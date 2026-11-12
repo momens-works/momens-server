@@ -108,18 +108,16 @@ class WebBlockerWriteIntegrationTest extends AbstractPostgresIntegrationTest {
     assertThat(events.getLast().get("idempotency_key"))
         .isEqualTo("blocker.deleted:" + blocker.id());
     assertThat(events.subList(1, 3))
-        .allSatisfy(
-            e ->
-                assertThat(e.get("idempotency_key").toString())
-                    .startsWith("blocker.resolved:" + blocker.id() + ":"));
+        .allSatisfy(e ->
+            assertThat(e.get("idempotency_key").toString())
+                .startsWith("blocker.resolved:" + blocker.id() + ":"));
     assertThat(events)
-        .allSatisfy(
-            e -> {
-              assertThat(e.get("issued_by")).isEqualTo("api-server");
-              assertThat(e.get("aggregate_type")).isEqualTo("blocker");
-              assertThat(e.get("aggregate_id")).isEqualTo(blocker.id().toString());
-              assertThat(e.get("payload").toString()).isEqualTo("{}");
-            });
+        .allSatisfy(e -> {
+          assertThat(e.get("issued_by")).isEqualTo("api-server");
+          assertThat(e.get("aggregate_type")).isEqualTo("blocker");
+          assertThat(e.get("aggregate_id")).isEqualTo(blocker.id().toString());
+          assertThat(e.get("payload").toString()).isEqualTo("{}");
+        });
     mockMvc
         .perform(auth(delete("/api/blockers/{id}", blocker.id()), f.userId()))
         .andExpect(status().isNotFound())
@@ -364,14 +362,14 @@ class WebBlockerWriteIntegrationTest extends AbstractPostgresIntegrationTest {
             blocked =
                 jdbc.queryForObject(
                     """
-                WITH RECURSIVE blocked AS (
-                  SELECT pid FROM pg_stat_activity WHERE ? = ANY(pg_blocking_pids(pid))
-                  UNION
-                  SELECT a.pid FROM pg_stat_activity a JOIN blocked b
-                    ON b.pid = ANY(pg_blocking_pids(a.pid)))
-                SELECT count(*) FROM blocked b JOIN pg_stat_activity a ON a.pid = b.pid
-                WHERE a.query ~* 'for (no key )?update' AND a.query LIKE '%blockers%'
-                """,
+                    WITH RECURSIVE blocked AS (
+                      SELECT pid FROM pg_stat_activity WHERE ? = ANY(pg_blocking_pids(pid))
+                      UNION
+                      SELECT a.pid FROM pg_stat_activity a JOIN blocked b
+                        ON b.pid = ANY(pg_blocking_pids(a.pid)))
+                    SELECT count(*) FROM blocked b JOIN pg_stat_activity a ON a.pid = b.pid
+                    WHERE a.query ~* 'for (no key )?update' AND a.query LIKE '%blockers%'
+                    """,
                     Integer.class, lockerPid);
             if (blocked == 2) {
               break;

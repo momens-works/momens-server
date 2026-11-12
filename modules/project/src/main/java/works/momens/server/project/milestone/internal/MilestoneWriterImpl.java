@@ -100,11 +100,9 @@ class MilestoneWriterImpl implements MilestoneWriter {
   private Milestone findMilestone(UUID milestoneId) {
     return milestoneRepository
         .findForMutation(milestoneId)
-        .orElseThrow(
-            () ->
-                new BusinessException(
-                    CommonErrorCode.COMMON_NOT_FOUND,
-                    Map.of("milestone_id", milestoneId.toString())));
+        .orElseThrow(() ->
+            new BusinessException(
+                CommonErrorCode.COMMON_NOT_FOUND, Map.of("milestone_id", milestoneId.toString())));
   }
 
   private List<UUID> ownerUserIds(UUID milestoneId) {

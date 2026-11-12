@@ -16,10 +16,9 @@ class PushDispatcherImpl implements PushDispatcher {
   @Override
   @Transactional(propagation = Propagation.MANDATORY)
   public void enqueue(long outboxEventId, List<Recipient> recipients) {
-    recipients.forEach(
-        recipient ->
-            pushDeliveryRepository.insertPendingIgnoringConflict(
-                outboxEventId, recipient.installationId(), recipient.targetUserId()));
+    recipients.forEach(recipient ->
+        pushDeliveryRepository.insertPendingIgnoringConflict(
+            outboxEventId, recipient.installationId(), recipient.targetUserId()));
   }
 
   @Override

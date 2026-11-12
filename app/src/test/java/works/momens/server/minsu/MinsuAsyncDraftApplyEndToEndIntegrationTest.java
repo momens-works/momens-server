@@ -119,23 +119,22 @@ class MinsuAsyncDraftApplyEndToEndIntegrationTest extends AbstractPostgresIntegr
     UUID taskId = convert("apply-read-order").taskId();
 
     new TransactionTemplate(transactionManager)
-        .executeWithoutResult(
-            transaction -> {
-              // 응답 조립이 하는 순서 그대로다. 원장을 먼저 읽고 그다음 task를 읽는다.
-              assertThat(draftStatusReader.statusOf(taskId)).isEqualTo(DraftStatus.GENERATING);
-              assertThat(taskTitle(taskId)).isEqualTo(SIGNAL_TITLE);
+        .executeWithoutResult(transaction -> {
+          // 응답 조립이 하는 순서 그대로다. 원장을 먼저 읽고 그다음 task를 읽는다.
+          assertThat(draftStatusReader.statusOf(taskId)).isEqualTo(DraftStatus.GENERATING);
+          assertThat(taskTitle(taskId)).isEqualTo(SIGNAL_TITLE);
 
-              // 응답 조립 도중에 scheduler가 반영과 종료를 원자적으로 커밋한다.
-              release.countDown();
-              awaitCompletion(taskId);
+          // 응답 조립 도중에 scheduler가 반영과 종료를 원자적으로 커밋한다.
+          release.countDown();
+          awaitCompletion(taskId);
 
-              // 같은 트랜잭션이지만 READ COMMITTED라 두 SELECT가 각각 그 시점의 snapshot을 뜬다. 따라서
-              // 나중에 읽은 값이 더 최신이고, ready 뒤에 읽는 title은 반영이 끝난 값이다. 격리 수준을
-              // REPEATABLE READ 이상으로 올리면 첫 문장이 snapshot을 고정해 이 계약이 조용히 깨진다.
-              assertAll(
-                  () -> assertThat(draftStatusReader.statusOf(taskId)).isEqualTo(DraftStatus.READY),
-                  () -> assertThat(taskTitle(taskId)).isEqualTo(GENERATED_TITLE));
-            });
+          // 같은 트랜잭션이지만 READ COMMITTED라 두 SELECT가 각각 그 시점의 snapshot을 뜬다. 따라서
+          // 나중에 읽은 값이 더 최신이고, ready 뒤에 읽는 title은 반영이 끝난 값이다. 격리 수준을
+          // REPEATABLE READ 이상으로 올리면 첫 문장이 snapshot을 고정해 이 계약이 조용히 깨진다.
+          assertAll(
+              () -> assertThat(draftStatusReader.statusOf(taskId)).isEqualTo(DraftStatus.READY),
+              () -> assertThat(taskTitle(taskId)).isEqualTo(GENERATED_TITLE));
+        });
   }
 
   @Test

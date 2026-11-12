@@ -202,10 +202,8 @@ class McpOAuthFlowIntegrationTest extends AbstractPostgresIntegrationTest {
         output
             .getAll()
             .lines()
-            .filter(
-                line ->
-                    line.contains(
-                        "event=mcp_oauth_refresh outcome=rejected reason=family_inactive"))
+            .filter(line ->
+                line.contains("event=mcp_oauth_refresh outcome=rejected reason=family_inactive"))
             .toList();
     assertThat(rejected)
         .hasSize(2)
@@ -283,27 +281,24 @@ class McpOAuthFlowIntegrationTest extends AbstractPostgresIntegrationTest {
     String code = approve(begin());
     mvc.perform(
             exchangeRequest(code)
-                .with(
-                    request -> {
-                      request.setParameter("code_verifier", "b".repeat(43));
-                      return request;
-                    }))
+                .with(request -> {
+                  request.setParameter("code_verifier", "b".repeat(43));
+                  return request;
+                }))
         .andExpect(status().isBadRequest());
     mvc.perform(
             exchangeRequest(code)
-                .with(
-                    request -> {
-                      request.setParameter("resource", "https://wrong.example/api/mcp");
-                      return request;
-                    }))
+                .with(request -> {
+                  request.setParameter("resource", "https://wrong.example/api/mcp");
+                  return request;
+                }))
         .andExpect(status().isBadRequest());
     mvc.perform(
             exchangeRequest(code)
-                .with(
-                    request -> {
-                      request.setParameter("redirect_uri", "http://localhost:9999/callback");
-                      return request;
-                    }))
+                .with(request -> {
+                  request.setParameter("redirect_uri", "http://localhost:9999/callback");
+                  return request;
+                }))
         .andExpect(status().isBadRequest());
     exchange(code);
     mvc.perform(exchangeRequest(code))
@@ -549,11 +544,10 @@ class McpOAuthFlowIntegrationTest extends AbstractPostgresIntegrationTest {
             .stringValue();
     mvc.perform(
             refreshRequest(refresh)
-                .with(
-                    request -> {
-                      request.setParameter("client_id", other);
-                      return request;
-                    }))
+                .with(request -> {
+                  request.setParameter("client_id", other);
+                  return request;
+                }))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error").value("invalid_grant"));
     mvc.perform(post("/api/oauth2/revoke").param("client_id", other).param("token", refresh))
@@ -662,17 +656,15 @@ class McpOAuthFlowIntegrationTest extends AbstractPostgresIntegrationTest {
     try (var executor = Executors.newFixedThreadPool(2)) {
       var start = new CountDownLatch(1);
       var first =
-          executor.submit(
-              () -> {
-                start.await();
-                return approve(firstId);
-              });
+          executor.submit(() -> {
+            start.await();
+            return approve(firstId);
+          });
       var second =
-          executor.submit(
-              () -> {
-                start.await();
-                return approve(secondId);
-              });
+          executor.submit(() -> {
+            start.await();
+            return approve(secondId);
+          });
       start.countDown();
       String firstCode = first.get(20, TimeUnit.SECONDS);
       String secondCode = second.get(20, TimeUnit.SECONDS);
@@ -818,11 +810,10 @@ class McpOAuthFlowIntegrationTest extends AbstractPostgresIntegrationTest {
     String code = approve(begin());
     mvc.perform(
             exchangeRequest(code)
-                .with(
-                    request -> {
-                      request.removeParameter("client_id");
-                      return request;
-                    }))
+                .with(request -> {
+                  request.removeParameter("client_id");
+                  return request;
+                }))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error").value("invalid_request"));
     exchange(code);

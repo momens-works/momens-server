@@ -262,33 +262,32 @@ class WebWorkspacesIntegrationTest extends AbstractPostgresIntegrationTest {
     TransactionTemplate transaction = new TransactionTemplate(transactionManager);
     transaction.setReadOnly(true);
     Integer queryCount =
-        transaction.execute(
-            status -> {
-              AtomicInteger count = new AtomicInteger();
-              // 스냅샷이 동기적으로 같은 Hibernate 세션에서 조회한다는 전제입니다.
-              entityManager
-                  .unwrap(Session.class)
-                  .addEventListeners(
-                      new SessionEventListener() {
-                        @Override
-                        public void jdbcPrepareStatementEnd() {
-                          count.incrementAndGet();
-                        }
-                      });
-              CompletableFuture.runAsync(
-                      () -> {
-                        EntityManager other = entityManagerFactory.createEntityManager();
-                        try {
-                          other.createNativeQuery("select 1").getSingleResult();
-                        } finally {
-                          other.close();
-                        }
-                      })
-                  .join();
-              assertThat(count.get()).isZero();
-              workspaceSnapshotService.get(workspaceId, caller.id());
-              return count.get();
-            });
+        transaction.execute(status -> {
+          AtomicInteger count = new AtomicInteger();
+          // 스냅샷이 동기적으로 같은 Hibernate 세션에서 조회한다는 전제입니다.
+          entityManager
+              .unwrap(Session.class)
+              .addEventListeners(
+                  new SessionEventListener() {
+                    @Override
+                    public void jdbcPrepareStatementEnd() {
+                      count.incrementAndGet();
+                    }
+                  });
+          CompletableFuture.runAsync(
+                  () -> {
+                    EntityManager other = entityManagerFactory.createEntityManager();
+                    try {
+                      other.createNativeQuery("select 1").getSingleResult();
+                    } finally {
+                      other.close();
+                    }
+                  })
+              .join();
+          assertThat(count.get()).isZero();
+          workspaceSnapshotService.get(workspaceId, caller.id());
+          return count.get();
+        });
     assertThat(queryCount).isEqualTo(14);
   }
 

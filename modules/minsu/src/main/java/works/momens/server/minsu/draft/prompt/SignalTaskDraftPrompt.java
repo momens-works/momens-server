@@ -61,12 +61,11 @@ public final class SignalTaskDraftPrompt {
   public LlmRequest render(SignalTaskDraftInput input) {
     List<EvidenceData> evidence =
         input.evidence().stream()
-            .map(
-                item ->
-                    new EvidenceData(
-                        trimToNull(item.target()),
-                        trimToNull(item.change()),
-                        trimToNull(item.impact())))
+            .map(item ->
+                new EvidenceData(
+                    trimToNull(item.target()),
+                    trimToNull(item.change()),
+                    trimToNull(item.impact())))
             .filter(EvidenceData::hasMeaning)
             .limit(MAX_EVIDENCE_COUNT)
             .toList();
@@ -85,11 +84,8 @@ public final class SignalTaskDraftPrompt {
       return true;
     }
     return input.evidence().stream()
-        .anyMatch(
-            evidence ->
-                hasText(evidence.target())
-                    || hasText(evidence.change())
-                    || hasText(evidence.impact()));
+        .anyMatch(evidence ->
+            hasText(evidence.target()) || hasText(evidence.change()) || hasText(evidence.impact()));
   }
 
   private static String loadInstruction() {

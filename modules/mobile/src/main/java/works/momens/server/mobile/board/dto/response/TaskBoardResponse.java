@@ -58,16 +58,15 @@ public record TaskBoardResponse(
   private static GroupResponse toGroup(MobileTaskGroup group) {
     List<TaskCardResponse> cards =
         group.tasks().stream()
-            .map(
-                card ->
-                    new TaskCardResponse(
-                        card.id(),
-                        card.title(),
-                        card.role(),
-                        toAssignee(card.assignee()),
-                        card.priority(),
-                        card.dueDate(),
-                        card.materialCount()))
+            .map(card ->
+                new TaskCardResponse(
+                    card.id(),
+                    card.title(),
+                    card.role(),
+                    toAssignee(card.assignee()),
+                    card.priority(),
+                    card.dueDate(),
+                    card.materialCount()))
             .toList();
     return new GroupResponse(group.status().key(), group.status().label(), cards.size(), cards);
   }

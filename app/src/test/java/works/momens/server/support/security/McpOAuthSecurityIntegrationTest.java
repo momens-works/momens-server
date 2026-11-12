@@ -707,10 +707,10 @@ class McpOAuthSecurityIntegrationTest extends AbstractPostgresIntegrationTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(
                 """
-            {"jsonrpc":"2.0","id":1,"method":"tools/list","params":{"_meta":{
-              "io.modelcontextprotocol/protocolVersion":"2026-07-28",
-              "io.modelcontextprotocol/clientCapabilities":{}}}}
-            """);
+                {"jsonrpc":"2.0","id":1,"method":"tools/list","params":{"_meta":{
+                  "io.modelcontextprotocol/protocolVersion":"2026-07-28",
+                  "io.modelcontextprotocol/clientCapabilities":{}}}}
+                """);
     return token == null ? request : request.header("Authorization", "Bearer " + token);
   }
 }

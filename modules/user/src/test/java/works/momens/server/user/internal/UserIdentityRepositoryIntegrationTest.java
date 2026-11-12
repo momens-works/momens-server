@@ -69,10 +69,9 @@ class UserIdentityRepositoryIntegrationTest extends AbstractPostgresIntegrationT
     UUID second = persistUser("identity-dup-2@momens.works");
     userIdentityRepository.saveAndFlush(identity(first, UserService.PROVIDER_GOOGLE, "sub-dup"));
 
-    assertThatThrownBy(
-            () ->
-                userIdentityRepository.saveAndFlush(
-                    identity(second, UserService.PROVIDER_GOOGLE, "sub-dup")))
+    assertThatThrownBy(() ->
+            userIdentityRepository.saveAndFlush(
+                identity(second, UserService.PROVIDER_GOOGLE, "sub-dup")))
         .isInstanceOf(DataIntegrityViolationException.class);
   }
 

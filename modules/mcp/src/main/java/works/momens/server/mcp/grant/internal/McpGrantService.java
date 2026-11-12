@@ -48,15 +48,14 @@ class McpGrantService implements McpGrantWriter, McpGrantReader {
     mcpGrantRepository
         .findByUserIdAndClientIdAndWorkspaceIdAndRevokedAtIsNull(
             command.userId(), command.clientId(), command.workspaceId())
-        .ifPresent(
-            grant -> {
-              Instant now = clock.instant();
-              // Use the same grant-before-token lock order as explicit revocation.
-              // A concurrent revoke may already have closed this lifecycle.
-              if (mcpGrantRepository.revokeActive(grant.getId(), now) == 1) {
-                tokenFamilyRevoker.revokeByGrantId(grant.getId(), now);
-              }
-            });
+        .ifPresent(grant -> {
+          Instant now = clock.instant();
+          // Use the same grant-before-token lock order as explicit revocation.
+          // A concurrent revoke may already have closed this lifecycle.
+          if (mcpGrantRepository.revokeActive(grant.getId(), now) == 1) {
+            tokenFamilyRevoker.revokeByGrantId(grant.getId(), now);
+          }
+        });
     return createValidated(command);
   }
 
@@ -118,16 +117,15 @@ class McpGrantService implements McpGrantWriter, McpGrantReader {
     return mcpGrantRepository
         .findByWorkspaceIdAndUserIdAndRevokedAtIsNullOrderByCreatedAtDescIdAsc(workspaceId, userId)
         .stream()
-        .map(
-            grant ->
-                new McpGrantConnection(
-                    grant.getId(),
-                    grant.getClientId(),
-                    grant.getUserId(),
-                    grant.getWorkspaceId(),
-                    grant.getScopes(),
-                    grant.getLastUsedAt(),
-                    grant.getCreatedAt()))
+        .map(grant ->
+            new McpGrantConnection(
+                grant.getId(),
+                grant.getClientId(),
+                grant.getUserId(),
+                grant.getWorkspaceId(),
+                grant.getScopes(),
+                grant.getLastUsedAt(),
+                grant.getCreatedAt()))
         .toList();
   }
 

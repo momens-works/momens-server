@@ -99,10 +99,8 @@ class McpReadToolService {
   public List<McpToolDefinition> list(McpAuthenticationContext context) {
     return definitions.stream()
         .filter(tool -> context.scopes().contains(SCOPES.get(tool.name()).value()))
-        .map(
-            tool ->
-                new McpToolDefinition(
-                    tool.name(), tool.description(), tool.inputSchema().deepCopy()))
+        .map(tool ->
+            new McpToolDefinition(tool.name(), tool.description(), tool.inputSchema().deepCopy()))
         .toList();
   }
 
@@ -139,12 +137,11 @@ class McpReadToolService {
     return context.permits(context.workspaceId(), scope)
         && grants
             .findActive(context.grantId())
-            .filter(
-                grant ->
-                    grant.userId().equals(context.userId())
-                        && grant.clientId().equals(context.clientId())
-                        && grant.workspaceId().equals(context.workspaceId())
-                        && grant.scopes().contains(scope.value()))
+            .filter(grant ->
+                grant.userId().equals(context.userId())
+                    && grant.clientId().equals(context.clientId())
+                    && grant.workspaceId().equals(context.workspaceId())
+                    && grant.scopes().contains(scope.value()))
             .isPresent()
         && memberships.roleOf(context.workspaceId(), context.userId()).isPresent();
   }

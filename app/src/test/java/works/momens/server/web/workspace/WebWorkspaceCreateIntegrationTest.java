@@ -112,13 +112,12 @@ class WebWorkspaceCreateIntegrationTest extends AbstractPostgresIntegrationTest 
             tuple("MEM-0002", "OPEN_QUESTION", "Open questions stay visible until they resolve"),
             tuple("MEM-0003", "INSIGHT", "Add your own context any time"));
     assertThat(memories)
-        .allSatisfy(
-            row -> {
-              assertThat(row.get("status")).isEqualTo("ACTIVE");
-              assertThat(row.get("confirmed_by_user_id")).isEqualTo(caller.id());
-              assertThat(row.get("metadata")).isEqualTo("{\"seeded\": true}");
-              assertThat((String) row.get("related")).contains(project.get("id").toString());
-            });
+        .allSatisfy(row -> {
+          assertThat(row.get("status")).isEqualTo("ACTIVE");
+          assertThat(row.get("confirmed_by_user_id")).isEqualTo(caller.id());
+          assertThat(row.get("metadata")).isEqualTo("{\"seeded\": true}");
+          assertThat((String) row.get("related")).contains(project.get("id").toString());
+        });
     assertThat(memories.get(2).get("body"))
         .isEqualTo("A note is the simplest memory — a thought you want the team to keep.");
   }

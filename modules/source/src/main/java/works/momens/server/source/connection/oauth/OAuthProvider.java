@@ -27,13 +27,12 @@ record OAuthProvider(
       params.put("scope", String.join(" ", definition.scopes()));
     }
     StringBuilder query = new StringBuilder();
-    params.forEach(
-        (name, value) -> {
-          if (!query.isEmpty()) {
-            query.append('&');
-          }
-          query.append(encode(name)).append('=').append(encode(value));
-        });
+    params.forEach((name, value) -> {
+      if (!query.isEmpty()) {
+        query.append('&');
+      }
+      query.append(encode(name)).append('=').append(encode(value));
+    });
     return definition.authorizeEndpoint() + "?" + query;
   }
 

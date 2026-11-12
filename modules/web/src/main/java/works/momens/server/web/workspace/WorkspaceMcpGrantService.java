@@ -24,12 +24,11 @@ class WorkspaceMcpGrantService {
   public List<McpGrantsResponse.Grant> list(UUID workspaceId, UUID userId) {
     access.requireRoleAtLeast(workspaceId, userId, WorkspaceRole.MEMBER);
     return grants.findActiveConnections(workspaceId, userId).stream()
-        .flatMap(
-            grant ->
-                clients
-                    .findClientName(grant.clientId())
-                    .map(name -> McpGrantsResponse.Grant.from(grant, name))
-                    .stream())
+        .flatMap(grant ->
+            clients
+                .findClientName(grant.clientId())
+                .map(name -> McpGrantsResponse.Grant.from(grant, name))
+                .stream())
         .toList();
   }
 

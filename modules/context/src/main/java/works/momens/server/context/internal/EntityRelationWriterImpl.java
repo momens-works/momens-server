@@ -87,12 +87,12 @@ class EntityRelationWriterImpl implements EntityRelationWriter {
         entityManager
             .createNativeQuery(
                 """
-            SELECT id, deleted_at FROM entity_relations
-            WHERE workspace_id = :workspaceId AND from_entity_type = :fromType
-              AND from_entity_id = :fromId AND relation_type = :relationType
-              AND to_entity_type = :toType AND to_entity_id = :toId
-            ORDER BY created_at DESC LIMIT 1
-            """)
+                SELECT id, deleted_at FROM entity_relations
+                WHERE workspace_id = :workspaceId AND from_entity_type = :fromType
+                  AND from_entity_id = :fromId AND relation_type = :relationType
+                  AND to_entity_type = :toType AND to_entity_id = :toId
+                ORDER BY created_at DESC LIMIT 1
+                """)
             .setParameter("workspaceId", command.workspaceId())
             .setParameter("fromType", command.fromEntityType().name())
             .setParameter("fromId", command.fromEntityId())

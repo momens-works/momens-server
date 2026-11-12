@@ -44,13 +44,9 @@ class WorkspaceMembershipReaderImpl implements WorkspaceMembershipReader {
     return workspaceMemberRepository
         .findByWorkspaceIdOrderByCreatedAtAscUserIdAsc(workspaceId)
         .stream()
-        .map(
-            member ->
-                new WorkspaceMembershipDetail(
-                    member.getUserId(),
-                    member.getRole(),
-                    member.getCreatedAt(),
-                    member.getUpdatedAt()))
+        .map(member ->
+            new WorkspaceMembershipDetail(
+                member.getUserId(), member.getRole(), member.getCreatedAt(), member.getUpdatedAt()))
         .toList();
   }
 
@@ -69,13 +65,9 @@ class WorkspaceMembershipReaderImpl implements WorkspaceMembershipReader {
     return workspaceMemberRepository
         .findPage(workspaceId, after, afterId, PageRequest.of(0, limit))
         .stream()
-        .map(
-            member ->
-                new WorkspaceMembershipDetail(
-                    member.getUserId(),
-                    member.getRole(),
-                    member.getCreatedAt(),
-                    member.getUpdatedAt()))
+        .map(member ->
+            new WorkspaceMembershipDetail(
+                member.getUserId(), member.getRole(), member.getCreatedAt(), member.getUpdatedAt()))
         .toList();
   }
 }

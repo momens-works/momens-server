@@ -120,11 +120,10 @@ class TaskWriterImpl implements TaskWriter {
         task.getChecklistItems().stream()
             .filter(candidate -> candidate.getId().equals(itemId))
             .findFirst()
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        TaskErrorCode.TASK_CHECKLIST_ITEM_NOT_FOUND,
-                        Map.of("checklist_item_id", itemId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    TaskErrorCode.TASK_CHECKLIST_ITEM_NOT_FOUND,
+                    Map.of("checklist_item_id", itemId.toString())));
     if (item.isCompleted() != completed) {
       item.changeCompleted(completed);
       task.checklistChanged();
@@ -176,10 +175,9 @@ class TaskWriterImpl implements TaskWriter {
   private Task findTask(UUID taskId) {
     return taskRepository
         .findForMutation(taskId)
-        .orElseThrow(
-            () ->
-                new BusinessException(
-                    TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())));
+        .orElseThrow(() ->
+            new BusinessException(
+                TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())));
   }
 
   private void appendCreatedEvent(Task task) {

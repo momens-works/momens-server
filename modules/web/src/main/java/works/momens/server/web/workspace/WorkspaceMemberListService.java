@@ -58,17 +58,16 @@ class WorkspaceMemberListService {
             .collect(Collectors.toMap(UserProfile::id, Function.identity()));
     return memberships.stream()
         .filter(membership -> profiles.containsKey(membership.userId()))
-        .map(
-            membership -> {
-              UserProfile profile = profiles.get(membership.userId());
-              return new WorkspaceMemberView(
-                  profile.id(),
-                  profile.email(),
-                  profile.name(),
-                  membership.role(),
-                  membership.createdAt(),
-                  membership.updatedAt());
-            })
+        .map(membership -> {
+          UserProfile profile = profiles.get(membership.userId());
+          return new WorkspaceMemberView(
+              profile.id(),
+              profile.email(),
+              profile.name(),
+              membership.role(),
+              membership.createdAt(),
+              membership.updatedAt());
+        })
         .toList();
   }
 

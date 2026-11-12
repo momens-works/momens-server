@@ -30,22 +30,20 @@ record McpReadPage(int limit, Instant time, UUID id, String binding, String tool
     TreeMap<String, String> filters = new TreeMap<>();
     arguments
         .properties()
-        .forEach(
-            entry -> {
-              if (!entry.getKey().equals("cursor") && !entry.getKey().equals("limit")) {
-                filters.put(entry.getKey(), entry.getValue().asText().strip());
-              }
-            });
+        .forEach(entry -> {
+          if (!entry.getKey().equals("cursor") && !entry.getKey().equals("limit")) {
+            filters.put(entry.getKey(), entry.getValue().asText().strip());
+          }
+        });
     StringBuilder filterKey = new StringBuilder();
-    filters.forEach(
-        (key, value) ->
-            filterKey
-                .append(key.length())
-                .append(':')
-                .append(key)
-                .append(value.length())
-                .append(':')
-                .append(value));
+    filters.forEach((key, value) ->
+        filterKey
+            .append(key.length())
+            .append(':')
+            .append(key)
+            .append(value.length())
+            .append(':')
+            .append(value));
     String binding =
         digest(tool + ":" + context.workspaceId() + ":" + context.userId() + ":" + filterKey);
     if (!arguments.has("cursor")) {

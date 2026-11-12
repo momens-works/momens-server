@@ -80,13 +80,12 @@ class SourceInstallerImpl implements SourceInstaller {
     ProviderIdentity identity = readIdentity(provider, tokenResponse);
 
     SourceConnectionDetail saved =
-        transactionTemplate.execute(
-            status -> {
-              SourceConnection connection = upsertConnection(state, provider, identity);
-              credentialTargets(provider, identity, connection)
-                  .forEach(id -> upsertCredential(id, tokenResponse, accessToken));
-              return toDetail(connection);
-            });
+        transactionTemplate.execute(status -> {
+          SourceConnection connection = upsertConnection(state, provider, identity);
+          credentialTargets(provider, identity, connection)
+              .forEach(id -> upsertCredential(id, tokenResponse, accessToken));
+          return toDetail(connection);
+        });
     return new CompletedInstall(saved, properties.successRedirectUri());
   }
 
@@ -94,11 +93,10 @@ class SourceInstallerImpl implements SourceInstaller {
     OAuthProvider provider =
         providerRegistry
             .find(sourceType)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        SourceErrorCode.SOURCE_UNSUPPORTED_PROVIDER,
-                        Map.of("provider", String.valueOf(sourceType))));
+            .orElseThrow(() ->
+                new BusinessException(
+                    SourceErrorCode.SOURCE_UNSUPPORTED_PROVIDER,
+                    Map.of("provider", String.valueOf(sourceType))));
     if (!provider.isConfigured()) {
       throw new BusinessException(
           SourceErrorCode.SOURCE_PROVIDER_UNCONFIGURED, Map.of("provider", provider.sourceType()));
@@ -146,20 +144,19 @@ class SourceInstallerImpl implements SourceInstaller {
                 .findByWorkspaceIdAndSourceTypeAndExternalWorkspaceIdOrderByCreatedAtAsc(
                     state.workspaceId(), provider.sourceType(), identity.externalId());
     if (!existing.isEmpty()) {
-      existing.forEach(
-          connection -> {
-            Map<String, Object> metadata = identity.metadata();
-            if (OAuthProviderRegistry.FIGMA.equals(provider.sourceType())) {
-              // configure의 마지막 검증과 같은 행 잠금을 사용합니다. 재승인 후에도 기존 webhook 정리가 가능해야 합니다.
-              metadata = new LinkedHashMap<>();
-              if (connection.getMetadata() != null) {
-                metadata.putAll(connection.getMetadata());
-              }
-              metadata.putAll(identity.metadata());
-            }
-            sourceConnectionRepository.reconnect(
-                connection.getId(), status, identity.externalName(), state.userId(), now, metadata);
-          });
+      existing.forEach(connection -> {
+        Map<String, Object> metadata = identity.metadata();
+        if (OAuthProviderRegistry.FIGMA.equals(provider.sourceType())) {
+          // configure의 마지막 검증과 같은 행 잠금을 사용합니다. 재승인 후에도 기존 webhook 정리가 가능해야 합니다.
+          metadata = new LinkedHashMap<>();
+          if (connection.getMetadata() != null) {
+            metadata.putAll(connection.getMetadata());
+          }
+          metadata.putAll(identity.metadata());
+        }
+        sourceConnectionRepository.reconnect(
+            connection.getId(), status, identity.externalName(), state.userId(), now, metadata);
+      });
       return sourceConnectionRepository.findById(existing.getFirst().getId()).orElseThrow();
     }
     SourceConnection connection =
@@ -203,22 +200,19 @@ class SourceInstallerImpl implements SourceInstaller {
     SourceCredential credential =
         sourceCredentialRepository
             .findById(connectionId)
-            .map(
-                existing -> {
-                  existing.replaceTokens(
-                      accessTokenEnc, refreshTokenEnc, tokenType, scope, expiresAt);
-                  return existing;
-                })
-            .orElseGet(
-                () ->
-                    SourceCredential.builder()
-                        .connectionId(connectionId)
-                        .accessTokenEnc(accessTokenEnc)
-                        .refreshTokenEnc(refreshTokenEnc)
-                        .tokenType(tokenType)
-                        .scope(scope)
-                        .expiresAt(expiresAt)
-                        .build());
+            .map(existing -> {
+              existing.replaceTokens(accessTokenEnc, refreshTokenEnc, tokenType, scope, expiresAt);
+              return existing;
+            })
+            .orElseGet(() ->
+                SourceCredential.builder()
+                    .connectionId(connectionId)
+                    .accessTokenEnc(accessTokenEnc)
+                    .refreshTokenEnc(refreshTokenEnc)
+                    .tokenType(tokenType)
+                    .scope(scope)
+                    .expiresAt(expiresAt)
+                    .build());
     sourceCredentialRepository.save(credential);
   }
 

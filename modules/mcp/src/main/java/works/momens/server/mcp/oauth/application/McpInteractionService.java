@@ -105,9 +105,8 @@ public class McpInteractionService {
         URI.create(request.getRedirectUri()).getAuthority(),
         request.getScopes().stream().toList(),
         workspaces.listByMemberUserId(userId).stream()
-            .map(
-                workspace ->
-                    new WorkspaceOption(workspace.id(), workspace.name(), workspace.slug()))
+            .map(workspace ->
+                new WorkspaceOption(workspace.id(), workspace.name(), workspace.slug()))
             .toList(),
         expiresAt(authorization));
   }

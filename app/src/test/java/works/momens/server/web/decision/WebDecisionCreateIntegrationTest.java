@@ -117,9 +117,9 @@ class WebDecisionCreateIntegrationTest extends AbstractPostgresIntegrationTest {
     create(
             f,
             """
-        {"title":" ","context":"  ","rationale":" ","alternatives":" MySQL ",
-         "decision_maker":"00000000-0000-0000-0000-000000000000"}
-        """)
+            {"title":" ","context":"  ","rationale":" ","alternatives":" MySQL ",
+             "decision_maker":"00000000-0000-0000-0000-000000000000"}
+            """)
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.title").value(" "))
         .andExpect(jsonPath("$.context").value("  "))
@@ -192,18 +192,17 @@ class WebDecisionCreateIntegrationTest extends AbstractPostgresIntegrationTest {
   @DisplayName("writer는 다른 워크스페이스에 속한 프로젝트의 Decision 생성을 거부한다")
   void writerRejectsProjectFromAnotherWorkspace() {
     Fixture f = fixture("member");
-    assertThatThrownBy(
-            () ->
-                writer.create(
-                    new CreateDecisionCommand(
-                        f.project(),
-                        UUID.randomUUID(),
-                        f.user(),
-                        "title",
-                        "context",
-                        null,
-                        "rationale",
-                        null)))
+    assertThatThrownBy(() ->
+            writer.create(
+                new CreateDecisionCommand(
+                    f.project(),
+                    UUID.randomUUID(),
+                    f.user(),
+                    "title",
+                    "context",
+                    null,
+                    "rationale",
+                    null)))
         .isInstanceOf(BusinessException.class);
     assertNoWrites(f);
   }
@@ -243,18 +242,17 @@ class WebDecisionCreateIntegrationTest extends AbstractPostgresIntegrationTest {
   @DisplayName("Decision 저장에 실패하면 outbox 이벤트를 발행하지 않는다")
   void failedDecisionInsertDoesNotPublishEvent() {
     Fixture f = fixture("member");
-    assertThatThrownBy(
-            () ->
-                writer.create(
-                    new CreateDecisionCommand(
-                        f.project(),
-                        f.workspace(),
-                        UUID.randomUUID(),
-                        "title",
-                        "context",
-                        null,
-                        "rationale",
-                        null)))
+    assertThatThrownBy(() ->
+            writer.create(
+                new CreateDecisionCommand(
+                    f.project(),
+                    f.workspace(),
+                    UUID.randomUUID(),
+                    "title",
+                    "context",
+                    null,
+                    "rationale",
+                    null)))
         .isInstanceOf(DataIntegrityViolationException.class);
     assertNoWrites(f);
   }
@@ -288,33 +286,30 @@ class WebDecisionCreateIntegrationTest extends AbstractPostgresIntegrationTest {
     var transaction = new TransactionTemplate(transactionManager);
     try (var executor = Executors.newSingleThreadExecutor()) {
       var deleting =
-          transaction.execute(
-              status -> {
-                projectReader.lockWorkspaceIdOf(f.project()).orElseThrow();
-                int pid = jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class);
-                var future =
-                    executor.submit(
-                        () ->
-                            jdbc.update(
-                                "UPDATE projects SET deleted_at = now() WHERE id = ?",
-                                f.project()));
-                try {
-                  awaitBlockedBy(pid);
-                  writer.create(
-                      new CreateDecisionCommand(
-                          f.project(),
-                          f.workspace(),
-                          f.user(),
-                          "title",
-                          "context",
-                          null,
-                          "rationale",
-                          null));
-                } catch (Exception e) {
-                  throw new IllegalStateException(e);
-                }
-                return future;
-              });
+          transaction.execute(status -> {
+            projectReader.lockWorkspaceIdOf(f.project()).orElseThrow();
+            int pid = jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class);
+            var future =
+                executor.submit(() ->
+                    jdbc.update(
+                        "UPDATE projects SET deleted_at = now() WHERE id = ?", f.project()));
+            try {
+              awaitBlockedBy(pid);
+              writer.create(
+                  new CreateDecisionCommand(
+                      f.project(),
+                      f.workspace(),
+                      f.user(),
+                      "title",
+                      "context",
+                      null,
+                      "rationale",
+                      null));
+            } catch (Exception e) {
+              throw new IllegalStateException(e);
+            }
+            return future;
+          });
       assertThat(deleting.get(15, TimeUnit.SECONDS)).isEqualTo(1);
     }
     assertThat(count("decisions", "project_id", f.project())).isEqualTo(1);
@@ -350,28 +345,26 @@ class WebDecisionCreateIntegrationTest extends AbstractPostgresIntegrationTest {
     Fixture f = fixture("member");
     var transaction = new TransactionTemplate(transactionManager);
     try (var executor = Executors.newSingleThreadExecutor()) {
-      transaction.executeWithoutResult(
-          status -> {
-            projectReader.lockWorkspaceIdOf(f.project()).orElseThrow();
-            var creating =
-                executor.submit(
-                    () ->
-                        writer.create(
-                            new CreateDecisionCommand(
-                                f.project(),
-                                f.workspace(),
-                                f.user(),
-                                "title",
-                                "context",
-                                null,
-                                "rationale",
-                                null)));
-            try {
-              assertThat(creating.get(5, TimeUnit.SECONDS).projectId()).isEqualTo(f.project());
-            } catch (Exception e) {
-              throw new IllegalStateException(e);
-            }
-          });
+      transaction.executeWithoutResult(status -> {
+        projectReader.lockWorkspaceIdOf(f.project()).orElseThrow();
+        var creating =
+            executor.submit(() ->
+                writer.create(
+                    new CreateDecisionCommand(
+                        f.project(),
+                        f.workspace(),
+                        f.user(),
+                        "title",
+                        "context",
+                        null,
+                        "rationale",
+                        null)));
+        try {
+          assertThat(creating.get(5, TimeUnit.SECONDS).projectId()).isEqualTo(f.project());
+        } catch (Exception e) {
+          throw new IllegalStateException(e);
+        }
+      });
     }
     assertThat(count("decisions", "project_id", f.project())).isEqualTo(1);
   }

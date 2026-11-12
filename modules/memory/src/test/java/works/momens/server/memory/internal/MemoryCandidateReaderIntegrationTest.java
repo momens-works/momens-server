@@ -116,11 +116,10 @@ class MemoryCandidateReaderIntegrationTest extends AbstractPostgresIntegrationTe
         .extracting(MemoryCandidateDetail::id)
         .containsExactly(nullArrays, emptyArrays);
     assertThat(details)
-        .allSatisfy(
-            detail -> {
-              assertThat(detail.sourceRefIds()).isEmpty();
-              assertThat(detail.relatedEntityIds()).isEmpty();
-            });
+        .allSatisfy(detail -> {
+          assertThat(detail.sourceRefIds()).isEmpty();
+          assertThat(detail.relatedEntityIds()).isEmpty();
+        });
   }
 
   @Test

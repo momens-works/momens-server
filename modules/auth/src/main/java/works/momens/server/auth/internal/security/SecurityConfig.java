@@ -81,17 +81,15 @@ class SecurityConfig {
         // 무상태 Bearer/쿠키 API. same-domain 배포라 CSRF는 SameSite 쿠키 속성으로 막습니다(ADR-0003).
         .csrf(AbstractHttpConfigurer::disable)
         .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-        .oauth2ResourceServer(
-            oauth2 ->
-                oauth2
-                    .authenticationEntryPoint(authenticationEntryPoint)
-                    .accessDeniedHandler(accessDeniedHandler)
-                    .bearerTokenResolver(bearerTokenResolver)
-                    .jwt(jwt -> jwt.decoder(accessTokenDecoder)))
-        .exceptionHandling(
-            ex ->
-                ex.authenticationEntryPoint(authenticationEntryPoint)
-                    .accessDeniedHandler(accessDeniedHandler));
+        .oauth2ResourceServer(oauth2 ->
+            oauth2
+                .authenticationEntryPoint(authenticationEntryPoint)
+                .accessDeniedHandler(accessDeniedHandler)
+                .bearerTokenResolver(bearerTokenResolver)
+                .jwt(jwt -> jwt.decoder(accessTokenDecoder)))
+        .exceptionHandling(ex ->
+            ex.authenticationEntryPoint(authenticationEntryPoint)
+                .accessDeniedHandler(accessDeniedHandler));
     return http.build();
   }
 

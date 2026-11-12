@@ -68,10 +68,8 @@ final class McpToolReferences {
       return milestones.stream()
           .filter(milestone -> milestone.id().equals(id.get()))
           .findFirst()
-          .orElseThrow(
-              () ->
-                  new McpToolInputException(
-                      "No milestone with this id in this workspace or project"));
+          .orElseThrow(() ->
+              new McpToolInputException("No milestone with this id in this workspace or project"));
     }
     List<MilestoneDetail> exact =
         milestones.stream()
@@ -80,13 +78,12 @@ final class McpToolReferences {
     List<MilestoneDetail> matches =
         exact.isEmpty()
             ? milestones.stream()
-                .filter(
-                    milestone ->
-                        milestone
-                            .name()
-                            .strip()
-                            .toLowerCase(Locale.ROOT)
-                            .contains(reference.toLowerCase(Locale.ROOT)))
+                .filter(milestone ->
+                    milestone
+                        .name()
+                        .strip()
+                        .toLowerCase(Locale.ROOT)
+                        .contains(reference.toLowerCase(Locale.ROOT)))
                 .toList()
             : exact;
     if (matches.size() == 1) {
@@ -120,15 +117,14 @@ final class McpToolReferences {
             .toList();
     List<UserProfile> partial =
         members.stream()
-            .filter(
-                member ->
-                    !member.name().isBlank()
-                        && !member.name().strip().equalsIgnoreCase(reference)
-                        && member
-                            .name()
-                            .strip()
-                            .toLowerCase(Locale.ROOT)
-                            .contains(reference.toLowerCase(Locale.ROOT)))
+            .filter(member ->
+                !member.name().isBlank()
+                    && !member.name().strip().equalsIgnoreCase(reference)
+                    && member
+                        .name()
+                        .strip()
+                        .toLowerCase(Locale.ROOT)
+                        .contains(reference.toLowerCase(Locale.ROOT)))
             .toList();
     if (exact.size() == 1) {
       return exact.getFirst().id();

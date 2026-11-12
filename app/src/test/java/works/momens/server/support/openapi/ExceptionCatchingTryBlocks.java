@@ -55,10 +55,9 @@ final class ExceptionCatchingTryBlocks {
 
   private static boolean isRegisteredAs(String codeUnitFullName, Handling handling) {
     return REGISTERED.stream()
-        .anyMatch(
-            registered ->
-                registered.codeUnitFullName().equals(codeUnitFullName)
-                    && registered.handling() == handling);
+        .anyMatch(registered ->
+            registered.codeUnitFullName().equals(codeUnitFullName)
+                && registered.handling() == handling);
   }
 
   record RegisteredTryBlock(String codeUnitFullName, Handling handling, String reason) {}

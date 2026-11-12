@@ -162,17 +162,14 @@ class DevSignalWriterIntegrationTest extends AbstractPostgresIntegrationTest {
   void rejectsUnknownProject() {
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(
-            () ->
-                writer.create(
-                    PROJECT_ID,
-                    new CreateDevSignalRequest(
-                        SignalType.RISK, "제목", "설명", null, null, null, null)))
+    assertThatThrownBy(() ->
+            writer.create(
+                PROJECT_ID,
+                new CreateDevSignalRequest(SignalType.RISK, "제목", "설명", null, null, null, null)))
         .isInstanceOf(BusinessException.class)
-        .satisfies(
-            e ->
-                assertThat(((BusinessException) e).getErrorCode().code())
-                    .isEqualTo("PROJECT_NOT_FOUND"));
+        .satisfies(e ->
+            assertThat(((BusinessException) e).getErrorCode().code())
+                .isEqualTo("PROJECT_NOT_FOUND"));
     verifyNoInteractions(outboxAppender);
   }
 }

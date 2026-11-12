@@ -59,24 +59,20 @@ class ReachableDomainErrorCodeCollectorConditionTest {
     List<String> violations =
         allCodeUnits()
             .filter(codeUnit -> !DomainErrorCodes.isDomainErrorCodeEnum(codeUnit.getOwner()))
-            .flatMap(
-                codeUnit ->
-                    Stream.concat(
-                        codeUnit.getFieldAccesses().stream()
-                            .filter(
-                                access ->
-                                    DomainErrorCodes.isDomainErrorCodeEnum(access.getTargetOwner()))
-                            .filter(access -> !(codeUnit instanceof JavaMethod))
-                            .map(access -> access.getDescription()),
-                        codeUnit.getMethodCallsFromSelf().stream()
-                            .filter(
-                                call ->
-                                    DomainErrorCodes.isDomainErrorCodeEnum(call.getTargetOwner()))
-                            .filter(
-                                call ->
-                                    call.getTarget().getName().equals("values")
-                                        || call.getTarget().getName().equals("valueOf"))
-                            .map(call -> call.getDescription())))
+            .flatMap(codeUnit ->
+                Stream.concat(
+                    codeUnit.getFieldAccesses().stream()
+                        .filter(access ->
+                            DomainErrorCodes.isDomainErrorCodeEnum(access.getTargetOwner()))
+                        .filter(access -> !(codeUnit instanceof JavaMethod))
+                        .map(access -> access.getDescription()),
+                    codeUnit.getMethodCallsFromSelf().stream()
+                        .filter(
+                            call -> DomainErrorCodes.isDomainErrorCodeEnum(call.getTargetOwner()))
+                        .filter(call ->
+                            call.getTarget().getName().equals("values")
+                                || call.getTarget().getName().equals("valueOf"))
+                        .map(call -> call.getDescription())))
             .toList();
 
     assertThat(violations)
@@ -92,10 +88,9 @@ class ReachableDomainErrorCodeCollectorConditionTest {
             .filter(javaClass -> !DomainErrorCodes.isDomainErrorCodeEnum(javaClass))
             .filter(javaClass -> !javaClass.isEquivalentTo(BusinessException.class))
             .flatMap(javaClass -> javaClass.getFields().stream())
-            .filter(
-                field ->
-                    field.getRawType().isEquivalentTo(ErrorCode.class)
-                        || DomainErrorCodes.isDomainErrorCodeEnum(field.getRawType()))
+            .filter(field ->
+                field.getRawType().isEquivalentTo(ErrorCode.class)
+                    || DomainErrorCodes.isDomainErrorCodeEnum(field.getRawType()))
             .map(field -> field.getFullName())
             .toList();
 
@@ -132,14 +127,13 @@ class ReachableDomainErrorCodeCollectorConditionTest {
             .filter(codeUnit -> !DomainErrorCodes.referencedBy(codeUnit).isEmpty())
             .map(JavaCodeUnit::getOwner)
             .distinct()
-            .flatMap(
-                owner ->
-                    Stream.concat(
-                            owner.getAllRawInterfaces().stream(),
-                            owner.getAllRawSuperclasses().stream())
-                        .filter(type -> !type.isEquivalentTo(Object.class))
-                        .filter(type -> !classes.contain(type.getName()))
-                        .map(type -> owner.getName() + " -> " + type.getName()))
+            .flatMap(owner ->
+                Stream.concat(
+                        owner.getAllRawInterfaces().stream(),
+                        owner.getAllRawSuperclasses().stream())
+                    .filter(type -> !type.isEquivalentTo(Object.class))
+                    .filter(type -> !classes.contain(type.getName()))
+                    .map(type -> owner.getName() + " -> " + type.getName()))
             .toList();
 
     assertThat(violations)

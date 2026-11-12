@@ -207,14 +207,10 @@ class WebFigmaConfigureIntegrationTest extends AbstractPostgresIntegrationTest {
   @Test
   @DisplayName("외부 트랜잭션에서 공개 writer를 호출하면 외부 등록 전 거부한다")
   void refusesAmbientTransaction() {
-    assertThatThrownBy(
-            () ->
-                transactions.executeWithoutResult(
-                    tx ->
-                        writer.configureFigma(
-                            workspaceId,
-                            connectionId,
-                            new ConfigureFigmaCommand("team", List.of("f1")))))
+    assertThatThrownBy(() ->
+            transactions.executeWithoutResult(tx ->
+                writer.configureFigma(
+                    workspaceId, connectionId, new ConfigureFigmaCommand("team", List.of("f1")))))
         .isInstanceOf(IllegalTransactionStateException.class);
     verifyNoInteractions(client);
   }

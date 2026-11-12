@@ -100,11 +100,10 @@ class FigmaTokenRefresherIntegrationTest extends AbstractPostgresIntegrationTest
   @AfterEach
   void tearDown() {
     server.stop(0);
-    workspaces.forEach(
-        id -> {
-          jdbc.update("DELETE FROM source_connections WHERE workspace_id=?", id);
-          jdbc.update("DELETE FROM workspaces WHERE id=?", id);
-        });
+    workspaces.forEach(id -> {
+      jdbc.update("DELETE FROM source_connections WHERE workspace_id=?", id);
+      jdbc.update("DELETE FROM workspaces WHERE id=?", id);
+    });
   }
 
   private FigmaTokenRefresher refresher(String clientId) {

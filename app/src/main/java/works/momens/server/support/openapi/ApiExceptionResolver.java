@@ -44,12 +44,11 @@ public class ApiExceptionResolver {
     return Arrays.stream(constants)
         .filter(constant -> constant.code().equals(code))
         .findFirst()
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    "@ApiException declares a code that does not exist in "
-                        + errorEnum.getName()
-                        + ": "
-                        + code));
+        .orElseThrow(() ->
+            new IllegalArgumentException(
+                "@ApiException declares a code that does not exist in "
+                    + errorEnum.getName()
+                    + ": "
+                    + code));
   }
 }

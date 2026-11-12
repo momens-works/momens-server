@@ -275,10 +275,9 @@ class TaskDraftGenerationLedger {
     // 여기서 예외를 던지면 claim은 커밋된 채 실행만 실패해 lease 만료까지 기다리게 된다.
     return json.read(evidenceJson, SignalTaskDraftInput.Evidence[].class)
         .map(Arrays::asList)
-        .orElseGet(
-            () -> {
-              log.warn("minsu 원장 evidence 역직렬화 실패, 빈 근거로 실행합니다");
-              return List.of();
-            });
+        .orElseGet(() -> {
+          log.warn("minsu 원장 evidence 역직렬화 실패, 빈 근거로 실행합니다");
+          return List.of();
+        });
   }
 }

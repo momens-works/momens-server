@@ -76,40 +76,38 @@ class MilestoneWriterIntegrationTest extends AbstractPostgresIntegrationTest {
     Fixture fixture = newFixture("writer-validation");
     Milestone milestone = saveMilestone(fixture.projectId(), "마일스톤");
 
-    assertThatThrownBy(
-            () ->
-                milestoneWriter.update(
-                    new UpdateMilestoneCommand(
-                        milestone.getId(),
-                        null,
-                        null,
-                        false,
-                        null,
-                        null,
-                        false,
-                        "unknown",
-                        null,
-                        null,
-                        false,
-                        null)))
+    assertThatThrownBy(() ->
+            milestoneWriter.update(
+                new UpdateMilestoneCommand(
+                    milestone.getId(),
+                    null,
+                    null,
+                    false,
+                    null,
+                    null,
+                    false,
+                    "unknown",
+                    null,
+                    null,
+                    false,
+                    null)))
         .isInstanceOf(FieldValidationException.class);
 
-    assertThatThrownBy(
-            () ->
-                milestoneWriter.update(
-                    new UpdateMilestoneCommand(
-                        milestone.getId(),
-                        null,
-                        null,
-                        false,
-                        null,
-                        null,
-                        false,
-                        null,
-                        101,
-                        null,
-                        false,
-                        null)))
+    assertThatThrownBy(() ->
+            milestoneWriter.update(
+                new UpdateMilestoneCommand(
+                    milestone.getId(),
+                    null,
+                    null,
+                    false,
+                    null,
+                    null,
+                    false,
+                    null,
+                    101,
+                    null,
+                    false,
+                    null)))
         .isInstanceOf(FieldValidationException.class);
   }
 
@@ -118,22 +116,21 @@ class MilestoneWriterIntegrationTest extends AbstractPostgresIntegrationTest {
     Fixture fixture = newFixture("writer-status-validation");
     Milestone milestone = saveMilestone(fixture.projectId(), "마일스톤");
 
-    assertThatThrownBy(
-            () ->
-                milestoneWriter.update(
-                    new UpdateMilestoneCommand(
-                        milestone.getId(),
-                        null,
-                        null,
-                        false,
-                        "unknown",
-                        null,
-                        false,
-                        null,
-                        null,
-                        null,
-                        false,
-                        null)))
+    assertThatThrownBy(() ->
+            milestoneWriter.update(
+                new UpdateMilestoneCommand(
+                    milestone.getId(),
+                    null,
+                    null,
+                    false,
+                    "unknown",
+                    null,
+                    false,
+                    null,
+                    null,
+                    null,
+                    false,
+                    null)))
         .isInstanceOf(FieldValidationException.class);
   }
 

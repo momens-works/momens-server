@@ -94,10 +94,9 @@ class WorkspaceMemberServiceTest {
     workspaceExists();
     callerHasRole(WorkspaceRole.MEMBER);
 
-    assertThatThrownBy(
-            () ->
-                workspaceMemberService.changeRole(
-                    WORKSPACE_ID, CALLER_ID, TARGET_ID, AssignableWorkspaceRole.ADMIN))
+    assertThatThrownBy(() ->
+            workspaceMemberService.changeRole(
+                WORKSPACE_ID, CALLER_ID, TARGET_ID, AssignableWorkspaceRole.ADMIN))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(CommonErrorCode.AUTH_FORBIDDEN);

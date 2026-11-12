@@ -82,11 +82,9 @@ class SignalActionServiceImpl implements SignalActionService {
     SignalReader.Snapshot signal =
         signalReader
             .findLive(signalId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        SignalErrorCode.SIGNAL_NOT_FOUND,
-                        Map.of("signal_id", signalId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    SignalErrorCode.SIGNAL_NOT_FOUND, Map.of("signal_id", signalId.toString())));
     if (workspaceMembershipReader.roleOf(signal.workspaceId(), userId).isEmpty()) {
       throw new BusinessException(
           CommonErrorCode.AUTH_FORBIDDEN, Map.of("signal_id", signalId.toString()));
@@ -105,9 +103,8 @@ class SignalActionServiceImpl implements SignalActionService {
   private PreparedTaskDraft prepareDraft(SignalReader.Snapshot signal) {
     List<SignalTaskDraftInput.Evidence> evidence =
         signalReader.findDraftEvidence(signal.id()).stream()
-            .map(
-                item ->
-                    new SignalTaskDraftInput.Evidence(item.target(), item.change(), item.impact()))
+            .map(item ->
+                new SignalTaskDraftInput.Evidence(item.target(), item.change(), item.impact()))
             .toList();
     return taskDraftGenerator.prepare(
         new SignalTaskDraftInput(
@@ -130,13 +127,12 @@ class SignalActionServiceImpl implements SignalActionService {
       TaskDetail detail =
           taskReader
               .findDetail(existing.getResultTaskId())
-              .orElseThrow(
-                  () ->
-                      new IllegalStateException(
-                          "signal_actions.result_task_id가 존재하지 않는 task를 가리킴: signal_id="
-                              + existing.getSignalId()
-                              + ", result_task_id="
-                              + existing.getResultTaskId()));
+              .orElseThrow(() ->
+                  new IllegalStateException(
+                      "signal_actions.result_task_id가 존재하지 않는 task를 가리킴: signal_id="
+                          + existing.getSignalId()
+                          + ", result_task_id="
+                          + existing.getResultTaskId()));
       return new SignalActionResult(
           existing.getSignalId(),
           SignalActionType.CONVERT_TO_TASK.value(),

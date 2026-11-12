@@ -129,14 +129,9 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
     userService.findOrCreateByIdentity(
         UserService.PROVIDER_GOOGLE, "sub-owner", "shared@momens.works", "이전주인", null);
 
-    assertThatThrownBy(
-            () ->
-                userService.findOrCreateByIdentity(
-                    UserService.PROVIDER_GOOGLE,
-                    "sub-newcomer",
-                    "shared@momens.works",
-                    "새주인",
-                    null))
+    assertThatThrownBy(() ->
+            userService.findOrCreateByIdentity(
+                UserService.PROVIDER_GOOGLE, "sub-newcomer", "shared@momens.works", "새주인", null))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(UserErrorCode.USER_EMAIL_LINKED_TO_ANOTHER_IDENTITY);
@@ -177,21 +172,18 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
       CountDownLatch start = new CountDownLatch(1);
       List<Future<UUID>> futures =
           IntStream.range(0, threads)
-              .mapToObj(
-                  i ->
-                      pool.submit(
-                          () -> {
-                            start.await();
-                            return tx.execute(
-                                    status ->
-                                        userService.findOrCreateByIdentity(
-                                            UserService.PROVIDER_GOOGLE,
-                                            "sub-race",
-                                            "race@momens.works",
-                                            "홍길동",
-                                            null))
-                                .id();
-                          }))
+              .mapToObj(i ->
+                  pool.submit(() -> {
+                    start.await();
+                    return tx.execute(status ->
+                            userService.findOrCreateByIdentity(
+                                UserService.PROVIDER_GOOGLE,
+                                "sub-race",
+                                "race@momens.works",
+                                "홍길동",
+                                null))
+                        .id();
+                  }))
               .toList();
       start.countDown();
 
@@ -209,9 +201,8 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
           .isEqualTo(ids.getFirst());
     } finally {
       pool.shutdownNow();
-      tx.executeWithoutResult(
-          status ->
-              userRepository.findByEmail("race@momens.works").ifPresent(userRepository::delete));
+      tx.executeWithoutResult(status ->
+          userRepository.findByEmail("race@momens.works").ifPresent(userRepository::delete));
     }
   }
 
@@ -238,24 +229,21 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
           CountDownLatch start = new CountDownLatch(1);
           List<Future<UUID>> futures =
               IntStream.range(0, 2)
-                  .mapToObj(
-                      i ->
-                          pool.submit(
-                              () -> {
-                                start.await();
-                                if (i > 0) {
-                                  LockSupport.parkNanos(delayNanos);
-                                }
-                                return tx.execute(
-                                        status ->
-                                            userService.findOrCreateByIdentity(
-                                                UserService.PROVIDER_GOOGLE,
-                                                providerUserId,
-                                                email,
-                                                "홍길동",
-                                                null))
-                                    .id();
-                              }))
+                  .mapToObj(i ->
+                      pool.submit(() -> {
+                        start.await();
+                        if (i > 0) {
+                          LockSupport.parkNanos(delayNanos);
+                        }
+                        return tx.execute(status ->
+                                userService.findOrCreateByIdentity(
+                                    UserService.PROVIDER_GOOGLE,
+                                    providerUserId,
+                                    email,
+                                    "홍길동",
+                                    null))
+                            .id();
+                      }))
                   .toList();
           start.countDown();
 

@@ -140,22 +140,18 @@ class FigmaTokenRefresher {
   private int save(String figmaUserId, RefreshedToken refreshed, byte[] refreshTokenEnc) {
     byte[] accessTokenEnc = encryptor.encrypt(refreshed.accessToken());
     Integer saved =
-        saveTransaction.execute(
-            tx -> {
-              List<SourceCredential> rows = credentials.findFigmaByUser(figmaUserId);
-              rows.forEach(
-                  row ->
-                      row.replaceTokens(
-                          accessTokenEnc,
-                          refreshTokenEnc,
-                          refreshed.tokenType() == null
-                              ? row.getTokenType()
-                              : refreshed.tokenType(),
-                          row.getScope(),
-                          refreshed.expiresAt()));
-              credentials.saveAll(rows);
-              return rows.size();
-            });
+        saveTransaction.execute(tx -> {
+          List<SourceCredential> rows = credentials.findFigmaByUser(figmaUserId);
+          rows.forEach(row ->
+              row.replaceTokens(
+                  accessTokenEnc,
+                  refreshTokenEnc,
+                  refreshed.tokenType() == null ? row.getTokenType() : refreshed.tokenType(),
+                  row.getScope(),
+                  refreshed.expiresAt()));
+          credentials.saveAll(rows);
+          return rows.size();
+        });
     return saved == null ? 0 : saved;
   }
 }

@@ -34,11 +34,10 @@ class WorkspaceMembershipWriterImpl implements WorkspaceMembershipWriter {
     UserProfile invitee =
         userService
             .findByEmail(command.email())
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        MembershipErrorCode.WORKSPACE_INVITEE_NOT_FOUND,
-                        Map.of("email", String.valueOf(command.email()))));
+            .orElseThrow(() ->
+                new BusinessException(
+                    MembershipErrorCode.WORKSPACE_INVITEE_NOT_FOUND,
+                    Map.of("email", String.valueOf(command.email()))));
     Optional<WorkspaceMember> existing =
         workspaceMemberRepository.findByWorkspaceIdAndUserId(command.workspaceId(), invitee.id());
     if (existing.isPresent()) {
@@ -64,13 +63,12 @@ class WorkspaceMembershipWriterImpl implements WorkspaceMembershipWriter {
     }
     return workspaceMemberRepository
         .findByWorkspaceIdAndUserId(command.workspaceId(), command.userId())
-        .map(
-            member ->
-                new WorkspaceMembershipDetail(
-                    member.getUserId(),
-                    member.getRole(),
-                    member.getCreatedAt(),
-                    member.getUpdatedAt()));
+        .map(member ->
+            new WorkspaceMembershipDetail(
+                member.getUserId(),
+                member.getRole(),
+                member.getCreatedAt(),
+                member.getUpdatedAt()));
   }
 
   @Override
@@ -97,11 +95,10 @@ class WorkspaceMembershipWriterImpl implements WorkspaceMembershipWriter {
   private WorkspaceMember requireMember(UUID workspaceId, UUID userId) {
     return workspaceMemberRepository
         .findByWorkspaceIdAndUserId(workspaceId, userId)
-        .orElseThrow(
-            () ->
-                new BusinessException(
-                    MembershipErrorCode.WORKSPACE_MEMBER_NOT_FOUND,
-                    Map.of("workspace_id", workspaceId.toString(), "user_id", userId.toString())));
+        .orElseThrow(() ->
+            new BusinessException(
+                MembershipErrorCode.WORKSPACE_MEMBER_NOT_FOUND,
+                Map.of("workspace_id", workspaceId.toString(), "user_id", userId.toString())));
   }
 
   private void requireNotOwner(WorkspaceMember member) {

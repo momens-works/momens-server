@@ -75,9 +75,8 @@ public class OpenApiConfig {
             .map(operation -> operation.getParameters())
             .filter(parameters -> parameters != null)
             .flatMap(List::stream)
-            .filter(
-                parameter ->
-                    "API-Version".equals(parameter.getName()) && "header".equals(parameter.getIn()))
+            .filter(parameter ->
+                "API-Version".equals(parameter.getName()) && "header".equals(parameter.getIn()))
             .map(Parameter::getSchema)
             .forEach(schema -> schema.setDefault("1"));
   }

@@ -75,33 +75,32 @@ public class FigmaConnectionConfigurator {
     SourceConnectionDetail saved;
     try {
       saved =
-          transactions.execute(
-              tx -> {
-                completion[0] = TransactionSynchronization.STATUS_UNKNOWN;
-                TransactionSynchronizationManager.registerSynchronization(
-                    new TransactionSynchronization() {
-                      @Override
-                      public void afterCompletion(int status) {
-                        completion[0] = status;
-                      }
-                    });
-                Snapshot current = snapshot(workspaceId, connectionId);
-                if (!before.matches(current)) {
-                  throw new BusinessException(
-                      SourceErrorCode.SOURCE_CONNECTION_CHANGED,
-                      Map.of("source_connection_id", connectionId.toString()));
-                }
-                Map<String, Object> metadata = new LinkedHashMap<>();
-                if (current.connection().getMetadata() != null) {
-                  metadata.putAll(current.connection().getMetadata());
-                }
-                metadata.put("team_id", teamId);
-                metadata.put("file_keys", fileKeys);
-                metadata.put("webhook_id", webhookId);
-                connections.configureFigma(
-                    connectionId, metadata, SourceConnectionStatus.ACTIVE, Instant.now());
-                return toDetail(connections.findById(connectionId).orElseThrow());
-              });
+          transactions.execute(tx -> {
+            completion[0] = TransactionSynchronization.STATUS_UNKNOWN;
+            TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                  @Override
+                  public void afterCompletion(int status) {
+                    completion[0] = status;
+                  }
+                });
+            Snapshot current = snapshot(workspaceId, connectionId);
+            if (!before.matches(current)) {
+              throw new BusinessException(
+                  SourceErrorCode.SOURCE_CONNECTION_CHANGED,
+                  Map.of("source_connection_id", connectionId.toString()));
+            }
+            Map<String, Object> metadata = new LinkedHashMap<>();
+            if (current.connection().getMetadata() != null) {
+              metadata.putAll(current.connection().getMetadata());
+            }
+            metadata.put("team_id", teamId);
+            metadata.put("file_keys", fileKeys);
+            metadata.put("webhook_id", webhookId);
+            connections.configureFigma(
+                connectionId, metadata, SourceConnectionStatus.ACTIVE, Instant.now());
+            return toDetail(connections.findById(connectionId).orElseThrow());
+          });
     } finally {
       if (completion[0] == TransactionSynchronization.STATUS_ROLLED_BACK) {
         cleaner.deleteWithToken(connectionId, webhookId, token);
@@ -132,16 +131,13 @@ public class FigmaConnectionConfigurator {
       // commit 결과를 모를 때 새 transaction의 행 잠금으로 먼저 DB 결과를 확인합니다.
       boolean stored =
           Boolean.TRUE.equals(
-              transactions.execute(
-                  tx ->
-                      connections
-                          .findForUpdate(connectionId, workspaceId)
-                          .map(
-                              connection ->
-                                  connection.getMetadata() != null
-                                      && webhookId.equals(
-                                          connection.getMetadata().get("webhook_id")))
-                          .orElse(false)));
+              transactions.execute(tx ->
+                  connections
+                      .findForUpdate(connectionId, workspaceId)
+                      .map(connection ->
+                          connection.getMetadata() != null
+                              && webhookId.equals(connection.getMetadata().get("webhook_id")))
+                      .orElse(false)));
       if (stored) {
         deletePreviousWebhook(connectionId, previousWebhookId, webhookId, token);
       } else {
@@ -160,20 +156,18 @@ public class FigmaConnectionConfigurator {
     SourceConnection connection =
         connections
             .findForUpdate(connectionId, workspaceId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        SourceErrorCode.SOURCE_CONNECTION_NOT_FOUND,
-                        Map.of("source_connection_id", connectionId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    SourceErrorCode.SOURCE_CONNECTION_NOT_FOUND,
+                    Map.of("source_connection_id", connectionId.toString())));
     if (!"FIGMA".equals(connection.getSourceType())) {
       throw new BusinessException(SourceErrorCode.SOURCE_NOT_FIGMA_CONNECTION, Map.of());
     }
     SourceCredential credential =
         credentials
             .findById(connectionId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(SourceErrorCode.SOURCE_FIGMA_REAUTH_REQUIRED, Map.of()));
+            .orElseThrow(() ->
+                new BusinessException(SourceErrorCode.SOURCE_FIGMA_REAUTH_REQUIRED, Map.of()));
     if (credential.getExpiresAt() != null && !credential.getExpiresAt().isAfter(Instant.now())) {
       throw new BusinessException(SourceErrorCode.SOURCE_FIGMA_REAUTH_REQUIRED, Map.of());
     }

@@ -53,14 +53,13 @@ public final class McpTokenService {
       Authentication authentication, AuthenticationProvider delegate) {
     // Commit security invalidations even when SAS rejects a replayed grant.
     Result result =
-        transactions.execute(
-            status -> {
-              try {
-                return new Result(authenticateLocked(authentication, delegate), null);
-              } catch (OAuth2AuthenticationException exception) {
-                return new Result(null, exception);
-              }
-            });
+        transactions.execute(status -> {
+          try {
+            return new Result(authenticateLocked(authentication, delegate), null);
+          } catch (OAuth2AuthenticationException exception) {
+            return new Result(null, exception);
+          }
+        });
     if (result.error() != null) {
       throw result.error();
     }

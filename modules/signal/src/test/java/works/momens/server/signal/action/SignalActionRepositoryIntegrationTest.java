@@ -62,15 +62,14 @@ class SignalActionRepositoryIntegrationTest extends AbstractPostgresIntegrationT
             .processedByUserId(USER_ID)
             .build());
 
-    assertThatThrownBy(
-            () ->
-                signalActionRepository.saveAndFlush(
-                    SignalAction.builder()
-                        .workspaceId(WORKSPACE_ID)
-                        .signalId(SIGNAL_ID)
-                        .actionType("convert_to_task")
-                        .processedByUserId(USER_ID)
-                        .build()))
+    assertThatThrownBy(() ->
+            signalActionRepository.saveAndFlush(
+                SignalAction.builder()
+                    .workspaceId(WORKSPACE_ID)
+                    .signalId(SIGNAL_ID)
+                    .actionType("convert_to_task")
+                    .processedByUserId(USER_ID)
+                    .build()))
         .isInstanceOf(DataIntegrityViolationException.class);
   }
 }

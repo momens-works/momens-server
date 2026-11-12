@@ -32,12 +32,12 @@ interface BlockerWriteControllerDocs {
                   @ExampleObject(
                       value =
                           """
-              {"id":"876d3562-b48b-45af-91ef-1e35a4358374",
-               "workspace_id":"5d2f7f3a-5db1-4f2c-8b9e-13607dd1f5e8",
-               "description":"배포 권한 승인이 필요합니다.","status":"active",
-               "blocked_entity_type":"task","blocked_entity_id":"4da2a4c9-a891-49dd-9bbd-801b2efea2af",
-               "created_at":"2026-10-05T00:00:00Z","updated_at":"2026-10-05T00:00:00Z"}
-              """)))
+                          {"id":"876d3562-b48b-45af-91ef-1e35a4358374",
+                           "workspace_id":"5d2f7f3a-5db1-4f2c-8b9e-13607dd1f5e8",
+                           "description":"배포 권한 승인이 필요합니다.","status":"active",
+                           "blocked_entity_type":"task","blocked_entity_id":"4da2a4c9-a891-49dd-9bbd-801b2efea2af",
+                           "created_at":"2026-10-05T00:00:00Z","updated_at":"2026-10-05T00:00:00Z"}
+                          """)))
   @ApiException(
       value = TaskErrorCode.class,
       codes = {"TASK_NOT_FOUND"})

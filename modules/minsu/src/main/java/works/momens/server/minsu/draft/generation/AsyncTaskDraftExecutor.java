@@ -102,18 +102,16 @@ public class AsyncTaskDraftExecutor implements DisposableBean {
       AtomicBoolean attemptSettled = new AtomicBoolean();
       settled.add(attemptSettled);
       futures.add(
-          pool.submit(
-              () -> {
-                try {
-                  return attempt.run(
-                      input, GenerationMode.ASYNCHRONOUS, execution.providerTimeout());
-                } finally {
-                  if (!attemptSettled.compareAndSet(false, true)) {
-                    // 대기 쪽이 먼저 상한으로 포기한 시도가 뒤늦게 돌아왔다. 슬롯이 회수된다.
-                    hungAttempts.decrementAndGet();
-                  }
-                }
-              }));
+          pool.submit(() -> {
+            try {
+              return attempt.run(input, GenerationMode.ASYNCHRONOUS, execution.providerTimeout());
+            } finally {
+              if (!attemptSettled.compareAndSet(false, true)) {
+                // 대기 쪽이 먼저 상한으로 포기한 시도가 뒤늦게 돌아왔다. 슬롯이 회수된다.
+                hungAttempts.decrementAndGet();
+              }
+            }
+          }));
     }
     long startedAtNanos = System.nanoTime();
     long deadlineNanos = startedAtNanos + execution.attemptTimeout().toNanos();

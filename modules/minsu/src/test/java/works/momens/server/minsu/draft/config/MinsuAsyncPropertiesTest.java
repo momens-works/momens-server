@@ -77,26 +77,24 @@ class MinsuAsyncPropertiesTest {
     // PROVIDER_ERROR로 분류돼 무효한 설정으로 claim과 재시도를 반복하는데, 이는 "설정이 무효하면
     // claim하지 않는다"는 규칙과 어긋난다.
     Duration overflow = Duration.ofMillis(Integer.MAX_VALUE).plusMillis(1);
-    assertThatThrownBy(
-            () ->
-                new Execution(
-                    Duration.ofNanos(1),
-                    Duration.ofSeconds(30),
-                    Duration.ofSeconds(60),
-                    4,
-                    List.of(Duration.ofSeconds(10)),
-                    4))
+    assertThatThrownBy(() ->
+            new Execution(
+                Duration.ofNanos(1),
+                Duration.ofSeconds(30),
+                Duration.ofSeconds(60),
+                4,
+                List.of(Duration.ofSeconds(10)),
+                4))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("provider-timeout");
-    assertThatThrownBy(
-            () ->
-                new Execution(
-                    Duration.ofSeconds(20),
-                    overflow,
-                    overflow.plusSeconds(1),
-                    4,
-                    List.of(Duration.ofSeconds(10)),
-                    4))
+    assertThatThrownBy(() ->
+            new Execution(
+                Duration.ofSeconds(20),
+                overflow,
+                overflow.plusSeconds(1),
+                4,
+                List.of(Duration.ofSeconds(10)),
+                4))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("attempt-timeout");
   }
@@ -106,15 +104,14 @@ class MinsuAsyncPropertiesTest {
   void rejectsNonPositiveBackoff() {
     // 즉시 재시도가 되어 실패하는 작업이 상한까지 provider를 연달아 때린다. 백오프를 둔 이유가
     // 사라지는데도 동작 자체는 정상으로 보인다.
-    assertThatThrownBy(
-            () ->
-                new Execution(
-                    Duration.ofSeconds(20),
-                    Duration.ofSeconds(30),
-                    Duration.ofSeconds(60),
-                    4,
-                    List.of(Duration.ofSeconds(10), Duration.ZERO),
-                    4))
+    assertThatThrownBy(() ->
+            new Execution(
+                Duration.ofSeconds(20),
+                Duration.ofSeconds(30),
+                Duration.ofSeconds(60),
+                4,
+                List.of(Duration.ofSeconds(10), Duration.ZERO),
+                4))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("backoffs");
   }
@@ -124,15 +121,14 @@ class MinsuAsyncPropertiesTest {
   void rejectsEmptyBackoffsWhenRetryEnabled() {
     // 비어 있으면 백오프 조회가 실패 기록 시점에 터지고, 그때는 이미 claim을 보유한 상태라 그 실패가
     // lease 만료 회수로만 드러난다.
-    assertThatThrownBy(
-            () ->
-                new Execution(
-                    Duration.ofSeconds(20),
-                    Duration.ofSeconds(30),
-                    Duration.ofSeconds(60),
-                    4,
-                    List.of(),
-                    4))
+    assertThatThrownBy(() ->
+            new Execution(
+                Duration.ofSeconds(20),
+                Duration.ofSeconds(30),
+                Duration.ofSeconds(60),
+                4,
+                List.of(),
+                4))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("backoffs");
   }
@@ -140,15 +136,14 @@ class MinsuAsyncPropertiesTest {
   @Test
   @DisplayName("재시도가 없으면 백오프 목록이 비어도 된다")
   void allowsEmptyBackoffsWithoutRetry() {
-    assertThatCode(
-            () ->
-                new Execution(
-                    Duration.ofSeconds(20),
-                    Duration.ofSeconds(30),
-                    Duration.ofSeconds(60),
-                    1,
-                    List.of(),
-                    4))
+    assertThatCode(() ->
+            new Execution(
+                Duration.ofSeconds(20),
+                Duration.ofSeconds(30),
+                Duration.ofSeconds(60),
+                1,
+                List.of(),
+                4))
         .doesNotThrowAnyException();
   }
 

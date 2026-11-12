@@ -30,11 +30,10 @@ class GoogleGenAiLlmClientTest {
     AtomicInteger creates = new AtomicInteger();
     FakeGoogleSdkClient sdkClient = new FakeGoogleSdkClient();
     GoogleGenAiLlmClient client =
-        new GoogleGenAiLlmClient(
-            selection -> {
-              creates.incrementAndGet();
-              return sdkClient;
-            });
+        new GoogleGenAiLlmClient(selection -> {
+          creates.incrementAndGet();
+          return sdkClient;
+        });
     List<Callable<LlmResponse>> calls = new ArrayList<>();
     for (int index = 0; index < 30; index++) {
       calls.add(() -> client.generate(SELECTION, REQUEST, TIMEOUT));
@@ -57,13 +56,12 @@ class GoogleGenAiLlmClientTest {
     AtomicInteger creates = new AtomicInteger();
     FakeGoogleSdkClient sdkClient = new FakeGoogleSdkClient();
     GoogleGenAiLlmClient client =
-        new GoogleGenAiLlmClient(
-            selection -> {
-              if (creates.incrementAndGet() == 1) {
-                throw new IllegalStateException("ADC unavailable");
-              }
-              return sdkClient;
-            });
+        new GoogleGenAiLlmClient(selection -> {
+          if (creates.incrementAndGet() == 1) {
+            throw new IllegalStateException("ADC unavailable");
+          }
+          return sdkClient;
+        });
 
     assertThatThrownBy(() -> client.generate(SELECTION, REQUEST, TIMEOUT))
         .isInstanceOf(IllegalStateException.class);

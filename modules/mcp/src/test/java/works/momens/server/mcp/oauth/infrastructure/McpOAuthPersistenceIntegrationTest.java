@@ -134,14 +134,13 @@ class McpOAuthPersistenceIntegrationTest extends AbstractPostgresIntegrationTest
             .build();
     authorizationService.save(authorization);
 
-    assertThatThrownBy(
-            () ->
-                jdbcTemplate.update(
-                    "UPDATE oauth2_authorization SET access_token_value = ?, access_token_issued_at = ?, access_token_expires_at = ? WHERE id = ?",
-                    sha256("access-token"),
-                    hasIssuedAt ? Timestamp.from(ISSUED_AT) : null,
-                    hasExpiresAt ? Timestamp.from(EXPIRES_AT) : null,
-                    authorization.getId()))
+    assertThatThrownBy(() ->
+            jdbcTemplate.update(
+                "UPDATE oauth2_authorization SET access_token_value = ?, access_token_issued_at = ?, access_token_expires_at = ? WHERE id = ?",
+                sha256("access-token"),
+                hasIssuedAt ? Timestamp.from(ISSUED_AT) : null,
+                hasExpiresAt ? Timestamp.from(EXPIRES_AT) : null,
+                authorization.getId()))
         .isInstanceOf(DataIntegrityViolationException.class)
         .hasMessageContaining("chk_mcp_access_token_timestamps");
   }

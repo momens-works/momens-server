@@ -64,10 +64,9 @@ class ApiExceptionDeclarationTest {
     return CLASSES.stream()
         .map(JavaClass::getMethods)
         .flatMap(Set::stream)
-        .filter(
-            method ->
-                method.isAnnotatedWith(ApiException.class)
-                    || method.isAnnotatedWith(ApiExceptions.class))
+        .filter(method ->
+            method.isAnnotatedWith(ApiException.class)
+                || method.isAnnotatedWith(ApiExceptions.class))
         .toList();
   }
 }

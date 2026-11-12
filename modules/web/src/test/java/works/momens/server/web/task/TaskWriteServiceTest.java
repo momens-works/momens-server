@@ -98,11 +98,10 @@ class TaskWriteServiceTest {
     assertThat(captor.getValue().statusSet()).isTrue();
     assertThat(captor.getValue().prioritySet()).isFalse();
 
-    assertThatThrownBy(
-            () ->
-                service.update(
-                    TASK_ID, USER_ID, null, false, null, false, null, true, null, false, null,
-                    false, null, false, null, false, null))
+    assertThatThrownBy(() ->
+            service.update(
+                TASK_ID, USER_ID, null, false, null, false, null, true, null, false, null, false,
+                null, false, null, false, null))
         .isInstanceOf(BusinessException.class);
   }
 }

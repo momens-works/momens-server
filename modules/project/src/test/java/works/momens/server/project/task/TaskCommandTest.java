@@ -30,10 +30,8 @@ class TaskCommandTest {
     String atMaxLength = "가".repeat(TaskPolicy.TITLE_MAX_LENGTH);
     assertThatNoException().isThrownBy(() -> createCommand(TaskStatus.TODO, atMaxLength));
     assertThatNoException()
-        .isThrownBy(
-            () ->
-                patchCommand(
-                    atMaxLength, true, TaskStatus.TODO, false, TaskPriority.MEDIUM, false));
+        .isThrownBy(() ->
+            patchCommand(atMaxLength, true, TaskStatus.TODO, false, TaskPriority.MEDIUM, false));
     assertThatNoException().isThrownBy(() -> updateCommand(atMaxLength));
   }
 
@@ -43,10 +41,8 @@ class TaskCommandTest {
     assertThatIllegalArgumentException()
         .isThrownBy(() -> createCommand(TaskStatus.TODO, overMaxLength));
     assertThatIllegalArgumentException()
-        .isThrownBy(
-            () ->
-                patchCommand(
-                    overMaxLength, true, TaskStatus.TODO, false, TaskPriority.MEDIUM, false));
+        .isThrownBy(() ->
+            patchCommand(overMaxLength, true, TaskStatus.TODO, false, TaskPriority.MEDIUM, false));
     assertThatIllegalArgumentException().isThrownBy(() -> updateCommand(overMaxLength));
   }
 
