@@ -134,12 +134,11 @@ class JwtTokenServiceTest {
     assertThat(store.tokens.values())
         .singleElement()
         .extracting(RefreshToken::getDevice)
-        .satisfies(
-            device -> {
-              String storedDevice = (String) device;
-              assertThat(storedDevice.codePointCount(0, storedDevice.length())).isEqualTo(255);
-              assertThat(storedDevice).endsWith("😀");
-            });
+        .satisfies(device -> {
+          String storedDevice = (String) device;
+          assertThat(storedDevice.codePointCount(0, storedDevice.length())).isEqualTo(255);
+          assertThat(storedDevice).endsWith("😀");
+        });
   }
 
   private static AuthProperties properties(String secret) {

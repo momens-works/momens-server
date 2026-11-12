@@ -316,15 +316,14 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
                           workspaceId, "GITHUB", "jsshin");
               TransactionTemplate concurrent = new TransactionTemplate(transactionManager);
               concurrent.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-              concurrent.executeWithoutResult(
-                  status ->
-                      jdbcTemplate.update(
-                          "UPDATE source_connections SET resync_requested_at = ?, last_synced_at = ?,"
-                              + " captures_read_count = 42, candidates_extracted_count = 7, updated_at = ? WHERE id = ?",
-                          Timestamp.from(requestedAt),
-                          Timestamp.from(syncedAt),
-                          Timestamp.from(workerUpdatedAt),
-                          id));
+              concurrent.executeWithoutResult(status ->
+                  jdbcTemplate.update(
+                      "UPDATE source_connections SET resync_requested_at = ?, last_synced_at = ?,"
+                          + " captures_read_count = 42, candidates_extracted_count = 7, updated_at = ? WHERE id = ?",
+                      Timestamp.from(requestedAt),
+                      Timestamp.from(syncedAt),
+                      Timestamp.from(workerUpdatedAt),
+                      id));
               return stale;
             })
         .when(interleaved)
@@ -398,16 +397,15 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
     UUID existing = insertFigmaConnection(workspaceId, "ACTIVE", "figma-user", "old");
     tokenBody.set(body);
 
-    assertThatThrownBy(
-            () ->
-                figmaInstaller()
-                    .completeInstall(
-                        new CompleteInstallCommand(
-                            "code-1",
-                            signer()
-                                .sign(
-                                    new OAuthState(
-                                        workspaceId, insertUser(), OAuthProviderRegistry.FIGMA)))))
+    assertThatThrownBy(() ->
+            figmaInstaller()
+                .completeInstall(
+                    new CompleteInstallCommand(
+                        "code-1",
+                        signer()
+                            .sign(
+                                new OAuthState(
+                                    workspaceId, insertUser(), OAuthProviderRegistry.FIGMA)))))
         .isInstanceOf(BusinessException.class)
         .hasFieldOrPropertyWithValue("errorCode", SourceErrorCode.SOURCE_OAUTH_EXCHANGE_FAILED);
     assertThat(
@@ -439,11 +437,9 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
   void reportsBadGatewayWhenTheProviderRejectsTheExchange() {
     tokenStatus.set(500);
 
-    assertThatThrownBy(
-            () ->
-                installer()
-                    .completeInstall(
-                        new CompleteInstallCommand("code-1", state(UUID.randomUUID()))))
+    assertThatThrownBy(() ->
+            installer()
+                .completeInstall(new CompleteInstallCommand("code-1", state(UUID.randomUUID()))))
         .isInstanceOf(BusinessException.class)
         .hasFieldOrPropertyWithValue("errorCode", SourceErrorCode.SOURCE_OAUTH_EXCHANGE_FAILED);
   }
@@ -453,11 +449,9 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
   void reportsBadGatewayWhenTheProviderReturnsNoAccessToken() {
     tokenBody.set("{\"token_type\":\"bearer\"}");
 
-    assertThatThrownBy(
-            () ->
-                installer()
-                    .completeInstall(
-                        new CompleteInstallCommand("code-1", state(UUID.randomUUID()))))
+    assertThatThrownBy(() ->
+            installer()
+                .completeInstall(new CompleteInstallCommand("code-1", state(UUID.randomUUID()))))
         .isInstanceOf(BusinessException.class)
         .hasFieldOrPropertyWithValue("errorCode", SourceErrorCode.SOURCE_OAUTH_EXCHANGE_FAILED);
   }

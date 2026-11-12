@@ -84,19 +84,17 @@ class SourceConnectionResyncIntegrationTest extends AbstractPostgresIntegrationT
       List<Future<Instant>> futures = new ArrayList<>();
       for (int i = 0; i < requests; i++) {
         futures.add(
-            executor.submit(
-                () -> {
-                  ready.countDown();
-                  if (!start.await(10, TimeUnit.SECONDS)) {
-                    throw new IllegalStateException("request barrier timed out");
-                  }
-                  return new TransactionTemplate(transactionManager)
-                      .execute(
-                          status -> {
-                            assertThat(repository.requestResync(id, workspaceId)).isEqualTo(1);
-                            return time(id, "resync_requested_at");
-                          });
-                }));
+            executor.submit(() -> {
+              ready.countDown();
+              if (!start.await(10, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("request barrier timed out");
+              }
+              return new TransactionTemplate(transactionManager)
+                  .execute(status -> {
+                    assertThat(repository.requestResync(id, workspaceId)).isEqualTo(1);
+                    return time(id, "resync_requested_at");
+                  });
+            }));
       }
       assertThat(ready.await(10, TimeUnit.SECONDS)).isTrue();
       start.countDown();

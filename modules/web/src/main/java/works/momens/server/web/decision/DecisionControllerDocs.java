@@ -34,18 +34,18 @@ interface DecisionControllerDocs {
                       name = "created",
                       value =
                           """
-              {
-                "id": "d574d489-378f-456a-8df7-05ba3714d400",
-                "project_id": "e674d489-378f-456a-8df7-05ba3714d401",
-                "title": "PostgreSQL 사용",
-                "context": "트랜잭션 일관성이 필요합니다.",
-                "rationale": "현재 운영 환경과 호환됩니다.",
-                "reversibility": "reversible",
-                "decision_maker": "f774d489-378f-456a-8df7-05ba3714d402",
-                "created_at": "2026-10-04T00:00:00Z",
-                "updated_at": "2026-10-04T00:00:00Z"
-              }
-              """)))
+                          {
+                            "id": "d574d489-378f-456a-8df7-05ba3714d400",
+                            "project_id": "e674d489-378f-456a-8df7-05ba3714d401",
+                            "title": "PostgreSQL 사용",
+                            "context": "트랜잭션 일관성이 필요합니다.",
+                            "rationale": "현재 운영 환경과 호환됩니다.",
+                            "reversibility": "reversible",
+                            "decision_maker": "f774d489-378f-456a-8df7-05ba3714d402",
+                            "created_at": "2026-10-04T00:00:00Z",
+                            "updated_at": "2026-10-04T00:00:00Z"
+                          }
+                          """)))
   @ApiException(
       value = ProjectErrorCode.class,
       codes = {"PROJECT_NOT_FOUND"})

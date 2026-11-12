@@ -124,10 +124,9 @@ class ProjectCreatorIntegrationTest extends AbstractPostgresIntegrationTest {
     UUID workspaceId = ProjectSeedSql.insertWorkspace(entityManager, "momens-duplicate");
     givenMembers(workspaceId, requesterId);
 
-    assertThatThrownBy(
-            () ->
-                projectCreator.create(
-                    command(workspaceId, requesterId, List.of(requesterId, requesterId))))
+    assertThatThrownBy(() ->
+            projectCreator.create(
+                command(workspaceId, requesterId, List.of(requesterId, requesterId))))
         .isInstanceOf(BusinessException.class)
         .extracting(thrown -> ((BusinessException) thrown).getErrorCode())
         .isEqualTo(CommonErrorCode.COMMON_VALIDATION_FAILED);

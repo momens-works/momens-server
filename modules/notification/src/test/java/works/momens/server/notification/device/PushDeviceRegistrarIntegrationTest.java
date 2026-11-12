@@ -115,18 +115,15 @@ class PushDeviceRegistrarIntegrationTest extends AbstractPostgresIntegrationTest
     ExecutorService executor = Executors.newFixedThreadPool(2);
     try {
       Future<?> first =
-          executor.submit(
-              () -> {
-                awaitStart(ready, start);
-                registrar.register(USER_ID, firstFid, token, PushInstallationPlatform.ANDROID);
-              });
+          executor.submit(() -> {
+            awaitStart(ready, start);
+            registrar.register(USER_ID, firstFid, token, PushInstallationPlatform.ANDROID);
+          });
       Future<?> second =
-          executor.submit(
-              () -> {
-                awaitStart(ready, start);
-                registrar.register(
-                    OTHER_USER_ID, secondFid, token, PushInstallationPlatform.ANDROID);
-              });
+          executor.submit(() -> {
+            awaitStart(ready, start);
+            registrar.register(OTHER_USER_ID, secondFid, token, PushInstallationPlatform.ANDROID);
+          });
 
       assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
       start.countDown();
@@ -194,15 +191,14 @@ class PushDeviceRegistrarIntegrationTest extends AbstractPostgresIntegrationTest
             .platform(ANDROID)
             .build());
 
-    assertThatThrownBy(
-            () ->
-                repository.saveAndFlush(
-                    PushInstallation.builder()
-                        .firebaseInstallationId(OTHER_FID)
-                        .userId(OTHER_USER_ID)
-                        .fcmRegistrationToken(TOKEN)
-                        .platform(ANDROID)
-                        .build()))
+    assertThatThrownBy(() ->
+            repository.saveAndFlush(
+                PushInstallation.builder()
+                    .firebaseInstallationId(OTHER_FID)
+                    .userId(OTHER_USER_ID)
+                    .fcmRegistrationToken(TOKEN)
+                    .platform(ANDROID)
+                    .build()))
         .isInstanceOf(DataIntegrityViolationException.class);
   }
 

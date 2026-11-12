@@ -42,13 +42,12 @@ class AppUpdateControllerTest {
 
   @Test
   void rejectsMalformedAppVersionWithFieldName() {
-    assertThatThrownBy(
-            () ->
-                mockMvc.perform(
-                    get("/api/mobile/app-update")
-                        .header("API-Version", "1")
-                        .param("platform", "ios")
-                        .param("app_version", "1.0-beta")))
+    assertThatThrownBy(() ->
+            mockMvc.perform(
+                get("/api/mobile/app-update")
+                    .header("API-Version", "1")
+                    .param("platform", "ios")
+                    .param("app_version", "1.0-beta")))
         .cause()
         .isInstanceOfSatisfying(
             FieldValidationException.class,

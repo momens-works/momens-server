@@ -102,10 +102,9 @@ class WorkspaceEditorIntegrationTest extends AbstractPostgresIntegrationTest {
     entityManager.flush();
     entityManager.clear();
 
-    assertThatThrownBy(
-            () ->
-                workspaceEditor.update(
-                    new UpdateWorkspaceCommand(workspaceId, null, null, "Invalid-Slug")))
+    assertThatThrownBy(() ->
+            workspaceEditor.update(
+                new UpdateWorkspaceCommand(workspaceId, null, null, "Invalid-Slug")))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(WorkspaceErrorCode.WORKSPACE_INVALID_SLUG);
@@ -118,10 +117,8 @@ class WorkspaceEditorIntegrationTest extends AbstractPostgresIntegrationTest {
     entityManager.flush();
     entityManager.clear();
 
-    assertThatThrownBy(
-            () ->
-                workspaceEditor.update(
-                    new UpdateWorkspaceCommand(workspaceId, null, null, "settings")))
+    assertThatThrownBy(() ->
+            workspaceEditor.update(new UpdateWorkspaceCommand(workspaceId, null, null, "settings")))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(WorkspaceErrorCode.WORKSPACE_RESERVED_SLUG);
@@ -135,10 +132,9 @@ class WorkspaceEditorIntegrationTest extends AbstractPostgresIntegrationTest {
     entityManager.flush();
     entityManager.clear();
 
-    assertThatThrownBy(
-            () ->
-                workspaceEditor.update(
-                    new UpdateWorkspaceCommand(workspaceId, null, null, "editor-it-theirs")))
+    assertThatThrownBy(() ->
+            workspaceEditor.update(
+                new UpdateWorkspaceCommand(workspaceId, null, null, "editor-it-theirs")))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(WorkspaceErrorCode.WORKSPACE_SLUG_ALREADY_EXISTS);
@@ -232,10 +228,9 @@ class WorkspaceEditorIntegrationTest extends AbstractPostgresIntegrationTest {
   @Test
   @DisplayName("존재하지 않는 워크스페이스는 WORKSPACE_NOT_FOUND를 던진다")
   void throwsWorkspaceNotFoundWhenMissing() {
-    assertThatThrownBy(
-            () ->
-                workspaceEditor.update(
-                    new UpdateWorkspaceCommand(UUID.randomUUID(), "새 이름", null, null)))
+    assertThatThrownBy(() ->
+            workspaceEditor.update(
+                new UpdateWorkspaceCommand(UUID.randomUUID(), "새 이름", null, null)))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(WorkspaceErrorCode.WORKSPACE_NOT_FOUND);

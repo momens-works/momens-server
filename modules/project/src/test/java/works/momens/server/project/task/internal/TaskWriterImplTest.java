@@ -191,19 +191,18 @@ class TaskWriterImplTest {
     when(taskRepository.findForMutation(task.getId())).thenReturn(Optional.of(task));
     when(workspaceMembershipReader.roleOf(workspaceId, assigneeId)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(
-            () ->
-                taskWriter.update(
-                    new UpdateTaskCommand(
-                        task.getId(),
-                        "새 제목",
-                        TaskRole.PM,
-                        assigneeId,
-                        TaskPriority.HIGH,
-                        TaskStatus.TODO,
-                        null,
-                        List.of(),
-                        null)))
+    assertThatThrownBy(() ->
+            taskWriter.update(
+                new UpdateTaskCommand(
+                    task.getId(),
+                    "새 제목",
+                    TaskRole.PM,
+                    assigneeId,
+                    TaskPriority.HIGH,
+                    TaskStatus.TODO,
+                    null,
+                    List.of(),
+                    null)))
         .isInstanceOf(BusinessException.class)
         .extracting(exception -> ((BusinessException) exception).getErrorCode())
         .isEqualTo(CommonErrorCode.COMMON_VALIDATION_FAILED);

@@ -206,18 +206,17 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
   void updateRejectsUnknownChecklistItemId() {
     Fixture fixture = newTask();
 
-    assertThatThrownBy(
-            () ->
-                taskWriter.update(
-                    command(
-                        fixture.taskId(),
-                        "제목",
-                        TaskRole.PM,
-                        null,
-                        TaskPriority.MEDIUM,
-                        TaskStatus.TODO,
-                        null,
-                        List.of(new ChecklistItemEdit(UUID.randomUUID(), "없는 항목", false)))))
+    assertThatThrownBy(() ->
+            taskWriter.update(
+                command(
+                    fixture.taskId(),
+                    "제목",
+                    TaskRole.PM,
+                    null,
+                    TaskPriority.MEDIUM,
+                    TaskStatus.TODO,
+                    null,
+                    List.of(new ChecklistItemEdit(UUID.randomUUID(), "없는 항목", false)))))
         .isInstanceOf(BusinessException.class)
         .extracting(exception -> ((BusinessException) exception).getErrorCode())
         .isEqualTo(TaskErrorCode.TASK_CHECKLIST_ITEM_NOT_FOUND);
@@ -239,20 +238,19 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
                 List.of(new ChecklistItemEdit(null, "A", false))));
     UUID idA = seeded.checklistItems().get(0).id();
 
-    assertThatThrownBy(
-            () ->
-                taskWriter.update(
-                    command(
-                        fixture.taskId(),
-                        "제목",
-                        TaskRole.PM,
-                        null,
-                        TaskPriority.MEDIUM,
-                        TaskStatus.TODO,
-                        null,
-                        List.of(
-                            new ChecklistItemEdit(idA, "A", false),
-                            new ChecklistItemEdit(idA, "A 중복", true)))))
+    assertThatThrownBy(() ->
+            taskWriter.update(
+                command(
+                    fixture.taskId(),
+                    "제목",
+                    TaskRole.PM,
+                    null,
+                    TaskPriority.MEDIUM,
+                    TaskStatus.TODO,
+                    null,
+                    List.of(
+                        new ChecklistItemEdit(idA, "A", false),
+                        new ChecklistItemEdit(idA, "A 중복", true)))))
         .isInstanceOf(BusinessException.class)
         .extracting(exception -> ((BusinessException) exception).getErrorCode())
         .isEqualTo(CommonErrorCode.COMMON_VALIDATION_FAILED);
@@ -292,18 +290,17 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
 
   @Test
   void updateRejectsUnknownTask() {
-    assertThatThrownBy(
-            () ->
-                taskWriter.update(
-                    command(
-                        UUID.randomUUID(),
-                        "제목",
-                        TaskRole.PM,
-                        null,
-                        TaskPriority.MEDIUM,
-                        TaskStatus.TODO,
-                        null,
-                        List.of())))
+    assertThatThrownBy(() ->
+            taskWriter.update(
+                command(
+                    UUID.randomUUID(),
+                    "제목",
+                    TaskRole.PM,
+                    null,
+                    TaskPriority.MEDIUM,
+                    TaskStatus.TODO,
+                    null,
+                    List.of())))
         .isInstanceOf(BusinessException.class)
         .extracting(exception -> ((BusinessException) exception).getErrorCode())
         .isEqualTo(TaskErrorCode.TASK_NOT_FOUND);

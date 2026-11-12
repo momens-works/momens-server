@@ -37,15 +37,15 @@ interface SourceConnectionWriteControllerDocs {
                   @ExampleObject(
                       value =
                           """
-              {
-                "id": "00000000-0000-4000-8000-000000000001",
-                "workspace_id": "00000000-0000-4000-8000-000000000002",
-                "source_type": "FIGMA", "status": "ACTIVE",
-                "captures_read_count": 0, "candidates_extracted_count": 0,
-                "metadata": {"team_id": "123456789", "file_keys": ["file-key"], "webhook_id": "webhook-id"},
-                "created_at": "2026-10-07T00:00:00Z", "updated_at": "2026-10-07T00:00:00Z"
-              }
-              """)))
+                          {
+                            "id": "00000000-0000-4000-8000-000000000001",
+                            "workspace_id": "00000000-0000-4000-8000-000000000002",
+                            "source_type": "FIGMA", "status": "ACTIVE",
+                            "captures_read_count": 0, "candidates_extracted_count": 0,
+                            "metadata": {"team_id": "123456789", "file_keys": ["file-key"], "webhook_id": "webhook-id"},
+                            "created_at": "2026-10-07T00:00:00Z", "updated_at": "2026-10-07T00:00:00Z"
+                          }
+                          """)))
   @ApiException(
       value = SourceErrorCode.class,
       codes = {

@@ -20,18 +20,16 @@ class AppUpdateConfig {
     if (properties.minimumVersions() != null) {
       properties
           .minimumVersions()
-          .forEach(
-              (platform, value) ->
-                  minimumVersions.put(
-                      platform,
-                      AppVersion.from(value)
-                          .orElseThrow(
-                              () ->
-                                  new IllegalStateException(
-                                      "Invalid minimum app version for "
-                                          + platform.value()
-                                          + ": "
-                                          + value))));
+          .forEach((platform, value) ->
+              minimumVersions.put(
+                  platform,
+                  AppVersion.from(value)
+                      .orElseThrow(() ->
+                          new IllegalStateException(
+                              "Invalid minimum app version for "
+                                  + platform.value()
+                                  + ": "
+                                  + value))));
     }
     return new AppUpdatePolicy(minimumVersions);
   }

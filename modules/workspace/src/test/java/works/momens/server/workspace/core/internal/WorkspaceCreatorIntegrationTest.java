@@ -84,27 +84,23 @@ class WorkspaceCreatorIntegrationTest extends AbstractPostgresIntegrationTest {
     entityManager.flush();
     entityManager.clear();
 
-    assertThatThrownBy(
-            () ->
-                workspaceCreator.create(
-                    new CreateWorkspaceCommand(REQUESTER_ID, "", null, "momens-free")))
+    assertThatThrownBy(() ->
+            workspaceCreator.create(
+                new CreateWorkspaceCommand(REQUESTER_ID, "", null, "momens-free")))
         .isInstanceOf(BusinessException.class);
-    assertThatThrownBy(
-            () ->
-                workspaceCreator.create(
-                    new CreateWorkspaceCommand(REQUESTER_ID, "모먼스", null, "Momens")))
+    assertThatThrownBy(() ->
+            workspaceCreator.create(
+                new CreateWorkspaceCommand(REQUESTER_ID, "모먼스", null, "Momens")))
         .isInstanceOf(BusinessException.class)
         .hasFieldOrPropertyWithValue("errorCode", WorkspaceErrorCode.WORKSPACE_INVALID_SLUG);
-    assertThatThrownBy(
-            () ->
-                workspaceCreator.create(
-                    new CreateWorkspaceCommand(REQUESTER_ID, "모먼스", null, "settings")))
+    assertThatThrownBy(() ->
+            workspaceCreator.create(
+                new CreateWorkspaceCommand(REQUESTER_ID, "모먼스", null, "settings")))
         .isInstanceOf(BusinessException.class)
         .hasFieldOrPropertyWithValue("errorCode", WorkspaceErrorCode.WORKSPACE_RESERVED_SLUG);
-    assertThatThrownBy(
-            () ->
-                workspaceCreator.create(
-                    new CreateWorkspaceCommand(REQUESTER_ID, "모먼스", null, "momens-taken")))
+    assertThatThrownBy(() ->
+            workspaceCreator.create(
+                new CreateWorkspaceCommand(REQUESTER_ID, "모먼스", null, "momens-taken")))
         .isInstanceOf(BusinessException.class)
         .hasFieldOrPropertyWithValue("errorCode", WorkspaceErrorCode.WORKSPACE_SLUG_ALREADY_EXISTS);
     verify(workspaceMembershipWriter, never()).addIfAbsent(any());

@@ -81,22 +81,20 @@ class WriterConcurrencyIntegrationTest extends AbstractPostgresIntegrationTest {
     CountDownLatch releaseUnchanged = new CountDownLatch(1);
     try (var executor = Executors.newSingleThreadExecutor()) {
       var unchanged =
-          executor.submit(
-              () -> {
-                try {
-                  new TransactionTemplate(transactionManager)
-                      .executeWithoutResult(
-                          status -> {
-                            update(milestone, id, "원래 이름", null);
-                            entityManager.flush();
-                            unchangedFlushed.countDown();
-                            await(releaseUnchanged);
-                          });
-                  return "ok";
-                } catch (OptimisticLockingFailureException exception) {
-                  return "conflict";
-                }
-              });
+          executor.submit(() -> {
+            try {
+              new TransactionTemplate(transactionManager)
+                  .executeWithoutResult(status -> {
+                    update(milestone, id, "원래 이름", null);
+                    entityManager.flush();
+                    unchangedFlushed.countDown();
+                    await(releaseUnchanged);
+                  });
+              return "ok";
+            } catch (OptimisticLockingFailureException exception) {
+              return "conflict";
+            }
+          });
       try {
         assertThat(unchangedFlushed.await(10, TimeUnit.SECONDS)).isTrue();
         update(milestone, id, "다른 요청의 변경", null);
@@ -478,32 +476,28 @@ class WriterConcurrencyIntegrationTest extends AbstractPostgresIntegrationTest {
     AtomicInteger firstPid = new AtomicInteger();
     try (var executor = Executors.newFixedThreadPool(2)) {
       var firstResult =
-          executor.submit(
-              () ->
-                  new TransactionTemplate(transactionManager)
-                      .executeWithoutResult(
-                          status -> {
-                            firstPid.set(
-                                jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
-                            first.run();
-                            entityManager.flush();
-                            firstFlushed.countDown();
-                            await(releaseFirst);
-                          }));
+          executor.submit(() ->
+              new TransactionTemplate(transactionManager)
+                  .executeWithoutResult(status -> {
+                    firstPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                    first.run();
+                    entityManager.flush();
+                    firstFlushed.countDown();
+                    await(releaseFirst);
+                  }));
       try {
         assertThat(firstFlushed.await(10, TimeUnit.SECONDS)).isTrue();
         var secondResult =
-            executor.submit(
-                () -> {
-                  try {
-                    second.run();
-                    return "ok";
-                  } catch (OptimisticLockingFailureException exception) {
-                    return "conflict";
-                  } catch (BusinessException exception) {
-                    return exception.getErrorCode().code();
-                  }
-                });
+            executor.submit(() -> {
+              try {
+                second.run();
+                return "ok";
+              } catch (OptimisticLockingFailureException exception) {
+                return "conflict";
+              } catch (BusinessException exception) {
+                return exception.getErrorCode().code();
+              }
+            });
         try {
           long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
           int blocked;

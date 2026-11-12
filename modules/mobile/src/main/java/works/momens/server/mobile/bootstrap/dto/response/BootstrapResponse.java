@@ -45,9 +45,8 @@ public record BootstrapResponse(
             context.me().id(), context.me().email(), context.me().name(), context.me().avatarUrl()),
         context.defaultProjectId(),
         context.projects().stream()
-            .map(
-                project ->
-                    new AccessibleProjectResponse(project.id(), project.name(), project.role()))
+            .map(project ->
+                new AccessibleProjectResponse(project.id(), project.name(), project.role()))
             .toList());
   }
 }

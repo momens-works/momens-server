@@ -87,9 +87,8 @@ class McpInteractionController implements McpInteractionControllerDocs {
           view.redirectHost(),
           view.scopes(),
           view.workspaces().stream()
-              .map(
-                  workspace ->
-                      new WorkspaceOption(workspace.id(), workspace.name(), workspace.slug()))
+              .map(workspace ->
+                  new WorkspaceOption(workspace.id(), workspace.name(), workspace.slug()))
               .toList(),
           view.expiresAt());
     }

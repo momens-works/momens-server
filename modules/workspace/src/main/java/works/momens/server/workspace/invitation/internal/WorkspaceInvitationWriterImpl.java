@@ -85,16 +85,15 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
     Instant now = clock.instant();
     Instant expiresAt = now.plus(TIME_TO_LIVE);
     UUID invitationId =
-        transactionTemplate.execute(
-            status ->
-                upserter.upsert(
-                    command.workspaceId(),
-                    email,
-                    command.role().value(),
-                    command.inviterUserId(),
-                    InvitationToken.hash(rawToken),
-                    expiresAt,
-                    now));
+        transactionTemplate.execute(status ->
+            upserter.upsert(
+                command.workspaceId(),
+                email,
+                command.role().value(),
+                command.inviterUserId(),
+                InvitationToken.hash(rawToken),
+                expiresAt,
+                now));
 
     return sendAndMarkSent(
         invitationId,
@@ -119,10 +118,9 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
     Instant now = clock.instant();
     Instant expiresAt = now.plus(TIME_TO_LIVE);
     int rotated =
-        transactionTemplate.execute(
-            status ->
-                repository.rotateToken(
-                    invitation.id(), InvitationToken.hash(rawToken), expiresAt, now));
+        transactionTemplate.execute(status ->
+            repository.rotateToken(
+                invitation.id(), InvitationToken.hash(rawToken), expiresAt, now));
     if (rotated == 0) {
       throw alreadyAccepted(invitation.id());
     }
@@ -141,14 +139,13 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
   public WorkspaceInvitationDetail revoke(RevokeInvitationCommand command) {
     WorkspaceInvitationDetail invitation =
         requireNotAccepted(command.workspaceId(), command.invitationId());
-    return transactionTemplate.execute(
-        status -> {
-          Instant now = clock.instant();
-          if (repository.revoke(invitation.id(), now) == 0) {
-            throw alreadyAccepted(invitation.id());
-          }
-          return detail(invitation.id());
-        });
+    return transactionTemplate.execute(status -> {
+      Instant now = clock.instant();
+      if (repository.revoke(invitation.id(), now) == 0) {
+        throw alreadyAccepted(invitation.id());
+      }
+      return detail(invitation.id());
+    });
   }
 
   private WorkspaceInvitationDetail sendAndMarkSent(
@@ -174,13 +171,12 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
           InvitationErrorCode.INVITATION_EMAIL_SEND_FAILED,
           Map.of("invitation_id", invitationId.toString()));
     }
-    return transactionTemplate.execute(
-        status -> {
-          WorkspaceInvitation invitation = requireInvitation(invitationId);
-          invitation.markSent(clock.instant());
-          repository.flush();
-          return InvitationDetailMapper.toDetail(invitation, clock.instant());
-        });
+    return transactionTemplate.execute(status -> {
+      WorkspaceInvitation invitation = requireInvitation(invitationId);
+      invitation.markSent(clock.instant());
+      repository.flush();
+      return InvitationDetailMapper.toDetail(invitation, clock.instant());
+    });
   }
 
   private void requireNotMember(UUID workspaceId, String normalizedEmail) {
@@ -196,16 +192,14 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
 
   private WorkspaceInvitationDetail requireNotAccepted(UUID workspaceId, UUID invitationId) {
     WorkspaceInvitationDetail invitation =
-        transactionTemplate.execute(
-            status ->
-                repository
-                    .findByIdAndWorkspaceId(invitationId, workspaceId)
-                    .map(found -> InvitationDetailMapper.toDetail(found, clock.instant()))
-                    .orElseThrow(
-                        () ->
-                            new BusinessException(
-                                InvitationErrorCode.INVITATION_NOT_FOUND,
-                                Map.of("invitation_id", invitationId.toString()))));
+        transactionTemplate.execute(status ->
+            repository
+                .findByIdAndWorkspaceId(invitationId, workspaceId)
+                .map(found -> InvitationDetailMapper.toDetail(found, clock.instant()))
+                .orElseThrow(() ->
+                    new BusinessException(
+                        InvitationErrorCode.INVITATION_NOT_FOUND,
+                        Map.of("invitation_id", invitationId.toString()))));
     if (invitation.status() == InvitationStatus.ACCEPTED) {
       throw alreadyAccepted(invitationId);
     }
@@ -215,11 +209,10 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
   private WorkspaceDetail requireWorkspace(UUID workspaceId) {
     return workspaceReader
         .findById(workspaceId)
-        .orElseThrow(
-            () ->
-                new BusinessException(
-                    WorkspaceErrorCode.WORKSPACE_NOT_FOUND,
-                    Map.of("workspace_id", workspaceId.toString())));
+        .orElseThrow(() ->
+            new BusinessException(
+                WorkspaceErrorCode.WORKSPACE_NOT_FOUND,
+                Map.of("workspace_id", workspaceId.toString())));
   }
 
   private WorkspaceInvitationDetail detail(UUID invitationId) {
@@ -229,11 +222,10 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
   private WorkspaceInvitation requireInvitation(UUID invitationId) {
     return repository
         .findById(invitationId)
-        .orElseThrow(
-            () ->
-                new BusinessException(
-                    InvitationErrorCode.INVITATION_NOT_FOUND,
-                    Map.of("invitation_id", invitationId.toString())));
+        .orElseThrow(() ->
+            new BusinessException(
+                InvitationErrorCode.INVITATION_NOT_FOUND,
+                Map.of("invitation_id", invitationId.toString())));
   }
 
   private static BusinessException alreadyAccepted(UUID invitationId) {

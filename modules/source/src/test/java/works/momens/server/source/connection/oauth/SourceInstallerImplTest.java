@@ -74,10 +74,9 @@ class SourceInstallerImplTest {
   @Test
   @DisplayName("지원하지 않는 provider는 거부한다")
   void rejectsProviderThatIsNotSupported() {
-    assertThatThrownBy(
-            () ->
-                configuredInstaller()
-                    .beginInstall(new BeginInstallCommand(WORKSPACE_ID, USER_ID, "linear")))
+    assertThatThrownBy(() ->
+            configuredInstaller()
+                .beginInstall(new BeginInstallCommand(WORKSPACE_ID, USER_ID, "linear")))
         .isInstanceOf(BusinessException.class)
         .hasFieldOrPropertyWithValue("errorCode", SourceErrorCode.SOURCE_UNSUPPORTED_PROVIDER);
   }
@@ -85,10 +84,9 @@ class SourceInstallerImplTest {
   @Test
   @DisplayName("자격 증명이 없는 provider는 거부한다")
   void rejectsSupportedProviderThatHasNoCredentials() {
-    assertThatThrownBy(
-            () ->
-                installerWith(Map.of())
-                    .beginInstall(new BeginInstallCommand(WORKSPACE_ID, USER_ID, "github")))
+    assertThatThrownBy(() ->
+            installerWith(Map.of())
+                .beginInstall(new BeginInstallCommand(WORKSPACE_ID, USER_ID, "github")))
         .isInstanceOf(BusinessException.class)
         .hasFieldOrPropertyWithValue("errorCode", SourceErrorCode.SOURCE_PROVIDER_UNCONFIGURED);
   }

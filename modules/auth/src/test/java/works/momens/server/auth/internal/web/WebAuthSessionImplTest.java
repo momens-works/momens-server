@@ -144,16 +144,14 @@ class WebAuthSessionImplTest {
         session.refresh(requestWithCookies(new Cookie("refresh_token", "old-web-refresh")));
 
     assertThat(result.setCookieHeaders())
-        .anyMatch(
-            c ->
-                c.startsWith("access_token=new-access-jwt")
-                    && c.contains("HttpOnly")
-                    && c.contains("Path=/;"))
-        .anyMatch(
-            c ->
-                c.startsWith("refresh_token=new-refresh-token")
-                    && c.contains("HttpOnly")
-                    && c.contains("Path=/api/auth"));
+        .anyMatch(c ->
+            c.startsWith("access_token=new-access-jwt")
+                && c.contains("HttpOnly")
+                && c.contains("Path=/;"))
+        .anyMatch(c ->
+            c.startsWith("refresh_token=new-refresh-token")
+                && c.contains("HttpOnly")
+                && c.contains("Path=/api/auth"));
   }
 
   @Test

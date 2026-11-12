@@ -102,10 +102,9 @@ class ProjectTaskService {
     TaskDetail detail =
         taskReader
             .findDetail(taskId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())));
     return new MobileTaskDetailView(draftStatus, toMobileDetail(detail));
   }
 
@@ -124,10 +123,8 @@ class ProjectTaskService {
     requireTaskMember(taskId, userId);
     List<UpdateTaskCommand.ChecklistItemEdit> items =
         checklistItems.stream()
-            .map(
-                edit ->
-                    new UpdateTaskCommand.ChecklistItemEdit(
-                        edit.id(), edit.title(), edit.completed()))
+            .map(edit ->
+                new UpdateTaskCommand.ChecklistItemEdit(edit.id(), edit.title(), edit.completed()))
             .toList();
     // 저장만 하고 상세는 반환하지 않는다. 저장 후 최신 상태는 클라이언트가 상세 조회로 다시 읽는다.
     taskWriter.update(
@@ -149,10 +146,9 @@ class ProjectTaskService {
         taskReader
             .findScope(taskId)
             .map(scope -> scope.workspaceId())
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())));
     if (workspaceMembershipReader.roleOf(workspaceId, userId).isEmpty()) {
       throw new BusinessException(
           CommonErrorCode.AUTH_FORBIDDEN, Map.of("task_id", taskId.toString()));
@@ -191,11 +187,10 @@ class ProjectTaskService {
     UUID workspaceId =
         projectReader
             .workspaceIdOf(projectId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        ProjectErrorCode.PROJECT_NOT_FOUND,
-                        Map.of("project_id", projectId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    ProjectErrorCode.PROJECT_NOT_FOUND,
+                    Map.of("project_id", projectId.toString())));
     if (workspaceMembershipReader.roleOf(workspaceId, userId).isEmpty()) {
       throw new BusinessException(
           CommonErrorCode.AUTH_FORBIDDEN, Map.of("project_id", projectId.toString()));

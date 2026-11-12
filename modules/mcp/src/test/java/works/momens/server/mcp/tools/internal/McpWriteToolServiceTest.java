@@ -317,8 +317,8 @@ class McpWriteToolServiceTest {
                 "create_task",
                 mapper.readTree(
                     """
-        {"project":"prj-0003","title":" Write tools ","assignee":"me","milestone":"Release"}
-        """),
+                    {"project":"prj-0003","title":" Write tools ","assignee":"me","milestone":"Release"}
+                    """),
                 withScopes(Set.of(McpScope.TASKS_WRITE.value())))
             .orElseThrow();
     assertThat(text(result))

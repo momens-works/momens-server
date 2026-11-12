@@ -43,8 +43,7 @@ final class FrameworkInvokedCodeUnits {
 
   private static boolean isInvokedByFramework(JavaCodeUnit codeUnit) {
     return FRAMEWORK_INVOCATION_ANNOTATIONS.stream()
-        .anyMatch(
-            annotation ->
-                codeUnit.isAnnotatedWith(annotation) || codeUnit.isMetaAnnotatedWith(annotation));
+        .anyMatch(annotation ->
+            codeUnit.isAnnotatedWith(annotation) || codeUnit.isMetaAnnotatedWith(annotation));
   }
 }

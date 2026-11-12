@@ -32,10 +32,9 @@ class TaskUpdateService {
     TaskSnapshot task =
         taskReader
             .findSnapshot(taskId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())));
     workspaceAccessChecker.requireRoleAtLeast(task.workspaceId(), userId, WorkspaceRole.MEMBER);
     return taskUpdateReader.listByTaskId(task.id());
   }

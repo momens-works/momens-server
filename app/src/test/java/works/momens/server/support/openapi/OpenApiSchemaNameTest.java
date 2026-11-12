@@ -17,10 +17,9 @@ class OpenApiSchemaNameTest {
     Map<String, List<Class<?>>> names =
         MainSourceClasses.imported().stream()
             .map(javaClass -> javaClass.reflect())
-            .filter(
-                type ->
-                    type.isAnnotationPresent(Schema.class)
-                        || (type.getPackageName().contains(".dto.") && type.isRecord()))
+            .filter(type ->
+                type.isAnnotationPresent(Schema.class)
+                    || (type.getPackageName().contains(".dto.") && type.isRecord()))
             .collect(Collectors.groupingBy(OpenApiSchemaNameTest::schemaName));
 
     assertThat(names.entrySet().stream().filter(entry -> entry.getValue().size() > 1).toList())

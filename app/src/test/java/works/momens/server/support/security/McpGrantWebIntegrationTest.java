@@ -220,17 +220,15 @@ class McpGrantWebIntegrationTest extends AbstractPostgresIntegrationTest {
           session.grant());
       try (var executor = Executors.newFixedThreadPool(2)) {
         var first =
-            executor.submit(
-                () ->
-                    mvc.perform(delete(path(workspace) + "/" + session.grant()).cookie(cookie))
-                        .andReturn()
-                        .getResponse());
+            executor.submit(() ->
+                mvc.perform(delete(path(workspace) + "/" + session.grant()).cookie(cookie))
+                    .andReturn()
+                    .getResponse());
         var second =
-            executor.submit(
-                () ->
-                    mvc.perform(delete(path(workspace) + "/" + session.grant()).cookie(cookie))
-                        .andReturn()
-                        .getResponse());
+            executor.submit(() ->
+                mvc.perform(delete(path(workspace) + "/" + session.grant()).cookie(cookie))
+                    .andReturn()
+                    .getResponse());
         try {
           long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
           int blocked;

@@ -49,11 +49,9 @@ class TaskLinkService {
     UUID memoryWorkspaceId =
         confirmedMemoryReader
             .findWorkspaceId(memoryId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        MemoryErrorCode.MEMORY_NOT_FOUND,
-                        Map.of("memory_id", memoryId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    MemoryErrorCode.MEMORY_NOT_FOUND, Map.of("memory_id", memoryId.toString())));
     requireSameWorkspace(workspaceId, memoryWorkspaceId);
     requireMember(workspaceId, userId);
     entityRelationWriter.link(command(workspaceId, taskId, EntityType.MEMORY, memoryId));
@@ -91,10 +89,9 @@ class TaskLinkService {
   private UUID requireTaskWorkspace(UUID taskId) {
     return taskReader
         .findSnapshot(taskId)
-        .orElseThrow(
-            () ->
-                new BusinessException(
-                    TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())))
+        .orElseThrow(() ->
+            new BusinessException(
+                TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())))
         .workspaceId();
   }
 

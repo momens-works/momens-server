@@ -250,10 +250,9 @@ class SignalListServiceImplTest extends AbstractPostgresIntegrationTest {
   void throwsValidationFailedForLimitBelowOne() {
     allowMember();
 
-    assertThatThrownBy(
-            () ->
-                signalListService.listByCreatedRange(
-                    PROJECT_ID, CALLER_ID, List.of("risk"), WIDE_FROM, WIDE_TO, null, 0))
+    assertThatThrownBy(() ->
+            signalListService.listByCreatedRange(
+                PROJECT_ID, CALLER_ID, List.of("risk"), WIDE_FROM, WIDE_TO, null, 0))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(CommonErrorCode.COMMON_VALIDATION_FAILED);
@@ -264,10 +263,9 @@ class SignalListServiceImplTest extends AbstractPostgresIntegrationTest {
   void throwsValidationFailedForMalformedCursor() {
     allowMember();
 
-    assertThatThrownBy(
-            () ->
-                signalListService.listByCreatedRange(
-                    PROJECT_ID, CALLER_ID, List.of("risk"), WIDE_FROM, WIDE_TO, "not-a-cursor", 3))
+    assertThatThrownBy(() ->
+            signalListService.listByCreatedRange(
+                PROJECT_ID, CALLER_ID, List.of("risk"), WIDE_FROM, WIDE_TO, "not-a-cursor", 3))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(CommonErrorCode.COMMON_VALIDATION_FAILED);

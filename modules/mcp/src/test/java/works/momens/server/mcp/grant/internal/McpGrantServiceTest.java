@@ -91,11 +91,10 @@ class McpGrantServiceTest {
                 new ConstraintViolationException(
                     "duplicate active grant", null, "uq_mcp_grants_active_subject")));
 
-    assertThatThrownBy(
-            () ->
-                service.create(
-                    new CreateMcpGrantCommand(
-                        userId, "client-1", workspaceId, List.of("mcp:tasks:read"))))
+    assertThatThrownBy(() ->
+            service.create(
+                new CreateMcpGrantCommand(
+                    userId, "client-1", workspaceId, List.of("mcp:tasks:read"))))
         .isInstanceOfSatisfying(
             BusinessException.class,
             exception ->
@@ -118,11 +117,10 @@ class McpGrantServiceTest {
             new ConstraintViolationException("unsupported scope", null, "ck_mcp_grants_scopes"));
     when(mcpGrantRepository.saveAndFlush(any(McpGrant.class))).thenThrow(exception);
 
-    assertThatThrownBy(
-            () ->
-                service.create(
-                    new CreateMcpGrantCommand(
-                        userId, "client-1", workspaceId, List.of("mcp:tasks:read"))))
+    assertThatThrownBy(() ->
+            service.create(
+                new CreateMcpGrantCommand(
+                    userId, "client-1", workspaceId, List.of("mcp:tasks:read"))))
         .isSameAs(exception);
   }
 
@@ -133,11 +131,10 @@ class McpGrantServiceTest {
     UUID workspaceId = UUID.randomUUID();
     when(workspaceMembershipReader.roleOf(workspaceId, userId)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(
-            () ->
-                service.create(
-                    new CreateMcpGrantCommand(
-                        userId, "client-1", workspaceId, List.of("mcp:tasks:read"))))
+    assertThatThrownBy(() ->
+            service.create(
+                new CreateMcpGrantCommand(
+                    userId, "client-1", workspaceId, List.of("mcp:tasks:read"))))
         .isInstanceOfSatisfying(
             BusinessException.class,
             exception ->

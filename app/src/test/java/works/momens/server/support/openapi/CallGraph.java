@@ -138,11 +138,10 @@ final class CallGraph {
         .distinct()
         .filter(this::isImported)
         .flatMap(javaClass -> javaClass.getCodeUnits().stream())
-        .filter(
-            codeUnit ->
-                codeUnit.getName().equals(target.getName())
-                    && rawParameterTypeNames(codeUnit.getRawParameterTypes())
-                        .equals(parameterTypeNames));
+        .filter(codeUnit ->
+            codeUnit.getName().equals(target.getName())
+                && rawParameterTypeNames(codeUnit.getRawParameterTypes())
+                    .equals(parameterTypeNames));
   }
 
   private boolean isImported(JavaClass javaClass) {

@@ -22,11 +22,10 @@ class WorkspaceEditorImpl implements WorkspaceEditor {
     Workspace workspace =
         workspaceRepository
             .findById(command.workspaceId())
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        WorkspaceErrorCode.WORKSPACE_NOT_FOUND,
-                        Map.of("workspace_id", command.workspaceId().toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    WorkspaceErrorCode.WORKSPACE_NOT_FOUND,
+                    Map.of("workspace_id", command.workspaceId().toString())));
     workspace.update(
         keepWhenEmpty(command.name()),
         keepWhenEmpty(command.description()),

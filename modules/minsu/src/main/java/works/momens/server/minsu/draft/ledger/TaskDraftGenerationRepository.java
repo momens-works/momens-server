@@ -16,19 +16,19 @@ interface TaskDraftGenerationRepository extends JpaRepository<TaskDraftGeneratio
    */
   String SNAPSHOT_UNFINISHED_SQL =
       """
-          SELECT COUNT(*) FILTER (WHERE status = 'pending') AS "pending",
-                 COUNT(*) FILTER (WHERE status = 'processing') AS "processing",
-                 GREATEST(COALESCE(EXTRACT(EPOCH FROM NOW() - MIN(created_at)), 0), 0)
-                     ::double precision AS "oldestUnfinishedAgeSeconds",
-                 COUNT(*) FILTER (
-                     WHERE status = 'processing' AND lease_expires_at <= NOW()) AS "expiredLeases",
-                 COALESCE(EXTRACT(EPOCH FROM NOW() - MIN(lease_expires_at) FILTER (
-                     WHERE status = 'processing' AND lease_expires_at <= NOW())), 0)::double precision
-                     AS "expiredLeaseMaxAgeSeconds",
-                 COUNT(*) FILTER (WHERE read_deadline_at <= NOW()) AS "readDeadlineExceeded"
-          FROM minsu_task_draft_generations
-          WHERE status <> 'completed'
-          """;
+      SELECT COUNT(*) FILTER (WHERE status = 'pending') AS "pending",
+             COUNT(*) FILTER (WHERE status = 'processing') AS "processing",
+             GREATEST(COALESCE(EXTRACT(EPOCH FROM NOW() - MIN(created_at)), 0), 0)
+                 ::double precision AS "oldestUnfinishedAgeSeconds",
+             COUNT(*) FILTER (
+                 WHERE status = 'processing' AND lease_expires_at <= NOW()) AS "expiredLeases",
+             COALESCE(EXTRACT(EPOCH FROM NOW() - MIN(lease_expires_at) FILTER (
+                 WHERE status = 'processing' AND lease_expires_at <= NOW())), 0)::double precision
+                 AS "expiredLeaseMaxAgeSeconds",
+             COUNT(*) FILTER (WHERE read_deadline_at <= NOW()) AS "readDeadlineExceeded"
+      FROM minsu_task_draft_generations
+      WHERE status <> 'completed'
+      """;
 
   Optional<TaskDraftGeneration> findByTaskId(UUID taskId);
 

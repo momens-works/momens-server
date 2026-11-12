@@ -276,12 +276,11 @@ class FigmaConnectionConfiguratorIntegrationTest extends AbstractPostgresIntegra
   @Test
   @DisplayName("외부 호출 중 credential 교체도 충돌로 처리한다")
   void detectsCredentialReplacement() {
-    duringCreate.set(
-        () ->
-            jdbc.update(
-                "UPDATE source_credentials SET access_token_enc=? WHERE connection_id=?",
-                encryptor.encrypt("new-token"),
-                id));
+    duringCreate.set(() ->
+        jdbc.update(
+            "UPDATE source_credentials SET access_token_enc=? WHERE connection_id=?",
+            encryptor.encrypt("new-token"),
+            id));
     assertThatThrownBy(this::configure)
         .hasFieldOrPropertyWithValue("errorCode", SourceErrorCode.SOURCE_CONNECTION_CHANGED);
     assertThat(deletes).containsExactly("new-1");
@@ -290,11 +289,10 @@ class FigmaConnectionConfiguratorIntegrationTest extends AbstractPostgresIntegra
   @Test
   @DisplayName("worker 통계와 resync 시각 변경은 충돌이 아니며 최신 값을 보존한다")
   void preservesConcurrentWorkerWrite() {
-    duringCreate.set(
-        () ->
-            jdbc.update(
-                "UPDATE source_connections SET captures_read_count=29, last_synced_at=now(), updated_at=now(), resync_requested_at=now() WHERE id=?",
-                id));
+    duringCreate.set(() ->
+        jdbc.update(
+            "UPDATE source_connections SET captures_read_count=29, last_synced_at=now(), updated_at=now(), resync_requested_at=now() WHERE id=?",
+            id));
     var result = configure();
     assertThat(result.capturesReadCount()).isEqualTo(29);
     assertThat(result.lastSyncedAt()).isNotNull();
@@ -306,18 +304,16 @@ class FigmaConnectionConfiguratorIntegrationTest extends AbstractPostgresIntegra
   void concurrentConfigure() throws Exception {
     CountDownLatch entered = new CountDownLatch(1);
     CountDownLatch release = new CountDownLatch(1);
-    duringCreate.set(
-        () -> {
-          entered.countDown();
-          await(release);
-        });
+    duringCreate.set(() -> {
+      entered.countDown();
+      await(release);
+    });
     try (var executor = Executors.newSingleThreadExecutor()) {
       var first =
-          executor.submit(
-              () ->
-                  assertThatThrownBy(this::configure)
-                      .hasFieldOrPropertyWithValue(
-                          "errorCode", SourceErrorCode.SOURCE_CONNECTION_CHANGED));
+          executor.submit(() ->
+              assertThatThrownBy(this::configure)
+                  .hasFieldOrPropertyWithValue(
+                      "errorCode", SourceErrorCode.SOURCE_CONNECTION_CHANGED));
       try {
         assertThat(entered.await(3, TimeUnit.SECONDS)).isTrue();
         assertThat(configure().metadata()).containsEntry("webhook_id", "new-2");
@@ -385,29 +381,25 @@ class FigmaConnectionConfiguratorIntegrationTest extends AbstractPostgresIntegra
           public <T> T execute(TransactionCallback<T> action) {
             int execution = executions.incrementAndGet();
             if (execution == 3 && failLookup) {
-              return super.execute(
-                  tx -> {
-                    throw new DataAccessResourceFailureException("private-lookup-error");
-                  });
+              return super.execute(tx -> {
+                throw new DataAccessResourceFailureException("private-lookup-error");
+              });
             }
             if (execution != 2) {
               return super.execute(action);
             }
             var completion = new AtomicReference<TransactionSynchronization>();
-            super.execute(
-                tx -> {
-                  T result = action.doInTransaction(tx);
-                  var callbacks =
-                      TransactionSynchronizationManager.getSynchronizations().stream()
-                          .filter(
-                              sync ->
-                                  sync.getClass().getEnclosingClass()
-                                      == FigmaConnectionConfigurator.class)
-                          .toList();
-                  assertThat(callbacks).hasSize(1);
-                  completion.set(callbacks.getFirst());
-                  return result;
-                });
+            super.execute(tx -> {
+              T result = action.doInTransaction(tx);
+              var callbacks =
+                  TransactionSynchronizationManager.getSynchronizations().stream()
+                      .filter(sync ->
+                          sync.getClass().getEnclosingClass() == FigmaConnectionConfigurator.class)
+                      .toList();
+              assertThat(callbacks).hasSize(1);
+              completion.set(callbacks.getFirst());
+              return result;
+            });
             // Commit PostgreSQL for real, then simulate an indeterminate completion report.
             // Only notify the application callback; Spring resource callbacks already completed.
             completion.get().afterCompletion(TransactionSynchronization.STATUS_UNKNOWN);
@@ -460,20 +452,16 @@ class FigmaConnectionConfiguratorIntegrationTest extends AbstractPostgresIntegra
   @Test
   @DisplayName("입력·다른 provider·workspace·서버 설정 오류는 외부 호출 없이 거부한다")
   void rejectsInvalidSetup() {
-    assertThatThrownBy(
-            () ->
-                configurator.configure(
-                    workspaceId, id, new ConfigureFigmaCommand(" ", List.of(" "))))
+    assertThatThrownBy(() ->
+            configurator.configure(workspaceId, id, new ConfigureFigmaCommand(" ", List.of(" "))))
         .hasFieldOrPropertyWithValue("errorCode", SourceErrorCode.SOURCE_FIGMA_INVALID_CONFIG);
-    assertThatThrownBy(
-            () ->
-                configurator.configure(
-                    UUID.randomUUID(), id, new ConfigureFigmaCommand("team", List.of("f"))))
+    assertThatThrownBy(() ->
+            configurator.configure(
+                UUID.randomUUID(), id, new ConfigureFigmaCommand("team", List.of("f"))))
         .hasFieldOrPropertyWithValue("errorCode", SourceErrorCode.SOURCE_CONNECTION_NOT_FOUND);
-    assertThatThrownBy(
-            () ->
-                configurator(new FigmaWebhookProperties("", ""), Duration.ofSeconds(1))
-                    .configure(workspaceId, id, new ConfigureFigmaCommand("team", List.of("f"))))
+    assertThatThrownBy(() ->
+            configurator(new FigmaWebhookProperties("", ""), Duration.ofSeconds(1))
+                .configure(workspaceId, id, new ConfigureFigmaCommand("team", List.of("f"))))
         .hasFieldOrPropertyWithValue(
             "errorCode", SourceErrorCode.SOURCE_FIGMA_WEBHOOK_UNCONFIGURED);
     jdbc.update("UPDATE source_connections SET source_type='GITHUB' WHERE id=?", id);
@@ -522,11 +510,10 @@ class FigmaConnectionConfiguratorIntegrationTest extends AbstractPostgresIntegra
             credentials,
             properties,
             new TransactionTemplate(manager));
-    duringCreate.set(
-        () ->
-            installer.completeInstall(
-                new CompleteInstallCommand(
-                    "code", signer.sign(new OAuthState(workspaceId, userId, "FIGMA")))));
+    duringCreate.set(() ->
+        installer.completeInstall(
+            new CompleteInstallCommand(
+                "code", signer.sign(new OAuthState(workspaceId, userId, "FIGMA")))));
     try {
       assertThatThrownBy(this::configure)
           .hasFieldOrPropertyWithValue("errorCode", SourceErrorCode.SOURCE_CONNECTION_CHANGED);
@@ -557,10 +544,9 @@ class FigmaConnectionConfiguratorIntegrationTest extends AbstractPostgresIntegra
               new FigmaWebhookProperties(
                   "https://worker.example/webhooks/figma", "private-passcode"),
               Duration.ofMillis(150));
-      assertThatThrownBy(
-              () ->
-                  shortTimeout.configure(
-                      workspaceId, id, new ConfigureFigmaCommand("team", List.of("file"))))
+      assertThatThrownBy(() ->
+              shortTimeout.configure(
+                  workspaceId, id, new ConfigureFigmaCommand("team", List.of("file"))))
           .hasFieldOrPropertyWithValue("errorCode", SourceErrorCode.SOURCE_FIGMA_WEBHOOK_FAILED);
       assertThat(row()).isEqualTo(before);
       assertThat(creates.get()).isEqualTo(1);

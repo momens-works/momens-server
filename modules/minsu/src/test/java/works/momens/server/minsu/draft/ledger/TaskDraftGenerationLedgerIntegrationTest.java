@@ -573,9 +573,8 @@ class TaskDraftGenerationLedgerIntegrationTest extends AbstractPostgresIntegrati
 
   private void inTransaction(Runnable action) {
     new TransactionTemplate(transactionManager)
-        .executeWithoutResult(
-            status -> {
-              action.run();
-            });
+        .executeWithoutResult(status -> {
+          action.run();
+        });
   }
 }

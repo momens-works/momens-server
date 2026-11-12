@@ -86,15 +86,14 @@ class WebAuthSessionImpl implements WebAuthSession {
   public WebAuthCookieUpdate logout(HttpServletRequest request) {
     cookies
         .readRefreshToken(request)
-        .ifPresent(
-            refreshToken -> {
-              try {
-                webAuthService.logout(refreshToken);
-              } catch (BusinessException e) {
-                // 이미 무효·폐기된 refresh라도 로그아웃은 쿠키를 정리하고 성공으로 끝냅니다(멱등).
-                log.debug("web logout with inactive refresh: code={}", e.getErrorCode().code());
-              }
-            });
+        .ifPresent(refreshToken -> {
+          try {
+            webAuthService.logout(refreshToken);
+          } catch (BusinessException e) {
+            // 이미 무효·폐기된 refresh라도 로그아웃은 쿠키를 정리하고 성공으로 끝냅니다(멱등).
+            log.debug("web logout with inactive refresh: code={}", e.getErrorCode().code());
+          }
+        });
     return new WebAuthCookieUpdate(
         List.of(
             cookies.clearAccessToken().toString(),

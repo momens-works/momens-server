@@ -45,22 +45,17 @@ class EntityRelationReaderImpl implements EntityRelationReader {
     Map<UUID, List<UUID>> sourceRefIds = new LinkedHashMap<>();
     entityRelationRepository
         .findContextLinks(workspaceId, taskIds)
-        .forEach(
-            row -> {
-              UUID taskId = (UUID) row[0];
-              if ("MEMORY".equals(row[1])) {
-                memoryIds.computeIfAbsent(taskId, ignored -> new ArrayList<>()).add((UUID) row[2]);
-              } else if ("SOURCE_OBJECT".equals(row[1])) {
-                sourceRefIds
-                    .computeIfAbsent(taskId, ignored -> new ArrayList<>())
-                    .add((UUID) row[2]);
-              }
-            });
+        .forEach(row -> {
+          UUID taskId = (UUID) row[0];
+          if ("MEMORY".equals(row[1])) {
+            memoryIds.computeIfAbsent(taskId, ignored -> new ArrayList<>()).add((UUID) row[2]);
+          } else if ("SOURCE_OBJECT".equals(row[1])) {
+            sourceRefIds.computeIfAbsent(taskId, ignored -> new ArrayList<>()).add((UUID) row[2]);
+          }
+        });
     Map<UUID, TaskContextLinks> links = new LinkedHashMap<>();
-    memoryIds.forEach(
-        (taskId, ids) ->
-            links.put(
-                taskId, new TaskContextLinks(ids, sourceRefIds.getOrDefault(taskId, List.of()))));
+    memoryIds.forEach((taskId, ids) ->
+        links.put(taskId, new TaskContextLinks(ids, sourceRefIds.getOrDefault(taskId, List.of()))));
     sourceRefIds.forEach(
         (taskId, ids) -> links.putIfAbsent(taskId, new TaskContextLinks(List.of(), ids)));
     return links;
@@ -73,14 +68,13 @@ class EntityRelationReaderImpl implements EntityRelationReader {
     List<UUID> sourceRefIds = new ArrayList<>();
     entityRelationRepository
         .findContextLinks(workspaceId, List.of(taskId))
-        .forEach(
-            row -> {
-              if ("MEMORY".equals(row[1])) {
-                memoryIds.add((UUID) row[2]);
-              } else if ("SOURCE_OBJECT".equals(row[1])) {
-                sourceRefIds.add((UUID) row[2]);
-              }
-            });
+        .forEach(row -> {
+          if ("MEMORY".equals(row[1])) {
+            memoryIds.add((UUID) row[2]);
+          } else if ("SOURCE_OBJECT".equals(row[1])) {
+            sourceRefIds.add((UUID) row[2]);
+          }
+        });
     return new TaskContextLinks(memoryIds, sourceRefIds);
   }
 }

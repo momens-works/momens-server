@@ -408,19 +408,18 @@ class ProjectTaskServiceTest {
   void updateTaskThrowsTaskNotFoundWhenTaskMissing() {
     when(taskReader.findScope(TASK_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(
-            () ->
-                projectTaskService.updateTask(
-                    TASK_ID,
-                    CALLER_ID,
-                    "제목",
-                    TaskRole.PM,
-                    null,
-                    TaskPriority.MEDIUM,
-                    TaskStatus.TODO,
-                    null,
-                    List.of(),
-                    null))
+    assertThatThrownBy(() ->
+            projectTaskService.updateTask(
+                TASK_ID,
+                CALLER_ID,
+                "제목",
+                TaskRole.PM,
+                null,
+                TaskPriority.MEDIUM,
+                TaskStatus.TODO,
+                null,
+                List.of(),
+                null))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(TaskErrorCode.TASK_NOT_FOUND);
@@ -432,19 +431,18 @@ class ProjectTaskServiceTest {
         .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
     when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(
-            () ->
-                projectTaskService.updateTask(
-                    TASK_ID,
-                    CALLER_ID,
-                    "제목",
-                    TaskRole.PM,
-                    null,
-                    TaskPriority.MEDIUM,
-                    TaskStatus.TODO,
-                    null,
-                    List.of(),
-                    null))
+    assertThatThrownBy(() ->
+            projectTaskService.updateTask(
+                TASK_ID,
+                CALLER_ID,
+                "제목",
+                TaskRole.PM,
+                null,
+                TaskPriority.MEDIUM,
+                TaskStatus.TODO,
+                null,
+                List.of(),
+                null))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(CommonErrorCode.AUTH_FORBIDDEN);
@@ -488,10 +486,9 @@ class ProjectTaskServiceTest {
   void toggleChecklistItemThrowsTaskNotFoundWhenTaskMissing() {
     when(taskReader.findScope(TASK_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(
-            () ->
-                projectTaskService.toggleChecklistItem(
-                    TASK_ID, CALLER_ID, UUID.randomUUID(), true, null))
+    assertThatThrownBy(() ->
+            projectTaskService.toggleChecklistItem(
+                TASK_ID, CALLER_ID, UUID.randomUUID(), true, null))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(TaskErrorCode.TASK_NOT_FOUND);

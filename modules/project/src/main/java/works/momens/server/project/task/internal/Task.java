@@ -229,10 +229,9 @@ class Task extends BaseEntity {
   void replaceChecklist(List<UpdateTaskCommand.ChecklistItemEdit> edits) {
     List<UpdateTaskCommand.ChecklistItemEdit> current =
         checklistItems.stream()
-            .map(
-                item ->
-                    new UpdateTaskCommand.ChecklistItemEdit(
-                        item.getId(), item.getTitle(), item.isCompleted()))
+            .map(item ->
+                new UpdateTaskCommand.ChecklistItemEdit(
+                    item.getId(), item.getTitle(), item.isCompleted()))
             .toList();
     if (current.equals(edits)) {
       return;

@@ -58,11 +58,10 @@ class WorkspaceService {
     WorkspaceDetail detail =
         workspaceReader
             .findById(workspaceId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        WorkspaceErrorCode.WORKSPACE_NOT_FOUND,
-                        Map.of("workspace_id", workspaceId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    WorkspaceErrorCode.WORKSPACE_NOT_FOUND,
+                    Map.of("workspace_id", workspaceId.toString())));
     workspaceAccessChecker.requireRoleAtLeast(workspaceId, userId, WorkspaceRole.MEMBER);
     return detail;
   }

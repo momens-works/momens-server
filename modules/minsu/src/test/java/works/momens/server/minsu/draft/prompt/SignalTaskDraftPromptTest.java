@@ -73,9 +73,8 @@ class SignalTaskDraftPromptTest {
   void keepsOnlyFirstTenMeaningfulEvidenceItems() throws Exception {
     List<SignalTaskDraftInput.Evidence> evidence =
         IntStream.range(0, 12)
-            .mapToObj(
-                index ->
-                    new SignalTaskDraftInput.Evidence("대상" + index, "변화" + index, "영향" + index))
+            .mapToObj(index ->
+                new SignalTaskDraftInput.Evidence("대상" + index, "변화" + index, "영향" + index))
             .toList();
     SignalTaskDraftInput input = new SignalTaskDraftInput("제목", "risk", "설명", "영향", evidence);
 

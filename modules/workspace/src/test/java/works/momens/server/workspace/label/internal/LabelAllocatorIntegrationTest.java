@@ -80,16 +80,13 @@ class LabelAllocatorIntegrationTest extends AbstractPostgresIntegrationTest {
       CountDownLatch start = new CountDownLatch(1);
       List<Future<String>> futures =
           IntStream.range(0, threads)
-              .mapToObj(
-                  i ->
-                      pool.submit(
-                          () -> {
-                            start.await();
-                            // 발급은 MANDATORY라 호출자 트랜잭션이 있어야 한다. 각 스레드가 자기
-                            // 트랜잭션을 열어 커밋하므로 실제로 같은 행을 동시에 두드리는 상황이 된다.
-                            return tx.execute(
-                                status -> labelAllocator.allocateMomLabel(workspaceId));
-                          }))
+              .mapToObj(i ->
+                  pool.submit(() -> {
+                    start.await();
+                    // 발급은 MANDATORY라 호출자 트랜잭션이 있어야 한다. 각 스레드가 자기
+                    // 트랜잭션을 열어 커밋하므로 실제로 같은 행을 동시에 두드리는 상황이 된다.
+                    return tx.execute(status -> labelAllocator.allocateMomLabel(workspaceId));
+                  }))
               .toList();
       start.countDown();
 
@@ -107,13 +104,12 @@ class LabelAllocatorIntegrationTest extends AbstractPostgresIntegrationTest {
       assertThat(labels.stream().sorted().toList()).isEqualTo(expected);
     } finally {
       pool.shutdownNow();
-      tx.executeWithoutResult(
-          status ->
-              entityManager
-                  .getEntityManager()
-                  .createNativeQuery("DELETE FROM workspaces WHERE id = ?1")
-                  .setParameter(1, workspaceId)
-                  .executeUpdate());
+      tx.executeWithoutResult(status ->
+          entityManager
+              .getEntityManager()
+              .createNativeQuery("DELETE FROM workspaces WHERE id = ?1")
+              .setParameter(1, workspaceId)
+              .executeUpdate());
     }
   }
 }

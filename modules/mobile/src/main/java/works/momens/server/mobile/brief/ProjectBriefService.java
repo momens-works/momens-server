@@ -78,11 +78,10 @@ class ProjectBriefService {
     ProjectSnapshot snapshot =
         projectReader
             .findSnapshot(projectId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        ProjectErrorCode.PROJECT_NOT_FOUND,
-                        Map.of("project_id", projectId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    ProjectErrorCode.PROJECT_NOT_FOUND,
+                    Map.of("project_id", projectId.toString())));
     if (workspaceMembershipReader.roleOf(snapshot.workspaceId(), userId).isEmpty()) {
       throw new BusinessException(
           CommonErrorCode.AUTH_FORBIDDEN, Map.of("project_id", projectId.toString()));
@@ -90,11 +89,10 @@ class ProjectBriefService {
     int progress =
         taskProgressReader
             .progressOf(projectId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        ProjectErrorCode.PROJECT_NOT_FOUND,
-                        Map.of("project_id", projectId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    ProjectErrorCode.PROJECT_NOT_FOUND,
+                    Map.of("project_id", projectId.toString())));
     // 브리프는 오늘의 브리프라 그날 온 시그널을 처리 여부와 무관하게 센다(MOM-81).
     LocalDate anchor = BriefDay.today(mobileClock.clock());
     BriefDay.Range today = BriefDay.rangeOf(anchor);
@@ -165,10 +163,9 @@ class ProjectBriefService {
             countsByType.values().stream().mapToLong(Long::longValue).sum());
     List<MobileBrief.FilterCount> typeChips =
         countsByType.entrySet().stream()
-            .map(
-                entry ->
-                    new MobileBrief.FilterCount(
-                        entry.getKey(), SignalTypeLabel.of(entry.getKey()), entry.getValue()))
+            .map(entry ->
+                new MobileBrief.FilterCount(
+                    entry.getKey(), SignalTypeLabel.of(entry.getKey()), entry.getValue()))
             .sorted(CHIP_ORDER)
             .toList();
     return Stream.concat(Stream.of(all), typeChips.stream()).toList();
@@ -183,10 +180,9 @@ class ProjectBriefService {
   private static List<MobileBrief.Priority> toPriorities(List<BoardTask> tasks) {
     List<BoardTask> ordered = tasks.stream().sorted(PRIORITY_ORDER).limit(PRIORITY_LIMIT).toList();
     return IntStream.range(0, ordered.size())
-        .mapToObj(
-            index ->
-                new MobileBrief.Priority(
-                    index + 1, ordered.get(index).title(), ordered.get(index).id()))
+        .mapToObj(index ->
+            new MobileBrief.Priority(
+                index + 1, ordered.get(index).title(), ordered.get(index).id()))
         .toList();
   }
 }

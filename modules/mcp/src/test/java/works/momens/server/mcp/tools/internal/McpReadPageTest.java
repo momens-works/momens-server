@@ -28,10 +28,8 @@ class McpReadPageTest {
   @ParameterizedTest
   @ValueSource(strings = {"0", "101", "-1", "1.5", "2147483648", "null", "\"20\"", "true"})
   void rejectsInvalidLimits(String limit) {
-    assertThatThrownBy(
-            () ->
-                McpReadPage.parse(
-                    "list_tasks", mapper.readTree("{\"limit\":" + limit + "}"), context))
+    assertThatThrownBy(() ->
+            McpReadPage.parse("list_tasks", mapper.readTree("{\"limit\":" + limit + "}"), context))
         .isInstanceOf(McpToolInputException.class);
   }
 
@@ -119,10 +117,9 @@ class McpReadPageTest {
   @Test
   void rejectsMalformedAndOversizedCursors() {
     for (String cursor : List.of("", "%%%", "a".repeat(1025))) {
-      assertThatThrownBy(
-              () ->
-                  McpReadPage.parse(
-                      "list_tasks", mapper.createObjectNode().put("cursor", cursor), context))
+      assertThatThrownBy(() ->
+              McpReadPage.parse(
+                  "list_tasks", mapper.createObjectNode().put("cursor", cursor), context))
           .isInstanceOf(McpToolInputException.class);
     }
   }

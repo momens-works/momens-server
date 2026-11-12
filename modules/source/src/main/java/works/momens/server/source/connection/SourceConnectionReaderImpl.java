@@ -23,11 +23,10 @@ class SourceConnectionReaderImpl implements SourceConnectionReader {
   public UUID getWorkspaceId(UUID connectionId) {
     return sourceConnectionRepository
         .findWorkspaceId(connectionId)
-        .orElseThrow(
-            () ->
-                new BusinessException(
-                    SourceErrorCode.SOURCE_CONNECTION_NOT_FOUND,
-                    Map.of("source_connection_id", connectionId.toString())));
+        .orElseThrow(() ->
+            new BusinessException(
+                SourceErrorCode.SOURCE_CONNECTION_NOT_FOUND,
+                Map.of("source_connection_id", connectionId.toString())));
   }
 
   @Override

@@ -32,17 +32,16 @@ class FigmaTokenRefreshClient {
           .contentType(MediaType.APPLICATION_FORM_URLENCODED)
           .accept(MediaType.APPLICATION_JSON)
           .body(form)
-          .exchange(
-              (request, response) -> {
-                int status = response.getStatusCode().value();
-                if (status == 400 || status == 401 || status == 403) {
-                  throw new RefreshFailedException(true, "status=" + status);
-                }
-                if (status < 200 || status >= 300) {
-                  throw new RefreshFailedException(false, "status=" + status);
-                }
-                return toToken(response.bodyTo(new ParameterizedTypeReference<>() {}));
-              });
+          .exchange((request, response) -> {
+            int status = response.getStatusCode().value();
+            if (status == 400 || status == 401 || status == 403) {
+              throw new RefreshFailedException(true, "status=" + status);
+            }
+            if (status < 200 || status >= 300) {
+              throw new RefreshFailedException(false, "status=" + status);
+            }
+            return toToken(response.bodyTo(new ParameterizedTypeReference<>() {}));
+          });
     } catch (RestClientException e) {
       throw new RefreshFailedException(false, e.getClass().getSimpleName());
     }

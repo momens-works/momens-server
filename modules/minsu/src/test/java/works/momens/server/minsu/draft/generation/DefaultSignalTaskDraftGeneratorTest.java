@@ -70,11 +70,10 @@ class DefaultSignalTaskDraftGeneratorTest {
   void stubEnroller() {
     // 실제 적재기는 draft와 snapshot을 봉인한 자기 타입을 돌려준다. 여기서는 draft만 그대로 되비친다.
     when(enroller.bind(any(), any()))
-        .thenAnswer(
-            invocation -> {
-              TaskDraft bound = invocation.getArgument(0);
-              return (PreparedTaskDraft) () -> bound;
-            });
+        .thenAnswer(invocation -> {
+          TaskDraft bound = invocation.getArgument(0);
+          return (PreparedTaskDraft) () -> bound;
+        });
   }
 
   @Test
@@ -423,17 +422,16 @@ class DefaultSignalTaskDraftGeneratorTest {
         .allSatisfy(counter -> assertThat(counter.count()).isZero());
     assertAll(
         Stream.of(GenerationOutcome.values())
-            .map(
-                outcome ->
-                    () ->
-                        assertThat(
-                                meterRegistry
-                                    .get("momens.minsu.task.draft.requests")
-                                    .tag("outcome", outcome.outcome())
-                                    .tag("fallback.reason", outcome.reason())
-                                    .counter()
-                                    .count())
-                            .isZero()));
+            .map(outcome ->
+                () ->
+                    assertThat(
+                            meterRegistry
+                                .get("momens.minsu.task.draft.requests")
+                                .tag("outcome", outcome.outcome())
+                                .tag("fallback.reason", outcome.reason())
+                                .counter()
+                                .count())
+                        .isZero()));
   }
 
   private static double tokenAmount(SimpleMeterRegistry meterRegistry, String type) {
@@ -443,16 +441,15 @@ class DefaultSignalTaskDraftGeneratorTest {
   @Test
   void logsInvalidResponseAtWarn() {
     List<ILoggingEvent> events =
-        captureLogs(
-            () ->
-                generator(
-                        responding(
-                            new LlmResponse(
-                                true, "SAFETY", "", "response-id", LlmResponse.TokenUsage.EMPTY)),
-                        true,
-                        true)
-                    .prepare(input())
-                    .draft());
+        captureLogs(() ->
+            generator(
+                    responding(
+                        new LlmResponse(
+                            true, "SAFETY", "", "response-id", LlmResponse.TokenUsage.EMPTY)),
+                    true,
+                    true)
+                .prepare(input())
+                .draft());
 
     assertThat(events)
         .filteredOn(
@@ -464,16 +461,14 @@ class DefaultSignalTaskDraftGeneratorTest {
   @Test
   void logsInvalidOutputAtWarn() {
     List<ILoggingEvent> events =
-        captureLogs(
-            () ->
-                generator(
-                        responding(
-                            success(
-                                "{\"title\":\"점검\",\"role\":\"invalid\",\"priority\":\"medium\"}")),
-                        true,
-                        true)
-                    .prepare(input())
-                    .draft());
+        captureLogs(() ->
+            generator(
+                    responding(
+                        success("{\"title\":\"점검\",\"role\":\"invalid\",\"priority\":\"medium\"}")),
+                    true,
+                    true)
+                .prepare(input())
+                .draft());
 
     assertThat(events)
         .filteredOn(event -> event.getFormattedMessage().contains("fallbackReason=invalid_output"))
@@ -484,15 +479,14 @@ class DefaultSignalTaskDraftGeneratorTest {
   @Test
   void logsGeneratedResponseAtDebug() {
     List<ILoggingEvent> events =
-        captureLogs(
-            () ->
-                generator(
-                        responding(
-                            success("{\"title\":\"점검\",\"role\":\"pm\",\"priority\":\"medium\"}")),
-                        true,
-                        true)
-                    .prepare(input())
-                    .draft());
+        captureLogs(() ->
+            generator(
+                    responding(
+                        success("{\"title\":\"점검\",\"role\":\"pm\",\"priority\":\"medium\"}")),
+                    true,
+                    true)
+                .prepare(input())
+                .draft());
 
     assertThat(events)
         .filteredOn(event -> event.getFormattedMessage().contains("outcome=generated"))

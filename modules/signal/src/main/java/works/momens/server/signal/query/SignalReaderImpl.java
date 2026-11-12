@@ -24,16 +24,15 @@ class SignalReaderImpl implements SignalReader {
   public Optional<Snapshot> findLive(UUID signalId) {
     return signalRepository
         .findByIdAndDeletedAtIsNull(signalId)
-        .map(
-            signal ->
-                new Snapshot(
-                    signal.getId(),
-                    signal.getWorkspaceId(),
-                    signal.getProjectId(),
-                    signal.getType(),
-                    signal.getTitle(),
-                    signal.getDescription(),
-                    signal.getImpact()));
+        .map(signal ->
+            new Snapshot(
+                signal.getId(),
+                signal.getWorkspaceId(),
+                signal.getProjectId(),
+                signal.getType(),
+                signal.getTitle(),
+                signal.getDescription(),
+                signal.getImpact()));
   }
 
   @Override
@@ -42,9 +41,8 @@ class SignalReaderImpl implements SignalReader {
     return signalEvidenceRepository
         .findDraftEvidence(signalId, PageRequest.ofSize(MAX_DRAFT_EVIDENCE_COUNT))
         .stream()
-        .map(
-            evidence ->
-                new DraftEvidence(evidence.getTarget(), evidence.getChange(), evidence.getImpact()))
+        .map(evidence ->
+            new DraftEvidence(evidence.getTarget(), evidence.getChange(), evidence.getImpact()))
         .toList();
   }
 }
