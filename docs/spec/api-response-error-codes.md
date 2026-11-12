@@ -161,8 +161,8 @@ JSON 에러 본문을 쓰지 않습니다. 실패 시 `?error=`에 실패 사유
 Bean Validation과 `FieldValidationException`을 통한 필드 단위 검증 실패는 `details.fields`에
 정리합니다. 각 원소의 `field`는 JSON 요청의 `snake_case` 필드명을 사용하고, `reason`은 사람이
 문제를 이해하기 위한 설명으로 제공합니다. 클라이언트는 `reason` 문구나 배열 순서를 분기 기준으로
-사용하지 않습니다. 쿼리 파라미터와 경로 변수의 검증 실패는 `field`에 요청에 선언된 이름을
-그대로 사용합니다.
+사용하지 않습니다. 쿼리 파라미터와 경로 변수의 검증 실패도 선언된 이름의 표기와 관계없이
+`field`를 `snake_case`로 씁니다.
 
 ```json
 {
