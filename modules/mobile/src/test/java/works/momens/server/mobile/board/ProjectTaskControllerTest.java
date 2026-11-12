@@ -90,7 +90,7 @@ class ProjectTaskControllerTest {
   void createTaskReturnsCreatedTask() throws Exception {
     UUID taskId = UUID.randomUUID();
     when(projectTaskService.createTask(
-            eq(PROJECT_ID), eq(USER_ID), eq("제목"), any(), eq(TaskPriority.MEDIUM)))
+            eq(PROJECT_ID), eq(USER_ID), eq("제목"), any(), eq(TaskPriority.MEDIUM), any()))
         .thenReturn(
             new TaskSnapshot(
                 taskId,
@@ -128,7 +128,7 @@ class ProjectTaskControllerTest {
   void createTaskReturnsStoredUrgent() throws Exception {
     UUID taskId = UUID.randomUUID();
     when(projectTaskService.createTask(
-            eq(PROJECT_ID), eq(USER_ID), eq("제목"), any(), eq(TaskPriority.URGENT)))
+            eq(PROJECT_ID), eq(USER_ID), eq("제목"), any(), eq(TaskPriority.URGENT), any()))
         .thenReturn(
             new TaskSnapshot(
                 taskId,

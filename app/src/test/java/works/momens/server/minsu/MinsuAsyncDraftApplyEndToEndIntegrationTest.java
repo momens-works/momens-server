@@ -208,6 +208,7 @@ class MinsuAsyncDraftApplyEndToEndIntegrationTest extends AbstractPostgresIntegr
             TaskRole.PM,
             null,
             TaskPriority.MEDIUM,
+            null,
             TaskStatus.TODO,
             null,
             List.of(),

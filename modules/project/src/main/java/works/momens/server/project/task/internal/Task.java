@@ -190,13 +190,15 @@ class Task extends BaseEntity {
       TaskPriority priority,
       TaskStatus status,
       String description,
-      UUID assigneeId) {
+      UUID assigneeId,
+      LocalDate dueDate) {
     this.title = title;
     this.role = role.value();
     this.priority = priority.value();
     this.status = status.value();
     this.description = description;
     this.assigneeId = assigneeId;
+    this.dueDate = dueDate;
   }
 
   /** draft 반영이 비교하는 세 필드가 주어진 값과 같은지. 하나라도 다르면 반영하지 않습니다. */

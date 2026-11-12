@@ -70,7 +70,8 @@ class TaskWriterImpl implements TaskWriter {
         command.priority(),
         command.status(),
         command.purpose(),
-        command.assigneeId());
+        command.assigneeId(),
+        command.dueDate());
     validateChecklistItemIds(task, command.checklistItems());
     task.replaceChecklist(command.checklistItems());
     appendUpdatedEventIfChanged(task, before);

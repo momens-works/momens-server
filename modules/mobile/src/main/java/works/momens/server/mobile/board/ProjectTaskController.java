@@ -44,6 +44,7 @@ class ProjectTaskController implements ProjectTaskControllerDocs {
             CurrentUser.id(principal),
             request.title(),
             request.role(),
-            request.priority()));
+            request.priority(),
+            request.dueDate()));
   }
 }

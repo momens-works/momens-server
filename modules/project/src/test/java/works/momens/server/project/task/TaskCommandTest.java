@@ -73,6 +73,7 @@ class TaskCommandTest {
         null,
         null,
         TaskPriority.MEDIUM,
+        null,
         TaskStatus.TODO,
         null,
         List.of(),

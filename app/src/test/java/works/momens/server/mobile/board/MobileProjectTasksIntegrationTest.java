@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -159,6 +160,42 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
   }
 
   @Test
+  void createStoresDueDateAndUpdateWithNullClearsIt() throws Exception {
+    UserProfile jinsu = userService.findOrCreate("tasks-it-due-date@momens.works", "신진수", null);
+    UUID workspace = insertWorkspace("tasks-due-date");
+    addMember(workspace, jinsu.id(), "owner");
+    UUID project = insertProject(workspace, jinsu.id(), "tasks-due-date-project");
+    String authorization = "Bearer " + accessTokens.issueAccessToken(jinsu.id());
+
+    mockMvc
+        .perform(
+            post("/api/mobile/projects/{projectId}/tasks", project)
+                .header("Authorization", authorization)
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"title\":\"권한 요청 점검\",\"role\":\"backend\",\"priority\":\"high\","
+                        + "\"due_date\":\"2026-09-25\"}"))
+        .andExpect(status().isCreated());
+    UUID task =
+        jdbcTemplate.queryForObject(
+            "SELECT id FROM tasks WHERE project_id = ?", UUID.class, project);
+    assertThat(dueDateOf(task)).isEqualTo(LocalDate.of(2026, 9, 25));
+
+    mockMvc
+        .perform(
+            patch("/api/mobile/tasks/{taskId}", task)
+                .header("Authorization", authorization)
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"title\":\"권한 요청 점검\",\"role\":\"backend\",\"priority\":\"high\","
+                        + "\"status\":\"todo\",\"due_date\":null}"))
+        .andExpect(status().isNoContent());
+    assertThat(dueDateOf(task)).isNull();
+  }
+
+  @Test
   void returnsForbiddenWhenCallerIsNotWorkspaceMember() throws Exception {
     UserProfile gyuil = userService.findOrCreate("tasks-it-owner@momens.works", "김규일", null);
     UserProfile jinsu = userService.findOrCreate("tasks-it-stranger@momens.works", "신진수", null);
@@ -203,6 +240,11 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
     jdbcTemplate.update(
         "INSERT INTO workspaces (id, name, slug) VALUES (?, ?, ?)", id, "모멘스", slug);
     return id;
+  }
+
+  private LocalDate dueDateOf(UUID taskId) {
+    return jdbcTemplate.queryForObject(
+        "SELECT due_date FROM tasks WHERE id = ?", LocalDate.class, taskId);
   }
 
   private void addMember(UUID workspaceId, UUID userId, String role) {

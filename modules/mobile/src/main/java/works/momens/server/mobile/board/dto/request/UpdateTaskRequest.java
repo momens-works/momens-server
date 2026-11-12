@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import tools.jackson.databind.annotation.JsonDeserialize;
@@ -30,6 +31,11 @@ public record UpdateTaskRequest(
     @Schema(description = "담당자 식별자. 생략하거나 null로 보내면 기존 담당자를 해제합니다.") UUID assigneeId,
     @Schema(description = "우선순위 (urgent/high/medium/low 중 하나)", example = "medium") @NotNull
         TaskPriority priority,
+    @Schema(
+            description = "마감일(YYYY-MM-DD). 생략하거나 null로 전달하면 기존 마감일을 삭제합니다.",
+            example = "2026-09-25",
+            nullable = true)
+        LocalDate dueDate,
     @Schema(
             description =
                 "상태. backlog는 아직 일정을 잡지 않은 작업, todo는 할 일, in_progress는 진행 중인 작업, done은 완료한 작업, cancelled는 취소한 작업입니다.",

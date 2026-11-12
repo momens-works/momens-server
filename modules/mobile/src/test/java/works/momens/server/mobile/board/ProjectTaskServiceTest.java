@@ -224,7 +224,8 @@ class ProjectTaskServiceTest {
     when(taskWriter.create(any())).thenReturn(created);
 
     TaskSnapshot result =
-        projectTaskService.createTask(PROJECT_ID, CALLER_ID, "제목", TaskRole.PM, TaskPriority.HIGH);
+        projectTaskService.createTask(
+            PROJECT_ID, CALLER_ID, "제목", TaskRole.PM, TaskPriority.HIGH, DUE_DATE);
 
     ArgumentCaptor<CreateTaskCommand> captor = ArgumentCaptor.forClass(CreateTaskCommand.class);
     verify(taskWriter).create(captor.capture());
@@ -235,6 +236,7 @@ class ProjectTaskServiceTest {
     assertThat(command.status()).isEqualTo(TaskStatus.TODO);
     assertThat(command.role()).isEqualTo(TaskRole.PM);
     assertThat(command.priority()).isEqualTo(TaskPriority.HIGH);
+    assertThat(command.dueDate()).isEqualTo(DUE_DATE);
     assertThat(result).isSameAs(created);
   }
 
@@ -243,7 +245,8 @@ class ProjectTaskServiceTest {
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.of(WORKSPACE_ID));
     when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> projectTaskService.createTask(PROJECT_ID, CALLER_ID, "제목", null, null))
+    assertThatThrownBy(
+            () -> projectTaskService.createTask(PROJECT_ID, CALLER_ID, "제목", null, null, null))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(CommonErrorCode.AUTH_FORBIDDEN);
@@ -416,6 +419,7 @@ class ProjectTaskServiceTest {
                 TaskRole.PM,
                 null,
                 TaskPriority.MEDIUM,
+                null,
                 TaskStatus.TODO,
                 null,
                 List.of(),
@@ -439,6 +443,7 @@ class ProjectTaskServiceTest {
                 TaskRole.PM,
                 null,
                 TaskPriority.MEDIUM,
+                null,
                 TaskStatus.TODO,
                 null,
                 List.of(),
@@ -463,6 +468,7 @@ class ProjectTaskServiceTest {
         TaskRole.BACKEND,
         null,
         TaskPriority.HIGH,
+        DUE_DATE,
         TaskStatus.IN_PROGRESS,
         "수정한 목적",
         items,
@@ -476,6 +482,7 @@ class ProjectTaskServiceTest {
     assertThat(command.role()).isEqualTo(TaskRole.BACKEND);
     assertThat(command.assigneeId()).isNull();
     assertThat(command.priority()).isEqualTo(TaskPriority.HIGH);
+    assertThat(command.dueDate()).isEqualTo(DUE_DATE);
     assertThat(command.status()).isEqualTo(TaskStatus.IN_PROGRESS);
     assertThat(command.purpose()).isEqualTo("수정한 목적");
     assertThat(command.checklistItems())

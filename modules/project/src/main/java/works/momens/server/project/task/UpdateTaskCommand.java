@@ -1,5 +1,6 @@
 package works.momens.server.project.task;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -7,9 +8,10 @@ import java.util.UUID;
  * 태스크 수정 입력.
  *
  * <p>수정 화면이 저장할 때 편집 상태 전체를 보내므로, title, role, priority, status, purpose는 항상 채워진 값으로 넘어옵니다. {@code
- * assigneeId}는 담당자를 지정하면 값이, 비우면 null이 들어옵니다. 화면이 항상 전체를 보내기 때문에 null은 담당자 비우기 하나로만 해석합니다. {@code
- * checklistItems}는 완료기준 최종 목록이고, {@code purpose}는 저장 시 {@code description} 컬럼에 매핑됩니다. role,
- * priority, status는 각 호출 모듈의 요청 DTO에서 enum 타입으로 validation하며, 이 모듈은 저장을 책임집니다.
+ * assigneeId}와 {@code dueDate}에는 값을 지정한 경우 해당 값이, 지정하지 않은 경우 {@code null}이 전달됩니다. 수정 화면에서는 편집 상태
+ * 전체를 전달하므로 {@code null}은 기존 담당자 또는 마감일을 삭제하는 의미로만 해석합니다. {@code checklistItems}는 완료기준 최종 목록이고,
+ * {@code purpose}는 저장 시 {@code description} 컬럼에 매핑됩니다. role, priority, status는 각 호출 모듈의 요청 DTO에서
+ * enum 타입으로 validation하며, 이 모듈은 저장을 책임집니다.
  *
  * <p>이 record에서 제목 길이를 직접 검증하며, 최대 길이를 초과하면 저장 전에 거부합니다.
  */
@@ -19,6 +21,7 @@ public record UpdateTaskCommand(
     TaskRole role,
     UUID assigneeId,
     TaskPriority priority,
+    LocalDate dueDate,
     TaskStatus status,
     String purpose,
     List<ChecklistItemEdit> checklistItems,

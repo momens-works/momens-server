@@ -343,6 +343,7 @@ id를 기준으로 하기 때문에, 페이지 사이에 시그널이 처리되�
 생성된 작업은 `todo`로 시작합니다. 생성 제목은 빈 문자열이거나 공백만으로 구성될 수 없습니다. 그 외 입력 검증은 OpenAPI의 `CreateTaskRequest`를 따릅니다.
 입력된 `urgent`는 변환 없이 저장하며, 응답에도 동일한 값을 반환합니다. 담당자·설명·완료 기준은
 생성 입력에 포함하지 않고 생성 후 수정합니다.
+`due_date`는 선택 필드이며, 생략하거나 `null`로 전달하면 마감일 없이 생성합니다.
 
 ### GET /api/mobile/tasks/{taskId}
 
@@ -385,9 +386,9 @@ convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다�
 
 ### PATCH /api/mobile/tasks/{taskId}
 
-작업 수정 화면에서 편집한 필드를 저장합니다. 요청은 리소스 전체가 아니라 편집 가능한 필드 전체(title, role, assignee_id, priority, status, purpose, checklist_items)를 담고, 서버가 관리하는 필드(materials, open_questions, next_action)는 요청에 없어 그대로 유지합니다. title, role, priority, status는 항상 채워 보냅니다. title은 생성과 달리 빈 문자열을 허용하고, title을 빈 문자열로 보내면 상세 화면이 '새 작업'으로 표시합니다.
+작업 수정 화면에서 편집한 필드를 저장합니다. 요청은 리소스 전체가 아니라 편집 가능한 필드 전체(title, role, assignee_id, priority, due_date, status, purpose, checklist_items)를 담고, 서버가 관리하는 필드(materials, open_questions, next_action)는 요청에 없어 그대로 유지합니다. title, role, priority, status는 항상 채워 보냅니다. title은 생성과 달리 빈 문자열을 허용하고, title을 빈 문자열로 보내면 상세 화면이 '새 작업'으로 표시합니다.
 
-- `assignee_id`·`purpose`를 생략하거나 `null`로 보내면 기존 값을 지웁니다. `purpose`는 빈 문자열도 허용합니다.
+- `assignee_id`, `purpose`, `due_date`를 생략하거나 `null`로 전달하면 기존 값을 삭제합니다. `purpose`는 빈 문자열도 허용합니다.
 - `checklist_items`는 최종 목록으로 전체 교체합니다. 생략·`null`은 전체 삭제입니다. 기존 항목은
   상세에서 받은 `id`로 제목·완료 상태를 갱신하고, `id` 없는 항목은 생성하며 목록에서 빠진 항목은 삭제합니다.
   `completed` 생략은 `false`입니다. 없는 `id`는 `TASK_CHECKLIST_ITEM_NOT_FOUND`, 중복 `id`는
