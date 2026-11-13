@@ -22,17 +22,20 @@ class MilestoneReaderImpl implements MilestoneReader {
 
   @Override
   @Transactional(readOnly = true)
-  public List<MilestoneDetail> listDetailsByWorkspaceId(UUID workspaceId) {
-    return withOwners(milestoneRepository.findDetailRowsByWorkspaceId(workspaceId));
+  public List<MilestoneDetail> listDetailsByProjectIds(Collection<UUID> projectIds) {
+    return projectIds.isEmpty()
+        ? List.of()
+        : withOwners(milestoneRepository.findDetailRowsByProjectIds(projectIds));
   }
 
   @Override
   @Transactional(readOnly = true)
   public List<MilestoneDetail> listPage(
-      UUID workspaceId, UUID projectId, Instant before, UUID beforeId, int limit) {
-    return withOwners(
-        milestoneRepository.findPage(
-            workspaceId, projectId, before, beforeId, PageRequest.of(0, limit)));
+      Collection<UUID> projectIds, Instant before, UUID beforeId, int limit) {
+    return projectIds.isEmpty()
+        ? List.of()
+        : withOwners(
+            milestoneRepository.findPage(projectIds, before, beforeId, PageRequest.of(0, limit)));
   }
 
   /** 소유자를 한 번의 배치 조회로 채웁니다. 소유자 행이 없으면 폴백할 컬럼이 없으므로 빈 목록입니다. */
@@ -57,9 +60,9 @@ class MilestoneReaderImpl implements MilestoneReader {
 
   @Override
   @Transactional(readOnly = true)
-  public List<MilestoneDetail> listByIds(UUID workspaceId, Collection<UUID> ids) {
-    return ids.isEmpty()
+  public List<MilestoneDetail> listByIds(Collection<UUID> projectIds, Collection<UUID> ids) {
+    return projectIds.isEmpty() || ids.isEmpty()
         ? List.of()
-        : withOwners(milestoneRepository.findRowsByIds(workspaceId, ids));
+        : withOwners(milestoneRepository.findRowsByIds(projectIds, ids));
   }
 }

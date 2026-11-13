@@ -226,9 +226,14 @@ class McpReadToolService {
   private String listMilestones(
       McpAuthenticationContext context, String reference, McpReadPage page) {
     UUID projectId = resolveProject(context, reference);
+    List<UUID> projectIds =
+        projectId == null
+            ? projects.listDetailsByWorkspaceId(context.workspaceId()).stream()
+                .map(ProjectDetail::id)
+                .toList()
+            : List.of(projectId);
     List<MilestoneDetail> found =
-        milestones.listPage(
-            context.workspaceId(), projectId, page.time(), page.id(), page.limit() + 1);
+        milestones.listPage(projectIds, page.time(), page.id(), page.limit() + 1);
     Map<UUID, ProjectDetail> index =
         projectIndex(
             projects.listByIds(
@@ -372,7 +377,7 @@ class McpReadToolService {
     String milestoneName =
         task.milestoneId() == null
             ? ""
-            : milestones.listByIds(context.workspaceId(), List.of(task.milestoneId())).stream()
+            : milestones.listByIds(List.of(project.id()), List.of(task.milestoneId())).stream()
                 .filter(milestone -> milestone.id().equals(task.milestoneId()))
                 .map(MilestoneDetail::name)
                 .findFirst()

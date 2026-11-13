@@ -575,7 +575,7 @@ class McpReadToolServiceTest {
     UUID secondId = UUID.randomUUID();
     UUID lookaheadProject = UUID.randomUUID();
     if (tool.equals("list_milestones")) {
-      when(milestones.listPage(workspaceId, null, null, null, 3))
+      when(milestones.listPage(List.of(projectId), null, null, 3))
           .thenReturn(
               List.of(
                   milestoneForProject(milestoneId, projectId),
@@ -593,6 +593,9 @@ class McpReadToolServiceTest {
     assertThat(output)
         .contains("2 " + (tool.equals("list_milestones") ? "milestone" : "task") + "(s)");
     verify(projects).listByIds(workspaceId, List.of(projectId));
+    if (tool.equals("list_milestones")) {
+      verify(projects).listDetailsByWorkspaceId(workspaceId);
+    }
     verifyNoMoreInteractions(projects);
     var args =
         mapper
@@ -742,8 +745,9 @@ class McpReadToolServiceTest {
         .thenReturn(List.of(project));
     when(memberships.listPage(workspaceId, null, null, 21))
         .thenAnswer(inv -> memberships.listPage(workspaceId, null, null, 100));
-    when(milestones.listPage(eq(workspaceId), any(), isNull(), isNull(), eq(21)))
-        .thenAnswer(inv -> milestones.listByIds(workspaceId, List.of(milestoneId)));
+    when(projects.listDetailsByWorkspaceId(workspaceId)).thenReturn(List.of(project));
+    when(milestones.listPage(eq(List.of(projectId)), isNull(), isNull(), eq(21)))
+        .thenAnswer(inv -> milestones.listByIds(List.of(projectId), List.of(milestoneId)));
     when(updates.countByTaskId(taskId)).thenReturn(1L);
     when(tasks.listPage(workspaceId, null, null, false, null, null, null, 21))
         .thenReturn(List.of(task));
@@ -753,7 +757,7 @@ class McpReadToolServiceTest {
     when(users.getProfiles(List.of(userId)))
         .thenReturn(
             List.of(new UserProfile(userId, "alice@example.com", "Alice", null, null, now, now)));
-    when(milestones.listByIds(workspaceId, List.of(milestoneId)))
+    when(milestones.listByIds(List.of(projectId), List.of(milestoneId)))
         .thenReturn(
             List.of(
                 new MilestoneDetail(

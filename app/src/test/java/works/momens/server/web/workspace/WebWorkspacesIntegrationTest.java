@@ -369,6 +369,32 @@ class WebWorkspacesIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
+  @DisplayName("snapshot milestones는 삭제된 project와 다른 workspace의 마일스톤을 제외한다")
+  void snapshotExcludesMilestonesOfDeletedProjectAndOtherWorkspace() throws Exception {
+    UserProfile caller =
+        userService.findOrCreate("web-it-milestone-scope@momens.works", "홍길동", null);
+    UUID workspaceId = insertWorkspace("web-it-milestone-scope", null);
+    addMember(workspaceId, caller.id(), "owner");
+    UUID liveProject = insertProject(workspaceId, caller.id());
+    UUID deletedProject = insertProject(workspaceId, caller.id());
+    jdbcTemplate.update("UPDATE projects SET deleted_at = NOW() WHERE id = ?", deletedProject);
+    UUID otherProject =
+        insertProject(insertWorkspace("web-it-milestone-scope-other", null), caller.id());
+    String insertMilestone = "INSERT INTO milestones (id, project_id, name) VALUES (?, ?, '마일스톤')";
+    UUID liveMilestone = UUID.randomUUID();
+    jdbcTemplate.update(insertMilestone, liveMilestone, liveProject);
+    jdbcTemplate.update(insertMilestone, UUID.randomUUID(), deletedProject);
+    jdbcTemplate.update(insertMilestone, UUID.randomUUID(), otherProject);
+
+    mockMvc
+        .perform(
+            authorized(get("/api/workspaces/{workspaceId}/snapshot", workspaceId), caller.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.milestones.length()").value(1))
+        .andExpect(jsonPath("$.milestones[0].id").value(liveMilestone.toString()));
+  }
+
+  @Test
   @DisplayName("없는 워크스페이스는 404 WORKSPACE_NOT_FOUND로 응답한다")
   void getReturnsNotFoundForUnknownWorkspace() throws Exception {
     UserProfile caller = userService.findOrCreate("web-it-404@momens.works", "홍길동", null);
