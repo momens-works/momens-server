@@ -127,10 +127,9 @@ capability의 물리 경계로 유지하고, 배포 단위도 나누지 않는�
   도메인 변경과 outbox 발행 계약은 [Blocker 쓰기 명세](../spec/blocker-write.md)에 있다.
 - `ProjectHealthStatus`, `MilestoneHealthStatus`와 소유자 멤버십 검증은 project와 milestone의 구현 계약이다. 현재 저장값과 검증 동작은
   같아도 변경 이유가 다르므로 각 하위 경계가 독립적으로 소유한다.
-- 마일스톤 workspace 목록은 `milestones`에 workspace id가 없어 project를 조인한다. snapshot 쿼리 예산
-  14회를 유지하기 위해 `MilestoneRepository`의 JPQL 조인을 persistence 예외로 허용한다. 엔티티 타입을
-  Java 코드로 공유하거나 쓰기 경계를 넘기는 예외는 아니며, 통합 테스트가 workspace 격리와 project
-  soft-delete 동작을 고정한다.
+- `milestones`에는 workspace id가 없으므로 `MilestoneReader`는 project id 목록을 받아 조회한다. 호출자가
+  core 공개 계약으로 확보한 같은 workspace의 삭제되지 않은 project id만 넘겨 workspace 격리와 project
+  soft-delete 제외를 정한다.
 - 하위 도메인마다 aggregate(`Project`, `Task`, `TaskUpdate`, `Milestone`, `Decision`, `Blocker`)의
   저장 책임을 소유하며, 원자적 유스케이스에서는 호출자 트랜잭션에 참여한다. onboarding의 초기 프로젝트
   생성, workspace 라벨 발급을 포함한 task/project 생성, `minsu`의 `TaskDraftApplier` 호출이 이에
