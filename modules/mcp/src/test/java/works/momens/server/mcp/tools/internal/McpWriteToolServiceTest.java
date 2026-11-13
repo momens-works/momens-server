@@ -439,8 +439,8 @@ class McpWriteToolServiceTest {
   @DisplayName("다른 프로젝트의 마일스톤 참조와 중복 이름을 거부한다")
   void rejectsMilestoneFromAnotherProjectAndAmbiguousNames() {
     seed();
-    when(milestones.listDetailsByWorkspaceId(workspaceId))
-        .thenReturn(List.of(milestone(milestoneId, UUID.randomUUID(), "Release")));
+    // 다른 project의 마일스톤은 조회 범위에 들어오지 않는다.
+    when(milestones.listDetailsByProjectIds(List.of(projectId))).thenReturn(List.of());
     assertThat(
             call(
                     "create_task",
@@ -448,7 +448,7 @@ class McpWriteToolServiceTest {
                 .path("isError")
                 .asBoolean())
         .isTrue();
-    when(milestones.listDetailsByWorkspaceId(workspaceId))
+    when(milestones.listDetailsByProjectIds(List.of(projectId)))
         .thenReturn(
             List.of(
                 milestone(milestoneId, projectId, "Release"),
@@ -635,7 +635,9 @@ class McpWriteToolServiceTest {
                     now)));
     when(tasks.findSnapshotByLabel(workspaceId, "MOM-0993")).thenReturn(Optional.of(task()));
     when(tasks.findSnapshotInWorkspace(workspaceId, taskId)).thenReturn(Optional.of(task()));
-    when(milestones.listDetailsByWorkspaceId(workspaceId))
+    when(milestones.listDetailsByProjectIds(List.of(projectId)))
+        .thenReturn(List.of(milestone(milestoneId, projectId, "Release")));
+    when(milestones.listByIds(List.of(projectId), List.of(milestoneId)))
         .thenReturn(List.of(milestone(milestoneId, projectId, "Release")));
     when(memberships.listMembershipDetails(workspaceId))
         .thenReturn(List.of(new WorkspaceMembershipDetail(userId, "member", now, now)));

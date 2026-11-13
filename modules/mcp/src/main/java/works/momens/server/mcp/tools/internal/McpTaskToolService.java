@@ -3,6 +3,7 @@ package works.momens.server.mcp.tools.internal;
 import static works.momens.server.mcp.tools.internal.McpToolInputs.argument;
 import static works.momens.server.mcp.tools.internal.McpToolInputs.date;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
@@ -44,7 +45,7 @@ class McpTaskToolService {
     ProjectDetail project =
         McpToolReferences.resolveProject(
             projects.listDetailsByWorkspaceId(context.workspaceId()), argument(args, "project"));
-    UUID milestoneId = resolveMilestone(context, project.id(), argument(args, "milestone"));
+    UUID milestoneId = resolveMilestone(project.id(), argument(args, "milestone"));
     TaskSnapshot task =
         taskWriter.create(
             new CreateTaskCommand(
@@ -60,7 +61,7 @@ class McpTaskToolService {
                 date(argument(args, "due_date"), "due_date"),
                 TaskOrigin.MANUAL,
                 null));
-    return McpWriteToolText.createdTask(task, project, milestoneName(context, task.milestoneId()))
+    return McpWriteToolText.createdTask(task, project, milestoneName(task))
         + "\nurl: "
         + links.taskUrl(context.workspaceId(), task);
   }
@@ -83,14 +84,14 @@ class McpTaskToolService {
                 !status.isEmpty(),
                 priority.isEmpty() ? null : taskPriority(priority),
                 !priority.isEmpty(),
-                resolveMilestone(context, current.projectId(), milestone),
+                resolveMilestone(current.projectId(), milestone),
                 !milestone.isEmpty(),
                 resolveAssignee(context, assignee),
                 !assignee.isEmpty(),
                 date(argument(args, "due_date"), "due_date"),
                 args.has("due_date"),
                 McpToolInputs.version(args)));
-    return McpWriteToolText.updatedTask(task, milestoneName(context, task.milestoneId()))
+    return McpWriteToolText.updatedTask(task, milestoneName(task))
         + "\nurl: "
         + links.taskUrl(context.workspaceId(), task);
   }
@@ -123,25 +124,22 @@ class McpTaskToolService {
     return task;
   }
 
-  private UUID resolveMilestone(
-      McpAuthenticationContext context, UUID projectId, String reference) {
+  /** projectId는 워크스페이스의 삭제되지 않은 project로 이미 확인된 값입니다. */
+  private UUID resolveMilestone(UUID projectId, String reference) {
     return switch (reference.toLowerCase(Locale.ROOT)) {
       case "", "none", "remove", "unassign", "unassigned" -> null;
       default ->
           McpToolReferences.resolveMilestone(
-                  milestones.listDetailsByWorkspaceId(context.workspaceId()).stream()
-                      .filter(milestone -> milestone.projectId().equals(projectId))
-                      .toList(),
-                  reference)
+                  milestones.listDetailsByProjectIds(List.of(projectId)), reference)
               .id();
     };
   }
 
-  private String milestoneName(McpAuthenticationContext context, UUID id) {
-    return id == null
+  /** 작업의 마일스톤은 같은 project 소속으로 검증되어 저장됩니다. */
+  private String milestoneName(TaskSnapshot task) {
+    return task.milestoneId() == null
         ? ""
-        : milestones.listDetailsByWorkspaceId(context.workspaceId()).stream()
-            .filter(milestone -> milestone.id().equals(id))
+        : milestones.listByIds(List.of(task.projectId()), List.of(task.milestoneId())).stream()
             .map(MilestoneDetail::name)
             .findFirst()
             .orElse("");

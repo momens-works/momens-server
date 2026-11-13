@@ -2,8 +2,8 @@ package works.momens.server.support.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -18,7 +18,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -355,16 +354,10 @@ class McpOAuthSecurityIntegrationTest extends AbstractPostgresIntegrationTest {
             "SELECT count(*) FROM outbox_events WHERE workspace_id = ?",
             Integer.class,
             workspaceId);
-    AtomicInteger lookups = new AtomicInteger();
-    doAnswer(
-            invocation -> {
-              if (lookups.incrementAndGet() == 2) {
-                throw new IllegalStateException("private SQL diagnostic");
-              }
-              return invocation.callRealMethod();
-            })
+    // 마일스톤 이름 조회는 작업 저장 뒤에 일어나므로, 여기서 실패하면 저장한 작업과 outbox가 롤백돼야 한다.
+    doThrow(new IllegalStateException("private SQL diagnostic"))
         .when(milestones)
-        .listDetailsByWorkspaceId(workspaceId);
+        .listByIds(List.of(projectId), List.of(milestoneId));
     try {
       mvc.perform(
               toolRequest(
@@ -393,7 +386,7 @@ class McpOAuthSecurityIntegrationTest extends AbstractPostgresIntegrationTest {
                   workspaceId))
           .isEqualTo(eventsBeforeFailure);
     } finally {
-      doCallRealMethod().when(milestones).listDetailsByWorkspaceId(workspaceId);
+      doCallRealMethod().when(milestones).listByIds(List.of(projectId), List.of(milestoneId));
     }
     Object milestoneUpdatedAt =
         jdbc.queryForObject(

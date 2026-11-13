@@ -58,7 +58,8 @@ class WorkspaceSnapshotService {
                     Map.of("workspace_id", workspaceId.toString())));
     List<WorkspaceMemberView> members = workspaceMemberListService.list(workspaceId, userId);
     List<ProjectDetail> projects = projectDetailReader.listDetailsByWorkspaceId(workspaceId);
-    List<MilestoneDetail> milestones = milestoneReader.listDetailsByWorkspaceId(workspaceId);
+    List<MilestoneDetail> milestones =
+        milestoneReader.listDetailsByProjectIds(projects.stream().map(ProjectDetail::id).toList());
     List<TaskSnapshot> tasks = taskReader.listSnapshotsByWorkspaceId(workspaceId);
     List<BlockerDetail> blockers = blockerReader.listDetailsByWorkspaceId(workspaceId);
     List<MemoryCandidateDetail> candidates =
