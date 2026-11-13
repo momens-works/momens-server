@@ -151,7 +151,7 @@ class MilestoneReaderIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
-  @DisplayName("project id 목록이 비면 조회 없이 빈 목록을 반환한다")
+  @DisplayName("project id 목록이 비면 빈 목록을 반환한다")
   void listsAreEmptyForNoProjects() {
     Fixture fixture = new Fixture("list-empty");
     UUID milestoneId = fixture.insertMilestone("범위 밖");

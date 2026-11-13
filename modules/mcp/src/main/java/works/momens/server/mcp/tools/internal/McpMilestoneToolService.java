@@ -78,15 +78,12 @@ class McpMilestoneToolService {
   }
 
   private MilestoneDetail findMilestone(McpAuthenticationContext context, String reference) {
-    List<ProjectDetail> workspaceProjects =
-        projects.listDetailsByWorkspaceId(context.workspaceId());
-    MilestoneDetail milestone =
-        McpToolReferences.resolveMilestone(
-            milestones.listDetailsByProjectIds(
-                workspaceProjects.stream().map(ProjectDetail::id).toList()),
-            reference);
-    McpToolReferences.requireProject(workspaceProjects, milestone.projectId());
-    return milestone;
+    return McpToolReferences.resolveMilestone(
+        milestones.listDetailsByProjectIds(
+            projects.listDetailsByWorkspaceId(context.workspaceId()).stream()
+                .map(ProjectDetail::id)
+                .toList()),
+        reference);
   }
 
   private static Integer progress(JsonNode args) {

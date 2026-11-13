@@ -25,6 +25,7 @@ import works.momens.server.mcp.transport.McpToolDefinition;
 import works.momens.server.project.core.ProjectDetail;
 import works.momens.server.project.core.ProjectDetailReader;
 import works.momens.server.project.core.ProjectReader;
+import works.momens.server.project.core.ProjectSnapshot;
 import works.momens.server.project.milestone.MilestoneDetail;
 import works.momens.server.project.milestone.MilestoneReader;
 import works.momens.server.project.task.TaskReader;
@@ -228,8 +229,8 @@ class McpReadToolService {
     UUID projectId = resolveProject(context, reference);
     List<UUID> projectIds =
         projectId == null
-            ? projects.listDetailsByWorkspaceId(context.workspaceId()).stream()
-                .map(ProjectDetail::id)
+            ? projectAccess.listByWorkspaceIds(List.of(context.workspaceId())).stream()
+                .map(ProjectSnapshot::id)
                 .toList()
             : List.of(projectId);
     List<MilestoneDetail> found =

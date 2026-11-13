@@ -42,6 +42,7 @@ import works.momens.server.mcp.transport.McpToolDefinition;
 import works.momens.server.project.core.ProjectDetail;
 import works.momens.server.project.core.ProjectDetailReader;
 import works.momens.server.project.core.ProjectReader;
+import works.momens.server.project.core.ProjectSnapshot;
 import works.momens.server.project.milestone.MilestoneDetail;
 import works.momens.server.project.milestone.MilestoneReader;
 import works.momens.server.project.task.TaskReader;
@@ -593,9 +594,6 @@ class McpReadToolServiceTest {
     assertThat(output)
         .contains("2 " + (tool.equals("list_milestones") ? "milestone" : "task") + "(s)");
     verify(projects).listByIds(workspaceId, List.of(projectId));
-    if (tool.equals("list_milestones")) {
-      verify(projects).listDetailsByWorkspaceId(workspaceId);
-    }
     verifyNoMoreInteractions(projects);
     var args =
         mapper
@@ -745,7 +743,8 @@ class McpReadToolServiceTest {
         .thenReturn(List.of(project));
     when(memberships.listPage(workspaceId, null, null, 21))
         .thenAnswer(inv -> memberships.listPage(workspaceId, null, null, 100));
-    when(projects.listDetailsByWorkspaceId(workspaceId)).thenReturn(List.of(project));
+    when(projectAccess.listByWorkspaceIds(List.of(workspaceId)))
+        .thenReturn(List.of(new ProjectSnapshot(projectId, workspaceId, "Sprint", null, null)));
     when(milestones.listPage(eq(List.of(projectId)), isNull(), isNull(), eq(21)))
         .thenAnswer(inv -> milestones.listByIds(List.of(projectId), List.of(milestoneId)));
     when(updates.countByTaskId(taskId)).thenReturn(1L);
