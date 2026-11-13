@@ -448,6 +448,7 @@ class McpWriteToolServiceTest {
                 .path("isError")
                 .asBoolean())
         .isTrue();
+    verify(milestones).listDetailsByProjectIds(List.of(projectId));
     when(milestones.listDetailsByProjectIds(List.of(projectId)))
         .thenReturn(
             List.of(
