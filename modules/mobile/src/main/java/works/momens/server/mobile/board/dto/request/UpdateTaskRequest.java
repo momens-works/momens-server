@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import org.hibernate.validator.constraints.UniqueElements;
 import tools.jackson.databind.annotation.JsonDeserialize;
 import works.momens.server.common.api.ExpectedVersionDeserializer;
 import works.momens.server.project.task.TaskPolicy;
@@ -24,11 +25,18 @@ public record UpdateTaskRequest(
         String title,
     @Schema(
             description =
-                "업무 역할. pm은 기획과 조율, design은 디자인, backend는 서버, frontend는 웹과 앱 화면 작업을 담당합니다.",
+                "role 목록입니다. `pm`, `design`, `backend`, `frontend` 중 최소 1개 이상 중복 없이 지정해야 하며, 전달한 목록으로 기존 role 목록을 교체합니다.")
+        @Size(min = 1)
+        @UniqueElements
+        List<@NotNull TaskRole> roles,
+    @Schema(
+            deprecated = true,
+            description =
+                "구버전 앱과의 호환성을 위한 role 필드입니다. 새 클라이언트는 `roles`를 사용합니다. `roles` 없이 `role`만 전달하면 기존 목록에 해당 role이 있는 경우 목록을 유지하고, 없는 경우 해당 role 하나로 교체합니다.",
             example = "pm")
-        @NotNull
         TaskRole role,
-    @Schema(description = "담당자 식별자. 생략하거나 null로 보내면 기존 담당자를 해제합니다.") UUID assigneeId,
+    @Schema(description = "담당자 식별자. 생략하거나 null로 보내면 기존 담당자를 해제합니다.", nullable = true)
+        UUID assigneeId,
     @Schema(description = "우선순위 (urgent/high/medium/low 중 하나)", example = "medium") @NotNull
         TaskPriority priority,
     @Schema(
@@ -42,7 +50,9 @@ public record UpdateTaskRequest(
             example = "in_progress")
         @NotNull
         TaskStatus status,
-    @Schema(description = "설명. 생략하거나 null로 보내면 기존 설명을 제거합니다. 빈 문자열도 허용합니다. 최대 300자(공백 포함).")
+    @Schema(
+            description = "설명. 생략하거나 null로 보내면 기존 설명을 제거합니다. 빈 문자열도 허용합니다. 최대 300자(공백 포함).",
+            nullable = true)
         @Size(max = 300)
         String purpose,
     @Schema(

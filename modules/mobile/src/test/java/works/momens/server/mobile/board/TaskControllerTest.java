@@ -200,6 +200,7 @@ class TaskControllerTest {
             any(),
             any(),
             any(),
+            any(),
             captor.capture(),
             isNull());
     assertThat(captor.getValue()).extracting(ChecklistEdit::completed).containsExactly(true, false);
