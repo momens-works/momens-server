@@ -1,16 +1,20 @@
 package works.momens.server.mobile.board;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.jayway.jsonpath.JsonPath;
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -96,7 +100,8 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
         .andExpect(jsonPath("$.task.title").value("권한 요청 점검"))
         .andExpect(jsonPath("$.task.status").value("todo"))
         .andExpect(jsonPath("$.task.priority").value("high"))
-        .andExpect(jsonPath("$.task.role").value("backend"));
+        .andExpect(jsonPath("$.task.role").value("backend"))
+        .andExpect(jsonPath("$.task.roles", contains("backend")));
 
     Map<String, Object> row =
         jdbcTemplate.queryForMap(
@@ -107,6 +112,73 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
     assertThat(row.get("role")).isEqualTo("backend");
     assertThat((String) row.get("label")).startsWith("MOM-");
     assertThat(row.get("workspace_id")).isEqualTo(workspace);
+  }
+
+  @Test
+  void createWithTwoRolesReturnsBothRolesFromCreateDetailAndBoard() throws Exception {
+    UserProfile user = userService.findOrCreate("tasks-it-roles@momens.works", "user", null);
+    UUID workspace = insertWorkspace("tasks-roles");
+    addMember(workspace, user.id(), "owner");
+    UUID project = insertProject(workspace, user.id(), "tasks-roles-project");
+    String token = "Bearer " + accessTokens.issueAccessToken(user.id());
+
+    String created =
+        mockMvc
+            .perform(
+                post("/api/mobile/projects/{projectId}/tasks", project)
+                    .header("Authorization", token)
+                    .header("API-Version", "1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"title\":\"Roles\",\"roles\":[\"backend\",\"pm\"],\"priority\":\"high\"}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.task.roles", contains("pm", "backend")))
+            .andExpect(jsonPath("$.task.role").value("pm"))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String taskId = JsonPath.read(created, "$.task.id");
+
+    mockMvc
+        .perform(
+            get("/api/mobile/tasks/{taskId}", taskId)
+                .header("Authorization", token)
+                .header("API-Version", "1"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.roles", contains("pm", "backend")));
+    mockMvc
+        .perform(
+            get("/api/mobile/projects/{projectId}/tasks", project)
+                .header("Authorization", token)
+                .header("API-Version", "1"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.groups[1].tasks[0].roles", contains("pm", "backend")));
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "{\"title\":\"Roles\",\"priority\":\"high\"}",
+        "{\"title\":\"Roles\",\"roles\":[],\"priority\":\"high\"}",
+        "{\"title\":\"Roles\",\"roles\":[\"pm\",\"pm\"],\"priority\":\"high\"}"
+      })
+  void createRejectsMissingEmptyOrDuplicateRoles(String body) throws Exception {
+    UserProfile user =
+        userService.findOrCreate("tasks-it-invalid-roles@momens.works", "user", null);
+    UUID workspace = insertWorkspace("tasks-invalid-roles-" + UUID.randomUUID());
+    addMember(workspace, user.id(), "owner");
+    UUID project = insertProject(workspace, user.id(), "tasks-invalid-roles-project");
+
+    mockMvc
+        .perform(
+            post("/api/mobile/projects/{projectId}/tasks", project)
+                .header("Authorization", "Bearer " + accessTokens.issueAccessToken(user.id()))
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("roles"));
   }
 
   @Test

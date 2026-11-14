@@ -121,7 +121,8 @@ class ProjectTaskService {
       UUID taskId,
       UUID userId,
       String title,
-      TaskRole role,
+      List<TaskRole> requestedRoles,
+      TaskRole legacyRole,
       UUID assigneeId,
       TaskPriority priority,
       LocalDate dueDate,
@@ -130,7 +131,10 @@ class ProjectTaskService {
       List<ChecklistEdit> checklistItems,
       Long version) {
     requireTaskMember(taskId, userId);
-    Set<TaskRole> roles = rolesKeepingExisting(taskId, role);
+    Set<TaskRole> roles =
+        requestedRoles != null
+            ? Set.copyOf(requestedRoles)
+            : rolesKeepingExisting(taskId, legacyRole);
     List<UpdateTaskCommand.ChecklistItemEdit> items =
         checklistItems.stream()
             .map(edit ->
