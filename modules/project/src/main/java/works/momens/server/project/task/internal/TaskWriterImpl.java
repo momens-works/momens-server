@@ -21,6 +21,7 @@ import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.PatchTaskCommand;
 import works.momens.server.project.task.TaskDetail;
 import works.momens.server.project.task.TaskErrorCode;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskSnapshot;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.project.task.UpdateTaskCommand;
@@ -66,7 +67,7 @@ class TaskWriterImpl implements TaskWriter {
     }
     task.update(
         command.title(),
-        command.role(),
+        command.roles(),
         command.priority(),
         command.status(),
         command.purpose(),
@@ -210,7 +211,7 @@ class TaskWriterImpl implements TaskWriter {
       String description,
       String status,
       String priority,
-      String role,
+      Set<TaskRole> roles,
       UUID milestoneId,
       UUID assigneeId,
       LocalDate dueDate) {
@@ -220,7 +221,7 @@ class TaskWriterImpl implements TaskWriter {
           task.getDescription(),
           task.getStatus(),
           task.getPriority(),
-          task.getRole(),
+          Set.copyOf(task.getRoles()),
           task.getMilestoneId(),
           task.getAssigneeId(),
           task.getDueDate());

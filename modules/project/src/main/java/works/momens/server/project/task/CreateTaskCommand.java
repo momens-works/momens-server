@@ -1,6 +1,7 @@
 package works.momens.server.project.task;
 
 import java.time.LocalDate;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -14,6 +15,8 @@ import java.util.UUID;
  * MANUAL}은 반드시 없어야 합니다 — 이 불변식은 생성 시점에 강제하며 조용히 기본값으로 채우지 않습니다.
  *
  * <p>이 record에서 제목 길이를 직접 검증하며, 최대 길이를 초과하면 저장 전에 거부합니다. 요청 DTO의 검증을 거치지 않는 쓰기 경로에도 동일한 규칙을 적용합니다.
+ *
+ * <p>{@code roles}를 전달하지 않으면 role이 지정되지 않은 태스크를 생성합니다.
  */
 public record CreateTaskCommand(
     UUID projectId,
@@ -21,7 +24,7 @@ public record CreateTaskCommand(
     String title,
     String description,
     TaskStatus status,
-    TaskRole role,
+    Set<TaskRole> roles,
     TaskPriority priority,
     UUID milestoneId,
     UUID assigneeId,
@@ -31,6 +34,7 @@ public record CreateTaskCommand(
 
   public CreateTaskCommand {
     TaskPolicy.requireTitleWithinLimit(title);
+    roles = roles == null ? Set.of() : Set.copyOf(roles);
     if (status == null) {
       throw new IllegalArgumentException("status는 필수입니다.");
     }
@@ -51,7 +55,7 @@ public record CreateTaskCommand(
       UUID workspaceId,
       String title,
       TaskStatus status,
-      TaskRole role,
+      Set<TaskRole> roles,
       TaskPriority priority,
       LocalDate dueDate) {
     return new CreateTaskCommand(
@@ -60,7 +64,7 @@ public record CreateTaskCommand(
         title,
         null,
         status,
-        role,
+        roles,
         priority,
         null,
         null,
@@ -83,7 +87,7 @@ public record CreateTaskCommand(
         title,
         null,
         status,
-        role,
+        Set.of(role),
         priority,
         null,
         null,

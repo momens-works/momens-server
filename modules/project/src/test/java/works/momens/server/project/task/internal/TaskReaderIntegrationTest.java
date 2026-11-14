@@ -5,7 +5,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.hibernate.Session;
+import org.hibernate.SessionEventListener;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -133,11 +137,49 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     List<BoardTask> board = taskReader.listTasksByStatus(projectId, BOARD_STATUSES);
 
     assertThat(board).extracting(BoardTask::title).containsExactly("나중", "먼저");
-    assertThat(board.get(1).role()).isEqualTo("backend");
+    assertThat(board.get(1).roles()).containsExactly("backend");
     assertThat(board.get(1).assigneeId()).isEqualTo(assigneeId);
     assertThat(board.get(1).dueDate()).isEqualTo(LocalDate.parse("2026-09-25"));
     assertThat(board.get(0).assigneeId()).isNull();
     assertThat(board.get(0).dueDate()).isNull();
+  }
+
+  @Test
+  void listTasksByStatusLoadsRolesInSingleQuery() {
+    UUID ownerId = ProjectSeedSql.insertUser(entityManager, "roles-owner@momens.works");
+    UUID workspaceId = ProjectSeedSql.insertWorkspace(entityManager, "roles");
+    UUID projectId = ProjectSeedSql.insertProject(entityManager, workspaceId, ownerId);
+    UUID twoRoles =
+        saveTask(
+            workspaceId, projectId, "Two roles", TaskStatus.TODO, TaskPriority.HIGH, TaskRole.PM);
+    saveTask(
+        workspaceId, projectId, "One role", TaskStatus.TODO, TaskPriority.HIGH, TaskRole.FRONTEND);
+    entityManager
+        .getEntityManager()
+        .createNativeQuery("INSERT INTO task_roles (task_id, role) VALUES (?1, 'backend')")
+        .setParameter(1, twoRoles)
+        .executeUpdate();
+    entityManager.clear();
+    AtomicInteger statements = new AtomicInteger();
+    entityManager
+        .getEntityManager()
+        .unwrap(Session.class)
+        .addEventListeners(
+            new SessionEventListener() {
+              @Override
+              public void jdbcPrepareStatementEnd() {
+                statements.incrementAndGet();
+              }
+            });
+
+    List<BoardTask> board = taskReader.listTasksByStatus(projectId, BOARD_STATUSES);
+
+    assertThat(statements).hasValue(1);
+    assertThat(board)
+        .filteredOn(task -> task.id().equals(twoRoles))
+        .singleElement()
+        .extracting(BoardTask::roles)
+        .isEqualTo(List.of("pm", "backend"));
   }
 
   @Test
@@ -167,7 +209,7 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     assertThat(detail.title()).isEqualTo("1차 와이어프레임");
     assertThat(detail.status()).isEqualTo("todo");
     assertThat(detail.priority()).isEqualTo("urgent");
-    assertThat(detail.role()).isEqualTo("backend");
+    assertThat(detail.roles()).containsExactly("backend");
     assertThat(detail.assigneeId()).isEqualTo(assigneeId);
     assertThat(detail.dueDate()).isEqualTo(LocalDate.parse("2026-09-25"));
     assertThat(detail.description()).isEqualTo("이번 범위의 화면 흐름을 정리한다");
@@ -343,10 +385,10 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
 
     List<BoardTask> board = taskReader.listTasksByStatus(projectId, BOARD_STATUSES);
     assertThat(board).extracting(BoardTask::title).containsExactly("웹 태스크");
-    assertThat(board.getFirst().role()).isNull();
+    assertThat(board.getFirst().roles()).isEmpty();
 
     TaskDetail detail = taskReader.findDetail(taskId).orElseThrow();
-    assertThat(detail.role()).isNull();
+    assertThat(detail.roles()).isEmpty();
   }
 
   private UUID saveTask(
@@ -365,7 +407,7 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
                     title,
                     null,
                     status,
-                    role,
+                    role == null ? Set.of() : Set.of(role),
                     priority,
                     null,
                     null,

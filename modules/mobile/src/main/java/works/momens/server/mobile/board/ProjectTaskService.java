@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -82,13 +83,13 @@ class ProjectTaskService {
       UUID projectId,
       UUID userId,
       String title,
-      TaskRole role,
+      Set<TaskRole> roles,
       TaskPriority priority,
       LocalDate dueDate) {
     UUID workspaceId = requireProjectMember(projectId, userId);
     return taskWriter.create(
         CreateTaskCommand.manual(
-            projectId, workspaceId, title, TaskStatus.TODO, role, priority, dueDate));
+            projectId, workspaceId, title, TaskStatus.TODO, roles, priority, dueDate));
   }
 
   /**
@@ -120,7 +121,7 @@ class ProjectTaskService {
       UUID taskId,
       UUID userId,
       String title,
-      TaskRole role,
+      Set<TaskRole> roles,
       UUID assigneeId,
       TaskPriority priority,
       LocalDate dueDate,
@@ -137,7 +138,7 @@ class ProjectTaskService {
     // 저장만 하고 상세는 반환하지 않는다. 저장 후 최신 상태는 클라이언트가 상세 조회로 다시 읽는다.
     taskWriter.update(
         new UpdateTaskCommand(
-            taskId, title, role, assigneeId, priority, dueDate, status, purpose, items, version));
+            taskId, title, roles, assigneeId, priority, dueDate, status, purpose, items, version));
   }
 
   @Transactional
@@ -169,7 +170,7 @@ class ProjectTaskService {
         detail.projectId(),
         detail.title(),
         detail.status(),
-        detail.role(),
+        detail.roles(),
         toAssignee(detail.assigneeId()),
         MobileTaskPriority.key(detail.priority()),
         detail.dueDate(),
@@ -231,7 +232,7 @@ class ProjectTaskService {
     return new MobileTaskCard(
         task.id(),
         task.title(),
-        task.role(),
+        task.roles(),
         assignee == null ? null : new MobileTaskCard.Assignee(assignee.id(), assignee.name()),
         MobileTaskPriority.key(task.priority()),
         task.dueDate(),

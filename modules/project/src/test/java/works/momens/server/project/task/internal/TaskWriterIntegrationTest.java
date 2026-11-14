@@ -5,8 +5,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -86,11 +88,47 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
                 List.of()));
 
     assertThat(updated.title()).isEqualTo("제목 수정");
-    assertThat(updated.role()).isEqualTo("backend");
+    assertThat(updated.roles()).containsExactly("backend");
     assertThat(updated.priority()).isEqualTo("high");
     assertThat(updated.status()).isEqualTo("in_progress");
     assertThat(updated.description()).isEqualTo("수정한 목적");
     assertThat(updated.assigneeId()).isEqualTo(assigneeId);
+  }
+
+  @Test
+  void updateAddsRoleWithoutRecreatingKeptRole() {
+    Fixture fixture = newTask();
+    entityManager
+        .getEntityManager()
+        .createNativeQuery(
+            "UPDATE task_roles SET created_at = '2026-11-10T00:00:00Z' WHERE task_id = ?1")
+        .setParameter(1, fixture.taskId())
+        .executeUpdate();
+    entityManager.clear();
+
+    TaskDetail updated =
+        taskWriter.update(
+            new UpdateTaskCommand(
+                fixture.taskId(),
+                "Role update",
+                Set.of(TaskRole.BACKEND, TaskRole.PM),
+                null,
+                TaskPriority.MEDIUM,
+                null,
+                TaskStatus.TODO,
+                null,
+                List.of(),
+                null));
+
+    assertThat(updated.roles()).containsExactly("pm", "backend");
+    Object keptRoleCreatedAt =
+        entityManager
+            .getEntityManager()
+            .createNativeQuery(
+                "SELECT created_at FROM task_roles WHERE task_id = ?1 AND role = 'pm'")
+            .setParameter(1, fixture.taskId())
+            .getSingleResult();
+    assertThat(keptRoleCreatedAt).isEqualTo(Instant.parse("2026-11-10T00:00:00Z"));
   }
 
   @Test
@@ -366,7 +404,7 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
                         workspaceId,
                         "초기 제목",
                         TaskStatus.TODO,
-                        TaskRole.PM,
+                        Set.of(TaskRole.PM),
                         TaskPriority.MEDIUM,
                         null),
                     null))
@@ -384,7 +422,16 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
       String purpose,
       List<ChecklistItemEdit> checklistItems) {
     return new UpdateTaskCommand(
-        taskId, title, role, assigneeId, priority, null, status, purpose, checklistItems, null);
+        taskId,
+        title,
+        Set.of(role),
+        assigneeId,
+        priority,
+        null,
+        status,
+        purpose,
+        checklistItems,
+        null);
   }
 
   private record Fixture(UUID workspaceId, UUID projectId, UUID taskId) {}

@@ -3,6 +3,7 @@ package works.momens.server.mobile.board;
 import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -48,7 +49,7 @@ class TaskController implements TaskControllerDocs {
         taskId,
         CurrentUser.id(principal),
         request.title(),
-        request.role(),
+        Set.of(request.role()),
         request.assigneeId(),
         request.priority(),
         request.dueDate(),

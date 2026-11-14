@@ -658,7 +658,6 @@ class McpWriteToolServiceTest {
         "Description",
         "todo",
         "medium",
-        null,
         userId,
         LocalDate.parse("2026-10-01"),
         now,

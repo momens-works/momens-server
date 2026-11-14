@@ -15,7 +15,6 @@ public record TaskSnapshot(
     String description,
     String status,
     String priority,
-    String role,
     UUID assigneeId,
     LocalDate dueDate,
     Instant createdAt,

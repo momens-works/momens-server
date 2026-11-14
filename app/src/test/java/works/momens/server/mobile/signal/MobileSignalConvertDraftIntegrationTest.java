@@ -81,7 +81,8 @@ class MobileSignalConvertDraftIntegrationTest extends AbstractPostgresIntegratio
 
     assertThat(
             jdbcTemplate.queryForMap(
-                "SELECT title, role, priority FROM tasks WHERE project_id = ?", project))
+                "SELECT title, (SELECT role FROM task_roles WHERE task_id = tasks.id) AS role, priority FROM tasks WHERE project_id = ?",
+                project))
         .containsEntry("title", "결제 정책 확정하기")
         .containsEntry("role", "backend")
         .containsEntry("priority", "high");

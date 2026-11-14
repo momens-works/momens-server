@@ -26,7 +26,7 @@ public record MobileTaskDetail(
     UUID projectId,
     String title,
     String status,
-    String role,
+    List<String> roles,
     Assignee assignee,
     String priority,
     LocalDate dueDate,

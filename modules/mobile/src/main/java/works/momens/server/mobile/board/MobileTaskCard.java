@@ -1,6 +1,7 @@
 package works.momens.server.mobile.board;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -12,7 +13,7 @@ import java.util.UUID;
 public record MobileTaskCard(
     UUID id,
     String title,
-    String role,
+    List<String> roles,
     Assignee assignee,
     String priority,
     LocalDate dueDate,

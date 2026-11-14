@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -54,7 +55,7 @@ class TaskDraftApplierIntegrationTest extends AbstractPostgresIntegrationTest {
     assertAll(
         () -> assertThat(result).isEqualTo(TaskDraftApplyResult.APPLIED),
         () -> assertThat(task.getTitle()).isEqualTo("결제 실패율 대응"),
-        () -> assertThat(task.getRole()).isEqualTo("backend"),
+        () -> assertThat(task.getRoles()).containsExactly(TaskRole.BACKEND),
         () -> assertThat(task.getPriority()).isEqualTo("high"));
   }
 
@@ -79,7 +80,8 @@ class TaskDraftApplierIntegrationTest extends AbstractPostgresIntegrationTest {
     // 전제로 쓰이지 않은 AI title이 함께 남아 draft가 사람과 모델의 혼합물이 된다.
     UUID taskId = newTask();
     reload(taskId)
-        .update("초기 제목", TaskRole.PM, TaskPriority.HIGH, TaskStatus.TODO, "초기 목적", null, null);
+        .update(
+            "초기 제목", Set.of(TaskRole.PM), TaskPriority.HIGH, TaskStatus.TODO, "초기 목적", null, null);
     entityManager.flush();
 
     TaskDraftApplyResult result =
@@ -89,7 +91,7 @@ class TaskDraftApplierIntegrationTest extends AbstractPostgresIntegrationTest {
     assertAll(
         () -> assertThat(result).isEqualTo(TaskDraftApplyResult.BASELINE_MISMATCH),
         () -> assertThat(task.getTitle()).isEqualTo("초기 제목"),
-        () -> assertThat(task.getRole()).isEqualTo("pm"),
+        () -> assertThat(task.getRoles()).containsExactly(TaskRole.PM),
         () -> assertThat(task.getPriority()).isEqualTo("high"));
   }
 
@@ -144,12 +146,13 @@ class TaskDraftApplierIntegrationTest extends AbstractPostgresIntegrationTest {
                     workspaceId,
                     "초기 제목",
                     TaskStatus.TODO,
-                    TaskRole.PM,
+                    Set.of(TaskRole.PM),
                     TaskPriority.MEDIUM,
                     null),
                 null));
     // description은 builder에 없어 수정 경로로 채운다. 반영이 건드리지 않는 필드를 확인하려면 값이 있어야 한다.
-    task.update("초기 제목", TaskRole.PM, TaskPriority.MEDIUM, TaskStatus.TODO, "초기 목적", null, null);
+    task.update(
+        "초기 제목", Set.of(TaskRole.PM), TaskPriority.MEDIUM, TaskStatus.TODO, "초기 목적", null, null);
     entityManager.flush();
     return task.getId();
   }

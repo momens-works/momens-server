@@ -2,6 +2,7 @@ package works.momens.server.project.task;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -18,7 +19,7 @@ public record BoardTask(
     String title,
     String status,
     String priority,
-    String role,
+    List<String> roles,
     UUID assigneeId,
     LocalDate dueDate,
     Instant createdAt) {}
