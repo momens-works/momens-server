@@ -24,7 +24,7 @@ public record TaskDetail(
     String title,
     String status,
     String priority,
-    String role,
+    List<String> roles,
     UUID assigneeId,
     LocalDate dueDate,
     String description,

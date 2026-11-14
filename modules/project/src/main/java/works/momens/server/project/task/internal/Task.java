@@ -1,7 +1,10 @@
 package works.momens.server.project.task.internal;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
@@ -14,12 +17,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Immutable;
+import org.hibernate.annotations.SortNatural;
 import works.momens.server.common.persistence.BaseEntity;
 import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.TaskDraftValues;
@@ -31,7 +38,7 @@ import works.momens.server.project.task.UpdateTaskCommand;
 /**
  * 태스크와 완료기준의 쓰기 aggregate입니다. 다른 aggregate는 식별자로 참조합니다.
  *
- * <p>웹에서 생성한 태스크는 role이 null일 수 있습니다. milestone과 due date도 함께 저장합니다.
+ * <p>웹에서 생성한 태스크는 role이 지정되지 않을 수 있습니다.
  */
 @Getter
 @Entity
@@ -71,7 +78,16 @@ class Task extends BaseEntity {
   @Column(name = "due_date")
   private LocalDate dueDate;
 
-  @Column private String role;
+  /**
+   * 태스크에 지정된 role 목록입니다. role은 별도 식별자가 필요하지 않은 값이므로 엔티티로 분리하지 않고 {@code task_roles} 테이블에 저장합니다. 응답
+   * 순서를 일정하게 유지하기 위해 {@link TaskRole}의 선언 순서대로 정렬합니다.
+   */
+  @ElementCollection
+  @CollectionTable(name = "task_roles", joinColumns = @JoinColumn(name = "task_id"))
+  @Column(name = "role", nullable = false)
+  @Convert(converter = TaskRoleAttributeConverter.class)
+  @SortNatural
+  private SortedSet<TaskRole> roles = new TreeSet<>();
 
   @Column(name = "origin_type", nullable = false)
   private String originType;
@@ -122,7 +138,7 @@ class Task extends BaseEntity {
     this.description = command.description();
     this.status = command.status().value();
     this.priority = (command.priority() != null ? command.priority() : TaskPriority.MEDIUM).value();
-    this.role = command.role() != null ? command.role().value() : null;
+    this.roles.addAll(command.roles());
     this.milestoneId = command.milestoneId();
     this.assigneeId = command.assigneeId();
     this.dueDate = command.dueDate();
@@ -172,6 +188,10 @@ class Task extends BaseEntity {
     }
   }
 
+  List<String> roleValues() {
+    return roles.stream().map(TaskRole::value).toList();
+  }
+
   void checklistChanged() {
     markUpdated();
   }
@@ -181,19 +201,20 @@ class Task extends BaseEntity {
   }
 
   /**
-   * 수정 화면이 저장한 편집 상태 전체로 태스크를 갱신합니다. title, role, priority, status는 mobile이 검증한 값이라 항상 채워집니다.
-   * description은 목적을 비운 경우 빈 문자열이나 null로 들어옵니다. assigneeId는 담당자를 지정하면 값이, 비우면 null이 들어옵니다.
+   * 수정 화면이 저장한 편집 상태 전체로 태스크를 갱신합니다. title, priority, status는 mobile에서 검증한 값이므로 항상 전달되며, roles는
+   * mobile에서 최소 1개 이상 포함되어 있는지 검증한 목록입니다. description은 목적을 비운 경우 빈 문자열이나 null로 들어옵니다. assigneeId는
+   * 담당자를 지정하면 값이, 비우면 null이 들어옵니다.
    */
   void update(
       String title,
-      TaskRole role,
+      Set<TaskRole> roles,
       TaskPriority priority,
       TaskStatus status,
       String description,
       UUID assigneeId,
       LocalDate dueDate) {
     this.title = title;
-    this.role = role.value();
+    replaceRoles(roles);
     this.priority = priority.value();
     this.status = status.value();
     this.description = description;
@@ -204,7 +225,7 @@ class Task extends BaseEntity {
   /** draft 반영이 비교하는 세 필드가 주어진 값과 같은지. 하나라도 다르면 반영하지 않습니다. */
   boolean matchesDraft(TaskDraftValues draft) {
     return Objects.equals(this.title, draft.title())
-        && Objects.equals(this.role, draft.role().value())
+        && this.roles.equals(Set.of(draft.role()))
         && Objects.equals(this.priority, draft.priority().value());
   }
 
@@ -214,8 +235,17 @@ class Task extends BaseEntity {
    */
   void applyDraft(TaskDraftValues draft) {
     this.title = draft.title();
-    this.role = draft.role().value();
+    replaceRoles(Set.of(draft.role()));
     this.priority = draft.priority().value();
+  }
+
+  /**
+   * 기존 role 목록을 전달받은 목록으로 교체합니다. 컬렉션 자체를 교체하지 않고 기존 목록에서 제외된 role만 삭제하고 새로 지정된 role만 추가합니다. 따라서
+   * 유지되는 role의 행과 {@code created_at} 값은 변경되지 않습니다.
+   */
+  private void replaceRoles(Set<TaskRole> roles) {
+    this.roles.retainAll(roles);
+    this.roles.addAll(roles);
   }
 
   /**

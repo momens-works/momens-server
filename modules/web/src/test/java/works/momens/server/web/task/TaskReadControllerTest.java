@@ -64,7 +64,6 @@ class TaskReadControllerTest {
         "todo",
         "medium",
         null,
-        null,
         LocalDate.parse("2026-08-31"),
         Instant.parse("2026-08-20T00:00:00Z"),
         Instant.parse("2026-08-20T00:00:00Z"),

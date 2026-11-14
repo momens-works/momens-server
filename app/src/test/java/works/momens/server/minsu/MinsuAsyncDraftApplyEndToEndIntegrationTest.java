@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -80,7 +81,9 @@ class MinsuAsyncDraftApplyEndToEndIntegrationTest extends AbstractPostgresIntegr
     awaitCompletion(taskId);
 
     Map<String, Object> task =
-        jdbcTemplate.queryForMap("SELECT title, role, priority FROM tasks WHERE id = ?", taskId);
+        jdbcTemplate.queryForMap(
+            "SELECT title, (SELECT role FROM task_roles WHERE task_id = tasks.id) AS role, priority FROM tasks WHERE id = ?",
+            taskId);
     assertAll(
         () -> assertThat(task).containsEntry("title", GENERATED_TITLE),
         () -> assertThat(task).containsEntry("role", "backend"),
@@ -205,7 +208,7 @@ class MinsuAsyncDraftApplyEndToEndIntegrationTest extends AbstractPostgresIntegr
         new UpdateTaskCommand(
             taskId,
             title,
-            TaskRole.PM,
+            Set.of(TaskRole.PM),
             null,
             TaskPriority.MEDIUM,
             null,

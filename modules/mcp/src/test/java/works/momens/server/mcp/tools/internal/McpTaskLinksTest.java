@@ -71,7 +71,6 @@ class McpTaskLinksTest {
         null,
         null,
         null,
-        null,
         0);
   }
 }

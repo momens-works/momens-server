@@ -111,6 +111,11 @@ final class CheckConstraintEnumLinks {
               storedValues(TaskRole.values(), TaskRole::value),
               IntendedDifference.NONE),
           new EnumLink(
+              "task_roles",
+              "role",
+              storedValues(TaskRole.values(), TaskRole::value),
+              IntendedDifference.NONE),
+          new EnumLink(
               "task_updates",
               "kind",
               storedValues(TaskUpdateKind.values(), TaskUpdateKind::value),

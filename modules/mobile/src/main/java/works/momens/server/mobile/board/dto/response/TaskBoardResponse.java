@@ -62,7 +62,7 @@ public record TaskBoardResponse(
                 new TaskCardResponse(
                     card.id(),
                     card.title(),
-                    card.role(),
+                    card.roles().isEmpty() ? null : card.roles().getFirst(),
                     toAssignee(card.assignee()),
                     card.priority(),
                     card.dueDate(),
