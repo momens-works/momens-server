@@ -455,7 +455,7 @@ class ProjectTaskServiceTest {
                 TASK_ID,
                 CALLER_ID,
                 "제목",
-                Set.of(TaskRole.PM),
+                TaskRole.PM,
                 null,
                 TaskPriority.MEDIUM,
                 null,
@@ -479,7 +479,7 @@ class ProjectTaskServiceTest {
                 TASK_ID,
                 CALLER_ID,
                 "제목",
-                Set.of(TaskRole.PM),
+                TaskRole.PM,
                 null,
                 TaskPriority.MEDIUM,
                 null,
@@ -490,6 +490,59 @@ class ProjectTaskServiceTest {
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(CommonErrorCode.AUTH_FORBIDDEN);
+  }
+
+  @Test
+  void updateTaskKeepsExistingRolesWhenRequestedRoleIsAlreadyAssigned() {
+    assertThat(rolesSentForSingleRoleUpdate(TaskRole.PM))
+        .containsExactlyInAnyOrder(TaskRole.PM, TaskRole.BACKEND);
+  }
+
+  @Test
+  void updateTaskReplacesRolesWhenRequestedRoleIsNotAssigned() {
+    assertThat(rolesSentForSingleRoleUpdate(TaskRole.DESIGN)).containsExactly(TaskRole.DESIGN);
+  }
+
+  private Set<TaskRole> rolesSentForSingleRoleUpdate(TaskRole requested) {
+    when(taskReader.findScope(TASK_ID))
+        .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
+    when(taskReader.findDetail(TASK_ID))
+        .thenReturn(
+            Optional.of(
+                new TaskDetail(
+                    TASK_ID,
+                    PROJECT_ID,
+                    WORKSPACE_ID,
+                    "title",
+                    "todo",
+                    "medium",
+                    List.of("pm", "backend"),
+                    null,
+                    null,
+                    null,
+                    List.of(),
+                    List.of(),
+                    null,
+                    0L)));
+
+    projectTaskService.updateTask(
+        TASK_ID,
+        CALLER_ID,
+        "title",
+        requested,
+        null,
+        TaskPriority.MEDIUM,
+        null,
+        TaskStatus.TODO,
+        null,
+        List.of(),
+        null);
+
+    ArgumentCaptor<UpdateTaskCommand> captor = ArgumentCaptor.forClass(UpdateTaskCommand.class);
+    verify(taskWriter).update(captor.capture());
+    return captor.getValue().roles();
   }
 
   @Test
@@ -504,7 +557,7 @@ class ProjectTaskServiceTest {
         TASK_ID,
         CALLER_ID,
         "제목",
-        Set.of(TaskRole.BACKEND),
+        TaskRole.BACKEND,
         null,
         TaskPriority.HIGH,
         DUE_DATE,
