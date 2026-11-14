@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import works.momens.server.common.api.CurrentUser;
+import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.mobile.board.dto.request.ToggleChecklistItemRequest;
 import works.momens.server.mobile.board.dto.request.UpdateTaskRequest;
 import works.momens.server.mobile.board.dto.response.ChecklistToggleResponse;
@@ -44,10 +45,14 @@ class TaskController implements TaskControllerDocs {
         request.checklistItems().stream()
             .map(item -> new ChecklistEdit(item.id(), item.title(), item.completed()))
             .toList();
+    if (request.roles() == null && request.role() == null) {
+      throw FieldValidationException.forField("roles");
+    }
     projectTaskService.updateTask(
         taskId,
         CurrentUser.id(principal),
         request.title(),
+        request.roles(),
         request.role(),
         request.assigneeId(),
         request.priority(),

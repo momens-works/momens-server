@@ -36,9 +36,15 @@ public record TaskBoardResponse(
       @Schema(description = "작업 식별자") UUID id,
       @Schema(description = "제목") String title,
       @Schema(
-              description = "업무 역할. pm/design/backend/frontend 중 하나. 웹에서 만든 작업은 미지정이면 null",
+              description =
+                  "role 목록입니다. `pm`, `design`, `backend`, `frontend` 순서로 정렬하며, role이 지정되지 않은 경우 빈 배열을 반환합니다.")
+          List<String> roles,
+      @Schema(
+              description =
+                  "구버전 앱과의 호환성을 위한 role 필드입니다. `roles`의 첫 번째 값을 반환하며, 지정된 role이 없으면 `null`을 반환합니다.",
               example = "pm",
-              nullable = true)
+              nullable = true,
+              deprecated = true)
           String role,
       @Schema(description = "담당자 정보. 미지정 시 null") AssigneeResponse assignee,
       @Schema(description = "우선순위 (urgent/high/medium/low)", example = "low") String priority,
@@ -62,6 +68,7 @@ public record TaskBoardResponse(
                 new TaskCardResponse(
                     card.id(),
                     card.title(),
+                    card.roles(),
                     card.roles().isEmpty() ? null : card.roles().getFirst(),
                     toAssignee(card.assignee()),
                     card.priority(),
