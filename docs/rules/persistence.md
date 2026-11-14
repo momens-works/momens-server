@@ -212,6 +212,9 @@ GRANT USAGE, SELECT ON SEQUENCE some_shared_table_id_seq TO postgres;
   `NOT NULL DEFAULT NOW()`는 안전망으로 둡니다.
 - 예외: append-only 발행 로그(`outbox_events`)는 행이 수정되지 않으므로 `updated_at`을 두지 않고
   `created_at`만 둡니다.
+- 예외: 태스크의 role 목록을 저장하는 `task_roles` 테이블은 행을 수정하지 않고 추가하거나 삭제하는 방식으로
+  관리하므로 `updated_at` 없이 `created_at`만 사용합니다. `created_at` 값은 스키마에 정의된 `DEFAULT NOW()`로
+  설정합니다.
 
 ### 소프트 삭제
 

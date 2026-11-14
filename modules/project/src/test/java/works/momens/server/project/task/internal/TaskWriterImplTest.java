@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -61,7 +62,7 @@ class TaskWriterImplTest {
                 workspaceId,
                 "권한 요청 점검",
                 TaskStatus.BACKLOG,
-                TaskRole.BACKEND,
+                Set.of(TaskRole.BACKEND),
                 TaskPriority.HIGH,
                 null));
 
@@ -70,7 +71,7 @@ class TaskWriterImplTest {
     Task saved = captor.getValue();
     assertThat(saved.getStatus()).isEqualTo("backlog");
     assertThat(saved.getPriority()).isEqualTo("high");
-    assertThat(saved.getRole()).isEqualTo("backend");
+    assertThat(saved.getRoles()).containsExactly(TaskRole.BACKEND);
     assertThat(created.id()).isEqualTo(saved.getId());
 
     Map<String, Object> payload = new HashMap<>();
@@ -154,7 +155,7 @@ class TaskWriterImplTest {
                 workspaceId,
                 "기존",
                 TaskStatus.TODO,
-                TaskRole.PM,
+                Set.of(TaskRole.PM),
                 TaskPriority.HIGH,
                 null),
             "MOM-0003");
@@ -197,7 +198,7 @@ class TaskWriterImplTest {
                 workspaceId,
                 "기존",
                 TaskStatus.TODO,
-                TaskRole.PM,
+                Set.of(TaskRole.PM),
                 TaskPriority.HIGH,
                 null),
             "MOM-0004");
@@ -209,7 +210,7 @@ class TaskWriterImplTest {
                 new UpdateTaskCommand(
                     task.getId(),
                     "새 제목",
-                    TaskRole.PM,
+                    Set.of(TaskRole.PM),
                     assigneeId,
                     TaskPriority.HIGH,
                     null,
@@ -337,7 +338,7 @@ class TaskWriterImplTest {
         new UpdateTaskCommand(
             task.getId(),
             "첫 번째",
-            TaskRole.BACKEND,
+            Set.of(TaskRole.BACKEND),
             null,
             TaskPriority.HIGH,
             null,
@@ -378,7 +379,7 @@ class TaskWriterImplTest {
             UUID.randomUUID(),
             "첫 번째",
             TaskStatus.TODO,
-            TaskRole.PM,
+            Set.of(TaskRole.PM),
             TaskPriority.HIGH,
             null),
         "MOM-0005");
@@ -388,7 +389,7 @@ class TaskWriterImplTest {
     return new UpdateTaskCommand(
         taskId,
         title,
-        TaskRole.PM,
+        Set.of(TaskRole.PM),
         null,
         TaskPriority.HIGH,
         null,

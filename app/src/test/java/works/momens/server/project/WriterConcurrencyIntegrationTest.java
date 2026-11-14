@@ -216,7 +216,7 @@ class WriterConcurrencyIntegrationTest extends AbstractPostgresIntegrationTest {
                         new UpdateTaskCommand(
                             id,
                             "덮어쓰기",
-                            TaskRole.BACKEND,
+                            Set.of(TaskRole.BACKEND),
                             null,
                             TaskPriority.MEDIUM,
                             null,
@@ -242,7 +242,7 @@ class WriterConcurrencyIntegrationTest extends AbstractPostgresIntegrationTest {
   @Test
   void draftChangeConflictsWithWaitingPatch() throws Exception {
     UUID id = fixture(false);
-    jdbc.update("UPDATE tasks SET role='backend' WHERE id=?", id);
+    jdbc.update("INSERT INTO task_roles (task_id, role) VALUES (?, 'backend')", id);
     assertThat(
             compete(
                 () ->

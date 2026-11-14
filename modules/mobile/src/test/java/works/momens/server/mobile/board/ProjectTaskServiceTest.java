@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -101,12 +102,34 @@ class ProjectTaskServiceTest {
         .thenReturn(
             List.of(
                 new BoardTask(
-                    backlogId, "백로그 태스크", "backlog", "medium", "pm", null, null, CREATED_AT),
-                new BoardTask(todoId, "투두 태스크", "todo", "low", "frontend", null, null, CREATED_AT),
+                    backlogId,
+                    "백로그 태스크",
+                    "backlog",
+                    "medium",
+                    List.of("pm"),
+                    null,
+                    null,
+                    CREATED_AT),
                 new BoardTask(
-                    inProgressId, "진행중 태스크", "in_progress", "medium", "pm", null, null, CREATED_AT),
+                    todoId, "투두 태스크", "todo", "low", List.of("frontend"), null, null, CREATED_AT),
                 new BoardTask(
-                    cancelledId, "취소 태스크", "cancelled", "high", "pm", null, null, CREATED_AT)));
+                    inProgressId,
+                    "진행중 태스크",
+                    "in_progress",
+                    "medium",
+                    List.of("pm"),
+                    null,
+                    null,
+                    CREATED_AT),
+                new BoardTask(
+                    cancelledId,
+                    "취소 태스크",
+                    "cancelled",
+                    "high",
+                    List.of("pm"),
+                    null,
+                    null,
+                    CREATED_AT)));
 
     List<MobileTaskGroup> groups = projectTaskService.getBoard(PROJECT_ID, CALLER_ID);
 
@@ -140,7 +163,7 @@ class ProjectTaskServiceTest {
                     "담당자 있는 태스크",
                     "todo",
                     "medium",
-                    "pm",
+                    List.of("pm"),
                     assigneeId,
                     DUE_DATE,
                     CREATED_AT),
@@ -149,12 +172,19 @@ class ProjectTaskServiceTest {
                     "담당자가 같은 태스크",
                     "todo",
                     "medium",
-                    "pm",
+                    List.of("pm"),
                     assigneeId,
                     null,
                     CREATED_AT),
                 new BoardTask(
-                    unassigned, "담당자 없는 태스크", "todo", "medium", "pm", null, null, CREATED_AT)));
+                    unassigned,
+                    "담당자 없는 태스크",
+                    "todo",
+                    "medium",
+                    List.of("pm"),
+                    null,
+                    null,
+                    CREATED_AT)));
     when(userService.getProfiles(List.of(assigneeId)))
         .thenReturn(
             List.of(
@@ -185,13 +215,14 @@ class ProjectTaskServiceTest {
     when(taskReader.listTasksByStatus(eq(PROJECT_ID), any()))
         .thenReturn(
             List.of(
-                new BoardTask(taskId, "긴급 태스크", "todo", "urgent", "pm", null, null, CREATED_AT)));
+                new BoardTask(
+                    taskId, "긴급 태스크", "todo", "urgent", List.of("pm"), null, null, CREATED_AT)));
 
     MobileTaskCard card =
         cardsOf(projectTaskService.getBoard(PROJECT_ID, CALLER_ID), MobileTaskStatus.TODO).get(0);
 
     assertThat(card.priority()).isEqualTo("urgent");
-    assertThat(card.role()).isEqualTo("pm");
+    assertThat(card.roles()).containsExactly("pm");
   }
 
   @Test
@@ -202,9 +233,17 @@ class ProjectTaskServiceTest {
     when(taskReader.listTasksByStatus(eq(PROJECT_ID), any()))
         .thenReturn(
             List.of(
-                new BoardTask(linked, "자료 있는 태스크", "todo", "medium", "pm", null, null, CREATED_AT),
                 new BoardTask(
-                    unlinked, "자료 없는 태스크", "todo", "medium", "pm", null, null, CREATED_AT)));
+                    linked, "자료 있는 태스크", "todo", "medium", List.of("pm"), null, null, CREATED_AT),
+                new BoardTask(
+                    unlinked,
+                    "자료 없는 태스크",
+                    "todo",
+                    "medium",
+                    List.of("pm"),
+                    null,
+                    null,
+                    CREATED_AT)));
     when(taskMaterialAssembler.countMaterials(WORKSPACE_ID, List.of(linked, unlinked)))
         .thenReturn(Map.of(linked, 2));
 
@@ -225,7 +264,7 @@ class ProjectTaskServiceTest {
 
     TaskSnapshot result =
         projectTaskService.createTask(
-            PROJECT_ID, CALLER_ID, "제목", TaskRole.PM, TaskPriority.HIGH, DUE_DATE);
+            PROJECT_ID, CALLER_ID, "제목", Set.of(TaskRole.PM), TaskPriority.HIGH, DUE_DATE);
 
     ArgumentCaptor<CreateTaskCommand> captor = ArgumentCaptor.forClass(CreateTaskCommand.class);
     verify(taskWriter).create(captor.capture());
@@ -234,7 +273,7 @@ class ProjectTaskServiceTest {
     assertThat(command.workspaceId()).isEqualTo(WORKSPACE_ID);
     assertThat(command.title()).isEqualTo("제목");
     assertThat(command.status()).isEqualTo(TaskStatus.TODO);
-    assertThat(command.role()).isEqualTo(TaskRole.PM);
+    assertThat(command.roles()).containsExactly(TaskRole.PM);
     assertThat(command.priority()).isEqualTo(TaskPriority.HIGH);
     assertThat(command.dueDate()).isEqualTo(DUE_DATE);
     assertThat(result).isSameAs(created);
@@ -454,6 +493,59 @@ class ProjectTaskServiceTest {
   }
 
   @Test
+  void updateTaskKeepsExistingRolesWhenRequestedRoleIsAlreadyAssigned() {
+    assertThat(rolesSentForSingleRoleUpdate(TaskRole.PM))
+        .containsExactlyInAnyOrder(TaskRole.PM, TaskRole.BACKEND);
+  }
+
+  @Test
+  void updateTaskReplacesRolesWhenRequestedRoleIsNotAssigned() {
+    assertThat(rolesSentForSingleRoleUpdate(TaskRole.DESIGN)).containsExactly(TaskRole.DESIGN);
+  }
+
+  private Set<TaskRole> rolesSentForSingleRoleUpdate(TaskRole requested) {
+    when(taskReader.findScope(TASK_ID))
+        .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
+    when(taskReader.findDetail(TASK_ID))
+        .thenReturn(
+            Optional.of(
+                new TaskDetail(
+                    TASK_ID,
+                    PROJECT_ID,
+                    WORKSPACE_ID,
+                    "title",
+                    "todo",
+                    "medium",
+                    List.of("pm", "backend"),
+                    null,
+                    null,
+                    null,
+                    List.of(),
+                    List.of(),
+                    null,
+                    0L)));
+
+    projectTaskService.updateTask(
+        TASK_ID,
+        CALLER_ID,
+        "title",
+        requested,
+        null,
+        TaskPriority.MEDIUM,
+        null,
+        TaskStatus.TODO,
+        null,
+        List.of(),
+        null);
+
+    ArgumentCaptor<UpdateTaskCommand> captor = ArgumentCaptor.forClass(UpdateTaskCommand.class);
+    verify(taskWriter).update(captor.capture());
+    return captor.getValue().roles();
+  }
+
+  @Test
   void updateTaskSendsFullEditableStateToEditor() {
     when(taskReader.findScope(TASK_ID))
         .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
@@ -479,7 +571,7 @@ class ProjectTaskServiceTest {
     UpdateTaskCommand command = captor.getValue();
     assertThat(command.taskId()).isEqualTo(TASK_ID);
     assertThat(command.title()).isEqualTo("제목");
-    assertThat(command.role()).isEqualTo(TaskRole.BACKEND);
+    assertThat(command.roles()).containsExactly(TaskRole.BACKEND);
     assertThat(command.assigneeId()).isNull();
     assertThat(command.priority()).isEqualTo(TaskPriority.HIGH);
     assertThat(command.dueDate()).isEqualTo(DUE_DATE);
@@ -538,7 +630,7 @@ class ProjectTaskServiceTest {
         "1차 와이어프레임",
         "todo",
         "urgent",
-        "pm",
+        List.of("pm"),
         assigneeId,
         DUE_DATE,
         description,
@@ -560,7 +652,6 @@ class ProjectTaskServiceTest {
         null,
         status,
         priority,
-        role,
         null,
         null,
         CREATED_AT,

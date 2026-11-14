@@ -2,6 +2,7 @@ package works.momens.server.mobile.board;
 
 import jakarta.validation.Valid;
 import java.security.Principal;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,7 @@ import works.momens.server.common.api.CurrentUser;
 import works.momens.server.mobile.board.dto.request.CreateTaskRequest;
 import works.momens.server.mobile.board.dto.response.TaskBoardResponse;
 import works.momens.server.mobile.board.dto.response.TaskCreateResponse;
+import works.momens.server.project.task.TaskRole;
 
 @RestController
 @RequestMapping("/api/mobile")
@@ -38,13 +40,15 @@ class ProjectTaskController implements ProjectTaskControllerDocs {
       @PathVariable UUID projectId,
       @Valid @RequestBody CreateTaskRequest request,
       Principal principal) {
+    Set<TaskRole> roles = Set.of(request.role());
     return TaskCreateResponse.from(
         projectTaskService.createTask(
             projectId,
             CurrentUser.id(principal),
             request.title(),
-            request.role(),
+            roles,
             request.priority(),
-            request.dueDate()));
+            request.dueDate()),
+        roles);
   }
 }

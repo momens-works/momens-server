@@ -100,7 +100,7 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
 
     Map<String, Object> row =
         jdbcTemplate.queryForMap(
-            "SELECT status, priority, role, label, workspace_id FROM tasks WHERE project_id = ?",
+            "SELECT status, priority, (SELECT role FROM task_roles WHERE task_id = tasks.id) AS role, label, workspace_id FROM tasks WHERE project_id = ?",
             project);
     assertThat(row.get("status")).isEqualTo("todo");
     assertThat(row.get("priority")).isEqualTo("high");
@@ -270,15 +270,17 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
       UUID workspaceId, UUID projectId, String title, String status, String priority, String role) {
     UUID id = UUID.randomUUID();
     jdbcTemplate.update(
-        "INSERT INTO tasks (id, workspace_id, project_id, title, status, priority, role)"
-            + " VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO tasks (id, workspace_id, project_id, title, status, priority)"
+            + " VALUES (?, ?, ?, ?, ?, ?)",
         id,
         workspaceId,
         projectId,
         title,
         status,
-        priority,
-        role);
+        priority);
+    if (role != null) {
+      jdbcTemplate.update("INSERT INTO task_roles (task_id, role) VALUES (?, ?)", id, role);
+    }
     return id;
   }
 }

@@ -107,7 +107,7 @@ public record TaskDetailResponse(
         detail.projectId(),
         detail.title(),
         detail.status(),
-        detail.role(),
+        detail.roles().isEmpty() ? null : detail.roles().getFirst(),
         assignee,
         detail.priority(),
         detail.dueDate(),

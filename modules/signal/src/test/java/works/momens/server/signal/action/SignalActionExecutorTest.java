@@ -124,7 +124,6 @@ class SignalActionExecutorTest {
         null,
         "todo",
         priority,
-        role,
         null,
         null,
         Instant.EPOCH,
