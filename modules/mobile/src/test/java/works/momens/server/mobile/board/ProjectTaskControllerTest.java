@@ -1,5 +1,7 @@
 package works.momens.server.mobile.board;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -25,6 +27,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.servlet.config.annotation.ApiVersionConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import works.momens.server.common.api.FieldValidationDetails;
+import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.project.task.TaskPolicy;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskSnapshot;
@@ -188,33 +192,21 @@ class ProjectTaskControllerTest {
   }
 
   @Test
-  void createTaskRejectsMissingRoleOrPriority() throws Exception {
-    mockMvc
-        .perform(
-            post("/api/mobile/projects/{projectId}/tasks", PROJECT_ID)
-                .principal(principal)
-                .header("API-Version", "1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\":\"제목\",\"priority\":\"medium\"}"))
-        .andExpect(status().isBadRequest());
-
-    mockMvc
-        .perform(
-            post("/api/mobile/projects/{projectId}/tasks", PROJECT_ID)
-                .principal(principal)
-                .header("API-Version", "1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\":\"제목\",\"role\":\"pm\"}"))
-        .andExpect(status().isBadRequest());
-
-    mockMvc
-        .perform(
-            post("/api/mobile/projects/{projectId}/tasks", PROJECT_ID)
-                .principal(principal)
-                .header("API-Version", "1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\":\"제목\",\"role\":\"\",\"priority\":\"medium\"}"))
-        .andExpect(status().isBadRequest());
+  void createTaskRejectsMissingRolesWithFieldName() {
+    assertThatThrownBy(() ->
+            mockMvc.perform(
+                post("/api/mobile/projects/{projectId}/tasks", PROJECT_ID)
+                    .principal(principal)
+                    .header("API-Version", "1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"title\":\"Roles\",\"priority\":\"medium\"}")))
+        .cause()
+        .isInstanceOfSatisfying(
+            FieldValidationException.class,
+            e ->
+                assertThat(((FieldValidationDetails) e.getDetails()).fields())
+                    .extracting(FieldValidationDetails.FieldViolation::field)
+                    .containsExactly("roles"));
   }
 
   @Test

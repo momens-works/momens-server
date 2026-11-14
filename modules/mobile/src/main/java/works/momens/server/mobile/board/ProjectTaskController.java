@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import works.momens.server.common.api.CurrentUser;
+import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.mobile.board.dto.request.CreateTaskRequest;
 import works.momens.server.mobile.board.dto.response.TaskBoardResponse;
 import works.momens.server.mobile.board.dto.response.TaskCreateResponse;
@@ -40,7 +41,11 @@ class ProjectTaskController implements ProjectTaskControllerDocs {
       @PathVariable UUID projectId,
       @Valid @RequestBody CreateTaskRequest request,
       Principal principal) {
-    Set<TaskRole> roles = Set.of(request.role());
+    if (request.roles() == null && request.role() == null) {
+      throw FieldValidationException.forField("roles");
+    }
+    Set<TaskRole> roles =
+        request.roles() != null ? Set.copyOf(request.roles()) : Set.of(request.role());
     return TaskCreateResponse.from(
         projectTaskService.createTask(
             projectId,
