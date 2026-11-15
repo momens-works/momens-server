@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 import static org.assertj.core.api.Assertions.assertThatNoException;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +13,11 @@ class TaskCommandTest {
   @Test
   void createRequiresStatus() {
     assertThatIllegalArgumentException().isThrownBy(() -> createCommand(null));
+  }
+
+  @Test
+  void updateRequiresRoles() {
+    assertThatIllegalArgumentException().isThrownBy(() -> updateCommand("title", null));
   }
 
   @Test
@@ -67,10 +73,14 @@ class TaskCommandTest {
   }
 
   private static UpdateTaskCommand updateCommand(String title) {
+    return updateCommand(title, Set.of(TaskRole.PM));
+  }
+
+  private static UpdateTaskCommand updateCommand(String title, Set<TaskRole> roles) {
     return new UpdateTaskCommand(
         UUID.randomUUID(),
         title,
-        null,
+        roles,
         null,
         TaskPriority.MEDIUM,
         null,

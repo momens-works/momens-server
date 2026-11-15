@@ -30,6 +30,9 @@ public record UpdateTaskCommand(
 
   public UpdateTaskCommand {
     TaskPolicy.requireTitleWithinLimit(title);
+    if (roles == null) {
+      throw new IllegalArgumentException("roles는 필수입니다.");
+    }
   }
 
   /**
