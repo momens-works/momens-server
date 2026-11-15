@@ -779,7 +779,6 @@
           "roles" : {
             "description" : "role 목록입니다. `pm`, `design`, `backend`, `frontend` 중 최소 1개 이상 지정해야 하며, 중복은 허용하지 않습니다.",
             "items" : {
-              "description" : "role 목록입니다. `pm`, `design`, `backend`, `frontend` 중 최소 1개 이상 지정해야 하며, 중복은 허용하지 않습니다.",
               "enum" : [
                 "pm",
                 "design",
@@ -790,7 +789,8 @@
             },
             "maxItems" : 2147483647,
             "minItems" : 1,
-            "type" : "array"
+            "type" : "array",
+            "uniqueItems" : true
           },
           "title" : {
             "description" : "태스크 제목. 공백 포함 최대 70자.",
@@ -3083,7 +3083,6 @@
           "roles" : {
             "description" : "role 목록입니다. `pm`, `design`, `backend`, `frontend` 중 최소 1개 이상 중복 없이 지정해야 하며, 전달한 목록으로 기존 role 목록을 교체합니다.",
             "items" : {
-              "description" : "role 목록입니다. `pm`, `design`, `backend`, `frontend` 중 최소 1개 이상 중복 없이 지정해야 하며, 전달한 목록으로 기존 role 목록을 교체합니다.",
               "enum" : [
                 "pm",
                 "design",
@@ -3094,7 +3093,8 @@
             },
             "maxItems" : 2147483647,
             "minItems" : 1,
-            "type" : "array"
+            "type" : "array",
+            "uniqueItems" : true
           },
           "status" : {
             "description" : "상태. backlog는 아직 일정을 잡지 않은 작업, todo는 할 일, in_progress는 진행 중인 작업, done은 완료한 작업, cancelled는 취소한 작업입니다.",

@@ -496,16 +496,22 @@ class ProjectTaskServiceTest {
 
   @Test
   void updateTaskKeepsExistingRolesWhenRequestedRoleIsAlreadyAssigned() {
-    assertThat(rolesSentForSingleRoleUpdate(TaskRole.PM))
+    assertThat(commandSentForSingleRoleUpdate(TaskRole.PM).roles())
         .containsExactlyInAnyOrder(TaskRole.PM, TaskRole.BACKEND);
   }
 
   @Test
   void updateTaskReplacesRolesWhenRequestedRoleIsNotAssigned() {
-    assertThat(rolesSentForSingleRoleUpdate(TaskRole.DESIGN)).containsExactly(TaskRole.DESIGN);
+    assertThat(commandSentForSingleRoleUpdate(TaskRole.DESIGN).roles())
+        .containsExactly(TaskRole.DESIGN);
   }
 
-  private Set<TaskRole> rolesSentForSingleRoleUpdate(TaskRole requested) {
+  @Test
+  void updateTaskExpectsObservedVersionWhenOnlyLegacyRoleIsSent() {
+    assertThat(commandSentForSingleRoleUpdate(TaskRole.PM).version()).isEqualTo(7L);
+  }
+
+  private UpdateTaskCommand commandSentForSingleRoleUpdate(TaskRole requested) {
     when(taskReader.findScope(TASK_ID))
         .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
     when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
@@ -527,7 +533,7 @@ class ProjectTaskServiceTest {
                     List.of(),
                     List.of(),
                     null,
-                    0L)));
+                    7L)));
 
     projectTaskService.updateTask(
         TASK_ID,
@@ -545,7 +551,7 @@ class ProjectTaskServiceTest {
 
     ArgumentCaptor<UpdateTaskCommand> captor = ArgumentCaptor.forClass(UpdateTaskCommand.class);
     verify(taskWriter).update(captor.capture());
-    return captor.getValue().roles();
+    return captor.getValue();
   }
 
   @Test

@@ -1,5 +1,6 @@
 package works.momens.server.mobile.board.dto.request;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -23,9 +24,12 @@ public record UpdateTaskRequest(
         @NotNull
         @Size(max = TaskPolicy.TITLE_MAX_LENGTH)
         String title,
-    @Schema(
-            description =
-                "role 목록입니다. `pm`, `design`, `backend`, `frontend` 중 최소 1개 이상 중복 없이 지정해야 하며, 전달한 목록으로 기존 role 목록을 교체합니다.")
+    @ArraySchema(
+            arraySchema =
+                @Schema(
+                    description =
+                        "role 목록입니다. `pm`, `design`, `backend`, `frontend` 중 최소 1개 이상 중복 없이 지정해야 하며, 전달한 목록으로 기존 role 목록을 교체합니다."),
+            uniqueItems = true)
         @Size(min = 1)
         @UniqueElements
         List<@NotNull TaskRole> roles,
