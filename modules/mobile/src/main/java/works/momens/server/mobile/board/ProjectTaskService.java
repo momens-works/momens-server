@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -131,10 +132,17 @@ class ProjectTaskService {
       List<ChecklistEdit> checklistItems,
       Long version) {
     requireTaskMember(taskId, userId);
-    Set<TaskRole> roles =
-        requestedRoles != null
-            ? Set.copyOf(requestedRoles)
-            : rolesKeepingExisting(taskId, legacyRole);
+    Set<TaskRole> roles;
+    Long expectedVersion = version;
+    if (requestedRoles != null) {
+      roles = Set.copyOf(requestedRoles);
+    } else {
+      Optional<TaskDetail> current = taskReader.findDetail(taskId);
+      roles = rolesKeepingExisting(current, legacyRole);
+      if (expectedVersion == null && current.isPresent()) {
+        expectedVersion = current.get().version();
+      }
+    }
     List<UpdateTaskCommand.ChecklistItemEdit> items =
         checklistItems.stream()
             .map(edit ->
@@ -143,7 +151,16 @@ class ProjectTaskService {
     // 저장만 하고 상세는 반환하지 않는다. 저장 후 최신 상태는 클라이언트가 상세 조회로 다시 읽는다.
     taskWriter.update(
         new UpdateTaskCommand(
-            taskId, title, roles, assigneeId, priority, dueDate, status, purpose, items, version));
+            taskId,
+            title,
+            roles,
+            assigneeId,
+            priority,
+            dueDate,
+            status,
+            purpose,
+            items,
+            expectedVersion));
   }
 
   @Transactional
@@ -158,13 +175,13 @@ class ProjectTaskService {
    * 구버전 앱은 단일 role만 전달합니다. 전달받은 role이 기존 목록에 포함되어 있으면 목록을 유지하고, 포함되어 있지 않으면 해당 role 하나로 교체합니다. 이를
    * 통해 구버전 앱에서 태스크를 수정할 때 다른 role이 의도치 않게 삭제되는 것을 방지합니다.
    */
-  private Set<TaskRole> rolesKeepingExisting(UUID taskId, TaskRole role) {
-    Set<TaskRole> current =
-        taskReader.findDetail(taskId).stream()
-            .flatMap(detail -> detail.roles().stream())
+  private Set<TaskRole> rolesKeepingExisting(Optional<TaskDetail> detail, TaskRole role) {
+    Set<TaskRole> assigned =
+        detail.stream()
+            .flatMap(found -> found.roles().stream())
             .map(value -> TaskRole.from(value).orElseThrow(IllegalStateException::new))
             .collect(Collectors.toSet());
-    return current.contains(role) ? current : Set.of(role);
+    return assigned.contains(role) ? assigned : Set.of(role);
   }
 
   private void requireTaskMember(UUID taskId, UUID userId) {
