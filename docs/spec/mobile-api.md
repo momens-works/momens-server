@@ -58,7 +58,7 @@ Signal type에 따라 앱이 다음처럼 화면 라벨을 정합니다. 이 라
 
 입력값의 허용 범위는 OpenAPI의 `CreateTaskRequest`와 `UpdateTaskRequest`를 따릅니다.
 
-태스크 응답에서는 `roles` 목록으로 반환합니다. `role`은 구버전 앱과의 호환성을 위해 유지하는 deprecated 필드로, `roles`의 첫 번째 값을 반환합니다. role이 지정되지 않은 경우 `roles`는 빈 배열, `role`은 `null`을 반환합니다.
+작업 응답에서는 `roles` 목록으로 반환합니다. `role`은 구버전 앱과의 호환성을 위해 유지하는 deprecated 필드로, `roles`의 첫 번째 값을 반환합니다. role이 지정되지 않은 경우 `roles`는 빈 배열, `role`은 `null`을 반환합니다.
 
 ### Membership
 
@@ -330,9 +330,9 @@ id를 기준으로 하기 때문에, 페이지 사이에 시그널이 처리되�
 
 프로젝트 작업 보드를 조회합니다.
 
-보드는 `in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서로 다섯 개의 상태 그룹을 노출합니다. 다섯 그룹은 작업이 없어도 항상 포함하며 그때 tasks는 빈 배열입니다. 각 그룹의 count는 tasks 배열 길이와 같습니다. `priority`는 저장값을 변환 없이 반환하며, 허용 값은 urgent, high, medium, low입니다. material_count는 작업에 연결된 소스 수이고, 연결이 없으면 0입니다. 웹에서 생성한 태스크는 role이 지정되지 않아 `roles`는 빈 배열, `role`은 `null`을 반환합니다(모바일 생성 API에서는 role을 최소 1개 이상 지정해야 합니다).
+보드는 `in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서로 다섯 개의 상태 그룹을 노출합니다. 다섯 그룹은 작업이 없어도 항상 포함하며 그때 tasks는 빈 배열입니다. 각 그룹의 count는 tasks 배열 길이와 같습니다. `priority`는 저장값을 변환 없이 반환하며, 허용 값은 urgent, high, medium, low입니다. material_count는 작업에 연결된 소스 수이고, 연결이 없으면 0입니다. 웹에서 생성한 작업은 role이 지정되지 않아 `roles`는 빈 배열, `role`은 `null`을 반환합니다(모바일 생성 API에서는 role을 최소 1개 이상 지정해야 합니다).
 
-담당자 정보는 저장된 `assignee_id`를 기준으로 조회하며, 사용자 식별자와 이름을 반환합니다. 담당자가 지정되지 않은 경우 `assignee`는 `null`입니다. 태스크 카드에는 담당자 이름만 표시하므로 상세 조회와 달리 프로필 이미지는 반환하지 않습니다.
+담당자 정보는 저장된 `assignee_id`를 기준으로 조회하며, 사용자 식별자와 이름을 반환합니다. 담당자가 지정되지 않은 경우 `assignee`는 `null`입니다. 작업 카드에는 담당자 이름만 표시하므로 상세 조회와 달리 프로필 이미지는 반환하지 않습니다.
 
 마감일은 `due_date`로 반환하며, 설정되지 않은 경우 `null`입니다. 날짜 표시 형식과 요일 계산은 모바일 앱에서 처리합니다.
 
@@ -345,7 +345,7 @@ id를 기준으로 하기 때문에, 페이지 사이에 시그널이 처리되�
 생성 입력에 포함하지 않고 생성 후 수정합니다.
 `due_date`는 선택 필드이며, 생략하거나 `null`로 전달하면 마감일 없이 생성합니다.
 
-`roles`에는 최소 1개 이상의 role을 중복 없이 지정해야 하며, 응답의 `roles`는 `pm`, `design`, `backend`, `frontend` 순서로 정렬합니다. 구버전 앱에서 `roles` 없이 `role`만 전달하면 해당 role 하나로 태스크를 생성합니다.
+`roles`에는 최소 1개 이상의 role을 중복 없이 지정해야 하며, 응답의 `roles`는 `pm`, `design`, `backend`, `frontend` 순서로 정렬합니다. 구버전 앱에서 `roles` 없이 `role`만 전달하면 해당 role 하나로 작업을 생성합니다.
 
 ### GET /api/mobile/tasks/{taskId}
 
@@ -377,14 +377,14 @@ convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다�
 서버는 값을 생성하거나 자르지 않고 저장된 값을 그대로 반환합니다. 해당 산출물의 생산 기능이 준비되기 전에는 같은 backing 계약을
 따르는 fixture가 채웁니다(ADR-0011). 작업 수정 API는 두 값을 요청에 받지 않고 그대로 유지합니다.
 
-담당자가 지정되지 않았으면 `assignee`는 `null`, 설명을 아직 작성하지 않았으면 `purpose`는 `null`입니다. 웹에서 생성한 태스크는 role이 지정되지 않아 `roles`는 빈 배열, `role`은 `null`을 반환합니다. 담당자는 저장된 `assignee_id`를 기준으로 조회합니다. 현재 민수 draft 생성 결과는 title, role, priority만 갱신하며 담당자를 자동 지정하지 않습니다. `assignee.avatar_url`은 담당자의 구글 계정 프로필 이미지이고, 없으면 `null`입니다.
+담당자가 지정되지 않았으면 `assignee`는 `null`, 설명을 아직 작성하지 않았으면 `purpose`는 `null`입니다. 웹에서 생성한 작업은 role이 지정되지 않아 `roles`는 빈 배열, `role`은 `null`을 반환합니다. 담당자는 저장된 `assignee_id`를 기준으로 조회합니다. 현재 민수 draft 생성 결과는 title, role, priority만 갱신하며 담당자를 자동 지정하지 않습니다. `assignee.avatar_url`은 담당자의 구글 계정 프로필 이미지이고, 없으면 `null`입니다.
 완료 기준이 없으면 `checklist`는 `completed_count` 0, `total_count` 0, `items` 빈 배열입니다.
 `status`는 저장된 5종(backlog, todo, in_progress, done, cancelled)을 그대로 반환하고(상세 상태 칩이 5종 노출),
 `priority`는 보드 응답과 동일하게 저장값을 변환 없이 반환합니다. `purpose`는 레거시 `tasks.description`에 매핑됩니다.
 
 설명·소스·질문·다음 행동의 JSON 키는 각각 `purpose`, `materials`, `open_questions`, `next_action`입니다.
 `materials`는 작업에 직접 연결된 소스이며, 메모리까지 포함하는 웹의 연결된 컨텍스트와는 다릅니다.
-설명은 최대 300자이며, 모바일 태스크 생성 및 수정 요청에서는 `roles`에 최소 1개 이상의 role을 지정해야 합니다.
+설명은 최대 300자이며, 모바일 작업 생성 및 수정 요청에서는 `roles`에 최소 1개 이상의 role을 지정해야 합니다.
 
 ### PATCH /api/mobile/tasks/{taskId}
 
@@ -399,7 +399,7 @@ convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다�
 - 상태의 허용 값·필수 필드·개수·글자 수 제한은 OpenAPI의 `UpdateTaskRequest`·`ChecklistItemRequest`를
   따릅니다. 상세 화면의 즉시 토글은 별도 엔드포인트를 사용합니다.
 - 선택 버전과 낙관적 잠금으로 충돌을 검사합니다. 생략 시 보호 범위와 재조회 절차는
-  [태스크·마일스톤 수정 충돌](api-response-error-codes.md#태스크마일스톤-수정-충돌)을 따릅니다.
+  [작업·마일스톤 수정 충돌](api-response-error-codes.md#작업마일스톤-수정-충돌)을 따릅니다.
 
 MCP의 부분 수정은 생략한 필드를 유지하므로 이 API와 다릅니다
 ([MCP 생략·삭제 계약](mcp-write-tools.md#생략과-삭제)).
