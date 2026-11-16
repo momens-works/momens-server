@@ -57,7 +57,7 @@ class TaskWriteServiceTest {
     when(workspaceMembershipReader.roleOf(WORKSPACE_ID, USER_ID))
         .thenReturn(Optional.of(WorkspaceRole.MEMBER));
 
-    service.create(PROJECT_ID, USER_ID, "제목", null, null, null, null, null, null);
+    service.create(PROJECT_ID, USER_ID, "제목", null, null, null, null, null, null, null);
 
     ArgumentCaptor<CreateTaskCommand> captor = ArgumentCaptor.captor();
     verify(taskWriter).create(captor.capture());
@@ -89,6 +89,8 @@ class TaskWriteServiceTest {
         false,
         null,
         false,
+        null,
+        false,
         null);
 
     ArgumentCaptor<PatchTaskCommand> captor = ArgumentCaptor.captor();
@@ -101,7 +103,7 @@ class TaskWriteServiceTest {
     assertThatThrownBy(() ->
             service.update(
                 TASK_ID, USER_ID, null, false, null, false, null, true, null, false, null, false,
-                null, false, null, false, null))
+                null, false, null, false, null, false, null))
         .isInstanceOf(BusinessException.class);
   }
 }

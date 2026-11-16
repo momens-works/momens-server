@@ -1,11 +1,14 @@
 package works.momens.server.web.task;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.jayway.jsonpath.JsonPath;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.UUID;
@@ -61,12 +64,101 @@ class WebTaskReadIntegrationTest extends AbstractPostgresIntegrationTest {
 
     mockMvc
         .perform(
+            authorized(patch("/api/tasks/{taskId}", taskId), caller.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"roles\":null}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("roles"));
+
+    mockMvc
+        .perform(
             authorized(post("/api/tasks/{taskId}/updates", taskId), caller.id())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"body\":\" 내용 \",\"kind\":\"Comment\"}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
         .andExpect(jsonPath("$.error.details.fields[0].field").value("kind"));
+  }
+
+  @Test
+  @DisplayName("웹에서 role을 지정해 생성한 태스크는 웹과 모바일 조회에서 동일한 role 목록을 반환하고, role 없이 생성한 태스크는 빈 목록을 반환합니다")
+  void createsTasksWithAndWithoutRolesReadableFromWebAndMobile() throws Exception {
+    UserProfile caller = userService.findOrCreate("web-task-roles@momens.works", "user", null);
+    UUID workspaceId = insertWorkspace();
+    UUID projectId = insertProject(workspaceId, caller.id());
+    addMember(workspaceId, caller.id());
+
+    String created =
+        mockMvc
+            .perform(
+                authorized(post("/api/projects/{projectId}/tasks", projectId), caller.id())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"title\":\"Roles\",\"roles\":[\"backend\",\"pm\"]}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.roles", contains("pm", "backend")))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String taskId = JsonPath.read(created, "$.id");
+    mockMvc
+        .perform(authorized(get("/api/tasks/{taskId}", taskId), caller.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.roles", contains("pm", "backend")));
+    mockMvc
+        .perform(authorized(get("/api/mobile/tasks/{taskId}", taskId), caller.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.roles", contains("pm", "backend")));
+
+    String withoutRoles =
+        mockMvc
+            .perform(
+                authorized(post("/api/projects/{projectId}/tasks", projectId), caller.id())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"title\":\"No roles\"}"))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    mockMvc
+        .perform(
+            authorized(
+                get("/api/tasks/{taskId}", (String) JsonPath.read(withoutRoles, "$.id")),
+                caller.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.roles").isEmpty());
+  }
+
+  @Test
+  @DisplayName("웹에서 role만 수정해도 version과 updated_at이 갱신되며, 변경된 role 목록이 모바일 상세 조회에 반영됩니다")
+  void patchingOnlyRolesIncrementsVersionAndIsReadableFromMobile() throws Exception {
+    UserProfile caller =
+        userService.findOrCreate("web-task-roles-patch@momens.works", "user", null);
+    UUID workspaceId = insertWorkspace();
+    UUID projectId = insertProject(workspaceId, caller.id());
+    UUID taskId = insertTask(workspaceId, projectId);
+    jdbcTemplate.update("INSERT INTO task_roles (task_id, role) VALUES (?, 'backend')", taskId);
+    addMember(workspaceId, caller.id());
+    Timestamp updatedAtBefore =
+        jdbcTemplate.queryForObject(
+            "SELECT updated_at FROM tasks WHERE id = ?", Timestamp.class, taskId);
+
+    mockMvc
+        .perform(
+            authorized(patch("/api/tasks/{taskId}", taskId), caller.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"roles\":[\"design\",\"pm\"],\"version\":0}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.roles", contains("pm", "design")))
+        .andExpect(jsonPath("$.version").value(1));
+    assertThat(
+            jdbcTemplate.queryForObject(
+                "SELECT updated_at FROM tasks WHERE id = ?", Timestamp.class, taskId))
+        .isAfter(updatedAtBefore);
+    mockMvc
+        .perform(authorized(get("/api/mobile/tasks/{taskId}", taskId), caller.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.roles", contains("pm", "design")));
   }
 
   @Test

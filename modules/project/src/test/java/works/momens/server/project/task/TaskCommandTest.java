@@ -29,6 +29,10 @@ class TaskCommandTest {
         .isThrownBy(() -> patchCommand("제목", false, null, true, TaskPriority.MEDIUM, false));
     assertThatIllegalArgumentException()
         .isThrownBy(() -> patchCommand("제목", false, TaskStatus.TODO, false, null, true));
+    assertThatIllegalArgumentException()
+        .isThrownBy(() ->
+            patchCommand(
+                "title", false, TaskStatus.TODO, false, TaskPriority.MEDIUM, false, null, true));
   }
 
   @Test
@@ -97,6 +101,18 @@ class TaskCommandTest {
       boolean statusSet,
       TaskPriority priority,
       boolean prioritySet) {
+    return patchCommand(title, titleSet, status, statusSet, priority, prioritySet, null, false);
+  }
+
+  private static PatchTaskCommand patchCommand(
+      String title,
+      boolean titleSet,
+      TaskStatus status,
+      boolean statusSet,
+      TaskPriority priority,
+      boolean prioritySet,
+      Set<TaskRole> roles,
+      boolean rolesSet) {
     return new PatchTaskCommand(
         UUID.randomUUID(),
         title,
@@ -107,6 +123,8 @@ class TaskCommandTest {
         statusSet,
         priority,
         prioritySet,
+        roles,
+        rolesSet,
         null,
         false,
         null,

@@ -16,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.security.Principal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -52,7 +53,8 @@ class TaskWriteControllerTest {
   @Test
   @DisplayName("태스크 생성은 레거시 응답 형식으로 반환한다")
   void createsLegacyTaskShape() throws Exception {
-    when(taskWriteService.create(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+    when(taskWriteService.create(
+            any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(task());
 
     mockMvc
@@ -84,14 +86,41 @@ class TaskWriteControllerTest {
   }
 
   @Test
+  @DisplayName("웹 태스크 생성 및 수정 요청에 빈 roles 목록이나 중복된 role을 전달하면 요청을 거부합니다")
+  void rejectsEmptyOrDuplicateRolesOnCreateAndUpdate() throws Exception {
+    for (String roles : new String[] {"[]", "[\"pm\",\"pm\"]"}) {
+      mockMvc
+          .perform(
+              post("/api/projects/{projectId}/tasks", PROJECT_ID)
+                  .principal(principal)
+                  .header("API-Version", "1")
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content("{\"title\":\"Roles\",\"roles\":" + roles + "}"))
+          .andExpect(status().isBadRequest());
+      mockMvc
+          .perform(
+              patch("/api/tasks/{taskId}", TASK_ID)
+                  .principal(principal)
+                  .header("API-Version", "1")
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content("{\"roles\":" + roles + "}"))
+          .andExpect(status().isBadRequest());
+    }
+    verifyNoInteractions(taskWriteService);
+  }
+
+  @Test
   @DisplayName("최대 길이와 같은 제목은 생성과 수정에서 모두 받아들인다")
   void acceptsTitleAtMaxLengthOnCreateAndUpdate() throws Exception {
     String atMaxLength = "가".repeat(TaskPolicy.TITLE_MAX_LENGTH);
-    when(taskWriteService.create(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+    when(taskWriteService.create(
+            any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(task());
     when(taskWriteService.update(
             any(),
             any(),
+            any(),
+            anyBoolean(),
             any(),
             anyBoolean(),
             any(),
@@ -172,6 +201,8 @@ class TaskWriteControllerTest {
             anyBoolean(),
             any(),
             anyBoolean(),
+            any(),
+            anyBoolean(),
             isNull()))
         .thenReturn(task());
 
@@ -188,6 +219,8 @@ class TaskWriteControllerTest {
         .update(
             eq(TASK_ID),
             eq(USER_ID),
+            isNull(),
+            eq(false),
             isNull(),
             eq(false),
             isNull(),
@@ -257,6 +290,7 @@ class TaskWriteControllerTest {
         null,
         "backlog",
         "medium",
+        List.of(),
         null,
         LocalDate.parse("2026-08-31"),
         Instant.parse("2026-08-21T00:00:00Z"),

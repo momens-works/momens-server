@@ -1,14 +1,19 @@
 package works.momens.server.web.task.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonSetter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
+import org.hibernate.validator.constraints.UniqueElements;
 import tools.jackson.databind.annotation.JsonDeserialize;
 import works.momens.server.common.api.ExpectedVersionDeserializer;
 import works.momens.server.project.task.TaskPolicy;
 import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskStatus;
 
 /** PATCH의 누락과 null을 구분하는 웹 task 요청입니다. */
@@ -46,6 +51,12 @@ public final class UpdateWebTaskRequest {
   private TaskPriority priority;
 
   private boolean prioritySet;
+
+  @Size(min = 1)
+  @UniqueElements
+  private List<@NotNull TaskRole> roles;
+
+  private boolean rolesSet;
 
   private UUID milestoneId;
 
@@ -87,6 +98,19 @@ public final class UpdateWebTaskRequest {
   public void setPriority(TaskPriority value) {
     priority = value;
     prioritySet = true;
+  }
+
+  @ArraySchema(
+      arraySchema =
+          @Schema(
+              description =
+                  "role 목록입니다. 생략하면 기존 값을 유지합니다. 지정할 경우 `pm`, `design`, `backend`, `frontend` 중 최소 1개 이상을 중복 없이 전달해야 하며, `null`은 허용하지 않습니다."),
+      minItems = 1,
+      uniqueItems = true)
+  @JsonSetter("roles")
+  public void setRoles(List<TaskRole> value) {
+    roles = value;
+    rolesSet = true;
   }
 
   @Schema(description = "마일스톤 식별자. null이면 연결을 해제합니다.", format = "uuid")
@@ -144,6 +168,15 @@ public final class UpdateWebTaskRequest {
   @Schema(hidden = true)
   public boolean prioritySet() {
     return prioritySet;
+  }
+
+  public List<TaskRole> roles() {
+    return roles;
+  }
+
+  @Schema(hidden = true)
+  public boolean rolesSet() {
+    return rolesSet;
   }
 
   public UUID milestoneId() {

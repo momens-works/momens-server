@@ -84,6 +84,8 @@ class McpTaskToolService {
                 !status.isEmpty(),
                 priority.isEmpty() ? null : taskPriority(priority),
                 !priority.isEmpty(),
+                null,
+                false,
                 resolveMilestone(current.projectId(), milestone),
                 !milestone.isEmpty(),
                 resolveAssignee(context, assignee),

@@ -333,6 +333,7 @@ class WebWorkspacesIntegrationTest extends AbstractPostgresIntegrationTest {
         .andExpect(jsonPath("$.milestones[0].progress").value(45))
         .andExpect(jsonPath("$.milestones[0].owner_user_ids").doesNotExist())
         .andExpect(jsonPath("$.tasks[0].id").value(taskId.toString()))
+        .andExpect(jsonPath("$.tasks[0].roles").isEmpty())
         .andExpect(jsonPath("$.task_contexts.length()").value(1))
         .andExpect(jsonPath("$.task_contexts[0].task_id").value(taskId.toString()))
         .andExpect(jsonPath("$.task_contexts[0].memories[0].id").value(memoryId.toString()))

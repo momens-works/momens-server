@@ -566,6 +566,8 @@ class WriterConcurrencyIntegrationTest extends AbstractPostgresIntegrationTest {
               false,
               null,
               false,
+              null,
+              false,
               null));
     }
   }

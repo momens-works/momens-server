@@ -131,6 +131,7 @@ class TaskUpdateServiceTest {
         null,
         "todo",
         "medium",
+        List.of(),
         null,
         LocalDate.parse("2026-08-31"),
         Instant.parse("2026-08-21T00:00:00Z"),

@@ -178,6 +178,8 @@ class TaskWriterImplTest {
             false,
             null,
             false,
+            null,
+            false,
             null));
 
     assertThat(task.getTitle()).isEqualTo("기존");
@@ -272,6 +274,8 @@ class TaskWriterImplTest {
             false,
             null,
             false,
+            null,
+            false,
             null));
     verify(outboxAppender, never())
         .appendWithIdempotencyKey(
@@ -293,6 +297,8 @@ class TaskWriterImplTest {
             false,
             null,
             false,
+            null,
+            false,
             milestoneId,
             true,
             null,
@@ -303,6 +309,8 @@ class TaskWriterImplTest {
     taskWriter.patch(
         new PatchTaskCommand(
             task.getId(),
+            null,
+            false,
             null,
             false,
             null,

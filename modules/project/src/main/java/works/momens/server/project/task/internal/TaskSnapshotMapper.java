@@ -17,6 +17,7 @@ final class TaskSnapshotMapper {
         task.getDescription(),
         task.getStatus(),
         task.getPriority(),
+        task.roleValues(),
         task.getAssigneeId(),
         task.getDueDate(),
         task.getCreatedAt(),

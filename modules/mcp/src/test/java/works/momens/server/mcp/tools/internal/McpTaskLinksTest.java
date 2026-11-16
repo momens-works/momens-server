@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -67,6 +68,7 @@ class McpTaskLinksTest {
         null,
         "todo",
         "medium",
+        List.of(),
         null,
         null,
         null,
