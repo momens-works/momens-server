@@ -2,6 +2,7 @@ package works.momens.server.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import jakarta.persistence.EntityManager;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,7 @@ class McpDeletedProjectMilestoneIntegrationTest extends AbstractPostgresIntegrat
   @Autowired ObjectMapper mapper;
   @Autowired McpToolExecutor tools;
   @Autowired McpGrantWriter grants;
+  @Autowired EntityManager entityManager;
   private final UUID workspaceId = UUID.randomUUID();
   private final UUID userId = UUID.randomUUID();
   private final UUID liveProjectId = UUID.randomUUID();
@@ -100,9 +102,10 @@ class McpDeletedProjectMilestoneIntegrationTest extends AbstractPostgresIntegrat
         if (tool.equals("update_milestone")) {
           args.put("name", "Renamed");
         }
-        assertThat(error(call(tool, args))).startsWith("No milestone");
+        assertThat(error(call(tool, args))).as(tool + " / " + reference).startsWith("No milestone");
       }
     }
+    entityManager.flush();
     assertThat(
             jdbc.queryForMap(
                 "SELECT name, deleted_at, version FROM milestones WHERE id=?", deletedMilestoneId))
@@ -112,33 +115,38 @@ class McpDeletedProjectMilestoneIntegrationTest extends AbstractPostgresIntegrat
   }
 
   @Test
-  @DisplayName("create_task는 삭제된 프로젝트의 마일스톤을 해석하지 않고 작업을 만들지 않는다")
-  void createTaskDoesNotResolveMilestoneOfDeletedProject() {
+  @DisplayName("create_task는 삭제된 프로젝트에 마일스톤을 지정한 작업을 만들지 않는다")
+  void createTaskRejectsDeletedProject() {
     deleteProject();
 
-    for (String reference : List.of(deletedMilestoneId.toString(), "Archived milestone")) {
-      error(
-          call(
-              "create_task",
-              args()
-                  .put("project", "PRJ-1005")
-                  .put("title", "Rejected")
-                  .put("milestone", reference)));
-    }
     assertThat(
-            jdbc.queryForObject(
-                "SELECT count(*) FROM tasks WHERE workspace_id=?", Long.class, workspaceId))
-        .isOne();
+            error(
+                call(
+                    "create_task",
+                    args()
+                        .put("project", "PRJ-1005")
+                        .put("title", "Rejected")
+                        .put("milestone", deletedMilestoneId.toString()))))
+        .startsWith("No project");
+    entityManager.flush();
+    assertThat(jdbc.queryForObject("SELECT count(*) FROM tasks WHERE title='Rejected'", Long.class))
+        .isZero();
   }
 
   @Test
-  @DisplayName("update_task는 삭제된 프로젝트의 마일스톤을 해석하지 않고 작업을 변경하지 않는다")
-  void updateTaskDoesNotResolveMilestoneOfDeletedProject() {
+  @DisplayName("update_task는 삭제된 프로젝트의 작업에 마일스톤을 지정하지 않는다")
+  void updateTaskRejectsTaskOfDeletedProject() {
     deleteProject();
 
-    for (String reference : List.of(deletedMilestoneId.toString(), "Archived milestone")) {
-      error(call("update_task", args().put("task", "MOM-6000").put("milestone", reference)));
-    }
+    assertThat(
+            error(
+                call(
+                    "update_task",
+                    args()
+                        .put("task", "MOM-6000")
+                        .put("milestone", deletedMilestoneId.toString()))))
+        .startsWith("Resource not found");
+    entityManager.flush();
     Map<String, Object> task =
         jdbc.queryForMap("SELECT milestone_id, version FROM tasks WHERE id=?", taskId);
     assertThat(task).containsEntry("milestone_id", null).containsEntry("version", 0L);
