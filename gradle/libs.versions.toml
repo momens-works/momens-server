@@ -2,7 +2,7 @@
 # Spring Boot BOM이 관리하는 의존성은 별도로 버전을 지정하지 않으므로 포함하지 않습니다.
 
 [versions]
-firebase-admin = "9.11.0"
+firebase-admin = "9.12.0"
 google-genai = "2.3.0"
 openapi-request-validator = "3.0.0"
 spring-boot = "4.1.2"
