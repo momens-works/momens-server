@@ -656,6 +656,7 @@ class ProjectTaskServiceTest {
         null,
         status,
         priority,
+        List.of(),
         null,
         null,
         CREATED_AT,

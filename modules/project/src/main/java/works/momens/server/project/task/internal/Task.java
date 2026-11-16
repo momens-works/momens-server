@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Immutable;
 import org.hibernate.annotations.SortNatural;
 import works.momens.server.common.persistence.BaseEntity;
@@ -81,12 +82,15 @@ class Task extends BaseEntity {
   /**
    * 태스크에 지정된 role 목록입니다. role은 별도 식별자가 필요하지 않은 값이므로 엔티티로 분리하지 않고 {@code task_roles} 테이블에 저장합니다. 응답
    * 순서를 일정하게 유지하기 위해 {@link TaskRole}의 선언 순서대로 정렬합니다.
+   *
+   * <p>join fetch를 사용하지 않는 조회에서도 태스크별로 role 목록 조회 쿼리가 발생하지 않도록, 여러 태스크의 role 목록을 한 번의 쿼리로 조회합니다.
    */
   @ElementCollection
   @CollectionTable(name = "task_roles", joinColumns = @JoinColumn(name = "task_id"))
   @Column(name = "role", nullable = false)
   @Convert(converter = TaskRoleAttributeConverter.class)
   @SortNatural
+  @BatchSize(size = 100)
   private SortedSet<TaskRole> roles = new TreeSet<>();
 
   @Column(name = "origin_type", nullable = false)
@@ -159,6 +163,8 @@ class Task extends BaseEntity {
       boolean statusSet,
       TaskPriority priority,
       boolean prioritySet,
+      Set<TaskRole> roles,
+      boolean rolesSet,
       UUID milestoneId,
       boolean milestoneSet,
       UUID assigneeId,
@@ -176,6 +182,9 @@ class Task extends BaseEntity {
     }
     if (prioritySet) {
       this.priority = priority.value();
+    }
+    if (rolesSet) {
+      replaceRoles(roles);
     }
     if (milestoneSet) {
       this.milestoneId = milestoneId;

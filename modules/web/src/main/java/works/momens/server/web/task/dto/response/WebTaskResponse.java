@@ -1,9 +1,11 @@
 package works.momens.server.web.task.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 import works.momens.server.project.task.TaskSnapshot;
 
@@ -18,6 +20,12 @@ public record WebTaskResponse(
     @Schema(description = "설명", nullable = true) String description,
     @Schema(description = "상태", example = "todo") String status,
     @Schema(description = "우선순위", example = "medium") String priority,
+    @ArraySchema(
+            arraySchema =
+                @Schema(
+                    description =
+                        "role 목록입니다. `pm`, `design`, `backend`, `frontend` 순서로 정렬되며, 지정된 role이 없으면 빈 배열을 반환합니다."))
+        List<String> roles,
     @Schema(description = "담당자 식별자", nullable = true) UUID assigneeId,
     @Schema(description = "마감일", example = "2026-08-31", nullable = true) LocalDate dueDate,
     @Schema(description = "생성 시각(UTC)", example = "2026-08-20T00:00:00Z") Instant createdAt,
@@ -33,6 +41,7 @@ public record WebTaskResponse(
         task.description(),
         task.status(),
         task.priority(),
+        task.roles(),
         task.assigneeId(),
         task.dueDate(),
         task.createdAt(),

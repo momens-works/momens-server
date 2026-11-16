@@ -900,6 +900,22 @@
             ],
             "type" : "string"
           },
+          "roles" : {
+            "description" : "role 목록입니다. 지정할 경우 `pm`, `design`, `backend`, `frontend` 중 최소 1개 이상을 선택해야 하며, 중복은 허용하지 않습니다. 생략하면 role이 지정되지 않은 태스크를 생성합니다.",
+            "items" : {
+              "enum" : [
+                "pm",
+                "design",
+                "backend",
+                "frontend"
+              ],
+              "type" : "string"
+            },
+            "maxItems" : 2147483647,
+            "minItems" : 1,
+            "type" : "array",
+            "uniqueItems" : true
+          },
           "status" : {
             "description" : "작업 상태. 생략하면 backlog를 사용합니다.",
             "enum" : [
@@ -2352,6 +2368,12 @@
             "format" : "uuid",
             "type" : "string"
           },
+          "roles" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
           "status" : {
             "type" : "string"
           },
@@ -3168,6 +3190,22 @@
             "type" : "string",
             "writeOnly" : true
           },
+          "roles" : {
+            "description" : "role 목록입니다. 생략하면 기존 값을 유지합니다. 지정할 경우 `pm`, `design`, `backend`, `frontend` 중 최소 1개 이상을 중복 없이 전달해야 하며, `null`은 허용하지 않습니다.",
+            "items" : {
+              "enum" : [
+                "pm",
+                "design",
+                "backend",
+                "frontend"
+              ],
+              "type" : "string"
+            },
+            "minItems" : 1,
+            "type" : "array",
+            "uniqueItems" : true,
+            "writeOnly" : true
+          },
           "status" : {
             "description" : "작업 상태. 생략하면 기존 값을 유지하며, null은 허용하지 않습니다.",
             "enum" : [
@@ -3623,6 +3661,13 @@
             "description" : "소속 프로젝트 식별자",
             "format" : "uuid",
             "type" : "string"
+          },
+          "roles" : {
+            "description" : "role 목록입니다. `pm`, `design`, `backend`, `frontend` 순서로 정렬되며, 지정된 role이 없으면 빈 배열을 반환합니다.",
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
           },
           "status" : {
             "description" : "상태",

@@ -115,6 +115,6 @@ class TaskOutboxIntegrationTest extends AbstractPostgresIntegrationTest {
   private PatchTaskCommand titlePatch(UUID taskId, String title) {
     return new PatchTaskCommand(
         taskId, title, true, null, false, null, false, null, false, null, false, null, false, null,
-        false, null);
+        false, null, false, null);
   }
 }

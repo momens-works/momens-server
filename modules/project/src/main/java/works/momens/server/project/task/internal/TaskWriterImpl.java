@@ -102,6 +102,8 @@ class TaskWriterImpl implements TaskWriter {
         command.statusSet(),
         command.priority(),
         command.prioritySet(),
+        command.roles(),
+        command.rolesSet(),
         command.milestoneId(),
         command.milestoneSet(),
         command.assigneeId(),

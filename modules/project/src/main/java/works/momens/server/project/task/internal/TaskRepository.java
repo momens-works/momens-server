@@ -54,8 +54,10 @@ interface TaskRepository extends JpaRepository<Task, UUID> {
   List<Task> findByProjectIdAndStatusInAndDeletedAtIsNullOrderByCreatedAtDescIdDesc(
       UUID projectId, Collection<String> statuses);
 
+  @EntityGraph(attributePaths = "roles")
   List<Task> findByProjectIdAndDeletedAtIsNullOrderByCreatedAtDesc(UUID projectId);
 
+  @EntityGraph(attributePaths = "roles")
   List<Task> findByWorkspaceIdAndDeletedAtIsNullOrderByCreatedAtDesc(UUID workspaceId);
 
   /**

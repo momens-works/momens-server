@@ -1,6 +1,7 @@
 package works.momens.server.project.task;
 
 import java.time.LocalDate;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -18,6 +19,8 @@ public record PatchTaskCommand(
     boolean statusSet,
     TaskPriority priority,
     boolean prioritySet,
+    Set<TaskRole> roles,
+    boolean rolesSet,
     UUID milestoneId,
     boolean milestoneSet,
     UUID assigneeId,
@@ -35,6 +38,12 @@ public record PatchTaskCommand(
     }
     if (prioritySet && priority == null) {
       throw new IllegalArgumentException("prioritySet이면 priority가 필요합니다.");
+    }
+    if (rolesSet && roles == null) {
+      throw new IllegalArgumentException("rolesSet이 true이면 roles가 필요합니다.");
+    }
+    if (rolesSet) {
+      roles = Set.copyOf(roles);
     }
     if (titleSet) {
       TaskPolicy.requireTitleWithinLimit(title);

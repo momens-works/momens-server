@@ -1,6 +1,8 @@
 package works.momens.server.web.task;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,7 @@ import works.momens.server.project.task.TaskErrorCode;
 import works.momens.server.project.task.TaskOrigin;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskReader;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskSnapshot;
 import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.TaskWriter;
@@ -38,6 +41,7 @@ class TaskWriteService {
       TaskStatus status,
       UUID milestoneId,
       TaskPriority priority,
+      List<TaskRole> roles,
       UUID assigneeId,
       LocalDate dueDate) {
     UUID workspaceId = requireProject(projectId);
@@ -52,7 +56,7 @@ class TaskWriteService {
             title,
             description == null || description.isEmpty() ? null : description,
             status == null ? TaskStatus.BACKLOG : status,
-            null,
+            roles == null ? null : Set.copyOf(roles),
             priority,
             milestoneId,
             assigneeId,
@@ -73,6 +77,8 @@ class TaskWriteService {
       boolean statusSet,
       TaskPriority priority,
       boolean prioritySet,
+      List<TaskRole> roles,
+      boolean rolesSet,
       UUID milestoneId,
       boolean milestoneSet,
       UUID assigneeId,
@@ -90,6 +96,9 @@ class TaskWriteService {
     if (prioritySet && priority == null) {
       throw FieldValidationException.forField("priority");
     }
+    if (rolesSet && roles == null) {
+      throw FieldValidationException.forField("roles");
+    }
     boolean effectiveTitleSet = titleSet && !title.isEmpty();
     return taskWriter.patch(
         new PatchTaskCommand(
@@ -102,6 +111,8 @@ class TaskWriteService {
             statusSet,
             priority,
             prioritySet,
+            rolesSet ? Set.copyOf(roles) : null,
+            rolesSet,
             milestoneId,
             milestoneSet,
             assigneeId,

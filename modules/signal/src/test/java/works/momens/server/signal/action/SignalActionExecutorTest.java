@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -124,6 +125,7 @@ class SignalActionExecutorTest {
         null,
         "todo",
         priority,
+        List.of(),
         null,
         null,
         Instant.EPOCH,

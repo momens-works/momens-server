@@ -45,6 +45,7 @@ class TaskWriteController implements TaskWriteControllerDocs {
             request.status(),
             request.milestoneId(),
             request.priority(),
+            request.roles(),
             request.assigneeId(),
             request.dueDate()));
   }
@@ -66,6 +67,8 @@ class TaskWriteController implements TaskWriteControllerDocs {
             request.statusSet(),
             request.priority(),
             request.prioritySet(),
+            request.roles(),
+            request.rolesSet(),
             request.milestoneId(),
             request.milestoneIdSet(),
             request.assigneeId(),
