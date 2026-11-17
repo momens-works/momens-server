@@ -45,7 +45,7 @@ public class OpenApiConfig {
         .info(
             new Info()
                 .title("Momens Server API")
-                .version("v1")
+                .version("1.0.0")
                 .description("Momens Java Spring 제품 API 서버 문서"))
         .servers(List.of(new Server().url(properties.serverUrl()).description("Configured Server")))
         .components(

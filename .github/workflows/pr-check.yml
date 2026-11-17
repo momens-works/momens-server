@@ -12,6 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # 스펙 버전 검사에서 PR merge commit의 첫 번째 부모인 base의 OpenAPI 스냅샷을 사용합니다.
+          fetch-depth: 2
 
       - name: Validate PR title and body
         if: github.actor != 'dependabot[bot]'
@@ -90,6 +93,16 @@ jobs:
         run: |
           ./scripts/prod-readiness-ledger-test.sh
           ./scripts/prod-readiness-ledger.sh --check
+
+      # OpenAPI Breaking Change가 발생했지만 스펙 버전의 major를 올리지 않은 PR은 검사를 실패 처리합니다
+      # (`docs/spec/openapi.md`). `develop`에서 `main`으로 머지하는 릴리스 PR은 `develop`에 머지되는
+      # 각 PR에서 이미 검사하므로 제외합니다.
+      - name: Check OpenAPI version bump for breaking changes
+        if: github.head_ref != 'develop' || github.base_ref != 'main'
+        run: |
+          ./scripts/openapi-version-bump-check-test.sh
+          git show HEAD^1:docs/spec/openapi.json > "$RUNNER_TEMP/openapi-base.json"
+          ./scripts/openapi-version-bump-check.sh "$RUNNER_TEMP/openapi-base.json" docs/spec/openapi.json
 
       # main 을 대상으로 하는 모든 PR에서 미반영 필수 설정을 막습니다. 미반영 상태로 배포하면
       # 설정 바인딩 단계에서 애플리케이션이 기동하지 않을 수 있습니다.

@@ -1,0 +1,5 @@
+fail-on: MISSING-VERSION-BUMP
+severity-levels: oasdiff-levels.txt
+err-ignore: oasdiff-ignore.txt
+warn-ignore: oasdiff-ignore.txt
+unmatch-path: '^/(api/mcp|api/oauth2|\.well-known)(/|$)'

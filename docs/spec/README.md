@@ -5,7 +5,7 @@
 | 문서 | 내용 |
 | --- | --- |
 | [API 버저닝](api-versioning.md) | Spring API versioning 적용 대상, 버전 전달 방식, breaking change 기준 |
-| [OpenAPI](openapi.md) | Swagger/OpenAPI 문서화 방식, 성공/실패 예시, controller docs interface 규칙, 스냅샷 고정 |
+| [OpenAPI](openapi.md) | Swagger/OpenAPI 문서화 방식, 성공/실패 예시, controller docs interface 규칙, 스냅샷 고정, 스펙 버전 |
 | [OpenAPI 스냅샷](openapi.json) | `/api/v3/api-docs` 커밋본. 직접 편집하지 않고 `./gradlew updateOpenApiSnapshot`으로 갱신합니다 |
 | [API 응답과 에러 코드](api-response-error-codes.md) | 성공 응답 형식, 에러 body, 에러 코드 네이밍, HTTP status 사용 기준, 에러 코드 확인 위치 |
 | [모바일 API 명세](mobile-api.md) | 모바일 호출 흐름·상태·재시도·앱 연동 의미 (필드 형식은 OpenAPI 참조) |
