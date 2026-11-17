@@ -97,6 +97,20 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
         insertTask(workspace, project, "unassigned", "in_progress", "urgent", "design"),
         null,
         dueDate);
+    UserProfile other =
+        userService.findOrCreate("tasks-it-filter-other@momens.works", "Other", null);
+    assign(
+        insertTask(workspace, project, "other-role", "todo", "high", "backend"),
+        jinsu.id(),
+        dueDate);
+    assign(
+        insertTask(workspace, project, "other-due-date", "todo", "high", "design"),
+        jinsu.id(),
+        dueDate.plusDays(1));
+    assign(
+        insertTask(workspace, project, "other-assignee", "todo", "high", "design"),
+        other.id(),
+        dueDate);
     String token = "Bearer " + accessTokens.issueAccessToken(jinsu.id());
 
     mockMvc
