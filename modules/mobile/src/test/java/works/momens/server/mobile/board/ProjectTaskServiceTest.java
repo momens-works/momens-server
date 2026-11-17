@@ -74,7 +74,8 @@ class ProjectTaskServiceTest {
   void getBoardThrowsProjectNotFoundWhenProjectMissing() {
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> projectTaskService.getBoard(PROJECT_ID, CALLER_ID))
+    assertThatThrownBy(
+            () -> projectTaskService.getBoard(PROJECT_ID, CALLER_ID, MobileTaskFilter.none()))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(ProjectErrorCode.PROJECT_NOT_FOUND);
@@ -85,7 +86,8 @@ class ProjectTaskServiceTest {
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.of(WORKSPACE_ID));
     when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> projectTaskService.getBoard(PROJECT_ID, CALLER_ID))
+    assertThatThrownBy(
+            () -> projectTaskService.getBoard(PROJECT_ID, CALLER_ID, MobileTaskFilter.none()))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(CommonErrorCode.AUTH_FORBIDDEN);
@@ -131,7 +133,8 @@ class ProjectTaskServiceTest {
                     null,
                     CREATED_AT)));
 
-    List<MobileTaskGroup> groups = projectTaskService.getBoard(PROJECT_ID, CALLER_ID);
+    List<MobileTaskGroup> groups =
+        projectTaskService.getBoard(PROJECT_ID, CALLER_ID, MobileTaskFilter.none());
 
     assertThat(groups)
         .extracting(MobileTaskGroup::status)
@@ -198,7 +201,9 @@ class ProjectTaskServiceTest {
                     CREATED_AT)));
 
     List<MobileTaskCard> cards =
-        cardsOf(projectTaskService.getBoard(PROJECT_ID, CALLER_ID), MobileTaskStatus.TODO);
+        cardsOf(
+            projectTaskService.getBoard(PROJECT_ID, CALLER_ID, MobileTaskFilter.none()),
+            MobileTaskStatus.TODO);
 
     assertThat(cards)
         .extracting(MobileTaskCard::assignee, MobileTaskCard::dueDate)
@@ -219,7 +224,10 @@ class ProjectTaskServiceTest {
                     taskId, "긴급 태스크", "todo", "urgent", List.of("pm"), null, null, CREATED_AT)));
 
     MobileTaskCard card =
-        cardsOf(projectTaskService.getBoard(PROJECT_ID, CALLER_ID), MobileTaskStatus.TODO).get(0);
+        cardsOf(
+                projectTaskService.getBoard(PROJECT_ID, CALLER_ID, MobileTaskFilter.none()),
+                MobileTaskStatus.TODO)
+            .get(0);
 
     assertThat(card.priority()).isEqualTo("urgent");
     assertThat(card.roles()).containsExactly("pm");
@@ -248,7 +256,9 @@ class ProjectTaskServiceTest {
         .thenReturn(Map.of(linked, 2));
 
     List<MobileTaskCard> cards =
-        cardsOf(projectTaskService.getBoard(PROJECT_ID, CALLER_ID), MobileTaskStatus.TODO);
+        cardsOf(
+            projectTaskService.getBoard(PROJECT_ID, CALLER_ID, MobileTaskFilter.none()),
+            MobileTaskStatus.TODO);
 
     assertThat(cards)
         .extracting(MobileTaskCard::id, MobileTaskCard::materialCount)

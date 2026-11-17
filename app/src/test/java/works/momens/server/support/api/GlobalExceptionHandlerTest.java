@@ -247,12 +247,13 @@ class GlobalExceptionHandlerTest {
   }
 
   @Test
-  @DisplayName("파라미터 타입 불일치는 COMMON_BAD_REQUEST로 매핑된다")
-  void rendersBadRequestForTypeMismatch() throws Exception {
+  @DisplayName("숫자 쿼리 파라미터에 변환할 수 없는 값을 전달하면 COMMON_VALIDATION_FAILED와 해당 파라미터 이름을 반환합니다")
+  void rendersValidationFailureForTypeMismatchInQuery() throws Exception {
     mockMvc
         .perform(get("/test/typed").param("value", "not-a-number"))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error.code").value("COMMON_BAD_REQUEST"));
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("value"));
   }
 
   @Test

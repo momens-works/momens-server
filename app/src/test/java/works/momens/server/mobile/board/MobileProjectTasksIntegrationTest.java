@@ -82,6 +82,52 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
   }
 
   @Test
+  void boardReturnsOnlyTasksMatchingFiltersWithFullRoles() throws Exception {
+    UserProfile jinsu = userService.findOrCreate("tasks-it-filter@momens.works", "신진수", null);
+    UUID workspace = insertWorkspace("tasks-filter");
+    addMember(workspace, jinsu.id(), "owner");
+    UUID project = insertProject(workspace, jinsu.id(), "tasks-filter-project");
+    LocalDate dueDate = LocalDate.of(2026, 10, 27);
+
+    UUID matching = insertTask(workspace, project, "matching", "todo", "high", "design");
+    jdbcTemplate.update("INSERT INTO task_roles (task_id, role) VALUES (?, 'pm')", matching);
+    assign(matching, jinsu.id(), dueDate);
+    assign(insertTask(workspace, project, "low", "todo", "low", "design"), jinsu.id(), dueDate);
+    assign(
+        insertTask(workspace, project, "unassigned", "in_progress", "urgent", "design"),
+        null,
+        dueDate);
+    String token = "Bearer " + accessTokens.issueAccessToken(jinsu.id());
+
+    mockMvc
+        .perform(
+            get("/api/mobile/projects/{projectId}/tasks", project)
+                .header("Authorization", token)
+                .header("API-Version", "1")
+                .param("roles", "design")
+                .param("priorities", "high", "urgent")
+                .param("due_date", "2026-10-27")
+                .param("assignee_id", jinsu.id().toString()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.groups.length()").value(5))
+        .andExpect(jsonPath("$.groups[0].count").value(0))
+        .andExpect(jsonPath("$.groups[1].count").value(1))
+        .andExpect(jsonPath("$.groups[1].tasks[0].title").value("matching"))
+        .andExpect(jsonPath("$.groups[1].tasks[0].roles", contains("pm", "design")));
+
+    mockMvc
+        .perform(
+            get("/api/mobile/projects/{projectId}/tasks", project)
+                .header("Authorization", token)
+                .header("API-Version", "1")
+                .param("unassigned", "true"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.groups[0].count").value(1))
+        .andExpect(jsonPath("$.groups[0].tasks[0].title").value("unassigned"))
+        .andExpect(jsonPath("$.groups[1].count").value(0));
+  }
+
+  @Test
   void createTaskPersistsTodoTaskWithMomLabel() throws Exception {
     UserProfile jinsu = userService.findOrCreate("tasks-it-create@momens.works", "신진수", null);
     UUID workspace = insertWorkspace("tasks-create");
@@ -317,6 +363,11 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
   private LocalDate dueDateOf(UUID taskId) {
     return jdbcTemplate.queryForObject(
         "SELECT due_date FROM tasks WHERE id = ?", LocalDate.class, taskId);
+  }
+
+  private void assign(UUID taskId, UUID assigneeId, LocalDate dueDate) {
+    jdbcTemplate.update(
+        "UPDATE tasks SET assignee_id = ?, due_date = ? WHERE id = ?", assigneeId, dueDate, taskId);
   }
 
   private void addMember(UUID workspaceId, UUID userId, String role) {

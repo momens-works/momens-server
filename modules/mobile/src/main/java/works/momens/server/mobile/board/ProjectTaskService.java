@@ -38,8 +38,9 @@ import works.momens.server.workspace.membership.WorkspaceMembershipReader;
  * 모바일 태스크 표면(보드 조회, 생성, 상세 조회)의 조합 서비스입니다. project(태스크 도메인), workspace(멤버십), user(프로필), minsu(draft
  * 생성 상태) public API를 조합하고 도메인 정책을 소유하지 않습니다.
  *
- * <p>보드 그룹 구성과 상세의 purpose 개명은 모바일 조합 규칙이므로 이 서비스가 소유하고, 저장된 priority의 모바일 응답 표기는 {@link
- * MobileTaskPriority}에서 관리합니다.
+ * <p>보드의 상태별 그룹 구성, 필터 적용, 상세 응답의 purpose 필드명 변경은 모바일 응답 구성 규칙이므로 이 서비스에서 처리합니다. 저장된 priority를 모바일
+ * 응답에 맞게 변환하는 규칙은 {@link MobileTaskPriority}에서 관리합니다. 필터는 프로젝트의 모든 태스크를 조회한 뒤 {@link
+ * MobileTaskFilter}를 통해 적용하며, 상태 그룹별 태스크 수는 필터링된 결과를 기준으로 계산합니다.
  *
  * <p>태스크 관련자료 목록과 개수는 {@link TaskMaterialAssembler}에 위임합니다.
  *
@@ -58,9 +59,12 @@ class ProjectTaskService {
   private final TaskDraftStatusReader taskDraftStatusReader;
 
   @Transactional(readOnly = true)
-  public List<MobileTaskGroup> getBoard(UUID projectId, UUID userId) {
+  public List<MobileTaskGroup> getBoard(UUID projectId, UUID userId, MobileTaskFilter filter) {
     UUID workspaceId = requireProjectMember(projectId, userId);
-    List<BoardTask> tasks = taskReader.listTasksByStatus(projectId, MobileTaskStatus.keys());
+    List<BoardTask> tasks =
+        taskReader.listTasksByStatus(projectId, MobileTaskStatus.keys()).stream()
+            .filter(filter::matches)
+            .toList();
     Map<UUID, Integer> materialCounts =
         taskMaterialAssembler.countMaterials(
             workspaceId, tasks.stream().map(BoardTask::id).toList());

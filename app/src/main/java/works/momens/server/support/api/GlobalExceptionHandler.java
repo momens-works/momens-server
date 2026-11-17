@@ -5,8 +5,6 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.TypeMismatchException;
-import org.springframework.core.MethodParameter;
-import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -98,29 +96,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
   }
 
   /**
-   * 쿼리 파라미터의 enum 변환에 실패하면 {@code COMMON_VALIDATION_FAILED}와 해당 쿼리 파라미터 이름을 응답합니다. enum을 {@code
-   * Optional}, 배열, 컬렉션으로 선언한 쿼리 파라미터도 원소 변환에 실패하면 같은 형식으로 응답합니다. 그 밖의 타입 변환 실패는 기존과 같이 {@code
-   * COMMON_BAD_REQUEST}로 응답합니다.
+   * 쿼리 파라미터의 타입 변환에 실패하면 타입에 관계없이 {@code COMMON_VALIDATION_FAILED}와 해당 파라미터 이름을 반환합니다. {@code
+   * Optional}, 배열, 컬렉션으로 선언된 쿼리 파라미터도 원소의 타입 변환에 실패하면 동일한 형식으로 응답합니다. 경로 변수의 타입 변환에 실패한 경우에는 {@code
+   * COMMON_BAD_REQUEST}를 반환합니다.
    */
   @Override
   protected ResponseEntity<Object> handleTypeMismatch(
       TypeMismatchException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
     if (ex instanceof MethodArgumentTypeMismatchException cause
-        && cause.getParameter().hasParameterAnnotation(RequestParam.class)
-        && isEnumValueParameter(cause.getParameter())) {
+        && cause.getParameter().hasParameterAnnotation(RequestParam.class)) {
       FieldValidationDetails.FieldViolation field =
           new FieldValidationDetails.FieldViolation(
               cause.getName(), FieldValidationException.DEFAULT_REASON);
       return validationFailed(List.of(field), headers, status);
     }
     return super.handleTypeMismatch(ex, headers, status, request);
-  }
-
-  private static boolean isEnumValueParameter(MethodParameter parameter) {
-    TypeDescriptor type = new TypeDescriptor(parameter.nestedIfOptional());
-    TypeDescriptor valueType =
-        type.isArray() || type.isCollection() ? type.getElementTypeDescriptor() : type;
-    return valueType != null && valueType.getType().isEnum();
   }
 
   /** 필수 쿼리 파라미터가 누락되면 {@code COMMON_VALIDATION_FAILED}와 해당 쿼리 파라미터 이름을 응답합니다. */

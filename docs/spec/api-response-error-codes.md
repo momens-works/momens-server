@@ -183,7 +183,7 @@ Bean Validation과 `FieldValidationException`을 통한 필드 단위 검증 실
 
 요청 본문의 enum 또는 날짜 필드에 전달된 문자열을 해당 타입으로 변환할 수 없는 경우, `field`에 오류가 발생한 필드 이름을 포함하여 `COMMON_VALIDATION_FAILED`로 응답합니다.
 
-쿼리 파라미터의 검증 실패도 같은 형식으로 응답합니다. enum 타입 쿼리 파라미터의 변환에 실패하거나 필수 쿼리 파라미터가 누락되면 `field`에 해당 쿼리 파라미터 이름을 담아 `COMMON_VALIDATION_FAILED`로 응답합니다. enum을 `Optional`, 배열, 컬렉션으로 선언한 쿼리 파라미터도 원소 변환에 실패하면 같은 형식으로 응답합니다. 그 밖의 쿼리 파라미터 타입 변환 실패와 경로 변수 변환 실패는 `COMMON_BAD_REQUEST`로 응답합니다.
+쿼리 파라미터의 검증 실패도 동일한 형식으로 응답합니다. 쿼리 파라미터의 타입 변환에 실패하거나 필수 쿼리 파라미터가 누락되면 타입에 관계없이 `COMMON_VALIDATION_FAILED`를 반환하고, `field`에는 해당 쿼리 파라미터 이름을 포함합니다. `Optional`, 배열, 컬렉션으로 선언된 쿼리 파라미터도 원소의 타입 변환에 실패하면 동일하게 처리합니다. 경로 변수의 타입 변환에 실패한 경우에는 `COMMON_BAD_REQUEST`를 반환합니다.
 
 ## 권한 details
 
