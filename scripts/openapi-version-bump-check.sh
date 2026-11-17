@@ -42,13 +42,14 @@ main() {
 
     # 두 스냅샷을 하나의 디렉터리에 복사한 뒤 마운트합니다. 호출 시 전달한 파일 경로와 관계없이
     # 동일한 방식으로 실행하기 위한 처리입니다.
-    local specs status=0
+    local specs policy_dir status=0
+    policy_dir="$(cd "$(dirname "$config")" && pwd)"
     specs="$(mktemp -d)"
     cp "$base" "$specs/base.json"
     cp "$head" "$specs/head.json"
     docker run --rm \
         -v "$specs:/specs:ro" \
-        -v "$(dirname "$config"):/policy:ro" \
+        -v "$policy_dir:/policy:ro" \
         "$OASDIFF_IMAGE" \
         breaking /specs/base.json /specs/head.json \
         --config "/policy/$(basename "$config")" \
