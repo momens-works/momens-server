@@ -11135,7 +11135,7 @@
     },
     "/api/mobile/projects/{projectId}/tasks" : {
       "get" : {
-        "description" : "작업을 `in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서로 그룹화해 반환합니다. 작업 수정 화면에서 다섯 가지 상태를 모두 지원하므로 보드 조회 응답에도 모든 상태 그룹을 포함합니다.",
+        "description" : "태스크를 `in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서로 그룹화해 반환합니다. 태스크 수정 화면에서 다섯 가지 상태를 모두 지원하므로 보드 조회 응답에도 모든 상태 그룹을 포함합니다. 쿼리 파라미터로 역할, 우선순위, 마감일, 담당자 조건을 지정하면 해당 조건을 만족하는 태스크만 반환합니다. 같은 파라미터에서 선택한 값은 OR 조건으로, 서로 다른 파라미터는 AND 조건으로 결합합니다. 각 그룹의 `count`는 필터 적용 후 남은 태스크 수를 나타냅니다. 모든 파라미터를 생략하면 프로젝트의 전체 태스크를 반환합니다.",
         "operationId" : "mobileGetTaskBoard",
         "parameters" : [
           {
@@ -11146,6 +11146,72 @@
             "schema" : {
               "format" : "uuid",
               "type" : "string"
+            }
+          },
+          {
+            "description" : "지정한 역할 중 하나 이상을 가진 태스크만 반환합니다. 생략하면 역할 필터를 적용하지 않습니다.",
+            "in" : "query",
+            "name" : "roles",
+            "required" : false,
+            "schema" : {
+              "items" : {
+                "enum" : [
+                  "pm",
+                  "design",
+                  "backend",
+                  "frontend"
+                ],
+                "type" : "string"
+              },
+              "type" : "array"
+            }
+          },
+          {
+            "description" : "지정한 우선순위 중 하나에 해당하는 태스크만 반환합니다. 생략하면 우선순위 필터를 적용하지 않습니다.",
+            "in" : "query",
+            "name" : "priorities",
+            "required" : false,
+            "schema" : {
+              "items" : {
+                "enum" : [
+                  "low",
+                  "medium",
+                  "high",
+                  "urgent"
+                ],
+                "type" : "string"
+              },
+              "type" : "array"
+            }
+          },
+          {
+            "description" : "마감일이 지정한 날짜와 일치하는 태스크만 반환합니다. 날짜 형식은 `YYYY-MM-DD`입니다.",
+            "in" : "query",
+            "name" : "due_date",
+            "required" : false,
+            "schema" : {
+              "format" : "date",
+              "type" : "string"
+            }
+          },
+          {
+            "description" : "지정한 사용자가 담당자인 태스크만 반환합니다. `unassigned=true`와 함께 전달할 수 없습니다.",
+            "in" : "query",
+            "name" : "assignee_id",
+            "required" : false,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "description" : "`true`이면 담당자가 지정되지 않은 태스크만 반환합니다. `assignee_id`와 함께 전달하면 `COMMON_VALIDATION_FAILED`를 반환합니다.",
+            "in" : "query",
+            "name" : "unassigned",
+            "required" : false,
+            "schema" : {
+              "default" : false,
+              "type" : "boolean"
             }
           },
           {

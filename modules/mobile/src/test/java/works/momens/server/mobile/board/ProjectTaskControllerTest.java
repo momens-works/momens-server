@@ -53,7 +53,7 @@ class ProjectTaskControllerTest {
   @Test
   void getBoardReturnsSnakeCaseGroups() throws Exception {
     UUID taskId = UUID.randomUUID();
-    when(projectTaskService.getBoard(eq(PROJECT_ID), eq(USER_ID)))
+    when(projectTaskService.getBoard(eq(PROJECT_ID), eq(USER_ID), any()))
         .thenReturn(
             List.of(
                 new MobileTaskGroup(
@@ -191,6 +191,24 @@ class ProjectTaskControllerTest {
                         + overMaxLength
                         + "\",\"role\":\"pm\",\"priority\":\"medium\"}"))
         .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void getBoardRejectsAssigneeIdTogetherWithUnassigned() {
+    assertThatThrownBy(() ->
+            mockMvc.perform(
+                get("/api/mobile/projects/{projectId}/tasks", PROJECT_ID)
+                    .principal(principal)
+                    .header("API-Version", "1")
+                    .param("assignee_id", USER_ID.toString())
+                    .param("unassigned", "true")))
+        .cause()
+        .isInstanceOfSatisfying(
+            FieldValidationException.class,
+            e ->
+                assertThat(((FieldValidationDetails) e.getDetails()).fields())
+                    .extracting(FieldValidationDetails.FieldViolation::field)
+                    .containsExactly("unassigned"));
   }
 
   @Test

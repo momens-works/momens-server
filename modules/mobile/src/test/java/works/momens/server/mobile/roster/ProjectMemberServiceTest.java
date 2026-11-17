@@ -61,7 +61,7 @@ class ProjectMemberServiceTest {
   }
 
   @Test
-  void listSortsByNameThenIdWithoutQuery() {
+  void listPutsCallerFirstThenSortsByNameAndIdWithoutQuery() {
     // 같은 이름이 둘일 때 id 보조 정렬로 순서가 결정적인지까지 본다.
     UUID firstGyuil = UUID.fromString("00000000-0000-0000-0000-000000000001");
     UUID secondGyuil = UUID.fromString("00000000-0000-0000-0000-000000000002");
@@ -75,9 +75,9 @@ class ProjectMemberServiceTest {
 
     assertThat(members)
         .containsExactly(
+            new ProjectMember(jinsu, "신진수", null),
             new ProjectMember(firstGyuil, "김규일", "https://a/1.png"),
-            new ProjectMember(secondGyuil, "김규일", "https://a/2.png"),
-            new ProjectMember(jinsu, "신진수", null));
+            new ProjectMember(secondGyuil, "김규일", "https://a/2.png"));
   }
 
   @Test

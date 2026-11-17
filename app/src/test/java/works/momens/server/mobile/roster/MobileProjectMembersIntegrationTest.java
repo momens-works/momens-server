@@ -28,7 +28,7 @@ class MobileProjectMembersIntegrationTest extends AbstractPostgresIntegrationTes
   @Autowired private JdbcTemplate jdbcTemplate;
 
   @Test
-  void returnsWorkspaceMembersSortedByName() throws Exception {
+  void returnsCallerFirstThenWorkspaceMembersSortedByName() throws Exception {
     UserProfile jinsu = userService.findOrCreate("members-it-jinsu@momens.works", "신진수", null);
     UserProfile gyuilEng =
         userService.findOrCreate(
@@ -52,11 +52,11 @@ class MobileProjectMembersIntegrationTest extends AbstractPostgresIntegrationTes
                 .header("API-Version", "1"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.members.length()").value(3))
-        .andExpect(jsonPath("$.members[0].name").value("Gyuil Kim"))
-        .andExpect(jsonPath("$.members[0].avatar_url").value("https://a/gyuil.png"))
-        .andExpect(jsonPath("$.members[1].name").value("김규일"))
-        .andExpect(jsonPath("$.members[1].avatar_url", nullValue()))
-        .andExpect(jsonPath("$.members[2].name").value("신진수"));
+        .andExpect(jsonPath("$.members[0].name").value("신진수"))
+        .andExpect(jsonPath("$.members[1].name").value("Gyuil Kim"))
+        .andExpect(jsonPath("$.members[1].avatar_url").value("https://a/gyuil.png"))
+        .andExpect(jsonPath("$.members[2].name").value("김규일"))
+        .andExpect(jsonPath("$.members[2].avatar_url", nullValue()));
   }
 
   @Test
