@@ -96,6 +96,43 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
+  void rejectsClientVersionFromBeforeLegacyUpdate() {
+    Fixture fixture = newTask();
+    long originalVersion = taskReader.findDetail(fixture.taskId()).orElseThrow().version();
+
+    entityManager
+        .getEntityManager()
+        .createNativeQuery(
+            "UPDATE tasks SET title = 'Legacy edit', updated_at = NOW() WHERE id = ?1")
+        .setParameter(1, fixture.taskId())
+        .executeUpdate();
+    entityManager.clear();
+
+    TaskDetail reloaded = taskReader.findDetail(fixture.taskId()).orElseThrow();
+    assertThat(reloaded.version()).isEqualTo(originalVersion + 1);
+    assertThat(reloaded.title()).isEqualTo("Legacy edit");
+
+    var staleEdit =
+        new UpdateTaskCommand(
+            fixture.taskId(),
+            "Stale edit",
+            Set.of(TaskRole.PM),
+            null,
+            TaskPriority.MEDIUM,
+            null,
+            TaskStatus.TODO,
+            null,
+            List.of(),
+            originalVersion);
+    assertThatThrownBy(() -> taskWriter.update(staleEdit))
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            exception ->
+                assertThat(exception.getErrorCode())
+                    .isEqualTo(CommonErrorCode.COMMON_CONCURRENT_MODIFICATION));
+  }
+
+  @Test
   void updateAddsRoleWithoutRecreatingKeptRole() {
     Fixture fixture = newTask();
     entityManager
