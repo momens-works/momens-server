@@ -133,6 +133,21 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
+  void legacySqlAdvancesVersionOnlyWhenTrackedValuesChange() {
+    Fixture fixture = newTask();
+    long originalVersion = storedVersion(fixture.taskId());
+
+    legacyUpdate(
+        "UPDATE tasks SET title = title, status = status, updated_at = NOW() WHERE id = ?1",
+        fixture.taskId());
+    assertThat(storedVersion(fixture.taskId())).isEqualTo(originalVersion);
+
+    legacyUpdate(
+        "UPDATE tasks SET deleted_at = NOW(), updated_at = NOW() WHERE id = ?1", fixture.taskId());
+    assertThat(storedVersion(fixture.taskId())).isEqualTo(originalVersion + 1);
+  }
+
+  @Test
   void updateAddsRoleWithoutRecreatingKeptRole() {
     Fixture fixture = newTask();
     entityManager
@@ -447,6 +462,15 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
                     null))
             .getId();
     return new Fixture(workspaceId, projectId, taskId);
+  }
+
+  private void legacyUpdate(String sql, UUID taskId) {
+    entityManager.getEntityManager().createNativeQuery(sql).setParameter(1, taskId).executeUpdate();
+    entityManager.clear();
+  }
+
+  private long storedVersion(UUID taskId) {
+    return taskRepository.findById(taskId).orElseThrow().getVersion();
   }
 
   private static UpdateTaskCommand command(
