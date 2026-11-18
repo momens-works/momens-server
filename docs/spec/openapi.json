@@ -2757,8 +2757,15 @@
         "description" : "보드 작업 카드",
         "properties" : {
           "assignee" : {
-            "$ref" : "#/components/schemas/TaskCardAssignee",
-            "description" : "담당자 정보. 미지정 시 null"
+            "description" : "담당자 정보. 미지정 시 null",
+            "oneOf" : [
+              {
+                "$ref" : "#/components/schemas/TaskCardAssignee"
+              },
+              {
+                "type" : "null"
+              }
+            ]
           },
           "due_date" : {
             "description" : "마감일. 미설정 시 null",
@@ -2846,8 +2853,15 @@
         "description" : "작업 상세 응답",
         "properties" : {
           "assignee" : {
-            "$ref" : "#/components/schemas/AssigneeResponse",
-            "description" : "담당자. 미지정이면 null"
+            "description" : "담당자. 미지정이면 null",
+            "oneOf" : [
+              {
+                "$ref" : "#/components/schemas/AssigneeResponse"
+              },
+              {
+                "type" : "null"
+              }
+            ]
           },
           "checklist" : {
             "$ref" : "#/components/schemas/ChecklistResponse",

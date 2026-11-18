@@ -197,6 +197,10 @@ management:
         enabled: false
 
 springdoc:
+  # null을 반환할 수 있는 객체 참조 필드(@Nullable)를 OpenAPI 3.1 문서에서 객체 또는 null로 표시합니다(MOM-1151).
+  model-converters:
+    java-nullable-property-customizer:
+      enabled: true
   api-docs:
     path: /api/v3/api-docs
   swagger-ui:
