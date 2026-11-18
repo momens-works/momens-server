@@ -34,6 +34,7 @@ import works.momens.server.project.task.TaskReader;
 import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskScope;
 import works.momens.server.project.task.TaskStatus;
+import works.momens.server.project.task.TaskWriteGate;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.project.task.UpdateTaskCommand;
 import works.momens.server.project.task.UpdateTaskCommand.ChecklistItemEdit;
@@ -50,7 +51,7 @@ import works.momens.server.workspace.membership.WorkspaceRole;
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({JpaAuditingConfig.class, TaskWriterImpl.class, TaskReaderImpl.class})
+@Import({JpaAuditingConfig.class, TaskWriterImpl.class, TaskReaderImpl.class, TaskWriteGate.class})
 class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
 
   @MockitoBean private ProjectReader projectReader;

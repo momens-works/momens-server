@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -29,11 +30,13 @@ import works.momens.server.outbox.OutboxAppender;
 import works.momens.server.project.milestone.MilestoneDirectory;
 import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.PatchTaskCommand;
+import works.momens.server.project.task.TaskErrorCode;
 import works.momens.server.project.task.TaskOrigin;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskSnapshot;
 import works.momens.server.project.task.TaskStatus;
+import works.momens.server.project.task.TaskWriteGate;
 import works.momens.server.project.task.UpdateTaskCommand;
 import works.momens.server.workspace.label.LabelAllocator;
 import works.momens.server.workspace.membership.WorkspaceMembershipReader;
@@ -47,7 +50,36 @@ class TaskWriterImplTest {
   @Mock private WorkspaceMembershipReader workspaceMembershipReader;
   @Mock private LabelAllocator labelAllocator;
   @Mock private OutboxAppender outboxAppender;
+  @Mock private TaskWriteGate writeGate;
   @InjectMocks private TaskWriterImpl taskWriter;
+
+  @Test
+  void pausedWritesDoNotAllocateLabelsOrPersist() {
+    var pausedWriter =
+        new TaskWriterImpl(
+            taskRepository,
+            milestoneDirectory,
+            workspaceMembershipReader,
+            labelAllocator,
+            outboxAppender,
+            new TaskWriteGate(true));
+    var command =
+        CreateTaskCommand.manual(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            "전환 중 신규 태스크",
+            TaskStatus.BACKLOG,
+            Set.of(TaskRole.BACKEND),
+            TaskPriority.MEDIUM,
+            null);
+
+    assertThatThrownBy(() -> pausedWriter.create(command))
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            exception ->
+                assertThat(exception.getErrorCode()).isEqualTo(TaskErrorCode.TASK_WRITES_PAUSED));
+    verifyNoInteractions(labelAllocator, taskRepository, outboxAppender);
+  }
 
   @Test
   void createUsesCommandPolicyAndAppendsCreatedEvent() {

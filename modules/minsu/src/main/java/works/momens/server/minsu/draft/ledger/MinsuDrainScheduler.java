@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import works.momens.server.minsu.draft.config.MinsuConfigStatus;
 import works.momens.server.minsu.draft.generation.AsyncGenerationResult;
 import works.momens.server.minsu.draft.generation.AsyncTaskDraftExecutor;
+import works.momens.server.project.task.TaskWriteGate;
 
 /**
  * 생성 원장 drain. push 설정과 독립적으로 drain 설정이 빈 등록과 폴링 여부를 결정한다.
@@ -26,6 +27,7 @@ class MinsuDrainScheduler {
   private final MinsuConfigStatus configStatus;
   private final TaskDraftGenerationLedger ledger;
   private final AsyncTaskDraftExecutor executor;
+  private final TaskWriteGate writeGate;
 
   /**
    * 마지막으로 성공한 주기 시각. 이 값이 자라면 drain이 멈춘 것이다.
@@ -39,10 +41,12 @@ class MinsuDrainScheduler {
       MinsuConfigStatus configStatus,
       TaskDraftGenerationLedger ledger,
       AsyncTaskDraftExecutor executor,
-      MeterRegistry meterRegistry) {
+      MeterRegistry meterRegistry,
+      TaskWriteGate writeGate) {
     this.configStatus = configStatus;
     this.ledger = ledger;
     this.executor = executor;
+    this.writeGate = writeGate;
     Gauge.builder("momens.minsu.drain.heartbeat.age", this, MinsuDrainScheduler::heartbeatAge)
         .baseUnit("seconds")
         .register(meterRegistry);
@@ -66,6 +70,9 @@ class MinsuDrainScheduler {
   }
 
   private void runPass() {
+    if (writeGate.isPaused()) {
+      return;
+    }
     if (!configStatus.enabled() || !configStatus.valid()) {
       // provider가 비활성이거나 설정이 무효면 claim하지 않는다. 원장은 pending 그대로 두고
       // completion_reason을 기록하지 않는다. 설정을 고치면 그대로 이어서 처리할 수 있는 작업을 종료로
