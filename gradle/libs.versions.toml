@@ -4,6 +4,7 @@
 [versions]
 firebase-admin = "9.12.0"
 google-genai = "2.3.0"
+jackson-databind-nullable = "0.2.13"
 openapi-request-validator = "3.0.0"
 spring-boot = "4.1.2"
 spring-dotenv = "5.1.0"
@@ -17,6 +18,7 @@ swagger = "2.2.55"
 [libraries]
 firebase-admin = { module = "com.google.firebase:firebase-admin", version.ref = "firebase-admin" }
 google-genai = { module = "com.google.genai:google-genai", version.ref = "google-genai" }
+jackson-databind-nullable = { module = "org.openapitools:jackson-databind-nullable", version.ref = "jackson-databind-nullable" }
 openapi-request-validator-mockmvc = { module = "com.atlassian.oai:openapi-request-validator-mockmvc", version.ref = "openapi-request-validator" }
 spring-dotenv = { module = "me.paulschwarz:spring-dotenv", version.ref = "spring-dotenv" }
 spring-modulith-api = { module = "org.springframework.modulith:spring-modulith-api", version.ref = "spring-modulith" }

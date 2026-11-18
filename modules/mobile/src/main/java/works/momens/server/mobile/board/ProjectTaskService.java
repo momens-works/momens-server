@@ -129,7 +129,8 @@ class ProjectTaskService {
       TaskRole legacyRole,
       UUID assigneeId,
       TaskPriority priority,
-      LocalDate dueDate,
+      LocalDate requestedDueDate,
+      boolean dueDateSet,
       TaskStatus status,
       String purpose,
       List<ChecklistEdit> checklistItems,
@@ -139,6 +140,7 @@ class ProjectTaskService {
         requestedRoles != null
             ? Set.copyOf(requestedRoles)
             : rolesKeepingExisting(taskId, legacyRole);
+    LocalDate dueDate = dueDateSet ? requestedDueDate : existingDueDate(taskId);
     List<UpdateTaskCommand.ChecklistItemEdit> items =
         checklistItems.stream()
             .map(edit ->
@@ -169,6 +171,14 @@ class ProjectTaskService {
             .map(value -> TaskRole.from(value).orElseThrow(IllegalStateException::new))
             .collect(Collectors.toSet());
     return current.contains(role) ? current : Set.of(role);
+  }
+
+  /**
+   * 구버전 앱은 태스크 수정 요청에 {@code due_date}를 포함하지 않습니다. 따라서 해당 필드가 생략되면 기존 마감일을 조회해 유지합니다. 이를 통해 구버전 앱에서
+   * 태스크를 수정하더라도 웹에서 설정한 마감일이 삭제되지 않도록 합니다.
+   */
+  private LocalDate existingDueDate(UUID taskId) {
+    return taskReader.findDetail(taskId).map(TaskDetail::dueDate).orElse(null);
   }
 
   private void requireTaskMember(UUID taskId, UUID userId) {
