@@ -119,7 +119,7 @@ Minsu background를 활성화하면 MOM-0823의 `task.draft_generated` 소비도
 
 ### 함께 확인할 것
 
-- MOM-0883의 배포 후 write 검증 방침과 MOM-0968의 최소 장애 알림.
+- [배포 후 write 검증 방침](#62-배포-후-write-검증)과 MOM-0968의 최소 장애 알림.
 - [전략의 rollback 호환성 6항목](strategy.md#롤백). MOM-0953의 정적 조사와 구분해 MOM-0967에서
   실제 왕복 검증 증거를 남긴다.
 - H022 fallback은 MOM-0967에서 제거하고 H023 snapshot만 사용한다. snapshot 정상·404·권한 오류에서
@@ -178,6 +178,26 @@ MCP·Slack 차단과 신규 쓰기 후 projection도 함께 확인한다.
 집중 관측을 통과한 뒤 같은 날 안에 두 사람이 필수 smoke를 한 번 더 실행한다. 로그가 보존되지
 않으므로 실행 시각·사용한 workspace·각 항목 결과·관련 로그를 그 자리에서 갈무리해 `MOM-0967`·`MOM-0992`에
 남긴다.
+
+### 6.2 배포 후 write 검증
+
+MOM-0883의 검증은 컷오버 실행 창에서 승인된 검증용 workspace의 수동 smoke와
+[집중 관측](#61-컷오버-판정-창)으로 수행한다. MOM-0879의 매 배포 스모크는 읽기만
+검증한다. 검증용 workspace도 같은 운영 DB를 쓰므로, 바꾸려는 aggregate의 기존 writer를
+G2 절차에 따라 차단하고 진행 중인 쓰기가 종료됐음을 확인한 뒤 신규 경로에 요청한다.
+검색 결과와 관측 신호에서 검증 데이터를 찾을 수 있도록 실행별 workspace·객체 ID를 기록한다.
+
+- 전환 전에 실행자와 반복 실행마다 다른 fixture를 배정한다. 로컬에서 먼저
+  [차등 비교 하네스](../../local-development.md#레거시-차등-비교)를 사용해 요청과
+  기대 상태를 확인한다. 하네스의 로컬 초기화 SQL은 격리된 하네스 DB에서만 실행한다.
+- 프로젝트·마일스톤 생성, Task 생성·수정·삭제, Task의 memory·source ref 연결·해제,
+  memory confirm·edit-and-confirm·resolve를 신규 경로에서 확인한다. API 결과와 다시 읽은
+  상태를 대조한다. Task·memory 검색 반영은 G1의 DB·retrieval 증거를 함께 남긴다.
+- 검증용 Task는 삭제와 검색 결과에서 사라지는 것까지 확인한다. 추가한 연결은 해제한다.
+  지원되는 정리 경로가 없는 생성물과 memory 전이 기록은 검증용 workspace에 남기고,
+  남은 ID와 보관·정리 담당을 MOM-0967에 적는다.
+- 기대 응답, 재조회 상태 또는 검색 반영이 어긋나면 6.1의 중단·롤백 조건을 적용한다.
+  관측 창의 5xx, DB constraint 오류, outbox 처리 지연과 실패 기록을 함께 보존한다.
 
 ## 7. 롤백
 
