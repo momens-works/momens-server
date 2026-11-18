@@ -45,9 +45,6 @@ CI가 실제 Secret·ConfigMap의 존재나 값을 조회해 증명하지는 않
 | `MOMENS_MCP_WEB_BASE_URI` | `configmap` | `applied` |
 <!-- END DECLARATION: prod-required-config -->
 
-2026-11-18에 운영 `momens-server-config`에서 웹 기본 주소의 반영을 확인했습니다.
-MCP consent와 discovery는 아래 수기 의무에서 계속 확인합니다. [k8s PR #43](https://github.com/Momens-Works/k8s/pull/43)
-
 ## 수기 prod 의무
 
 이 구간은 자동 생성하거나 릴리스 게이트로 차단하지 않습니다. 코드에서 감지할 수 없거나, 차단하면
