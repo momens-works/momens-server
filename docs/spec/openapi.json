@@ -3904,7 +3904,7 @@
   "info" : {
     "description" : "Momens Java Spring 제품 API 서버 문서",
     "title" : "Momens Server API",
-    "version" : "1.0.0"
+    "version" : "v1"
   },
   "openapi" : "3.1.0",
   "paths" : {

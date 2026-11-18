@@ -2,10 +2,12 @@ name: PR Check
 
 on:
   pull_request:
-    types: [opened, edited, synchronize, reopened]
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
 
 permissions:
   contents: read
+  # 새 커밋이 푸시되면 Breaking Change 승인 라벨을 제거합니다.
+  pull-requests: write
 
 jobs:
   pr-format:
@@ -13,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # 스펙 버전 검사에서 PR merge commit의 첫 번째 부모인 base의 OpenAPI 스냅샷을 사용합니다.
+          # Breaking Change 검사에서 PR merge commit의 첫 번째 부모인 base의 OpenAPI 스냅샷을 사용합니다.
           fetch-depth: 2
 
       - name: Validate PR title and body
@@ -94,15 +96,40 @@ jobs:
           ./scripts/prod-readiness-ledger-test.sh
           ./scripts/prod-readiness-ledger.sh --check
 
-      # OpenAPI Breaking Change가 발생했지만 스펙 버전의 major를 올리지 않은 PR은 검사를 실패 처리합니다
-      # (`docs/spec/openapi.md`). `develop`에서 `main`으로 머지하는 릴리스 PR은 `develop`에 머지되는
-      # 각 PR에서 이미 검사하므로 제외합니다.
-      - name: Check OpenAPI version bump for breaking changes
+      # OpenAPI Breaking Change가 감지되면 리뷰어가 breaking-change-approved 라벨을 부여한 경우에만 통과합니다(docs/spec/openapi.md).
+      # 새 커밋이 푸시되면 승인 라벨을 제거해 변경된 코드를 다시 검토하도록 합니다.
+      # develop에서 main으로 머지하는 릴리스 PR은 develop에 머지되는 각 PR에서 이미 검사하므로 제외합니다.
+      - name: Check OpenAPI breaking changes
         if: github.head_ref != 'develop' || github.base_ref != 'main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_ACTION: ${{ github.event.action }}
+          PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
+          APPROVAL_LABEL: breaking-change-approved
         run: |
-          ./scripts/openapi-version-bump-check-test.sh
+          ./scripts/openapi-breaking-change-check-test.sh
+
+          approved=false
+          if jq -e --arg label "$APPROVAL_LABEL" 'index($label) != null' <<<"$PR_LABELS" >/dev/null; then
+            approved=true
+          fi
+          if [[ "$PR_ACTION" == "synchronize" && "$approved" == "true" ]]; then
+            gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label "$APPROVAL_LABEL"
+            approved=false
+          fi
+
           git show HEAD^1:docs/spec/openapi.json > "$RUNNER_TEMP/openapi-base.json"
-          ./scripts/openapi-version-bump-check.sh "$RUNNER_TEMP/openapi-base.json" docs/spec/openapi.json
+          status=0
+          ./scripts/openapi-breaking-change-check.sh "$RUNNER_TEMP/openapi-base.json" docs/spec/openapi.json || status=$?
+          if [[ "$status" -eq 1 && "$approved" == "true" ]]; then
+            echo "::notice::리뷰어가 Breaking Change를 승인했습니다."
+            exit 0
+          fi
+          if [[ "$status" -eq 1 ]]; then
+            echo "::error::Breaking Change가 감지되었습니다. 리뷰어가 변경 내역을 확인한 후 $APPROVAL_LABEL 라벨을 부여해야 검사를 통과할 수 있습니다."
+          fi
+          exit "$status"
 
       # main 을 대상으로 하는 모든 PR에서 미반영 필수 설정을 막습니다. 미반영 상태로 배포하면
       # 설정 바인딩 단계에서 애플리케이션이 기동하지 않을 수 있습니다.

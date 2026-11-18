@@ -220,7 +220,7 @@ git rebase origin/develop
 
 - `OpenApiSnapshot`: 스냅샷을 사용하는 테스트는 모두 이 클래스를 통해 파일을 읽습니다. 스냅샷 대신 실행 중인 OpenAPI 문서를 읽도록 변경하면 해당 테스트에 Spring 컨텍스트와 PostgreSQL 컨테이너가 필요하게 됩니다.
 - `.github/workflows/openapi-change-notification.yml`: 머지된 PR의 base와 head에서 `git show`로 스냅샷을 읽습니다.
-- `.github/workflows/pr-check.yml`: PR merge commit의 첫 번째 부모인 base와 merge commit의 OpenAPI 스냅샷을 비교해 스펙 버전 검사를 실행합니다.
+- `.github/workflows/pr-check.yml`: PR merge commit의 첫 번째 부모인 base와 merge commit의 OpenAPI 스냅샷을 비교해 Breaking Change를 검사합니다.
 - `app/build.gradle`: 테스트에 스냅샷 경로를 전달하고, `updateOpenApiSnapshot` 태스크로 스냅샷을 생성합니다.
 
 스냅샷 경로를 명시한 설정은 다음과 같습니다.
@@ -228,39 +228,28 @@ git rebase origin/develop
 - 계약 변경 알림 워크플로의 `paths` 필터
 - `.gitattributes`의 생성 파일 지정
 
-## 스펙 버전
+## Breaking Change 검사
 
-`info.version`은 OpenAPI 문서의 버전으로, 클라이언트가 `API-Version` 헤더로 전달하는 API 버전과는 별개입니다. SemVer 형식을 사용하며, 초기 버전은 `1.0.0`입니다. 버전은 `app`의 `OpenApiConfig`에서 선언합니다.
+PR의 `pr-format` 체크에서 OpenAPI 스냅샷의 Breaking Change를 검사합니다. `scripts/openapi-breaking-change-check.sh`를 실행해 PR merge commit의 첫 번째 부모인 base와 merge commit의 스냅샷을 비교합니다. 검사 정책은 `docs/spec/.oasdiff.yaml`에서 관리하며, 판정 기준은 [API 버저닝](api-versioning.md#자동-검사-기준)을 따릅니다.
 
-[API 버저닝](api-versioning.md#breaking-change-기준)에 정의된 Breaking Change가 발생하면 동일한 PR에서 major 버전을 올려야 합니다. 호환되는 변경에 대해서는 별도의 버전 증가 규칙을 두지 않습니다.
+Breaking Change가 감지되면 변경 내역이 PR 화면에 annotation으로 표시됩니다. 해당 PR은 `breaking-change-approved` 라벨이 있어야 체크를 통과할 수 있습니다. 리뷰어는 승인 라벨을 부여하기 전에 다음 사항을 확인합니다.
 
-PR의 `pr-format` 체크에서 이 규칙을 검증합니다. `scripts/openapi-version-bump-check.sh`로 PR merge commit의 첫 번째 부모인 base와 merge commit의 OpenAPI 스냅샷을 비교합니다. 검사 정책은 `docs/spec/.oasdiff.yaml`에서 관리합니다.
+- 의도한 변경이라면 `API-Version`을 통한 핸들러 분기처럼 기존 클라이언트와의 호환성을 유지하기 위한 대응이 포함되어 있는지 확인합니다.
+- 의도하지 않은 변경이라면 승인 라벨을 부여하지 않고 해당 변경을 되돌리도록 요청합니다.
+- 실제 API의 요청 및 응답 동작은 변경되지 않고 OpenAPI 문서만 수정한 경우에는 변경 사유를 리뷰 코멘트로 남긴 후 승인합니다.
 
-`develop`에서 `main`으로 머지하는 릴리스 PR은 `develop`에 머지되는 각 PR에서 이미 검증하므로 검사 대상에서 제외합니다. 단, `main`의 스냅샷 버전이 `v1`인 동안에는 `main`을 대상으로 하는 hotfix PR에 Breaking Change가 발생해도 버전 비교가 정상적으로 이루어지지 않아 검사가 실패합니다.
+승인 라벨을 부여한 후 새 커밋이 푸시되면 워크플로에서 라벨을 자동으로 제거합니다. 변경된 코드를 다시 검토한 후 승인 라벨을 재부여해야 체크를 통과할 수 있습니다.
 
-로컬에서도 다음 명령으로 동일한 검사를 실행할 수 있습니다. Docker가 필요합니다.
+`info.version`은 `v1`로 유지하며 별도의 버전 증가 규칙은 정의하지 않습니다. 클라이언트가 사용하는 API 버전은 `API-Version` 헤더로 관리합니다.
+
+`develop`에서 `main`으로 머지하는 릴리스 PR은 `develop`에 머지되는 각 PR에서 이미 검사하므로 Breaking Change 검사 대상에서 제외합니다.
+
+로컬에서도 다음 명령으로 동일한 검사를 실행할 수 있습니다. 실행하려면 Docker가 필요합니다.
 
 ```bash
 git show origin/develop:docs/spec/openapi.json > /tmp/openapi-base.json
-./scripts/openapi-version-bump-check.sh /tmp/openapi-base.json docs/spec/openapi.json
+./scripts/openapi-breaking-change-check.sh /tmp/openapi-base.json docs/spec/openapi.json
 ```
-
-### 예외 등록
-
-실제 요청 및 응답 동작은 변경되지 않았지만 oasdiff가 Breaking Change로 판정한 경우, major 버전을 올리는 대신 `docs/spec/oasdiff-ignore.txt`에 해당 항목을 예외로 등록할 수 있습니다.
-
-다음과 같은 경우가 해당합니다.
-
-- 실제 응답 동작에 맞춰 잘못 작성된 OpenAPI 스펙만 정정한 경우
-- 허용 값의 범위는 동일하지만 제약 조건의 표현 방식이 달라져 oasdiff가 허용 범위가 축소된 것으로 판정한 경우
-
-예외는 한 줄에 하나씩 작성합니다. 날짜, PR 번호, 예외 사유를 기록한 뒤 검사 실패 메시지를 원문 그대로 추가합니다.
-
-```text
-- 2026-11-07 #352 스키마 이름 충돌을 수정해 실제 응답에 없던 필드를 문서에서 삭제했습니다. in API PATCH /api/mobile/tasks/{taskId}/checklist-items/{itemId} removed the optional property `checklist/items` from the response with the `200` status
-```
-
-등록한 예외는 머지 이후에도 이력으로 유지합니다. 리뷰어는 예외 사유가 실제 API 동작과 일치하는지 확인해야 합니다.
 
 ## 구현 체크리스트
 

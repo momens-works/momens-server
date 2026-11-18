@@ -97,7 +97,7 @@ public class PostController {
 
 ### 자동 검사 기준
 
-PR 단계의 [스펙 버전 검사](openapi.md#스펙-버전)에서는 oasdiff를 사용해 위 기준에 해당하는 변경을 검증합니다. oasdiff가 심각도를 `warning` 이상으로 판정한 변경을 Breaking Change로 간주합니다. 규칙별 심각도는 oasdiff의 [Breaking changes 문서](https://github.com/oasdiff/oasdiff/blob/v1.38.0/docs/BREAKING-CHANGES.md) 또는 `oasdiff checks changelog` 명령으로 확인할 수 있습니다.
+PR 단계의 [Breaking Change 검사](openapi.md#breaking-change-검사)에서는 oasdiff를 사용해 위에서 정의한 기준에 해당하는 변경을 검사합니다. oasdiff가 심각도를 `warning` 이상으로 판정한 변경을 Breaking Change로 간주합니다. 규칙별 심각도는 oasdiff의 [Breaking changes 문서](https://github.com/oasdiff/oasdiff/blob/v1.38.0/docs/BREAKING-CHANGES.md) 또는 `oasdiff checks changelog` 명령으로 확인할 수 있습니다.
 
 기본 심각도를 조정한 규칙은 `docs/spec/oasdiff-levels.txt`에서 관리합니다. 현재는 `response-optional-property-removed`의 심각도만 `error`로 상향했습니다. 응답 스키마에 `required`가 선언되어 있지 않아 응답 필드를 삭제해도 oasdiff의 기본 심각도인 `info`로 판정되기 때문입니다.
 
