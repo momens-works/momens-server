@@ -16,6 +16,7 @@ import works.momens.server.minsu.SignalTaskDraftInput;
 import works.momens.server.minsu.TaskDraftStatusReader;
 import works.momens.server.project.task.TaskDetail;
 import works.momens.server.project.task.TaskReader;
+import works.momens.server.project.task.TaskWriteGate;
 import works.momens.server.signal.SignalActionResult;
 import works.momens.server.signal.SignalActionService;
 import works.momens.server.signal.SignalErrorCode;
@@ -42,6 +43,7 @@ class SignalActionServiceImpl implements SignalActionService {
   private final TaskReader taskReader;
   private final SignalTaskDraftGenerator taskDraftGenerator;
   private final TaskDraftStatusReader taskDraftStatusReader;
+  private final TaskWriteGate writeGate;
 
   @Override
   public SignalActionResult convertToTask(UUID signalId, UUID userId) {
@@ -51,6 +53,7 @@ class SignalActionServiceImpl implements SignalActionService {
       return replayOrConflict(existing.get(), SignalActionType.CONVERT_TO_TASK);
     }
 
+    writeGate.requireOpen();
     PreparedTaskDraft prepared = prepareDraft(signal);
     try {
       return executor.convert(signal, userId, prepared);

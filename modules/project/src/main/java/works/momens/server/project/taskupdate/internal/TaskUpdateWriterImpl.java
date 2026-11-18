@@ -8,6 +8,7 @@ import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.project.task.TaskErrorCode;
+import works.momens.server.project.task.TaskWriteGate;
 import works.momens.server.project.taskupdate.CreateTaskUpdateCommand;
 import works.momens.server.project.taskupdate.TaskUpdateDetail;
 import works.momens.server.project.taskupdate.TaskUpdateWriter;
@@ -17,10 +18,12 @@ import works.momens.server.project.taskupdate.TaskUpdateWriter;
 class TaskUpdateWriterImpl implements TaskUpdateWriter {
 
   private final TaskUpdateRepository taskUpdateRepository;
+  private final TaskWriteGate writeGate;
 
   @Override
   @Transactional
   public TaskUpdateDetail create(CreateTaskUpdateCommand command) {
+    writeGate.requireOpen();
     String body = command.body();
     if (body == null || body.trim().isEmpty()) {
       throw FieldValidationException.forField("body");
@@ -41,6 +44,7 @@ class TaskUpdateWriterImpl implements TaskUpdateWriter {
   @Override
   @Transactional
   public void delete(UUID taskId, UUID updateId, UUID userId) {
+    writeGate.requireOpen();
     TaskUpdate update =
         taskUpdateRepository
             .findByIdAndTaskIdAndDeletedAtIsNull(updateId, taskId)

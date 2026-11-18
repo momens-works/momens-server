@@ -15,6 +15,7 @@ import works.momens.server.memory.ConfirmedMemoryReader;
 import works.momens.server.memory.MemoryErrorCode;
 import works.momens.server.project.task.TaskErrorCode;
 import works.momens.server.project.task.TaskReader;
+import works.momens.server.project.task.TaskWriteGate;
 import works.momens.server.source.SourceRefWriter;
 import works.momens.server.web.WorkspaceAccessChecker;
 import works.momens.server.workspace.membership.WorkspaceRole;
@@ -42,6 +43,7 @@ class TaskLinkService {
   private final SourceRefWriter sourceRefWriter;
   private final EntityRelationWriter entityRelationWriter;
   private final WorkspaceAccessChecker workspaceAccessChecker;
+  private final TaskWriteGate writeGate;
 
   @Transactional
   public void linkMemory(UUID taskId, UUID memoryId, UUID userId) {
@@ -54,6 +56,7 @@ class TaskLinkService {
                     MemoryErrorCode.MEMORY_NOT_FOUND, Map.of("memory_id", memoryId.toString())));
     requireSameWorkspace(workspaceId, memoryWorkspaceId);
     requireMember(workspaceId, userId);
+    writeGate.requireOpen();
     entityRelationWriter.link(command(workspaceId, taskId, EntityType.MEMORY, memoryId));
   }
 
@@ -61,6 +64,7 @@ class TaskLinkService {
   public void unlinkMemory(UUID taskId, UUID memoryId, UUID userId) {
     UUID workspaceId = requireTaskWorkspace(taskId);
     requireMember(workspaceId, userId);
+    writeGate.requireOpen();
     requireUnlinked(
         entityRelationWriter.unlink(command(workspaceId, taskId, EntityType.MEMORY, memoryId)));
   }
@@ -70,6 +74,7 @@ class TaskLinkService {
       UUID taskId, UUID userId, String sourceUrl, String sourceType, String title) {
     UUID workspaceId = requireTaskWorkspace(taskId);
     requireMember(workspaceId, userId);
+    writeGate.requireOpen();
     UUID sourceRefId =
         sourceRefWriter.createManualLink(
             new SourceRefWriter.NewManualLink(workspaceId, sourceType, sourceUrl, title));
@@ -81,6 +86,7 @@ class TaskLinkService {
   public void unlinkSourceRef(UUID taskId, UUID sourceRefId, UUID userId) {
     UUID workspaceId = requireTaskWorkspace(taskId);
     requireMember(workspaceId, userId);
+    writeGate.requireOpen();
     requireUnlinked(
         entityRelationWriter.unlink(
             command(workspaceId, taskId, EntityType.SOURCE_OBJECT, sourceRefId)));

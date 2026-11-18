@@ -8,12 +8,14 @@ import works.momens.server.project.task.ApplyTaskDraftCommand;
 import works.momens.server.project.task.TaskDraftApplier;
 import works.momens.server.project.task.TaskDraftApplyResult;
 import works.momens.server.project.task.TaskDraftValues;
+import works.momens.server.project.task.TaskWriteGate;
 
 @Service
 @RequiredArgsConstructor
 class TaskDraftApplierImpl implements TaskDraftApplier {
 
   private final TaskRepository taskRepository;
+  private final TaskWriteGate writeGate;
 
   /**
    * 호출자 트랜잭션에 합류합니다({@code Propagation.MANDATORY}). 여기에 별도 경계를 만들면 호출자의 원장 종료와 원자성이 깨집니다. 반영만 커밋되고
@@ -30,6 +32,7 @@ class TaskDraftApplierImpl implements TaskDraftApplier {
   @Override
   @Transactional(propagation = Propagation.MANDATORY)
   public TaskDraftApplyResult apply(ApplyTaskDraftCommand command) {
+    writeGate.requireOpen();
     Task task = taskRepository.lockByIdAndDeletedAtIsNull(command.taskId()).orElse(null);
     if (task == null) {
       // 없는 것과 삭제된 것을 구분하지 않습니다. 어느 쪽이든 반영할 대상이 없고, 호출자가 취할 행동도 같습니다.

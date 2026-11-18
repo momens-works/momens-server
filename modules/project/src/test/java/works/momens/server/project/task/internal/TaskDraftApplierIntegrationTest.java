@@ -24,10 +24,11 @@ import works.momens.server.project.task.TaskDraftValues;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskStatus;
+import works.momens.server.project.task.TaskWriteGate;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({JpaAuditingConfig.class, TaskDraftApplierImpl.class})
+@Import({JpaAuditingConfig.class, TaskDraftApplierImpl.class, TaskWriteGate.class})
 class TaskDraftApplierIntegrationTest extends AbstractPostgresIntegrationTest {
 
   private static final TaskDraftValues BASELINE =
