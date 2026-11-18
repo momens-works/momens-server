@@ -42,8 +42,11 @@ CI가 실제 Secret·ConfigMap의 존재나 값을 조회해 증명하지는 않
 | `MOMENS_AUTH_JWT_SECRET` | `secret` | `applied` |
 | `MOMENS_AUTH_WEB_FAILURE_REDIRECT_URI` | `configmap` | `applied` |
 | `MOMENS_AUTH_WEB_SUCCESS_REDIRECT_URI` | `configmap` | `applied` |
-| `MOMENS_MCP_WEB_BASE_URI` | `configmap` | `required` |
+| `MOMENS_MCP_WEB_BASE_URI` | `configmap` | `applied` |
 <!-- END DECLARATION: prod-required-config -->
+
+2026-11-18에 운영 `momens-server-config`에서 웹 기본 주소의 반영을 확인했습니다.
+MCP consent와 discovery는 아래 수기 의무에서 계속 확인합니다. [k8s PR #43](https://github.com/Momens-Works/k8s/pull/43)
 
 ## 수기 prod 의무
 
