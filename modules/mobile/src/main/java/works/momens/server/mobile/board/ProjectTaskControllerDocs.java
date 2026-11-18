@@ -16,6 +16,7 @@ import works.momens.server.mobile.board.dto.request.CreateTaskRequest;
 import works.momens.server.mobile.board.dto.response.TaskBoardResponse;
 import works.momens.server.mobile.board.dto.response.TaskCreateResponse;
 import works.momens.server.project.core.ProjectErrorCode;
+import works.momens.server.project.task.TaskErrorCode;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
 
@@ -68,6 +69,9 @@ interface ProjectTaskControllerDocs {
   @ApiException(
       value = ProjectErrorCode.class,
       codes = {"PROJECT_NOT_FOUND"})
+  @ApiException(
+      value = TaskErrorCode.class,
+      codes = {"TASK_WRITES_PAUSED"})
   @ApiException(CommonErrorCode.class)
   TaskCreateResponse createTask(
       @Parameter(description = "project 식별자") UUID projectId,

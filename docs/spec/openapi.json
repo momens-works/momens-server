@@ -11711,6 +11711,25 @@
               }
             },
             "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "TASK_WRITES_PAUSED" : {
+                    "description" : "작업 변경이 일시 중단되었습니다.",
+                    "summary" : "TASK_WRITES_PAUSED",
+                    "value" : {
+                      "error" : {
+                        "code" : "TASK_WRITES_PAUSED",
+                        "message" : "작업 변경이 일시 중단되었습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Service Unavailable"
           }
         },
         "summary" : "일반 작업 생성",
@@ -12243,6 +12262,25 @@
               }
             },
             "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "TASK_WRITES_PAUSED" : {
+                    "description" : "작업 변경이 일시 중단되었습니다.",
+                    "summary" : "TASK_WRITES_PAUSED",
+                    "value" : {
+                      "error" : {
+                        "code" : "TASK_WRITES_PAUSED",
+                        "message" : "작업 변경이 일시 중단되었습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Service Unavailable"
           }
         },
         "summary" : "시그널을 작업으로 전환",
@@ -13042,6 +13080,25 @@
               }
             },
             "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "TASK_WRITES_PAUSED" : {
+                    "description" : "작업 변경이 일시 중단되었습니다.",
+                    "summary" : "TASK_WRITES_PAUSED",
+                    "value" : {
+                      "error" : {
+                        "code" : "TASK_WRITES_PAUSED",
+                        "message" : "작업 변경이 일시 중단되었습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Service Unavailable"
           }
         },
         "summary" : "작업 수정",
@@ -13338,6 +13395,25 @@
               }
             },
             "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "TASK_WRITES_PAUSED" : {
+                    "description" : "작업 변경이 일시 중단되었습니다.",
+                    "summary" : "TASK_WRITES_PAUSED",
+                    "value" : {
+                      "error" : {
+                        "code" : "TASK_WRITES_PAUSED",
+                        "message" : "작업 변경이 일시 중단되었습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Service Unavailable"
           }
         },
         "summary" : "완료 기준 완료 상태 변경",
@@ -14735,6 +14811,25 @@
               }
             },
             "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "TASK_WRITES_PAUSED" : {
+                    "description" : "작업 변경이 일시 중단되었습니다.",
+                    "summary" : "TASK_WRITES_PAUSED",
+                    "value" : {
+                      "error" : {
+                        "code" : "TASK_WRITES_PAUSED",
+                        "message" : "작업 변경이 일시 중단되었습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Service Unavailable"
           }
         },
         "summary" : "프로젝트 작업 생성",
@@ -16291,6 +16386,25 @@
               }
             },
             "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "TASK_WRITES_PAUSED" : {
+                    "description" : "작업 변경이 일시 중단되었습니다.",
+                    "summary" : "TASK_WRITES_PAUSED",
+                    "value" : {
+                      "error" : {
+                        "code" : "TASK_WRITES_PAUSED",
+                        "message" : "작업 변경이 일시 중단되었습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Service Unavailable"
           }
         },
         "summary" : "작업 삭제",
@@ -16809,6 +16923,25 @@
               }
             },
             "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "TASK_WRITES_PAUSED" : {
+                    "description" : "작업 변경이 일시 중단되었습니다.",
+                    "summary" : "TASK_WRITES_PAUSED",
+                    "value" : {
+                      "error" : {
+                        "code" : "TASK_WRITES_PAUSED",
+                        "message" : "작업 변경이 일시 중단되었습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Service Unavailable"
           }
         },
         "summary" : "작업 수정",
@@ -17626,6 +17759,25 @@
               }
             },
             "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "TASK_WRITES_PAUSED" : {
+                    "description" : "작업 변경이 일시 중단되었습니다.",
+                    "summary" : "TASK_WRITES_PAUSED",
+                    "value" : {
+                      "error" : {
+                        "code" : "TASK_WRITES_PAUSED",
+                        "message" : "작업 변경이 일시 중단되었습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Service Unavailable"
           }
         },
         "summary" : "작업의 메모리 연결 해제",
@@ -17910,6 +18062,25 @@
               }
             },
             "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "TASK_WRITES_PAUSED" : {
+                    "description" : "작업 변경이 일시 중단되었습니다.",
+                    "summary" : "TASK_WRITES_PAUSED",
+                    "value" : {
+                      "error" : {
+                        "code" : "TASK_WRITES_PAUSED",
+                        "message" : "작업 변경이 일시 중단되었습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Service Unavailable"
           }
         },
         "summary" : "작업에 메모리 연결",
@@ -18176,6 +18347,25 @@
               }
             },
             "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "TASK_WRITES_PAUSED" : {
+                    "description" : "작업 변경이 일시 중단되었습니다.",
+                    "summary" : "TASK_WRITES_PAUSED",
+                    "value" : {
+                      "error" : {
+                        "code" : "TASK_WRITES_PAUSED",
+                        "message" : "작업 변경이 일시 중단되었습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Service Unavailable"
           }
         },
         "summary" : "작업에 링크 첨부",
@@ -18452,6 +18642,25 @@
               }
             },
             "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "TASK_WRITES_PAUSED" : {
+                    "description" : "작업 변경이 일시 중단되었습니다.",
+                    "summary" : "TASK_WRITES_PAUSED",
+                    "value" : {
+                      "error" : {
+                        "code" : "TASK_WRITES_PAUSED",
+                        "message" : "작업 변경이 일시 중단되었습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Service Unavailable"
           }
         },
         "summary" : "작업의 source-ref 연결 해제",
@@ -18972,6 +19181,25 @@
               }
             },
             "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "TASK_WRITES_PAUSED" : {
+                    "description" : "작업 변경이 일시 중단되었습니다.",
+                    "summary" : "TASK_WRITES_PAUSED",
+                    "value" : {
+                      "error" : {
+                        "code" : "TASK_WRITES_PAUSED",
+                        "message" : "작업 변경이 일시 중단되었습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Service Unavailable"
           }
         },
         "summary" : "작업 업데이트 생성",
@@ -19238,6 +19466,25 @@
               }
             },
             "description" : "Bad Gateway"
+          },
+          "503" : {
+            "content" : {
+              "application/json" : {
+                "examples" : {
+                  "TASK_WRITES_PAUSED" : {
+                    "description" : "작업 변경이 일시 중단되었습니다.",
+                    "summary" : "TASK_WRITES_PAUSED",
+                    "value" : {
+                      "error" : {
+                        "code" : "TASK_WRITES_PAUSED",
+                        "message" : "작업 변경이 일시 중단되었습니다."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description" : "Service Unavailable"
           }
         },
         "summary" : "작업 업데이트 삭제",
