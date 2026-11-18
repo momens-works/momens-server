@@ -21,7 +21,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.exc.InvalidFormatException;
+import tools.jackson.databind.exc.MismatchedInputException;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.common.api.ErrorCode;
@@ -75,8 +75,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
   }
 
   /**
-   * 요청 본문의 enum 또는 날짜 필드에 전달된 문자열을 해당 타입으로 변환할 수 없는 경우 {@code COMMON_VALIDATION_FAILED}와 오류가 발생한 필드
-   * 이름을 응답합니다. JSON 형식 오류처럼 그 밖의 이유로 본문을 읽지 못한 경우에는 기존과 같이 {@code COMMON_BAD_REQUEST}를 응답합니다.
+   * 요청 body의 enum 또는 날짜 필드를 해당 타입으로 변환할 수 없으면 {@code COMMON_VALIDATION_FAILED}와 오류가 발생한 필드 이름을
+   * 반환합니다. 허용되지 않는 문자열뿐 아니라 숫자, 배열, 객체처럼 문자열이 아닌 값도 동일하게 처리합니다.
+   *
+   * <p>JSON 문법 오류처럼 그 밖의 원인으로 요청 body를 읽지 못하면 기존과 동일하게 {@code COMMON_BAD_REQUEST}를 반환합니다.
    */
   @Override
   protected ResponseEntity<Object> handleHttpMessageNotReadable(
@@ -84,7 +86,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
       HttpHeaders headers,
       HttpStatusCode status,
       WebRequest request) {
-    if (ex.getCause() instanceof InvalidFormatException cause
+    if (ex.getCause() instanceof MismatchedInputException cause
         && cause.getTargetType() != null
         && (cause.getTargetType().isEnum() || cause.getTargetType() == LocalDate.class)) {
       FieldValidationDetails.FieldViolation field =

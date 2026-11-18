@@ -18,6 +18,8 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -156,17 +158,41 @@ class GlobalExceptionHandlerTest {
         .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
   }
 
-  @Test
-  @DisplayName("날짜 필드에 변환할 수 없는 문자열이 전달되면 COMMON_VALIDATION_FAILED와 해당 필드 이름을 응답합니다.")
-  void rendersValidationFailureForUnparsableDateValue() throws Exception {
+  @ParameterizedTest
+  @DisplayName("날짜 필드에 YYYY-MM-DD 형식이 아닌 값을 전송하면 COMMON_VALIDATION_FAILED와 해당 필드 이름을 반환한다")
+  @ValueSource(
+      strings = {
+        "\"2026-13-01\"",
+        "20261112",
+        "\"2026-11-12T09:00:00Z\"",
+        "[2026,11,12]",
+        "[]",
+        "\"\"",
+        "\"  \"",
+        "\"+57443-01-16\""
+      })
+  void rendersValidationFailureForInvalidDateValue(String value) throws Exception {
     mockMvc
         .perform(
             post("/test/date")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"due_date\":\"2026-13-01\"}"))
+                .content("{\"due_date\":" + value + "}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
         .andExpect(jsonPath("$.error.details.fields[0].field").value("due_date"));
+  }
+
+  @Test
+  @DisplayName("enum 필드에 문자열이 아닌 값을 전송하면 COMMON_VALIDATION_FAILED와 해당 필드 이름을 반환한다")
+  void rendersValidationFailureForNonStringEnumValue() throws Exception {
+    mockMvc
+        .perform(
+            post("/test/enum")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"test_level\":true}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
   }
 
   @Test
