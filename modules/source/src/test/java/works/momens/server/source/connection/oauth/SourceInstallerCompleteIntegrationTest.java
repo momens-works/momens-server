@@ -365,9 +365,10 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
     assertThat(completed.connection().capturesReadCount()).isEqualTo(42);
   }
 
-  @Test
-  @DisplayName("Notion 재승인은 연결의 페이지 목록을 보존하고 워크스페이스 아이콘을 갱신한다")
-  void preservesNotionPageSelectionOnReconnect() {
+  @ParameterizedTest
+  @ValueSource(strings = {"[\"page-a\"]", "[]"})
+  @DisplayName("Notion 재승인은 빈 목록을 포함한 연결의 페이지 목록을 보존하고 워크스페이스 아이콘을 갱신한다")
+  void preservesNotionPageSelectionOnReconnect(String pageIds) {
     tokenBody.set(
         "{\"access_token\":\"tok-1\",\"workspace_id\":\"notion-ws\",\"workspace_icon\":\"old\"}");
     String signedState =
@@ -378,7 +379,9 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
             .connection()
             .id();
     jdbcTemplate.update(
-        "UPDATE source_connections SET metadata = metadata || '{\"page_ids\":[\"page-a\"]}'::jsonb WHERE id = ?",
+        "UPDATE source_connections SET metadata = metadata || jsonb_build_object('page_ids', ?::jsonb)"
+            + " WHERE id = ?",
+        pageIds,
         id);
 
     tokenBody.set(
@@ -391,7 +394,7 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
 
     assertThat(reconnectedId).isEqualTo(id);
     assertThat(connectionRepository.findById(id).orElseThrow().getMetadata())
-        .containsEntry("page_ids", List.of("page-a"))
+        .containsEntry("page_ids", pageIds.equals("[]") ? List.of() : List.of("page-a"))
         .containsEntry("workspace_icon", "new");
   }
 
