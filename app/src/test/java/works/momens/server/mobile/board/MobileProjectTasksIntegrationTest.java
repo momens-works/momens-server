@@ -328,6 +328,35 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
   }
 
   @Test
+  void updateWithoutDueDateKeepsIt() throws Exception {
+    UserProfile jinsu =
+        userService.findOrCreate("tasks-it-keep-due-date@momens.works", "신진수", null);
+    UUID workspace = insertWorkspace("tasks-keep-due-date");
+    addMember(workspace, jinsu.id(), "owner");
+    UUID project = insertProject(workspace, jinsu.id(), "tasks-keep-due-date-project");
+    UUID task = insertTask(workspace, project, "before-edit", "todo", "high", "backend");
+    LocalDate dueDate = LocalDate.of(2026, 9, 25);
+    assign(task, null, dueDate);
+
+    mockMvc
+        .perform(
+            patch("/api/mobile/tasks/{taskId}", task)
+                .header("Authorization", "Bearer " + accessTokens.issueAccessToken(jinsu.id()))
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"title\":\"after-edit\",\"role\":\"backend\",\"assignee_id\":null,"
+                        + "\"priority\":\"high\",\"status\":\"todo\",\"purpose\":\"\","
+                        + "\"checklist_items\":[]}"))
+        .andExpect(status().isNoContent());
+
+    assertThat(
+            jdbcTemplate.queryForObject("SELECT title FROM tasks WHERE id = ?", String.class, task))
+        .isEqualTo("after-edit");
+    assertThat(dueDateOf(task)).isEqualTo(dueDate);
+  }
+
+  @Test
   void returnsForbiddenWhenCallerIsNotWorkspaceMember() throws Exception {
     UserProfile gyuil = userService.findOrCreate("tasks-it-owner@momens.works", "김규일", null);
     UserProfile jinsu = userService.findOrCreate("tasks-it-stranger@momens.works", "신진수", null);

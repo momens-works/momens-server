@@ -407,7 +407,8 @@ convert-to-task 응답과 같습니다. 앱은 `generating`이면 나중에 다�
 작업 수정 화면에서 편집한 필드를 저장합니다. 요청에는 리소스 전체가 아닌 편집 가능한 필드 전체(`title`, `roles`, `assignee_id`, `priority`, `due_date`, `status`, `purpose`, `checklist_items`)를 포함합니다. 서버에서 관리하는 필드(`materials`, `open_questions`, `next_action`)는 요청에 포함하지 않으며, 기존 값을 유지합니다. `title`, `roles`, `priority`, `status`는 항상 값을 지정해 전달합니다. title은 생성과 달리 빈 문자열을 허용하고, title을 빈 문자열로 보내면 상세 화면이 '새 작업'으로 표시합니다.
 
 - 구버전 앱에서 `roles` 없이 `role`만 전달하면, 해당 role이 기존 목록에 포함되어 있는 경우 목록을 유지하고, 포함되어 있지 않은 경우 해당 role 하나로 교체합니다.
-- `assignee_id`, `purpose`, `due_date`를 생략하거나 `null`로 전달하면 기존 값을 삭제합니다. `purpose`는 빈 문자열도 허용합니다.
+- `assignee_id`, `purpose`를 생략하거나 `null`로 전달하면 기존 값을 삭제합니다. `purpose`는 빈 문자열도 허용합니다.
+- `due_date`를 생략하면 기존 마감일을 유지하고, `null`로 전달하면 삭제합니다. 이는 해당 필드를 전송하지 않는 구버전 앱에서 태스크를 수정하더라도 기존 마감일이 삭제되지 않도록 하기 위함입니다.
 - `checklist_items`는 최종 목록으로 전체 교체합니다. 생략·`null`은 전체 삭제입니다. 기존 항목은
   상세에서 받은 `id`로 제목·완료 상태를 갱신하고, `id` 없는 항목은 생성하며 목록에서 빠진 항목은 삭제합니다.
   `completed` 생략은 `false`입니다. 없는 `id`는 `TASK_CHECKLIST_ITEM_NOT_FOUND`, 중복 `id`는

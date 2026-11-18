@@ -37,6 +37,8 @@ dependencies {
     // OpenAPI 문서화 애너테이션(@Tag/@Operation/@Schema)만 사용합니다. Swagger UI와 공통 설정은
     // 실행과 조립을 맡는 app 모듈이 springdoc starter로 소유합니다(docs/spec/openapi.md).
     implementation libs.swagger.annotations.jakarta
+    // 태스크 수정 요청에서 필드 누락과 명시적인 null을 구분하기 위해 사용합니다(MOM-1151).
+    implementation libs.jackson.databind.nullable
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

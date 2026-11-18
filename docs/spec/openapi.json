@@ -3153,7 +3153,7 @@
             "type" : "array"
           },
           "due_date" : {
-            "description" : "마감일(YYYY-MM-DD). 생략하거나 null로 전달하면 기존 마감일을 삭제합니다.",
+            "description" : "마감일(YYYY-MM-DD). 생략하면 기존 마감일을 유지하고, null로 전달하면 삭제합니다.",
             "example" : "2026-09-25",
             "format" : "date",
             "type" : [
