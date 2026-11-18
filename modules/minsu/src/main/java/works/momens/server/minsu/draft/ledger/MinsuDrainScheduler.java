@@ -71,6 +71,8 @@ class MinsuDrainScheduler {
 
   private void runPass() {
     if (writeGate.isPaused()) {
+      // draft 반영은 task writer를 거치지 않고 tasks를 직접 수정하므로 task 쓰기가 닫힌 동안에는 claim하지
+      // 않는다. 원장은 pending으로 남고, 그 전에 read_deadline_at이 지나면 읽기 투영이 닫는다.
       return;
     }
     if (!configStatus.enabled() || !configStatus.valid()) {

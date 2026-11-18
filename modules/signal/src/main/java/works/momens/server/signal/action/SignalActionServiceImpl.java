@@ -53,6 +53,8 @@ class SignalActionServiceImpl implements SignalActionService {
       return replayOrConflict(existing.get(), SignalActionType.CONVERT_TO_TASK);
     }
 
+    // replay는 쓰지 않으므로 쓰기 중단 중에도 응답한다. 막힐 요청이 evidence 조회와 모델 호출을 하지 않도록
+    // task writer보다 먼저 확인한다.
     writeGate.requireOpen();
     PreparedTaskDraft prepared = prepareDraft(signal);
     try {
