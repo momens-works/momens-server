@@ -5,13 +5,11 @@ import io.swagger.v3.core.jackson.ModelResolver;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import java.util.List;
-import java.util.Map;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.customizers.OperationCustomizer;
 import org.springdoc.core.providers.ObjectMapperProvider;
@@ -87,43 +85,16 @@ public class OpenApiConfig {
    * 필드명(camelCase)으로 나온다. swagger-core가 introspection에 쓰는 Jackson 2 ObjectMapper에 같은 snake_case 전략을
    * 걸어, 런타임 규칙과 동일하게 스키마 property를 전역 snake_case로 생성한다. 특정 필드만 다르게 두려면 {@code @JsonProperty}로 개별
    * override할 수 있다(런타임 Jackson 3와 swagger-core Jackson 2가 같은 애노테이션 패키지를 읽는다).
+   *
+   * <p>springdoc은 기본 {@code ModelResolver}를 이 빈으로 교체하므로, 해당 빈도 OpenAPI 3.1 모드로 생성합니다.
    */
   @Bean
   public ModelResolver modelResolver(ObjectMapperProvider objectMapperProvider) {
     return new ModelResolver(
-        objectMapperProvider
-            .jsonMapper()
-            .copy()
-            .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE));
-  }
-
-  /**
-   * {@code @Schema(nullable = true)}는 OpenAPI 3.0의 {@code nullable} 키워드용이라 3.1 직렬화에서 통째로 떨어져, 실제로는
-   * null이 오는 필드가 문서에는 null 불허({@code type: string})로 나온다. 3.1의 표현({@code type: [..., "null"]})으로 전역
-   * 변환해 문서가 실제 응답과 같은 null 계약을 갖게 한다. 필드별 {@code types = {"string", "null"}} 명시는 누락되기 쉬워 전역 변환으로
-   * 통일한다.
-   */
-  @Bean
-  public OpenApiCustomizer nullableAsTypeCustomizer() {
-    return openApi -> {
-      if (openApi.getComponents() == null || openApi.getComponents().getSchemas() == null) {
-        return;
-      }
-      openApi.getComponents().getSchemas().values().forEach(this::applyNullableTypes);
-    };
-  }
-
-  private void applyNullableTypes(Schema<?> schema) {
-    if (Boolean.TRUE.equals(schema.getNullable())) {
-      schema.addType("null");
-      schema.setNullable(null);
-    }
-    Map<String, Schema> properties = schema.getProperties();
-    if (properties != null) {
-      properties.values().forEach(this::applyNullableTypes);
-    }
-    if (schema.getItems() != null) {
-      applyNullableTypes(schema.getItems());
-    }
+            objectMapperProvider
+                .jsonMapper()
+                .copy()
+                .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE))
+        .openapi31(true);
   }
 }
