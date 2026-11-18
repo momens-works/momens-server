@@ -257,6 +257,8 @@ outbox 발행을 함께 롤백합니다. 서버는 자동 재시도하지 않습
 조회하고 사용자가 변경 사항을 확인한 뒤 새 버전으로 요청해야 합니다. 삭제와 수정이 겹치면
 충돌로 실패할 수 있으며, 처음 조회할 때 이미 삭제된 항목은 기존 not-found 응답을 유지합니다.
 
-이 보장은 신규 서버 writer에 적용됩니다. 버전을 검사·갱신하지 않는 레거시 SQL까지 보호하지
-않으므로 [컷오버의 legacy writer 차단·drain](../design/legacy-product-api-migration/cutover.md#1-전환-단위)
+이 보장은 신규 서버 writer에 적용됩니다. 레거시 SQL이 태스크·마일스톤 내용을 바꾸면 DB
+트리거가 버전을 올리므로, 그 전에 조회한 버전으로 보낸 신규 서버 요청은 충돌로 실패합니다.
+레거시는 버전을 검사하지 않아 자신의 덮어쓰기를 막지 못하므로
+[컷오버의 legacy writer 차단·drain](../design/legacy-product-api-migration/cutover.md#1-전환-단위)
 조건을 유지합니다. AI 초안은 기존 baseline 검사와 행 잠금을 유지하면서 버전을 갱신합니다.
