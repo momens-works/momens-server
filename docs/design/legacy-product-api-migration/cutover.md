@@ -30,6 +30,7 @@ Product capability별 혼합 전환이나 OAuth/MCP UI의 legacy base 격리를 
 | `VITE_API_BASE_URL` | Product API와 신규 OAuth/MCP UI 연결. `/auth/me`도 `/api/me` 계약으로 변경 |
 | Google callback 허용 목록 | 신규·레거시 callback 병행 등록 유지 |
 | source provider callback 허용 목록 | GitHub·Slack·Notion·Figma의 신규·레거시 callback 병행 등록 |
+| `MOMENS_PROJECT_TASK_WRITES_PAUSED` | 신규 서버의 task·댓글·task 링크·Signal 변환·MCP task 도구 쓰기와 Minsu draft claim 차단. prod 기본값은 `true`이며 k8s prod overlay로 바꾼다. 기동 시 한 번 읽으므로 값을 바꾸면 재배포한다 |
 
 `VITE_LEGACY_API_BASE_URL`은 새로 도입하지 않는다. 기존 배포에 있다면 사용처를 확인하고
 MOM-0967에서 제거 범위를 정한다.
@@ -99,7 +100,8 @@ task 이벤트 세 종류의 consumer 지원과 재처리를 확인한 뒤 운�
 4. `MINSU_SLACK_ACTIONS_ENABLED=false`를 모든 legacy replica에 반영하고 이미 시작한 action
    goroutine 종료를 확인한다. 고정 대기나 HTTP drain만으로 대신하지 않는다. Slack 답변 기능은
    유지하고 전체 runtime 종료는 MOM-1023에서 처리한다.
-5. 진행 중 legacy 쓰기가 끝난 증거를 남긴 뒤 신규 writer를 연다. 실패하면 양쪽 쓰기를 닫고 복구한다.
+5. 진행 중 legacy 쓰기가 끝난 증거를 남긴 뒤 `MOMENS_PROJECT_TASK_WRITES_PAUSED=false`로 신규 writer를 연다.
+   실패하면 양쪽 쓰기를 닫고 복구한다.
 
 Minsu background를 활성화하면 MOM-0823의 `task.draft_generated` 소비도 확인한다.
 
@@ -222,7 +224,8 @@ Cloudflare에서 직전 FE deployment로 롤백해 로그인과 로그아웃 요
 
 ### 7.2 2단계
 
-- 신규 HTTP·모바일·Signal·MCP·댓글·Minsu background 쓰기를 먼저 막고 진행 중 처리를 확인한다.
+- `MOMENS_PROJECT_TASK_WRITES_PAUSED=true`로 재배포해 신규 HTTP·모바일·Signal·MCP·댓글·Minsu background
+  쓰기를 먼저 막고, 이전 pod 종료와 진행 중 처리를 확인한다.
 - 신규 쓰기가 한 건도 없다는 증거가 있으면 기존 경로 복구를 검토한다. 쓰기가 있었거나 불명확하면
   호환성 6항목의 실행 증거와 미처리 outbox 처리 계획이 필요하다.
 - 투영 담당자가 진행 중 처리 종료, 미처리·재시도·보류 이벤트 처리/재개 방식을 확인한 뒤 legacy

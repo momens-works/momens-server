@@ -225,6 +225,7 @@ Bean Validation과 `FieldValidationException`을 통한 필드 단위 검증 실
 - `409 Conflict`: 이미 존재함, 상태 전이 불가, 만료/이미 처리됨 등 충돌.
 - `500 Internal Server Error`: 서버 내부 오류.
 - `502 Bad Gateway`: 외부 API 또는 downstream 서비스 호출 실패.
+- `503 Service Unavailable`: 운영 설정으로 일시 중단한 쓰기. 설정이 바뀌기 전에는 재시도해도 같은 응답입니다.
 
 403은 요청자의 권한이 부족한 경우에 사용합니다. 요청에서 지정한 대상 리소스를 찾을 수 없으면 404를, 다른 리소스의 속성으로 전달한 참조 값이 유효하지 않으면 400을 사용합니다.
 
