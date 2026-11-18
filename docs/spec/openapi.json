@@ -8,18 +8,22 @@
             "description" : "초대 링크에 포함된 토큰",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "AcceptInvitationResponse" : {
         "description" : "초대 수락 응답",
         "properties" : {
           "member" : {
-            "$ref" : "#/components/schemas/WorkspaceMemberResponse"
+            "$ref" : "#/components/schemas/WorkspaceMemberResponse",
+            "description" : "새로 생성된 멤버십"
           },
           "workspace" : {
-            "$ref" : "#/components/schemas/WorkspaceResponse"
+            "$ref" : "#/components/schemas/WorkspaceResponse",
+            "description" : "초대를 수락해 참여한 워크스페이스"
           }
-        }
+        },
+        "type" : "object"
       },
       "AccessibleProjectResponse" : {
         "description" : "접근 가능한 project 한 건",
@@ -40,7 +44,8 @@
             "example" : "member",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "AddWorkspaceMemberRequest" : {
         "description" : "초대 없이 워크스페이스 멤버를 바로 추가하는 요청",
@@ -62,7 +67,8 @@
         },
         "required" : [
           "role"
-        ]
+        ],
+        "type" : "object"
       },
       "AppUpdateResponse" : {
         "description" : "모바일 앱 업데이트 필요 여부 응답",
@@ -71,7 +77,8 @@
             "description" : "앱 버전이 해당 플랫폼의 최소 지원 버전보다 낮아 업데이트가 필요하면 true입니다.",
             "type" : "boolean"
           }
-        }
+        },
+        "type" : "object"
       },
       "AssigneeResponse" : {
         "description" : "담당자",
@@ -89,7 +96,8 @@
             "description" : "이름",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "AuthMessageResponse" : {
         "description" : "인증 명령 성공 응답",
@@ -99,7 +107,8 @@
             "example" : "logged out",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "BlockerResponse" : {
         "description" : "차단 사유",
@@ -138,7 +147,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "BootstrapMe" : {
         "description" : "현재 사용자 요약",
@@ -166,7 +176,8 @@
             "example" : "김민지",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "BootstrapResponse" : {
         "description" : "모바일 앱 진입 컨텍스트 응답",
@@ -181,7 +192,8 @@
             ]
           },
           "me" : {
-            "$ref" : "#/components/schemas/BootstrapMe"
+            "$ref" : "#/components/schemas/BootstrapMe",
+            "description" : "현재 사용자 요약"
           },
           "projects" : {
             "description" : "접근 가능한 project 목록(생성 최신순). 없으면 빈 배열입니다.",
@@ -190,7 +202,8 @@
             },
             "type" : "array"
           }
-        }
+        },
+        "type" : "object"
       },
       "BriefResponse" : {
         "description" : "프로젝트 브리프 응답",
@@ -203,12 +216,15 @@
             "type" : "array"
           },
           "project" : {
-            "$ref" : "#/components/schemas/ProjectResponse"
+            "$ref" : "#/components/schemas/ProjectResponse",
+            "description" : "프로젝트 스냅샷"
           },
           "signal_summary" : {
-            "$ref" : "#/components/schemas/SignalSummaryResponse"
+            "$ref" : "#/components/schemas/SignalSummaryResponse",
+            "description" : "시그널 요약"
           }
-        }
+        },
+        "type" : "object"
       },
       "BriefSignalSummaryPageResponse" : {
         "description" : "브리프 시그널 요약 페이지 응답",
@@ -227,7 +243,8 @@
               "null"
             ]
           }
-        }
+        },
+        "type" : "object"
       },
       "ChecklistItemRequest" : {
         "description" : "완료 기준 항목",
@@ -252,7 +269,8 @@
         },
         "required" : [
           "title"
-        ]
+        ],
+        "type" : "object"
       },
       "ChecklistItemResponse" : {
         "description" : "완료 기준 항목",
@@ -270,7 +288,8 @@
             "description" : "항목 제목",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "ChecklistResponse" : {
         "description" : "완료 기준",
@@ -292,7 +311,8 @@
             "format" : "int32",
             "type" : "integer"
           }
-        }
+        },
+        "type" : "object"
       },
       "ChecklistToggleChecklist" : {
         "description" : "완료 기준 요약",
@@ -303,20 +323,23 @@
             "type" : "integer"
           },
           "item" : {
-            "$ref" : "#/components/schemas/ItemResponse"
+            "$ref" : "#/components/schemas/ItemResponse",
+            "description" : "완료 상태를 바꾼 항목"
           },
           "total_count" : {
             "description" : "전체 항목 수",
             "format" : "int32",
             "type" : "integer"
           }
-        }
+        },
+        "type" : "object"
       },
       "ChecklistToggleResponse" : {
         "description" : "완료 기준 완료 상태 변경 응답",
         "properties" : {
           "checklist" : {
-            "$ref" : "#/components/schemas/ChecklistToggleChecklist"
+            "$ref" : "#/components/schemas/ChecklistToggleChecklist",
+            "description" : "완료 기준 요약"
           },
           "version" : {
             "description" : "수정 충돌 확인용 버전",
@@ -324,7 +347,8 @@
             "minimum" : 0,
             "type" : "integer"
           }
-        }
+        },
+        "type" : "object"
       },
       "ConfigureFigmaRequest" : {
         "description" : "Figma 팀 webhook과 수집할 파일 허용 목록",
@@ -332,7 +356,6 @@
           "file_keys" : {
             "description" : "파일 키. 공백 제거 후 빈 값 제외·중복 제거, 대소문자와 순서 유지",
             "items" : {
-              "description" : "파일 키. 공백 제거 후 빈 값 제외·중복 제거, 대소문자와 순서 유지",
               "type" : "string"
             },
             "minItems" : 1,
@@ -348,7 +371,8 @@
         "required" : [
           "file_keys",
           "team_id"
-        ]
+        ],
+        "type" : "object"
       },
       "ConfirmedMemoryResponse" : {
         "description" : "확정 메모리",
@@ -394,9 +418,7 @@
             "type" : "string"
           },
           "metadata" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
+            "additionalProperties" : { },
             "type" : "object"
           },
           "related_entity_ids" : {
@@ -438,7 +460,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "ConvertToTaskResponse" : {
         "description" : "convert-to-task 처리 결과",
@@ -449,7 +472,8 @@
           "task" : {
             "$ref" : "#/components/schemas/Task"
           }
-        }
+        },
+        "type" : "object"
       },
       "ConvertToTaskSignal" : {
         "properties" : {
@@ -460,7 +484,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "CreateBlockerRequest" : {
         "description" : "작업 차단 사유 생성 요청",
@@ -479,7 +504,8 @@
         },
         "required" : [
           "description"
-        ]
+        ],
+        "type" : "object"
       },
       "CreateDecisionRequest" : {
         "description" : "Decision 생성 요청",
@@ -524,7 +550,8 @@
           "context",
           "rationale",
           "title"
-        ]
+        ],
+        "type" : "object"
       },
       "CreateDevSignalEvidenceDetails" : {
         "description" : "근거의 대상·변화·영향(각 공백 포함 30자 이하)",
@@ -556,7 +583,8 @@
               "null"
             ]
           }
-        }
+        },
+        "type" : "object"
       },
       "CreateDevSignalRequest" : {
         "description" : "dev 데모용 Signal 생성 요청",
@@ -609,7 +637,8 @@
           "description",
           "title",
           "type"
-        ]
+        ],
+        "type" : "object"
       },
       "CreateDevSignalResponse" : {
         "description" : "dev 데모용 Signal 생성 응답",
@@ -619,7 +648,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "CreateMilestoneRequest" : {
         "description" : "웹 마일스톤 생성 요청",
@@ -651,7 +681,6 @@
           "owner_user_ids" : {
             "description" : "소유자 식별자 목록. 생략하면 요청자가 소유자로 지정됩니다.",
             "items" : {
-              "description" : "소유자 식별자 목록. 생략하면 요청자가 소유자로 지정됩니다.",
               "format" : "uuid",
               "type" : "string"
             },
@@ -674,7 +703,8 @@
         },
         "required" : [
           "name"
-        ]
+        ],
+        "type" : "object"
       },
       "CreateProjectRequest" : {
         "description" : "웹 프로젝트 생성 요청",
@@ -706,7 +736,6 @@
           "owner_user_ids" : {
             "description" : "소유자 식별자 목록. 생략하면 요청자가 단독 소유자로 지정됩니다. 동일한 식별자를 중복으로 전달하면 400을 반환합니다.",
             "items" : {
-              "description" : "소유자 식별자 목록. 생략하면 요청자가 단독 소유자로 지정됩니다. 동일한 식별자를 중복으로 전달하면 400을 반환합니다.",
               "format" : "uuid",
               "type" : "string"
             },
@@ -739,7 +768,8 @@
         },
         "required" : [
           "name"
-        ]
+        ],
+        "type" : "object"
       },
       "CreateTaskRequest" : {
         "description" : "일반 작업 생성 요청",
@@ -803,7 +833,8 @@
         "required" : [
           "priority",
           "title"
-        ]
+        ],
+        "type" : "object"
       },
       "CreateTaskSourceRefRequest" : {
         "description" : "작업에 첨부할 링크 요청",
@@ -824,7 +855,8 @@
         },
         "required" : [
           "source_url"
-        ]
+        ],
+        "type" : "object"
       },
       "CreateTaskSourceRefResponse" : {
         "description" : "링크 첨부 성공 응답",
@@ -838,7 +870,8 @@
             "description" : "결과 메시지",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "CreateTaskUpdateRequest" : {
         "description" : "웹 작업 업데이트 생성 요청",
@@ -856,17 +889,15 @@
             "type" : "string"
           },
           "metadata" : {
-            "additionalProperties" : {
-              "description" : "추가 메타데이터",
-              "type" : "object"
-            },
+            "additionalProperties" : { },
             "description" : "추가 메타데이터",
             "type" : "object"
           }
         },
         "required" : [
           "body"
-        ]
+        ],
+        "type" : "object"
       },
       "CreateWebTaskRequest" : {
         "description" : "웹 작업 생성 요청",
@@ -936,7 +967,8 @@
         },
         "required" : [
           "title"
-        ]
+        ],
+        "type" : "object"
       },
       "CreateWorkspaceInvitationRequest" : {
         "description" : "워크스페이스 초대 생성 요청",
@@ -958,7 +990,8 @@
         },
         "required" : [
           "role"
-        ]
+        ],
+        "type" : "object"
       },
       "CreateWorkspaceRequest" : {
         "description" : "워크스페이스 생성 요청",
@@ -978,7 +1011,8 @@
         },
         "required" : [
           "name"
-        ]
+        ],
+        "type" : "object"
       },
       "DevTokenRequest" : {
         "description" : "dev 전용 토큰 발급 요청",
@@ -992,7 +1026,8 @@
               "null"
             ]
           }
-        }
+        },
+        "type" : "object"
       },
       "DevTokenResponse" : {
         "description" : "dev 전용 토큰 발급 응답",
@@ -1007,7 +1042,8 @@
             "example" : "Bearer",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "DismissResponse" : {
         "description" : "dismiss 처리 결과",
@@ -1015,7 +1051,8 @@
           "signal" : {
             "$ref" : "#/components/schemas/DismissSignal"
           }
-        }
+        },
+        "type" : "object"
       },
       "DismissSignal" : {
         "properties" : {
@@ -1026,7 +1063,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "EditAndConfirmMemoryCandidateRequest" : {
         "description" : "메모리 후보 수정 후 확정 요청",
@@ -1043,13 +1081,15 @@
             "description" : "수정할 제목",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "Evidence" : {
         "description" : "근거 한 건",
         "properties" : {
           "details" : {
-            "$ref" : "#/components/schemas/CreateDevSignalEvidenceDetails"
+            "$ref" : "#/components/schemas/CreateDevSignalEvidenceDetails",
+            "description" : "근거의 대상·변화·영향"
           },
           "occurred_at" : {
             "description" : "원천 발생 시각(ISO-8601)",
@@ -1082,7 +1122,8 @@
         },
         "required" : [
           "source_type"
-        ]
+        ],
+        "type" : "object"
       },
       "EvidenceResponse" : {
         "properties" : {
@@ -1109,7 +1150,8 @@
               "null"
             ]
           }
-        }
+        },
+        "type" : "object"
       },
       "FilterResponse" : {
         "description" : "필터 칩",
@@ -1129,7 +1171,8 @@
             "example" : "All",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "GoogleTokenRequest" : {
         "description" : "모바일 Google ID 토큰 교환 요청",
@@ -1153,7 +1196,8 @@
         },
         "required" : [
           "id_token"
-        ]
+        ],
+        "type" : "object"
       },
       "GroupResponse" : {
         "description" : "상태 그룹",
@@ -1180,7 +1224,8 @@
             },
             "type" : "array"
           }
-        }
+        },
+        "type" : "object"
       },
       "Invitation" : {
         "description" : "워크스페이스 초대 정보",
@@ -1254,7 +1299,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "ItemResponse" : {
         "description" : "완료 기준 항목",
@@ -1272,7 +1318,8 @@
             "description" : "항목 제목",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "LogoutRequest" : {
         "description" : "로그아웃 요청",
@@ -1286,7 +1333,8 @@
         },
         "required" : [
           "refresh_token"
-        ]
+        ],
+        "type" : "object"
       },
       "MaterialResponse" : {
         "description" : "연결된 소스",
@@ -1330,7 +1378,8 @@
               "null"
             ]
           }
-        }
+        },
+        "type" : "object"
       },
       "McpApproveInteractionRequest" : {
         "properties" : {
@@ -1341,7 +1390,8 @@
         },
         "required" : [
           "workspace_id"
-        ]
+        ],
+        "type" : "object"
       },
       "McpGrantErrorResponse" : {
         "description" : "MCP 연결 관리의 레거시 호환 오류 응답",
@@ -1350,7 +1400,8 @@
             "example" : "forbidden",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "McpGrantResponse" : {
         "description" : "현재 사용자의 활성 MCP 연결",
@@ -1385,7 +1436,6 @@
           "scopes" : {
             "description" : "승인한 scope 목록",
             "items" : {
-              "description" : "승인한 scope 목록",
               "type" : "string"
             },
             "type" : "array"
@@ -1400,7 +1450,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "McpGrantsResponse" : {
         "description" : "현재 사용자가 승인한 활성 MCP 연결 목록",
@@ -1411,21 +1462,24 @@
             },
             "type" : "array"
           }
-        }
+        },
+        "type" : "object"
       },
       "McpInteractionRedirectResponse" : {
         "properties" : {
           "redirect_to" : {
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "McpInteractionResponse" : {
         "properties" : {
           "interaction" : {
             "$ref" : "#/components/schemas/McpInteractionView"
           }
-        }
+        },
+        "type" : "object"
       },
       "McpInteractionView" : {
         "properties" : {
@@ -1455,7 +1509,8 @@
             },
             "type" : "array"
           }
-        }
+        },
+        "type" : "object"
       },
       "McpInteractionWorkspace" : {
         "properties" : {
@@ -1469,15 +1524,18 @@
           "slug" : {
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "MeResponse" : {
         "description" : "내 프로필 응답. user 객체로 감쌉니다.",
         "properties" : {
           "user" : {
-            "$ref" : "#/components/schemas/UserResponse"
+            "$ref" : "#/components/schemas/UserResponse",
+            "description" : "사용자 프로필"
           }
-        }
+        },
+        "type" : "object"
       },
       "MemberResponse" : {
         "description" : "프로젝트 멤버 한 명",
@@ -1500,7 +1558,8 @@
             "example" : "김민지",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "MemoryResponse" : {
         "description" : "확정 memory",
@@ -1558,7 +1617,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "MergeMemoryCandidateRequest" : {
         "description" : "메모리 후보 병합 요청",
@@ -1571,7 +1631,8 @@
         },
         "required" : [
           "merge_target_memory_id"
-        ]
+        ],
+        "type" : "object"
       },
       "MobileMe" : {
         "description" : "현재 로그인한 사용자의 계정 정보",
@@ -1599,7 +1660,8 @@
             "example" : "김민지",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "OpenQuestionResponse" : {
         "description" : "질문",
@@ -1613,7 +1675,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "PriorityResponse" : {
         "description" : "현재 우선순위 항목",
@@ -1633,7 +1696,8 @@
             "description" : "작업 제목",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "ProjectMembersResponse" : {
         "description" : "프로젝트 멤버 목록 응답",
@@ -1645,7 +1709,8 @@
             },
             "type" : "array"
           }
-        }
+        },
+        "type" : "object"
       },
       "ProjectResponse" : {
         "description" : "프로젝트 스냅샷",
@@ -1681,7 +1746,8 @@
               "null"
             ]
           }
-        }
+        },
+        "type" : "object"
       },
       "RefreshTokenRequest" : {
         "description" : "Refresh token 요청",
@@ -1695,7 +1761,8 @@
         },
         "required" : [
           "refresh_token"
-        ]
+        ],
+        "type" : "object"
       },
       "RegisterPushDeviceRequest" : {
         "description" : "push 설치 등록 또는 FCM token 갱신 요청",
@@ -1717,7 +1784,8 @@
         "required" : [
           "fcm_registration_token",
           "platform"
-        ]
+        ],
+        "type" : "object"
       },
       "RejectMemoryCandidateRequest" : {
         "description" : "메모리 후보 거절 요청",
@@ -1726,7 +1794,8 @@
             "description" : "거절 사유",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "ResolveMemoryRequest" : {
         "description" : "메모리 해결 요청",
@@ -1739,7 +1808,8 @@
         },
         "required" : [
           "resolving_memory_id"
-        ]
+        ],
+        "type" : "object"
       },
       "SignalDetailResponse" : {
         "description" : "시그널 상세 응답",
@@ -1772,7 +1842,8 @@
           "type" : {
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "SignalEvidenceDetails" : {
         "description" : "근거의 대상·변화·영향. signal_evidence가 소유하며 각 값은 공백 포함 30자 이하입니다.",
@@ -1798,7 +1869,8 @@
               "null"
             ]
           }
-        }
+        },
+        "type" : "object"
       },
       "SignalItem" : {
         "description" : "Signal 목록 카드 한 건",
@@ -1831,7 +1903,8 @@
             "example" : "risk",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "SignalItemResponse" : {
         "description" : "시그널 요약 항목",
@@ -1850,7 +1923,8 @@
             "example" : "risk",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "SignalListResponse" : {
         "description" : "Signal 목록 응답",
@@ -1877,7 +1951,8 @@
             "description" : "카드 헤더 제목",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "SignalSummaryResponse" : {
         "description" : "시그널 요약",
@@ -1910,7 +1985,8 @@
               "null"
             ]
           }
-        }
+        },
+        "type" : "object"
       },
       "SnapshotBlockerResponse" : {
         "properties" : {
@@ -1947,7 +2023,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "SnapshotMemoryCandidateResponse" : {
         "properties" : {
@@ -1981,9 +2058,7 @@
             "type" : "string"
           },
           "metadata" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
+            "additionalProperties" : { },
             "type" : "object"
           },
           "proposed_by" : {
@@ -2031,7 +2106,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "SnapshotMemoryResponse" : {
         "properties" : {
@@ -2076,9 +2152,7 @@
             "type" : "string"
           },
           "metadata" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
+            "additionalProperties" : { },
             "type" : "object"
           },
           "related_entity_ids" : {
@@ -2120,7 +2194,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "SnapshotMilestoneResponse" : {
         "properties" : {
@@ -2178,7 +2253,8 @@
             "format" : "int64",
             "type" : "integer"
           }
-        }
+        },
+        "type" : "object"
       },
       "SnapshotProjectResponse" : {
         "properties" : {
@@ -2204,9 +2280,7 @@
             "type" : "string"
           },
           "metadata" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
+            "additionalProperties" : { },
             "type" : "object"
           },
           "name" : {
@@ -2249,7 +2323,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "SnapshotSourceRefResponse" : {
         "properties" : {
@@ -2311,7 +2386,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "SnapshotTaskContextResponse" : {
         "properties" : {
@@ -2331,7 +2407,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "SnapshotTaskResponse" : {
         "properties" : {
@@ -2388,7 +2465,8 @@
             "format" : "int64",
             "type" : "integer"
           }
-        }
+        },
+        "type" : "object"
       },
       "SourceConnectionResponse" : {
         "properties" : {
@@ -2431,9 +2509,7 @@
             "type" : "string"
           },
           "metadata" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
+            "additionalProperties" : { },
             "type" : "object"
           },
           "resync_requested_at" : {
@@ -2454,7 +2530,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "SourceConnectionsResponse" : {
         "properties" : {
@@ -2464,14 +2541,16 @@
             },
             "type" : "array"
           }
-        }
+        },
+        "type" : "object"
       },
       "SourceInstallResponse" : {
         "properties" : {
           "authorize_url" : {
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "SourceOAuthCallbackResponse" : {
         "properties" : {
@@ -2506,9 +2585,7 @@
             "type" : "string"
           },
           "metadata" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
+            "additionalProperties" : { },
             "type" : "object"
           },
           "source_type" : {
@@ -2525,7 +2602,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "SourceRefResponse" : {
         "description" : "source ref",
@@ -2606,7 +2684,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "Task" : {
         "description" : "convert 결과 작업",
@@ -2634,7 +2713,8 @@
             "description" : "제목. generating 동안에도 항상 유효한 draft입니다",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "TaskBoardResponse" : {
         "description" : "프로젝트 작업 보드 응답",
@@ -2655,7 +2735,8 @@
             "example" : "프로젝트 태스크",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "TaskCardAssignee" : {
         "description" : "카드에 표시할 담당자 정보",
@@ -2669,13 +2750,15 @@
             "description" : "담당자 이름",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "TaskCardResponse" : {
         "description" : "보드 작업 카드",
         "properties" : {
           "assignee" : {
-            "$ref" : "#/components/schemas/TaskCardAssignee"
+            "$ref" : "#/components/schemas/TaskCardAssignee",
+            "description" : "담당자 정보. 미지정 시 null"
           },
           "due_date" : {
             "description" : "마감일. 미설정 시 null",
@@ -2713,7 +2796,6 @@
           "roles" : {
             "description" : "role 목록입니다. `pm`, `design`, `backend`, `frontend` 순서로 정렬하며, role이 지정되지 않은 경우 빈 배열을 반환합니다.",
             "items" : {
-              "description" : "role 목록입니다. `pm`, `design`, `backend`, `frontend` 순서로 정렬하며, role이 지정되지 않은 경우 빈 배열을 반환합니다.",
               "type" : "string"
             },
             "type" : "array"
@@ -2722,7 +2804,8 @@
             "description" : "제목",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "TaskContextResponse" : {
         "description" : "작업에 연결된 메모리와 소스(source ref)",
@@ -2746,24 +2829,29 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "TaskCreateResponse" : {
         "description" : "작업 생성 응답",
         "properties" : {
           "task" : {
-            "$ref" : "#/components/schemas/TaskResponse"
+            "$ref" : "#/components/schemas/TaskResponse",
+            "description" : "생성된 작업"
           }
-        }
+        },
+        "type" : "object"
       },
       "TaskDetailResponse" : {
         "description" : "작업 상세 응답",
         "properties" : {
           "assignee" : {
-            "$ref" : "#/components/schemas/AssigneeResponse"
+            "$ref" : "#/components/schemas/AssigneeResponse",
+            "description" : "담당자. 미지정이면 null"
           },
           "checklist" : {
-            "$ref" : "#/components/schemas/ChecklistResponse"
+            "$ref" : "#/components/schemas/ChecklistResponse",
+            "description" : "완료 기준"
           },
           "draft_status" : {
             "description" : "AI가 제목을 더 손볼 것이 남았는지. generating이면 나중에 다시 조회해야 합니다. ready면 정상 종료 기준으로 지금 title이 최종 값이며, 생성이 deadline을 넘겨 닫힌 경우에만 뒤늦은 반영으로 한 번 더 바뀔 수 있습니다.",
@@ -2835,7 +2923,6 @@
           "roles" : {
             "description" : "role 목록입니다. `pm`, `design`, `backend`, `frontend` 순서로 정렬하며, role이 지정되지 않은 경우 빈 배열을 반환합니다.",
             "items" : {
-              "description" : "role 목록입니다. `pm`, `design`, `backend`, `frontend` 순서로 정렬하며, role이 지정되지 않은 경우 빈 배열을 반환합니다.",
               "type" : "string"
             },
             "type" : "array"
@@ -2855,7 +2942,8 @@
             "minimum" : 0,
             "type" : "integer"
           }
-        }
+        },
+        "type" : "object"
       },
       "TaskResponse" : {
         "description" : "생성된 작업",
@@ -2884,7 +2972,6 @@
           "roles" : {
             "description" : "role 목록입니다. `pm`, `design`, `backend`, `frontend` 순서로 정렬합니다.",
             "items" : {
-              "description" : "role 목록입니다. `pm`, `design`, `backend`, `frontend` 순서로 정렬합니다.",
               "type" : "string"
             },
             "type" : "array"
@@ -2898,7 +2985,8 @@
             "description" : "제목",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "TaskUpdateListResponse" : {
         "description" : "작업 업데이트 목록 응답",
@@ -2910,7 +2998,8 @@
             },
             "type" : "array"
           }
-        }
+        },
+        "type" : "object"
       },
       "ToggleChecklistItemRequest" : {
         "description" : "완료 기준 완료 상태 변경 요청",
@@ -2932,7 +3021,8 @@
         },
         "required" : [
           "completed"
-        ]
+        ],
+        "type" : "object"
       },
       "TokenResponse" : {
         "description" : "Access/refresh token 응답",
@@ -2956,7 +3046,8 @@
             "example" : "Bearer",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "UpdateMeRequest" : {
         "description" : "프로필 수정 요청. 제공된(non-null) 필드만 갱신합니다.",
@@ -2982,7 +3073,8 @@
               "null"
             ]
           }
-        }
+        },
+        "type" : "object"
       },
       "UpdateResponse" : {
         "description" : "작업 업데이트",
@@ -3015,9 +3107,7 @@
             "type" : "string"
           },
           "metadata" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
+            "additionalProperties" : { },
             "type" : "object"
           },
           "project_id" : {
@@ -3039,7 +3129,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "UpdateTaskRequest" : {
         "description" : "작업 수정 요청",
@@ -3151,7 +3242,8 @@
           "priority",
           "status",
           "title"
-        ]
+        ],
+        "type" : "object"
       },
       "UpdateWebTaskRequest" : {
         "description" : "웹 작업 수정 요청",
@@ -3234,7 +3326,8 @@
             ],
             "writeOnly" : true
           }
-        }
+        },
+        "type" : "object"
       },
       "UpdateWorkspaceMemberRequest" : {
         "description" : "워크스페이스 멤버 수정 요청",
@@ -3251,7 +3344,8 @@
         },
         "required" : [
           "role"
-        ]
+        ],
+        "type" : "object"
       },
       "UpdateWorkspaceRequest" : {
         "description" : "워크스페이스 수정 요청",
@@ -3268,7 +3362,8 @@
             "description" : "워크스페이스 slug. 값이 없으면 기존 slug를 유지합니다.",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "UserResponse" : {
         "description" : "사용자 프로필",
@@ -3317,7 +3412,8 @@
             "format" : "date-time",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "WebDecisionResponse" : {
         "description" : "생성된 Decision. 성공 응답은 wrapper 없이 반환합니다.",
@@ -3361,7 +3457,8 @@
             "format" : "date-time",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "WebMessageResponse" : {
         "description" : "명령 성공 응답",
@@ -3371,7 +3468,8 @@
             "example" : "updated",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "WebMilestoneResponse" : {
         "description" : "웹 마일스톤 응답입니다. 수정 충돌 확인용 버전을 포함합니다.",
@@ -3432,7 +3530,8 @@
             "minimum" : 0,
             "type" : "integer"
           }
-        }
+        },
+        "type" : "object"
       },
       "WebProjectResponse" : {
         "description" : "웹 프로젝트 응답입니다. 필드 구성은 레거시 프로젝트 응답과 동일합니다.",
@@ -3459,9 +3558,7 @@
             "type" : "string"
           },
           "metadata" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
+            "additionalProperties" : { },
             "type" : "object"
           },
           "name" : {
@@ -3504,7 +3601,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "WebSourceRefResponse" : {
         "properties" : {
@@ -3523,9 +3621,7 @@
             "type" : "string"
           },
           "metadata" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
+            "additionalProperties" : { },
             "type" : "object"
           },
           "permission_key" : {
@@ -3583,7 +3679,8 @@
             "format" : "uuid",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "WebTaskListResponse" : {
         "description" : "프로젝트 작업 목록 응답",
@@ -3595,7 +3692,8 @@
             },
             "type" : "array"
           }
-        }
+        },
+        "type" : "object"
       },
       "WebTaskResponse" : {
         "description" : "웹 작업",
@@ -3691,15 +3789,18 @@
             "minimum" : 0,
             "type" : "integer"
           }
-        }
+        },
+        "type" : "object"
       },
       "WorkspaceInvitationResponse" : {
         "description" : "워크스페이스 초대 한 건 응답",
         "properties" : {
           "invitation" : {
-            "$ref" : "#/components/schemas/Invitation"
+            "$ref" : "#/components/schemas/Invitation",
+            "description" : "초대 정보"
           }
-        }
+        },
+        "type" : "object"
       },
       "WorkspaceInvitationsResponse" : {
         "description" : "워크스페이스 초대 목록 응답",
@@ -3711,7 +3812,8 @@
             },
             "type" : "array"
           }
-        }
+        },
+        "type" : "object"
       },
       "WorkspaceListResponse" : {
         "description" : "워크스페이스 목록 응답",
@@ -3723,7 +3825,8 @@
             },
             "type" : "array"
           }
-        }
+        },
+        "type" : "object"
       },
       "WorkspaceMemberResponse" : {
         "description" : "워크스페이스 멤버",
@@ -3755,7 +3858,8 @@
             "format" : "date-time",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "WorkspaceMembersResponse" : {
         "description" : "워크스페이스 멤버 목록 응답",
@@ -3767,7 +3871,8 @@
             },
             "type" : "array"
           }
-        }
+        },
+        "type" : "object"
       },
       "WorkspaceResponse" : {
         "description" : "워크스페이스",
@@ -3808,7 +3913,8 @@
             "format" : "date-time",
             "type" : "string"
           }
-        }
+        },
+        "type" : "object"
       },
       "WorkspaceSlugAvailabilityResponse" : {
         "description" : "slug 사용 가능 여부",
@@ -3835,7 +3941,8 @@
               "null"
             ]
           }
-        }
+        },
+        "type" : "object"
       },
       "WorkspaceSnapshotResponse" : {
         "properties" : {
@@ -3890,7 +3997,8 @@
           "workspace" : {
             "$ref" : "#/components/schemas/WorkspaceResponse"
           }
-        }
+        },
+        "type" : "object"
       }
     },
     "securitySchemes" : {

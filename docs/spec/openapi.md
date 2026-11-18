@@ -37,6 +37,7 @@ schema에 의도하지 않은 `default: null`이 생길 수 있습니다.
 - springdoc 또는 Swagger 의존성을 올릴 때 세 구성요소의 런타임 버전을 함께 확인합니다.
 - `/api/v3/api-docs`가 OpenAPI 3.1을 유지하고 request object schema에 의도하지 않은 `default`가 없는지
   통합 테스트로 검증합니다.
+- 스키마를 생성하는 `ModelResolver`도 OpenAPI 3.1 모드로 생성합니다.
 - 문서 생성 문제를 숨기기 위해 OpenAPI 3.0으로 낮추거나 직렬화된 JSON을 후처리하지 않습니다.
 
 ## Controller 문서화
