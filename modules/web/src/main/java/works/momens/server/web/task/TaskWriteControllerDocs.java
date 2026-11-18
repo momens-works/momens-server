@@ -33,6 +33,9 @@ interface TaskWriteControllerDocs {
   @ApiException(
       value = ProjectErrorCode.class,
       codes = {"PROJECT_NOT_FOUND"})
+  @ApiException(
+      value = TaskErrorCode.class,
+      codes = {"TASK_WRITES_PAUSED"})
   @ApiException(CommonErrorCode.class)
   WebTaskResponse create(
       @Parameter(description = "프로젝트 식별자") UUID projectId,
@@ -49,7 +52,7 @@ interface TaskWriteControllerDocs {
       content = @Content(schema = @Schema(implementation = WebTaskResponse.class)))
   @ApiException(
       value = TaskErrorCode.class,
-      codes = {"TASK_NOT_FOUND"})
+      codes = {"TASK_NOT_FOUND", "TASK_WRITES_PAUSED"})
   @ApiException(CommonErrorCode.class)
   WebTaskResponse update(
       @Parameter(description = "작업 식별자") UUID taskId,
@@ -66,7 +69,7 @@ interface TaskWriteControllerDocs {
       content = @Content(schema = @Schema(implementation = WebMessageResponse.class)))
   @ApiException(
       value = TaskErrorCode.class,
-      codes = {"TASK_NOT_FOUND"})
+      codes = {"TASK_NOT_FOUND", "TASK_WRITES_PAUSED"})
   @ApiException(CommonErrorCode.class)
   WebMessageResponse delete(
       @Parameter(description = "작업 식별자") UUID taskId,
@@ -83,7 +86,7 @@ interface TaskWriteControllerDocs {
       content = @Content(schema = @Schema(implementation = UpdateResponse.class)))
   @ApiException(
       value = TaskErrorCode.class,
-      codes = {"TASK_NOT_FOUND"})
+      codes = {"TASK_NOT_FOUND", "TASK_WRITES_PAUSED"})
   @ApiException(CommonErrorCode.class)
   UpdateResponse createUpdate(
       @Parameter(description = "작업 식별자") UUID taskId,
@@ -100,7 +103,7 @@ interface TaskWriteControllerDocs {
       content = @Content(schema = @Schema(implementation = WebMessageResponse.class)))
   @ApiException(
       value = TaskErrorCode.class,
-      codes = {"TASK_NOT_FOUND"})
+      codes = {"TASK_NOT_FOUND", "TASK_WRITES_PAUSED"})
   @ApiException(CommonErrorCode.class)
   WebMessageResponse deleteUpdate(
       @Parameter(description = "작업 식별자") UUID taskId,

@@ -30,7 +30,7 @@ interface TaskLinkControllerDocs {
       content = @Content(schema = @Schema(implementation = WebMessageResponse.class)))
   @ApiException(
       value = TaskErrorCode.class,
-      codes = {"TASK_NOT_FOUND"})
+      codes = {"TASK_NOT_FOUND", "TASK_WRITES_PAUSED"})
   @ApiException(
       value = MemoryErrorCode.class,
       codes = {"MEMORY_NOT_FOUND"})
@@ -53,7 +53,7 @@ interface TaskLinkControllerDocs {
       content = @Content(schema = @Schema(implementation = WebMessageResponse.class)))
   @ApiException(
       value = TaskErrorCode.class,
-      codes = {"TASK_NOT_FOUND"})
+      codes = {"TASK_NOT_FOUND", "TASK_WRITES_PAUSED"})
   @ApiException(
       value = ContextErrorCode.class,
       codes = {"CONTEXT_LINK_NOT_FOUND"})
@@ -74,7 +74,7 @@ interface TaskLinkControllerDocs {
       content = @Content(schema = @Schema(implementation = CreateTaskSourceRefResponse.class)))
   @ApiException(
       value = TaskErrorCode.class,
-      codes = {"TASK_NOT_FOUND"})
+      codes = {"TASK_NOT_FOUND", "TASK_WRITES_PAUSED"})
   @ApiException(CommonErrorCode.class)
   CreateTaskSourceRefResponse createTaskSourceRef(
       @Parameter(description = "작업 식별자") UUID taskId,
@@ -91,7 +91,7 @@ interface TaskLinkControllerDocs {
       content = @Content(schema = @Schema(implementation = WebMessageResponse.class)))
   @ApiException(
       value = TaskErrorCode.class,
-      codes = {"TASK_NOT_FOUND"})
+      codes = {"TASK_NOT_FOUND", "TASK_WRITES_PAUSED"})
   @ApiException(
       value = ContextErrorCode.class,
       codes = {"CONTEXT_LINK_NOT_FOUND"})

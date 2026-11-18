@@ -50,7 +50,7 @@ interface TaskControllerDocs {
   @ApiResponse(responseCode = "204", description = "수정 성공. 본문 없음. 최신 상태는 상세 조회로 읽습니다.")
   @ApiException(
       value = TaskErrorCode.class,
-      codes = {"TASK_NOT_FOUND", "TASK_CHECKLIST_ITEM_NOT_FOUND"})
+      codes = {"TASK_NOT_FOUND", "TASK_CHECKLIST_ITEM_NOT_FOUND", "TASK_WRITES_PAUSED"})
   @ApiException(CommonErrorCode.class)
   void updateTask(
       @Parameter(description = "task 식별자") UUID taskId,
@@ -67,7 +67,7 @@ interface TaskControllerDocs {
       content = @Content(schema = @Schema(implementation = ChecklistToggleResponse.class)))
   @ApiException(
       value = TaskErrorCode.class,
-      codes = {"TASK_NOT_FOUND", "TASK_CHECKLIST_ITEM_NOT_FOUND"})
+      codes = {"TASK_NOT_FOUND", "TASK_CHECKLIST_ITEM_NOT_FOUND", "TASK_WRITES_PAUSED"})
   @ApiException(
       value = UserErrorCode.class,
       codes = {"USER_NOT_FOUND"})
