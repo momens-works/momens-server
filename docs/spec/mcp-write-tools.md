@@ -37,6 +37,8 @@
 - 예상 입력·권한·리소스 오류는 `isError: true`다. 미등록 도구·객체가 아닌 arguments는
   JSON-RPC `-32602`, 예상치 못한 내부 오류는 상세 없는 `-32603 Internal error`다.
   도메인 예외의 원문·details를 tool text로 전달하지 않는다.
+- 운영 설정으로 task 쓰기가 중단되면 작업·댓글 도구는 `isError: true`와
+  `Task writes are temporarily paused.`를 반환한다. 다시 열릴 때까지 재시도해도 같다.
 
 ### 수정 충돌
 
