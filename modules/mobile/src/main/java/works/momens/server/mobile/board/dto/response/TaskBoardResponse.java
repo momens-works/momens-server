@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 import works.momens.server.mobile.board.MobileTaskCard;
 import works.momens.server.mobile.board.MobileTaskGroup;
 
@@ -46,7 +47,7 @@ public record TaskBoardResponse(
               nullable = true,
               deprecated = true)
           String role,
-      @Schema(description = "담당자 정보. 미지정 시 null") AssigneeResponse assignee,
+      @Schema(description = "담당자 정보. 미지정 시 null") @Nullable AssigneeResponse assignee,
       @Schema(description = "우선순위 (urgent/high/medium/low)", example = "low") String priority,
       @Schema(description = "마감일. 미설정 시 null", example = "2026-09-25", nullable = true)
           LocalDate dueDate,

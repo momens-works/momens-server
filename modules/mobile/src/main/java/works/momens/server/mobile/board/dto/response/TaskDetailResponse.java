@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 import works.momens.server.mobile.MobileDraftStatus;
 import works.momens.server.mobile.board.MobileTaskDetail;
 import works.momens.server.mobile.board.MobileTaskDetailView;
@@ -37,7 +38,7 @@ public record TaskDetailResponse(
             nullable = true,
             deprecated = true)
         String role,
-    @Schema(description = "담당자. 미지정이면 null") AssigneeResponse assignee,
+    @Schema(description = "담당자. 미지정이면 null") @Nullable AssigneeResponse assignee,
     @Schema(description = "우선순위 (urgent/high/medium/low)", example = "medium") String priority,
     @Schema(description = "마감일. 미설정 시 null", example = "2026-09-25", nullable = true)
         LocalDate dueDate,

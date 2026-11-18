@@ -147,6 +147,7 @@ Request/response DTO는 `record`를 기본으로 하고 `@Schema`로 문서화�
 
 - record 자체에 설명을 둡니다.
 - 주요 필드에는 `description`, `example`, `nullable`을 명시합니다.
+- `null`을 반환할 수 있는 객체 참조 필드에는 `@Nullable`(`org.jspecify.annotations`)을 지정합니다.
 - validation annotation과 `@Schema` 설명이 서로 어긋나지 않게 합니다.
 
 ### 스키마 이름 충돌
