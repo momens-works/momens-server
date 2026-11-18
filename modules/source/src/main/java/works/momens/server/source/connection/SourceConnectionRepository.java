@@ -74,8 +74,8 @@ public interface SourceConnectionRepository extends JpaRepository<SourceConnecti
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query(
       "select c from SourceConnection c where c.workspaceId = :workspaceId"
-          + " and c.sourceType = 'FIGMA' and c.externalWorkspaceId = :externalId order by c.createdAt")
-  List<SourceConnection> findFigmaForReconnect(UUID workspaceId, String externalId);
+          + " and c.sourceType = :sourceType and c.externalWorkspaceId = :externalId order by c.createdAt")
+  List<SourceConnection> findForReconnect(UUID workspaceId, String sourceType, String externalId);
 
   /**
    * credential 갱신이 {@link SourceCredentialRepository#findFigmaByUser}와 같은 순서로 행을 잠가 교착을 피하도록 id 순으로

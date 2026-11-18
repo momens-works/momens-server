@@ -163,9 +163,8 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
   }
 
   private SourceInstallerImpl figmaInstaller() {
-    SourceOAuthProperties properties = properties();
     String base = "http://localhost:" + server.getAddress().getPort();
-    ProviderDefinition definition =
+    return localInstaller(
         new ProviderDefinition(
             OAuthProviderRegistry.FIGMA,
             base + "/authorize",
@@ -176,12 +175,32 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
             ClientAuthStyle.BASIC_HEADER,
             null,
             IdentityMethod.NONE,
-            ProviderIdentities::figma);
+            ProviderIdentities::figma));
+  }
+
+  private SourceInstallerImpl notionInstaller() {
+    String base = "http://localhost:" + server.getAddress().getPort();
+    return localInstaller(
+        new ProviderDefinition(
+            OAuthProviderRegistry.NOTION,
+            base + "/authorize",
+            base + "/token",
+            List.of(),
+            Map.of(),
+            TokenBodyFormat.JSON,
+            ClientAuthStyle.BASIC_HEADER,
+            null,
+            IdentityMethod.NONE,
+            ProviderIdentities::notion));
+  }
+
+  private SourceInstallerImpl localInstaller(ProviderDefinition definition) {
+    SourceOAuthProperties properties = properties();
     OAuthProviderRegistry registry =
         new OAuthProviderRegistry(properties) {
           @Override
           Optional<OAuthProvider> find(String sourceType) {
-            return OAuthProviderRegistry.FIGMA.equals(OAuthStateSigner.normalize(sourceType))
+            return definition.sourceType().equals(OAuthStateSigner.normalize(sourceType))
                 ? Optional.of(
                     new OAuthProvider(definition, "cid", "secret", properties.redirectUri()))
                 : Optional.empty();
@@ -344,6 +363,36 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
     assertThat(completed.connection().resyncRequestedAt()).isEqualTo(requestedAt);
     assertThat(completed.connection().updatedAt()).isEqualTo(workerUpdatedAt);
     assertThat(completed.connection().capturesReadCount()).isEqualTo(42);
+  }
+
+  @Test
+  @DisplayName("Notion 재승인은 연결의 페이지 목록을 보존하고 워크스페이스 아이콘을 갱신한다")
+  void preservesNotionPageSelectionOnReconnect() {
+    tokenBody.set(
+        "{\"access_token\":\"tok-1\",\"workspace_id\":\"notion-ws\",\"workspace_icon\":\"old\"}");
+    String signedState =
+        signer().sign(new OAuthState(workspaceId, insertUser(), OAuthProviderRegistry.NOTION));
+    UUID id =
+        notionInstaller()
+            .completeInstall(new CompleteInstallCommand("first", signedState))
+            .connection()
+            .id();
+    jdbcTemplate.update(
+        "UPDATE source_connections SET metadata = metadata || '{\"page_ids\":[\"page-a\"]}'::jsonb WHERE id = ?",
+        id);
+
+    tokenBody.set(
+        "{\"access_token\":\"tok-2\",\"workspace_id\":\"notion-ws\",\"workspace_icon\":\"new\"}");
+    UUID reconnectedId =
+        notionInstaller()
+            .completeInstall(new CompleteInstallCommand("second", signedState))
+            .connection()
+            .id();
+
+    assertThat(reconnectedId).isEqualTo(id);
+    assertThat(connectionRepository.findById(id).orElseThrow().getMetadata())
+        .containsEntry("page_ids", List.of("page-a"))
+        .containsEntry("workspace_icon", "new");
   }
 
   @Test

@@ -136,18 +136,21 @@ class SourceInstallerImpl implements SourceInstaller {
             ? SourceConnectionStatus.PENDING
             : SourceConnectionStatus.ACTIVE;
     Instant now = Instant.now();
-    List<SourceConnection> existing =
+    boolean preserveMetadata =
         OAuthProviderRegistry.FIGMA.equals(provider.sourceType())
-            ? sourceConnectionRepository.findFigmaForReconnect(
-                state.workspaceId(), identity.externalId())
+            || OAuthProviderRegistry.NOTION.equals(provider.sourceType());
+    List<SourceConnection> existing =
+        preserveMetadata
+            ? sourceConnectionRepository.findForReconnect(
+                state.workspaceId(), provider.sourceType(), identity.externalId())
             : sourceConnectionRepository
                 .findByWorkspaceIdAndSourceTypeAndExternalWorkspaceIdOrderByCreatedAtAsc(
                     state.workspaceId(), provider.sourceType(), identity.externalId());
     if (!existing.isEmpty()) {
       existing.forEach(connection -> {
         Map<String, Object> metadata = identity.metadata();
-        if (OAuthProviderRegistry.FIGMA.equals(provider.sourceType())) {
-          // configure의 마지막 검증과 같은 행 잠금을 사용합니다. 재승인 후에도 기존 webhook 정리가 가능해야 합니다.
+        if (preserveMetadata) {
+          // 기존 Figma webhook 설정과 Notion 수집 대상 목록을 행 잠금 아래 보존합니다.
           metadata = new LinkedHashMap<>();
           if (connection.getMetadata() != null) {
             metadata.putAll(connection.getMetadata());
