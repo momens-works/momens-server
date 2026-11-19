@@ -69,7 +69,7 @@ interface TaskControllerDocs {
   @ApiException(CommonErrorCode.class)
   void deleteTask(
       @Parameter(description = "task 식별자") UUID taskId,
-      @Parameter(description = "수정 충돌 검사용 버전. 생략하면 충돌 검사를 수행하지 않습니다.") Long version,
+      @Parameter(description = "조회한 태스크의 버전. 생략하면 요청 처리 중 발생한 동시 변경을 검사합니다.") Long version,
       Principal principal);
 
   @Operation(
