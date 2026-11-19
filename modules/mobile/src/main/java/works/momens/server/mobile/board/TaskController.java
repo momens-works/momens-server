@@ -6,11 +6,14 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import works.momens.server.common.api.CurrentUser;
@@ -62,6 +65,23 @@ class TaskController implements TaskControllerDocs {
         request.purpose(),
         checklistItems,
         request.version());
+  }
+
+  @Override
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @DeleteMapping(path = "/tasks/{taskId}", version = "1")
+  public void deleteTask(
+      @PathVariable UUID taskId,
+      @RequestParam(required = false) Long version,
+      Principal principal) {
+    projectTaskService.deleteTask(taskId, CurrentUser.id(principal), version);
+  }
+
+  @Override
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @PostMapping(path = "/tasks/{taskId}/restore", version = "1")
+  public void restoreTask(@PathVariable UUID taskId, Principal principal) {
+    projectTaskService.restoreTask(taskId, CurrentUser.id(principal));
   }
 
   @Override

@@ -71,7 +71,8 @@ class TaskWriterImplTest {
             TaskStatus.BACKLOG,
             Set.of(TaskRole.BACKEND),
             TaskPriority.MEDIUM,
-            null);
+            null,
+            UUID.randomUUID());
 
     assertThatThrownBy(() -> pausedWriter.create(command))
         .isInstanceOfSatisfying(
@@ -96,7 +97,8 @@ class TaskWriterImplTest {
                 TaskStatus.BACKLOG,
                 Set.of(TaskRole.BACKEND),
                 TaskPriority.HIGH,
-                null));
+                null,
+                UUID.randomUUID()));
 
     ArgumentCaptor<Task> captor = ArgumentCaptor.forClass(Task.class);
     verify(taskRepository).save(captor.capture());
@@ -128,7 +130,14 @@ class TaskWriterImplTest {
     TaskSnapshot created =
         taskWriter.create(
             CreateTaskCommand.fromSignal(
-                projectId, workspaceId, "제목", TaskStatus.IN_PROGRESS, TaskRole.PM, null, signalId));
+                projectId,
+                workspaceId,
+                "제목",
+                TaskStatus.IN_PROGRESS,
+                TaskRole.PM,
+                null,
+                signalId,
+                UUID.randomUUID()));
 
     assertThat(created.status()).isEqualTo("in_progress");
     assertThat(created.priority()).isEqualTo("medium");
@@ -167,7 +176,8 @@ class TaskWriterImplTest {
                 assigneeId,
                 dueDate,
                 TaskOrigin.MANUAL,
-                null));
+                null,
+                UUID.randomUUID()));
 
     assertThat(created.description()).isEqualTo("설명");
     assertThat(created.status()).isEqualTo("backlog");
@@ -189,7 +199,8 @@ class TaskWriterImplTest {
                 TaskStatus.TODO,
                 Set.of(TaskRole.PM),
                 TaskPriority.HIGH,
-                null),
+                null,
+                UUID.randomUUID()),
             "MOM-0003");
     when(taskRepository.findForMutation(task.getId())).thenReturn(Optional.of(task));
 
@@ -234,7 +245,8 @@ class TaskWriterImplTest {
                 TaskStatus.TODO,
                 Set.of(TaskRole.PM),
                 TaskPriority.HIGH,
-                null),
+                null,
+                UUID.randomUUID()),
             "MOM-0004");
     when(taskRepository.findForMutation(task.getId())).thenReturn(Optional.of(task));
     when(workspaceMembershipReader.roleOf(workspaceId, assigneeId)).thenReturn(Optional.empty());
@@ -421,7 +433,8 @@ class TaskWriterImplTest {
             TaskStatus.TODO,
             Set.of(TaskRole.PM),
             TaskPriority.HIGH,
-            null),
+            null,
+            UUID.randomUUID()),
         "MOM-0005");
   }
 

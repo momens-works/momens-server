@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
+import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.common.api.ExpectedVersion;
 import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.outbox.OutboxAppender;
@@ -21,6 +22,7 @@ import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.PatchTaskCommand;
 import works.momens.server.project.task.TaskDetail;
 import works.momens.server.project.task.TaskErrorCode;
+import works.momens.server.project.task.TaskPolicy;
 import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskSnapshot;
 import works.momens.server.project.task.TaskWriteGate;
@@ -36,6 +38,7 @@ class TaskWriterImpl implements TaskWriter {
   private static final String EVENT_TASK_CREATED = "task.created";
   private static final String EVENT_TASK_UPDATED = "task.updated";
   private static final String EVENT_TASK_DELETED = "task.deleted";
+  private static final String EVENT_TASK_RESTORED = "task.restored";
 
   private final TaskRepository taskRepository;
   private final MilestoneDirectory milestoneDirectory;
@@ -146,11 +149,50 @@ class TaskWriterImpl implements TaskWriter {
   @Transactional
   public void delete(UUID taskId, Long version) {
     writeGate.requireOpen();
+    softDelete(findTask(taskId), version);
+  }
+
+  @Override
+  @Transactional
+  public void deleteAsCreator(UUID taskId, UUID userId, Long version) {
+    writeGate.requireOpen();
     Task task = findTask(taskId);
+    requireCreator(task, userId);
+    softDelete(task, version);
+  }
+
+  @Override
+  @Transactional
+  public void restoreAsCreator(UUID taskId, UUID userId) {
+    writeGate.requireOpen();
+    Task task =
+        taskRepository
+            .findForRestore(taskId)
+            .orElseThrow(() ->
+                new BusinessException(
+                    TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())));
+    requireCreator(task, userId);
+    if (!task.isDeleted()) {
+      throw new BusinessException(
+          TaskErrorCode.TASK_NOT_DELETED, Map.of("task_id", taskId.toString()));
+    }
+    task.restore();
+    outboxAppender.append(
+        task.getWorkspaceId(), "task", taskId.toString(), EVENT_TASK_RESTORED, Map.of());
+  }
+
+  private void softDelete(Task task, Long version) {
     ExpectedVersion.check(version, task.getVersion());
     task.delete();
     outboxAppender.append(
-        task.getWorkspaceId(), "task", taskId.toString(), EVENT_TASK_DELETED, Map.of());
+        task.getWorkspaceId(), "task", task.getId().toString(), EVENT_TASK_DELETED, Map.of());
+  }
+
+  private static void requireCreator(Task task, UUID userId) {
+    if (!TaskPolicy.canDelete(task.getCreatorId(), userId)) {
+      throw new BusinessException(
+          CommonErrorCode.AUTH_FORBIDDEN, Map.of("task_id", task.getId().toString()));
+    }
   }
 
   private void validateReferences(

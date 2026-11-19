@@ -56,7 +56,8 @@ class SignalActionExecutor {
                 TaskStatus.TODO,
                 draft.role(),
                 draft.priority(),
-                signal.id()));
+                signal.id(),
+                userId));
     // 원장 baseline은 방금 tasks에 쓴 값이어야 한다. task 생성 직후에 적재해 두 값이 갈릴 자리를 두지 않는다.
     // 응답의 draft_status는 이 반환값이고 원장을 다시 읽지 않는다. 재조회하면 아래 title(방금 쓴
     // fallback)과 짝이 맞지 않는 ready가 나올 수 있다.

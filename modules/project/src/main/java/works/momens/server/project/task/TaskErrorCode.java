@@ -7,7 +7,8 @@ import works.momens.server.common.api.ErrorCode;
 public enum TaskErrorCode implements ErrorCode {
   TASK_NOT_FOUND(404, "작업을 찾을 수 없습니다."),
   TASK_CHECKLIST_ITEM_NOT_FOUND(404, "완료 기준 항목을 찾을 수 없습니다."),
-  TASK_WRITES_PAUSED(503, "작업 변경이 일시 중단되었습니다.");
+  TASK_WRITES_PAUSED(503, "작업 변경이 일시 중단되었습니다."),
+  TASK_NOT_DELETED(409, "삭제되지 않은 태스크는 복구할 수 없습니다.");
 
   private final int status;
   private final String defaultMessage;

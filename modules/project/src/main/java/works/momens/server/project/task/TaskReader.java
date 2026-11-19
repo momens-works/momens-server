@@ -27,6 +27,9 @@ public interface TaskReader {
    */
   Optional<TaskScope> findScope(UUID taskId);
 
+  /** 소프트 삭제된 태스크를 포함해 소속 workspace와 project를 조회합니다. 삭제된 태스크를 복구하기 전에 요청한 사용자의 멤버십을 확인하는 데 사용합니다. */
+  Optional<TaskScope> findScopeIncludingDeleted(UUID taskId);
+
   /** 표면 응답으로 매핑할 태스크 저장값 한 건을 조회합니다. */
   Optional<TaskSnapshot> findSnapshot(UUID taskId);
 

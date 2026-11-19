@@ -55,6 +55,8 @@ public record TaskDetailResponse(
             allowableValues = {"generating", "ready"},
             example = "ready")
         String draftStatus,
+    @Schema(description = "요청한 사용자의 태스크 삭제 가능 여부. 작성자인 경우에만 true이며, 작성자 정보가 없는 태스크는 false입니다.")
+        boolean canDelete,
     @Schema(description = "수정 충돌 확인용 버전", minimum = "0") long version) {
 
   @Schema(description = "담당자")
@@ -125,6 +127,7 @@ public record TaskDetailResponse(
         openQuestions,
         detail.nextAction(),
         MobileDraftStatus.key(view.draftStatus()),
+        detail.canDelete(),
         detail.version());
   }
 

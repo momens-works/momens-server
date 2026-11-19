@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -23,9 +24,11 @@ import works.momens.server.project.task.BoardTask;
 import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.TaskDetail;
 import works.momens.server.project.task.TaskErrorCode;
+import works.momens.server.project.task.TaskPolicy;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskReader;
 import works.momens.server.project.task.TaskRole;
+import works.momens.server.project.task.TaskScope;
 import works.momens.server.project.task.TaskSnapshot;
 import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.TaskWriter;
@@ -93,7 +96,7 @@ class ProjectTaskService {
     UUID workspaceId = requireProjectMember(projectId, userId);
     return taskWriter.create(
         CreateTaskCommand.manual(
-            projectId, workspaceId, title, TaskStatus.TODO, roles, priority, dueDate));
+            projectId, workspaceId, title, TaskStatus.TODO, roles, priority, dueDate, userId));
   }
 
   /**
@@ -117,7 +120,7 @@ class ProjectTaskService {
             .orElseThrow(() ->
                 new BusinessException(
                     TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())));
-    return new MobileTaskDetailView(draftStatus, toMobileDetail(detail));
+    return new MobileTaskDetailView(draftStatus, toMobileDetail(detail, userId));
   }
 
   @Transactional
@@ -157,7 +160,7 @@ class ProjectTaskService {
       UUID taskId, UUID userId, UUID itemId, boolean completed, Long version) {
     requireTaskMember(taskId, userId);
     TaskDetail updated = taskWriter.toggleChecklistItem(taskId, itemId, completed, version);
-    return toMobileDetail(updated);
+    return toMobileDetail(updated, userId);
   }
 
   /**
@@ -181,12 +184,27 @@ class ProjectTaskService {
     return taskReader.findDetail(taskId).map(TaskDetail::dueDate).orElse(null);
   }
 
+  @Transactional
+  public void deleteTask(UUID taskId, UUID userId, Long version) {
+    requireTaskMember(taskId, userId);
+    taskWriter.deleteAsCreator(taskId, userId, version);
+  }
+
+  @Transactional
+  public void restoreTask(UUID taskId, UUID userId) {
+    requireTaskMember(taskId, userId, taskReader.findScopeIncludingDeleted(taskId));
+    taskWriter.restoreAsCreator(taskId, userId);
+  }
+
   private void requireTaskMember(UUID taskId, UUID userId) {
     // 수정 전에는 상세 전체를 읽을 필요가 없어 소속 projection만 조회해 멤버십을 확인한다.
+    requireTaskMember(taskId, userId, taskReader.findScope(taskId));
+  }
+
+  private void requireTaskMember(UUID taskId, UUID userId, Optional<TaskScope> scope) {
     UUID workspaceId =
-        taskReader
-            .findScope(taskId)
-            .map(scope -> scope.workspaceId())
+        scope
+            .map(TaskScope::workspaceId)
             .orElseThrow(() ->
                 new BusinessException(
                     TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())));
@@ -196,7 +214,7 @@ class ProjectTaskService {
     }
   }
 
-  private MobileTaskDetail toMobileDetail(TaskDetail detail) {
+  private MobileTaskDetail toMobileDetail(TaskDetail detail, UUID userId) {
     return new MobileTaskDetail(
         detail.id(),
         detail.projectId(),
@@ -211,6 +229,7 @@ class ProjectTaskService {
         taskMaterialAssembler.getMaterials(detail.workspaceId(), detail.id()),
         detail.openQuestions(),
         detail.nextAction(),
+        TaskPolicy.canDelete(detail.creatorId(), userId),
         detail.version());
   }
 

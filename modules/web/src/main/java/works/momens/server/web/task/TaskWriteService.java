@@ -62,7 +62,8 @@ class TaskWriteService {
             assigneeId,
             dueDate,
             TaskOrigin.MANUAL,
-            null));
+            null,
+            userId));
   }
 
   @Transactional

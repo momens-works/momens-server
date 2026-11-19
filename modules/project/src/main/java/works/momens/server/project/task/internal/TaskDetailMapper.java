@@ -32,6 +32,7 @@ final class TaskDetailMapper {
         task.getPriority(),
         task.roleValues(),
         task.getAssigneeId(),
+        task.getCreatorId(),
         task.getDueDate(),
         task.getDescription(),
         checklistItems,

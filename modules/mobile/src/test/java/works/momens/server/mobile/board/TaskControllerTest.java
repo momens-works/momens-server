@@ -88,6 +88,7 @@ class TaskControllerTest {
                             "https://figma.example/p")),
                     List.of(new TaskDetail.OpenQuestion(QUESTION_ID, "권한 거부 시 대체 흐름을 둘지 검토 필요")),
                     "권한 거부 흐름을 PM과 확정한 뒤 화면 카피를 수정하세요.",
+                    false,
                     0L)));
 
     mockMvc
@@ -145,6 +146,7 @@ class TaskControllerTest {
                     List.of(),
                     List.of(),
                     null,
+                    false,
                     0L)));
 
     mockMvc
@@ -318,6 +320,7 @@ class TaskControllerTest {
                 List.of(),
                 List.of(),
                 null,
+                false,
                 0L));
 
     mockMvc

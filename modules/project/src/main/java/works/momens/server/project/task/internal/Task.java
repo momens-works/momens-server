@@ -99,6 +99,9 @@ class Task extends BaseEntity {
   @Column(name = "origin_signal_id", columnDefinition = "uuid")
   private UUID originSignalId;
 
+  @Column(name = "creator_id", columnDefinition = "uuid", updatable = false)
+  private UUID creatorId;
+
   /**
    * 완료기준 항목. 자식 엔티티의 전체 생명주기를 이 aggregate가 소유하므로 cascade ALL과 orphanRemoval로 컬렉션 변경이 곧 저장 변경이 되게
    * 합니다. 저장 순서는 {@code position} 컬럼이 담고, 조회는 {@code @OrderBy}로 그 값 오름차순 정렬만 합니다. 순서 부여는 {@code
@@ -148,6 +151,7 @@ class Task extends BaseEntity {
     this.dueDate = command.dueDate();
     this.originType = command.origin().value();
     this.originSignalId = command.originSignalId();
+    this.creatorId = command.creatorId();
   }
 
   static Task create(CreateTaskCommand command, String label) {
@@ -207,6 +211,14 @@ class Task extends BaseEntity {
 
   void delete() {
     this.deletedAt = Instant.now();
+  }
+
+  void restore() {
+    this.deletedAt = null;
+  }
+
+  boolean isDeleted() {
+    return deletedAt != null;
   }
 
   /**

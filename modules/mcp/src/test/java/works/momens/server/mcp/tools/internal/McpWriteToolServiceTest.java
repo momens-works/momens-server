@@ -271,6 +271,7 @@ class McpWriteToolServiceTest {
     ArgumentCaptor<CreateTaskCommand> command = ArgumentCaptor.forClass(CreateTaskCommand.class);
     verify(taskWriter).create(command.capture());
     assertThat(command.getValue().title()).isEqualTo(atMaxLength);
+    assertThat(command.getValue().creatorId()).isEqualTo(userId);
   }
 
   @Test

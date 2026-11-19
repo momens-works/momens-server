@@ -46,6 +46,12 @@ class TaskReaderImpl implements TaskReader {
     return taskRepository.findScopeById(taskId);
   }
 
+  @Override
+  @Transactional(readOnly = true)
+  public Optional<TaskScope> findScopeIncludingDeleted(UUID taskId) {
+    return taskRepository.findScopeIncludingDeletedById(taskId);
+  }
+
   /**
    * 웹 상세 조회에 사용합니다. soft delete된 태스크와 소속 프로젝트가 soft delete된 태스크를 모두 제외합니다.
    *

@@ -60,7 +60,8 @@ class McpTaskToolService {
                 resolveAssignee(context, argument(args, "assignee")),
                 date(argument(args, "due_date"), "due_date"),
                 TaskOrigin.MANUAL,
-                null));
+                null,
+                context.userId()));
     return McpWriteToolText.createdTask(task, project, milestoneName(task))
         + "\nurl: "
         + links.taskUrl(context.workspaceId(), task);

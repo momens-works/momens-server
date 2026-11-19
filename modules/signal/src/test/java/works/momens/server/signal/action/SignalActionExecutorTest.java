@@ -65,7 +65,8 @@ class SignalActionExecutorTest {
                 TaskStatus.TODO,
                 TaskRole.DESIGN,
                 TaskPriority.HIGH,
-                SIGNAL_ID));
+                SIGNAL_ID,
+                USER_ID));
     verify(outboxAppender)
         .append(
             WORKSPACE_ID,
