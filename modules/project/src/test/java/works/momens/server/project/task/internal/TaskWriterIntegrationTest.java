@@ -2,11 +2,14 @@ package works.momens.server.project.task.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -443,11 +446,67 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
     assertThat(taskReader.findScope(UUID.randomUUID())).isEmpty();
   }
 
+  @Test
+  void deleteAsCreatorRejectsOtherUser() {
+    Fixture fixture = newTask();
+
+    assertThatThrownBy(() -> taskWriter.deleteAsCreator(fixture.taskId(), UUID.randomUUID(), null))
+        .isInstanceOf(BusinessException.class)
+        .extracting(exception -> ((BusinessException) exception).getErrorCode())
+        .isEqualTo(CommonErrorCode.AUTH_FORBIDDEN);
+    assertThat(taskReader.findDetail(fixture.taskId())).isPresent();
+  }
+
+  @Test
+  void restoreAsCreatorKeepsDeletedStateAndPublishesRestored() {
+    Fixture fixture = newTask();
+    taskWriter.update(
+        command(
+            fixture.taskId(),
+            "초기 제목",
+            TaskRole.PM,
+            null,
+            TaskPriority.MEDIUM,
+            TaskStatus.IN_PROGRESS,
+            null,
+            List.of(new ChecklistItemEdit(null, "완료기준", true))));
+    taskWriter.deleteAsCreator(fixture.taskId(), fixture.creatorId(), null);
+    entityManager.flush();
+    entityManager.clear();
+    assertThat(taskReader.findDetail(fixture.taskId())).isEmpty();
+
+    taskWriter.restoreAsCreator(fixture.taskId(), fixture.creatorId());
+    entityManager.flush();
+    entityManager.clear();
+
+    TaskDetail detail = taskReader.findDetail(fixture.taskId()).orElseThrow();
+    assertThat(detail.status()).isEqualTo("in_progress");
+    assertThat(detail.roles()).containsExactly("pm");
+    assertThat(detail.creatorId()).isEqualTo(fixture.creatorId());
+    assertThat(detail.checklistItems())
+        .extracting(TaskDetail.ChecklistItem::title, TaskDetail.ChecklistItem::completed)
+        .containsExactly(tuple("완료기준", true));
+    verify(outboxAppender)
+        .append(
+            fixture.workspaceId(), "task", fixture.taskId().toString(), "task.restored", Map.of());
+  }
+
+  @Test
+  void restoreAsCreatorRejectsTaskNotDeleted() {
+    Fixture fixture = newTask();
+
+    assertThatThrownBy(() -> taskWriter.restoreAsCreator(fixture.taskId(), fixture.creatorId()))
+        .isInstanceOf(BusinessException.class)
+        .extracting(exception -> ((BusinessException) exception).getErrorCode())
+        .isEqualTo(TaskErrorCode.TASK_NOT_DELETED);
+  }
+
   private Fixture newTask() {
     UUID ownerId =
         ProjectSeedSql.insertUser(entityManager, "owner-" + UUID.randomUUID() + "@momens.works");
     UUID workspaceId = ProjectSeedSql.insertWorkspace(entityManager, "edit");
     UUID projectId = ProjectSeedSql.insertProject(entityManager, workspaceId, ownerId);
+    UUID creatorId = UUID.randomUUID();
     UUID taskId =
         taskRepository
             .saveAndFlush(
@@ -459,10 +518,11 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
                         TaskStatus.TODO,
                         Set.of(TaskRole.PM),
                         TaskPriority.MEDIUM,
-                        null),
+                        null,
+                        creatorId),
                     null))
             .getId();
-    return new Fixture(workspaceId, projectId, taskId);
+    return new Fixture(workspaceId, projectId, taskId, creatorId);
   }
 
   private void legacyUpdate(String sql, UUID taskId) {
@@ -496,5 +556,5 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
         null);
   }
 
-  private record Fixture(UUID workspaceId, UUID projectId, UUID taskId) {}
+  private record Fixture(UUID workspaceId, UUID projectId, UUID taskId, UUID creatorId) {}
 }

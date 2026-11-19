@@ -35,6 +35,7 @@ public record MobileTaskDetail(
     List<Material> materials,
     List<TaskDetail.OpenQuestion> openQuestions,
     String nextAction,
+    boolean canDelete,
     long version) {
 
   /** 담당자 표시 정보. avatarUrl은 담당자의 구글 계정 프로필 이미지이고, 없으면 null입니다. */

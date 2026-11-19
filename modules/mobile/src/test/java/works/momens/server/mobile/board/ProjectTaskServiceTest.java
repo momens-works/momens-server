@@ -286,6 +286,7 @@ class ProjectTaskServiceTest {
     assertThat(command.roles()).containsExactly(TaskRole.PM);
     assertThat(command.priority()).isEqualTo(TaskPriority.HIGH);
     assertThat(command.dueDate()).isEqualTo(DUE_DATE);
+    assertThat(command.creatorId()).isEqualTo(CALLER_ID);
     assertThat(result).isSameAs(created);
   }
 
@@ -387,6 +388,7 @@ class ProjectTaskServiceTest {
     assertThat(result.checklistItems())
         .extracting(TaskDetail.ChecklistItem::title)
         .containsExactly("완료기준");
+    assertThat(result.canDelete()).isTrue();
   }
 
   @Test
@@ -536,6 +538,7 @@ class ProjectTaskServiceTest {
                     null,
                     null,
                     null,
+                    null,
                     List.of(),
                     List.of(),
                     null,
@@ -650,6 +653,7 @@ class ProjectTaskServiceTest {
         "urgent",
         List.of("pm"),
         assigneeId,
+        CALLER_ID,
         DUE_DATE,
         description,
         checklistItems,

@@ -73,7 +73,8 @@ class TaskCommandTest {
         null,
         null,
         TaskOrigin.MANUAL,
-        null);
+        null,
+        UUID.randomUUID());
   }
 
   private static UpdateTaskCommand updateCommand(String title) {

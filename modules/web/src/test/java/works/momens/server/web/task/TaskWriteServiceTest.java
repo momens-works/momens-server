@@ -63,6 +63,7 @@ class TaskWriteServiceTest {
     verify(taskWriter).create(captor.capture());
     assertThat(captor.getValue().status()).isEqualTo(TaskStatus.BACKLOG);
     assertThat(captor.getValue().priority()).isNull();
+    assertThat(captor.getValue().creatorId()).isEqualTo(USER_ID);
   }
 
   @Test

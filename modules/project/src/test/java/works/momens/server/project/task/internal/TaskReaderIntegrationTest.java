@@ -413,7 +413,8 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
                     null,
                     null,
                     TaskOrigin.MANUAL,
-                    null),
+                    null,
+                    UUID.randomUUID()),
                 null))
         .getId();
   }
