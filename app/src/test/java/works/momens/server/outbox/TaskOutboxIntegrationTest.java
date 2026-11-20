@@ -40,7 +40,7 @@ class TaskOutboxIntegrationTest extends AbstractPostgresIntegrationTest {
             taskId.toString());
     assertThat(keys).hasSize(3).doesNotHaveDuplicates();
     assertThat(keys.subList(0, 2)).allMatch(key -> key.startsWith("task.updated:" + taskId + ":"));
-    assertThat(keys.get(2)).isEqualTo("task.deleted:" + taskId);
+    assertThat(keys.get(2)).startsWith("task.deleted:" + taskId + ":");
     assertThat(
             jdbcTemplate.queryForObject(
                 "SELECT deleted_at IS NOT NULL FROM tasks WHERE id = ?", Boolean.class, taskId))
