@@ -166,10 +166,14 @@ worker-first 활성화 조건은 [운영 준비 대장](../prod-readiness-ledger
   `task.created:{taskId}` 키를 유지한다. 살아 있는 task의 `title`, `description`, `status`,
   `priority`, `role`, `milestone_id`, `assignee_id`, `due_date` 중 실제 값이 바뀌면
   `task.updated`를 빈 payload `{}`와 `task.updated:{taskId}:{changeUUID}` 키로 남긴다.
-  완료 기준만 바뀌거나 비교 대상 값이 같으면 발행하지 않는다. soft delete에는 빈 payload의
-  `task.deleted`와 `task.deleted:{taskId}` 키를 남긴다. task 변경과 이벤트 저장은 같은
-  트랜잭션이다.
+  완료 기준만 바뀌거나 비교 대상 값이 같으면 발행하지 않는다. 소프트 삭제 시에는 빈 payload의
+  `task.deleted` 이벤트를, 복구 시에는 빈 payload의 `task.restored` 이벤트를 저장합니다. 동일한
+  태스크를 삭제한 뒤 복구하고 다시 삭제할 수 있으므로, 두 이벤트 모두 `task.updated`와 마찬가지로
+  `task.deleted:{taskId}:{changeUUID}`, `task.restored:{taskId}:{changeUUID}` 형식의 키를
+  사용합니다. 태스크 변경과 이벤트 저장은 동일한 트랜잭션에서 처리합니다.
 - task consumer 계약(`MOM-0956`): envelope의 `aggregate_id`를 task ID로 사용한다.
+  `task.restored`도 `task.created`, `task.updated`와 동일하게 태스크의 최신 상태를 조회해 검색
+  문서를 갱신하므로, 복구된 태스크가 검색 결과에 다시 나타납니다.
   `task.created`·`task.updated`는 공유 DB에서 삭제 상태를 포함한 **최신** task를 조회해
   투영한다. `deleted_at`이 있거나 원본 행을 찾을 수 없으면 검색 문서와 source-ref를 삭제
   상태로 수렴시킨다. `task.deleted`도 ID만으로 삭제 처리하며 살아 있는 원본 조회에

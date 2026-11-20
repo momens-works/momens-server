@@ -177,15 +177,26 @@ class TaskWriterImpl implements TaskWriter {
           TaskErrorCode.TASK_NOT_DELETED, Map.of("task_id", taskId.toString()));
     }
     task.restore();
-    outboxAppender.append(
-        task.getWorkspaceId(), "task", taskId.toString(), EVENT_TASK_RESTORED, Map.of());
+    outboxAppender.appendWithIdempotencyKey(
+        task.getWorkspaceId(),
+        "task",
+        taskId.toString(),
+        EVENT_TASK_RESTORED,
+        Map.of(),
+        EVENT_TASK_RESTORED + ":" + taskId + ":" + UUID.randomUUID());
   }
 
   private void softDelete(Task task, Long version) {
     ExpectedVersion.check(version, task.getVersion());
     task.delete();
-    outboxAppender.append(
-        task.getWorkspaceId(), "task", task.getId().toString(), EVENT_TASK_DELETED, Map.of());
+    String taskId = task.getId().toString();
+    outboxAppender.appendWithIdempotencyKey(
+        task.getWorkspaceId(),
+        "task",
+        taskId,
+        EVENT_TASK_DELETED,
+        Map.of(),
+        EVENT_TASK_DELETED + ":" + taskId + ":" + UUID.randomUUID());
   }
 
   private static void requireCreator(Task task, UUID userId) {

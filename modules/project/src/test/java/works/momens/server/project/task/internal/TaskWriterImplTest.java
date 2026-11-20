@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -421,7 +422,13 @@ class TaskWriterImplTest {
         .isInstanceOf(BusinessException.class);
 
     verify(outboxAppender)
-        .append(task.getWorkspaceId(), "task", task.getId().toString(), "task.deleted", Map.of());
+        .appendWithIdempotencyKey(
+            eq(task.getWorkspaceId()),
+            eq("task"),
+            eq(task.getId().toString()),
+            eq("task.deleted"),
+            eq(Map.of()),
+            startsWith("task.deleted:" + task.getId() + ":"));
   }
 
   private Task newTask() {

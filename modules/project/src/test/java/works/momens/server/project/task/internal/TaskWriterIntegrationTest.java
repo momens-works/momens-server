@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -487,8 +489,13 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
         .extracting(TaskDetail.ChecklistItem::title, TaskDetail.ChecklistItem::completed)
         .containsExactly(tuple("완료기준", true));
     verify(outboxAppender)
-        .append(
-            fixture.workspaceId(), "task", fixture.taskId().toString(), "task.restored", Map.of());
+        .appendWithIdempotencyKey(
+            eq(fixture.workspaceId()),
+            eq("task"),
+            eq(fixture.taskId().toString()),
+            eq("task.restored"),
+            eq(Map.of()),
+            startsWith("task.restored:" + fixture.taskId() + ":"));
   }
 
   @Test
