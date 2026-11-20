@@ -366,7 +366,6 @@ Figma는 [팀당 webhook을 최대 20개로 제한](https://developers.figma.com
 provider POST 결과가 유실되거나 프로세스가 종료되면 잔여 webhook이 생길 수 있으며, 영속적인 정리
 재시도는 이번 범위에 포함하지 않습니다. POST는 자동 재시도하지 않습니다.
 
-운영 전환 전 MOM-1022에서는 worker의 `webhook_id` 기반 연결 매칭과 동일 파일의 다중 워크스페이스
-등록을 별도로 검증해야 합니다. 현 worker의 첫 `file_keys` 일치 연결 선택은 이번 서버 변경으로 해결되지
-않습니다. 또한 레거시 configure/disable/reconnect 쓰기와의 동시 실행까지 보장하지 않으므로 전환 시
+worker는 아직 `webhook_id`가 아니라 `file_keys`가 처음 일치하는 연결로 이벤트를 수집합니다. 같은 파일을
+여러 워크스페이스가 등록하면 이벤트가 한 연결로 섞일 수 있으며, 운영 전환 전에 MOM-1170에서 해결합니다. 또한 레거시 configure/disable/reconnect 쓰기와의 동시 실행까지 보장하지 않으므로 전환 시
 같은 연결의 lifecycle 쓰기를 신규 서버로 함께 라우팅해야 합니다.
