@@ -18,8 +18,7 @@ import java.util.UUID;
  *
  * <p>{@code roles}를 전달하지 않으면 role이 지정되지 않은 태스크를 생성합니다.
  *
- * <p>{@code creatorId}는 태스크를 생성한 사용자이며 필수 값입니다. 모바일 및 웹 생성 API에서는 요청한 사용자를, 시그널 전환에서는 전환을 요청한 사용자를,
- * MCP에서는 연결을 승인한 사용자를 전달합니다.
+ * <p>{@code creatorId}는 태스크를 생성한 사용자이며, 필수 값입니다.
  */
 public record CreateTaskCommand(
     UUID projectId,

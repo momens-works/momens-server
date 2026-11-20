@@ -7,8 +7,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -161,6 +163,27 @@ class TaskControllerTest {
         .andExpect(jsonPath("$.open_questions.length()").value(0))
         .andExpect(jsonPath("$.next_action").value((Object) null))
         .andExpect(jsonPath("$.draft_status").value("ready"));
+  }
+
+  @Test
+  void deleteTaskPassesVersionAndReturnsNoContent() throws Exception {
+    mockMvc
+        .perform(
+            delete("/api/mobile/tasks/{taskId}", TASK_ID)
+                .param("version", "3")
+                .principal(principal))
+        .andExpect(status().isNoContent());
+
+    verify(projectTaskService).deleteTask(TASK_ID, USER_ID, 3L);
+  }
+
+  @Test
+  void restoreTaskReturnsNoContent() throws Exception {
+    mockMvc
+        .perform(post("/api/mobile/tasks/{taskId}/restore", TASK_ID).principal(principal))
+        .andExpect(status().isNoContent());
+
+    verify(projectTaskService).restoreTask(TASK_ID, USER_ID);
   }
 
   @Test

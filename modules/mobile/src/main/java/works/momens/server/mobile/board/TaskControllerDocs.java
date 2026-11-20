@@ -59,7 +59,7 @@ interface TaskControllerDocs {
 
   @Operation(
       operationId = "mobileDeleteTask",
-      summary = "태스크 삭제",
+      summary = "작업 삭제",
       description =
           "태스크 작성자가 태스크를 소프트 삭제합니다. 작성자가 아니거나 작성자 정보가 없는 태스크는 AUTH_FORBIDDEN으로 거부합니다. 삭제된 태스크는 보드 조회, 상세 조회, 진행률 계산에서 제외되며 복구 API를 통해 복구할 수 있습니다.")
   @ApiResponse(responseCode = "204", description = "삭제 성공. 응답 본문 없음.")
@@ -70,22 +70,22 @@ interface TaskControllerDocs {
   void deleteTask(
       @Parameter(description = "task 식별자") UUID taskId,
       @Parameter(
-              description = "조회한 태스크의 버전. 생략하면 요청 처리 중 발생한 동시 변경을 검사합니다.",
+              description = "조회한 태스크의 버전. 생략하면 요청 처리 중 발생한 동시 변경만 검사합니다.",
               schema = @Schema(implementation = Long.class, minimum = "0"))
           Long version,
       Principal principal);
 
   @Operation(
       operationId = "mobileRestoreTask",
-      summary = "태스크 복구",
+      summary = "작업 복구",
       description =
-          "태스크 작성자가 소프트 삭제된 태스크를 복구합니다. 복구한 태스크는 삭제 직전의 상태, 담당자, role, 완료 기준을 유지합니다. 서버에서는 복구 기한을 제한하지 않으며, 실행 취소 기능의 제공 시간은 앱에서 결정합니다.")
+          "태스크 작성자가 소프트 삭제된 태스크를 복구합니다. 복구한 태스크는 삭제 직전의 상태, 담당자, role, 완료 기준을 유지합니다. 서버에서는 복구 기한을 제한하지 않으며, 실행 취소 기능의 제공 시간은 앱에서 결정합니다. 이미 복구되었거나 삭제되지 않은 태스크는 상태를 변경하지 않고 `204`를 반환합니다.")
   @ApiResponse(
       responseCode = "204",
       description = "복구 성공. 응답 본문 없음. 최신 상태는 보드 또는 상세 조회 API를 통해 다시 조회합니다.")
   @ApiException(
       value = TaskErrorCode.class,
-      codes = {"TASK_NOT_FOUND", "TASK_NOT_DELETED", "TASK_WRITES_PAUSED"})
+      codes = {"TASK_NOT_FOUND", "TASK_WRITES_PAUSED"})
   @ApiException(CommonErrorCode.class)
   void restoreTask(@Parameter(description = "task 식별자") UUID taskId, Principal principal);
 

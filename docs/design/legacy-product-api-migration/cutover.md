@@ -77,9 +77,10 @@ MOM-0967에서 제거 범위를 정한다.
 
 1. `MOM-0898` — 공통 outbox polling·claim, offset, retry와 DLQ 또는 동등한 실패 격리. 운영
    규모·DML 권한을 확인하고 consumer를 운영에서 활성화한다
-2. `MOM-0956` — `task.created`·`task.updated`·`task.deleted`의 최신 상태 hydrate·삭제
-   처리와 task별 prod E2E 투영 확인. 삭제 뒤 오래된 생성·수정 이벤트 재처리에서도 문서가
-   복원되지 않아야 한다([task consumer 계약](../module-map.md#outbox)).
+2. `MOM-0956` — `task.created`, `task.updated`, `task.deleted`, `task.restored` 이벤트를 처리할 때
+   최신 상태를 hydrate하고, task별 검색 반영 여부를 운영 환경 E2E 테스트로 확인한다. 삭제 후 이전
+   생성·수정 이벤트를 재처리해도 문서가 복원되지 않아야 하며, 복구 후 이전 삭제 이벤트를 재처리해도
+   문서가 삭제되지 않아야 한다([task consumer 계약](../module-map.md#outbox)).
 3. `MOM-0957` — memory event hydrate·projector와 memory별 prod E2E 투영 확인
 4. `MOM-1020`·`MOM-1021` — decision·blocker projector의 기존 이벤트 시작 범위 확인과
    aggregate별 prod 투영 확인
@@ -90,8 +91,12 @@ MOM-0967에서 제거 범위를 정한다.
 시계열 수집이 준비되지 않은 환경에서는 lag graph만으로 판정하지 않는다. `MOM-0898`과 각 projector
 작업이 정한 조회 수단으로 event 처리 상태·offset·실패 잔여를 직접 확인하고, aggregate별 증거를
 각 projector 작업(`MOM-0956`·`MOM-0957`·`MOM-1020`·`MOM-1021`)에 남긴 뒤 2단계를 연다.
-task 이벤트 세 종류의 consumer 지원과 재처리를 확인한 뒤 운영 task writer를 확대·전환한다.
-미지원 이벤트가 먼저 쌓이면 처리 완료로 건너뛰지 않고 소비 지원 뒤 재시도해야 한다.
+task 이벤트 네 종류에 대한 consumer 지원과 재처리 동작을 확인한 뒤 운영 환경의 task writer를
+확대하고 전환한다. `task.restored`를 처리하는 worker(momens-worker#27)는 운영 환경에서 task
+writer를 활성화하기(`MOMENS_PROJECT_TASK_WRITES_PAUSED=false`) 전에 배포한다.
+
+지원하지 않는 이벤트는 `BLOCKED` 상태로 남으며 자동으로 재처리되지 않는다. 따라서 해당 이벤트가
+먼저 쌓였다면 consumer 지원을 추가한 뒤 worker CLI의 `replay`로 재처리해야 한다.
 
 ### G2 — 단일 task writer 인계 (MOM-0953·0967·0992)
 

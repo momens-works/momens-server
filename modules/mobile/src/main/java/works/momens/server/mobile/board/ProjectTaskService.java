@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -192,22 +191,31 @@ class ProjectTaskService {
 
   @Transactional
   public void restoreTask(UUID taskId, UUID userId) {
-    requireTaskMember(taskId, userId, taskReader.findScopeIncludingDeleted(taskId));
+    UUID workspaceId =
+        taskReader
+            .findScopeIncludingDeleted(taskId)
+            .map(TaskScope::workspaceId)
+            .orElseThrow(() -> taskNotFound(taskId));
+    requireMember(workspaceId, userId, taskId);
     taskWriter.restoreAsCreator(taskId, userId);
   }
 
   private void requireTaskMember(UUID taskId, UUID userId) {
     // 수정 전에는 상세 전체를 읽을 필요가 없어 소속 projection만 조회해 멤버십을 확인한다.
-    requireTaskMember(taskId, userId, taskReader.findScope(taskId));
+    UUID workspaceId =
+        taskReader
+            .findScope(taskId)
+            .map(TaskScope::workspaceId)
+            .orElseThrow(() -> taskNotFound(taskId));
+    requireMember(workspaceId, userId, taskId);
   }
 
-  private void requireTaskMember(UUID taskId, UUID userId, Optional<TaskScope> scope) {
-    UUID workspaceId =
-        scope
-            .map(TaskScope::workspaceId)
-            .orElseThrow(() ->
-                new BusinessException(
-                    TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())));
+  private static BusinessException taskNotFound(UUID taskId) {
+    return new BusinessException(
+        TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString()));
+  }
+
+  private void requireMember(UUID workspaceId, UUID userId, UUID taskId) {
     if (workspaceMembershipReader.roleOf(workspaceId, userId).isEmpty()) {
       throw new BusinessException(
           CommonErrorCode.AUTH_FORBIDDEN, Map.of("task_id", taskId.toString()));

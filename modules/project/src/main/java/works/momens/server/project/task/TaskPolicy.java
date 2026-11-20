@@ -13,7 +13,10 @@ public final class TaskPolicy {
 
   private TaskPolicy() {}
 
-  /** 요청한 사용자의 태스크 삭제 및 복구 권한을 확인합니다. 태스크 작성자만 허용하며, 작성자 정보가 없는 태스크는 누구도 삭제하거나 복구할 수 없습니다. */
+  /**
+   * 모바일 태스크 삭제 및 복구 요청에 대한 사용자 권한을 확인합니다. 태스크 작성자만 삭제하거나 복구할 수 있으며, 작성자 정보가 없는 태스크는 누구도 삭제하거나 복구할 수
+   * 없습니다. 웹에서는 워크스페이스 멤버라면 누구나 태스크를 삭제할 수 있으므로 이 규칙을 적용하지 않습니다.
+   */
   public static boolean canDelete(UUID creatorId, UUID userId) {
     return creatorId != null && creatorId.equals(userId);
   }

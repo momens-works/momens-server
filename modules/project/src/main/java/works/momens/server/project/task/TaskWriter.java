@@ -22,8 +22,9 @@ public interface TaskWriter {
   void deleteAsCreator(UUID taskId, UUID userId, Long version);
 
   /**
-   * 작성자 권한을 확인한 후 소프트 삭제된 태스크를 복구합니다. 요청한 사용자가 작성자가 아니면 {@code AUTH_FORBIDDEN}, 삭제되지 않은 태스크이면
-   * {@code TASK_NOT_DELETED}로 거부합니다. 복구한 태스크는 삭제 직전의 상태, 담당자, role, 완료 기준을 유지합니다.
+   * 작성자 권한을 확인한 뒤 소프트 삭제된 태스크를 복구합니다. 요청한 사용자가 작성자가 아니면 {@code AUTH_FORBIDDEN}으로 거부합니다. 이미 복구되었거나
+   * 삭제되지 않은 태스크는 변경하지 않고 이벤트도 발행하지 않으므로 동일한 복구 요청을 재시도해도 결과가 같습니다. 복구된 태스크는 삭제 직전의 상태, 담당자, role,
+   * 완료 기준을 유지합니다.
    */
   void restoreAsCreator(UUID taskId, UUID userId);
 }

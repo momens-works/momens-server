@@ -12697,7 +12697,7 @@
             }
           },
           {
-            "description" : "조회한 태스크의 버전. 생략하면 요청 처리 중 발생한 동시 변경을 검사합니다.",
+            "description" : "조회한 태스크의 버전. 생략하면 요청 처리 중 발생한 동시 변경만 검사합니다.",
             "in" : "query",
             "name" : "version",
             "required" : false,
@@ -12954,7 +12954,7 @@
             "description" : "Service Unavailable"
           }
         },
-        "summary" : "태스크 삭제",
+        "summary" : "작업 삭제",
         "tags" : [
           "Mobile"
         ]
@@ -13827,7 +13827,7 @@
     },
     "/api/mobile/tasks/{taskId}/restore" : {
       "post" : {
-        "description" : "태스크 작성자가 소프트 삭제된 태스크를 복구합니다. 복구한 태스크는 삭제 직전의 상태, 담당자, role, 완료 기준을 유지합니다. 서버에서는 복구 기한을 제한하지 않으며, 실행 취소 기능의 제공 시간은 앱에서 결정합니다.",
+        "description" : "태스크 작성자가 소프트 삭제된 태스크를 복구합니다. 복구한 태스크는 삭제 직전의 상태, 담당자, role, 완료 기준을 유지합니다. 서버에서는 복구 기한을 제한하지 않으며, 실행 취소 기능의 제공 시간은 앱에서 결정합니다. 이미 복구되었거나 삭제되지 않은 태스크는 상태를 변경하지 않고 `204`를 반환합니다.",
         "operationId" : "mobileRestoreTask",
         "parameters" : [
           {
@@ -14004,16 +14004,6 @@
                         "message" : "요청이 현재 상태와 충돌합니다."
                       }
                     }
-                  },
-                  "TASK_NOT_DELETED" : {
-                    "description" : "삭제되지 않은 태스크는 복구할 수 없습니다.",
-                    "summary" : "TASK_NOT_DELETED",
-                    "value" : {
-                      "error" : {
-                        "code" : "TASK_NOT_DELETED",
-                        "message" : "삭제되지 않은 태스크는 복구할 수 없습니다."
-                      }
-                    }
                   }
                 }
               }
@@ -14097,7 +14087,7 @@
             "description" : "Service Unavailable"
           }
         },
-        "summary" : "태스크 복구",
+        "summary" : "작업 복구",
         "tags" : [
           "Mobile"
         ]

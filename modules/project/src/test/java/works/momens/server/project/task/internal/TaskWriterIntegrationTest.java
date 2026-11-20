@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.startsWith;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -476,6 +477,10 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
     entityManager.flush();
     entityManager.clear();
     assertThat(taskReader.findDetail(fixture.taskId())).isEmpty();
+    assertThatThrownBy(() -> taskWriter.restoreAsCreator(fixture.taskId(), UUID.randomUUID()))
+        .isInstanceOf(BusinessException.class)
+        .extracting(exception -> ((BusinessException) exception).getErrorCode())
+        .isEqualTo(CommonErrorCode.AUTH_FORBIDDEN);
 
     taskWriter.restoreAsCreator(fixture.taskId(), fixture.creatorId());
     entityManager.flush();
@@ -499,13 +504,14 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
-  void restoreAsCreatorRejectsTaskNotDeleted() {
+  void restoreAsCreatorIgnoresTaskNotDeleted() {
     Fixture fixture = newTask();
 
-    assertThatThrownBy(() -> taskWriter.restoreAsCreator(fixture.taskId(), fixture.creatorId()))
-        .isInstanceOf(BusinessException.class)
-        .extracting(exception -> ((BusinessException) exception).getErrorCode())
-        .isEqualTo(TaskErrorCode.TASK_NOT_DELETED);
+    taskWriter.restoreAsCreator(fixture.taskId(), fixture.creatorId());
+
+    assertThat(taskReader.findDetail(fixture.taskId())).isPresent();
+    verify(outboxAppender, never())
+        .appendWithIdempotencyKey(any(), any(), any(), eq("task.restored"), any(), any());
   }
 
   private Fixture newTask() {
@@ -513,7 +519,7 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
         ProjectSeedSql.insertUser(entityManager, "owner-" + UUID.randomUUID() + "@momens.works");
     UUID workspaceId = ProjectSeedSql.insertWorkspace(entityManager, "edit");
     UUID projectId = ProjectSeedSql.insertProject(entityManager, workspaceId, ownerId);
-    UUID creatorId = UUID.randomUUID();
+    UUID creatorId = ownerId;
     UUID taskId =
         taskRepository
             .saveAndFlush(
