@@ -69,7 +69,7 @@ MOM-0967에서 제거 범위를 정한다.
 
 신규 서버는 변경과 outbox를 기록하고 worker가 projection한다. 코드 존재와 prod에서 실제 소비·
 투영이 되는 것은 다르다. task·memory뿐 아니라 이관 확정된 decision·blocker도 각각
-MOM-1020·1021 및 MOM-1022에서 검증한다.
+MOM-1020·1021에서 운영 투영을 확인한다. 레거시 없는 신규 경로 E2E는 MOM-1022에서 갖췄다.
 
 **이 실패는 조용하다.** write는 성공하므로 5xx도 401도 나지 않고 6절의 관측 창에서 잡히지
 않는다. `MOM-0898` 완료만으로 이 게이트를 닫지 않는다. 공통 consumer와 aggregate별 projector는
