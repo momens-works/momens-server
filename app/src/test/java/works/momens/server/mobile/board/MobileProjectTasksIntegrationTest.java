@@ -1,13 +1,20 @@
 package works.momens.server.mobile.board;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.jayway.jsonpath.JsonPath;
+import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -19,13 +26,7 @@ import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
-/**
- * {@code /api/mobile/projects/{projectId}/tasks} 보드 조회와 생성을 실제 Spring 컨텍스트로 확인하는 통합 테스트입니다.
- *
- * <p>실제 토큰(auth 모듈이 제공하는 test fixture)과 실제 PostgreSQL을 사용해 보안 필터부터 권한 검사, 보드 그룹 구성, 라벨 발급, 응답 형태까지
- * 검증합니다. 사용자는 user public API로 생성합니다. workspace와 멤버십, project, task는 아직 생성 public API가
- * 없거나(workspace 쪽) 시드를 간단히 하려고 각 모듈 스키마에 SQL로 직접 넣습니다.
- */
+/** 실제 토큰과 PostgreSQL로 보안 필터부터 보드 조합·라벨 발급까지 검증합니다. 조회 fixture는 생성 API와 독립적으로 SQL로 구성합니다. */
 @SpringBootTest
 @AutoConfigureMockMvc
 class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest {
@@ -36,7 +37,7 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
   @Autowired private JdbcTemplate jdbcTemplate;
 
   @Test
-  void boardGroupsAllFiveBoardStatusesInOrder() throws Exception {
+  void boardGroupsAllFiveStatusesInOrder() throws Exception {
     UserProfile jinsu = userService.findOrCreate("tasks-it-board@momens.works", "신진수", null);
     UUID workspace = insertWorkspace("tasks-board");
     addMember(workspace, jinsu.id(), "owner");
@@ -55,23 +56,89 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
                 .header("API-Version", "1"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.title").value("프로젝트 태스크"))
+        .andExpect(jsonPath("$.description").value(""))
         .andExpect(jsonPath("$.groups.length()").value(5))
-        .andExpect(jsonPath("$.groups[0].group_key").value("todo"))
+        .andExpect(jsonPath("$.groups[0].group_key").value("in_progress"))
+        .andExpect(jsonPath("$.groups[0].label").value("진행 중"))
         .andExpect(jsonPath("$.groups[0].count").value(1))
-        .andExpect(jsonPath("$.groups[0].tasks[0].title").value("긴급 투두"))
-        // 레거시에만 있는 urgent는 모바일 표기에서 high로 내린다.
-        .andExpect(jsonPath("$.groups[0].tasks[0].priority").value("high"))
-        .andExpect(jsonPath("$.groups[0].tasks[0].role").value("frontend"))
-        .andExpect(jsonPath("$.groups[0].tasks[0].material_count").value(0))
-        .andExpect(jsonPath("$.groups[1].group_key").value("in_progress"))
+        .andExpect(jsonPath("$.groups[1].group_key").value("todo"))
+        .andExpect(jsonPath("$.groups[1].label").value("할 일"))
         .andExpect(jsonPath("$.groups[1].count").value(1))
+        .andExpect(jsonPath("$.groups[1].tasks[0].title").value("긴급 투두"))
+        // 저장된 urgent를 변환 없이 반환합니다.
+        .andExpect(jsonPath("$.groups[1].tasks[0].priority").value("urgent"))
+        .andExpect(jsonPath("$.groups[1].tasks[0].role").value("frontend"))
+        .andExpect(jsonPath("$.groups[1].tasks[0].material_count").value(0))
         .andExpect(jsonPath("$.groups[2].group_key").value("done"))
+        .andExpect(jsonPath("$.groups[2].label").value("완료"))
         .andExpect(jsonPath("$.groups[2].count").value(1))
-        .andExpect(jsonPath("$.groups[3].group_key").value("backlog"))
+        .andExpect(jsonPath("$.groups[3].group_key").value("cancelled"))
+        .andExpect(jsonPath("$.groups[3].label").value("취소"))
         .andExpect(jsonPath("$.groups[3].count").value(1))
-        .andExpect(jsonPath("$.groups[3].tasks[0].title").value("백로그"))
-        .andExpect(jsonPath("$.groups[4].group_key").value("cancelled"))
-        .andExpect(jsonPath("$.groups[4].count").value(1));
+        .andExpect(jsonPath("$.groups[4].group_key").value("backlog"))
+        .andExpect(jsonPath("$.groups[4].label").value("백로그"))
+        .andExpect(jsonPath("$.groups[4].count").value(1))
+        .andExpect(jsonPath("$.groups[4].tasks[0].title").value("백로그"));
+  }
+
+  @Test
+  void boardReturnsOnlyTasksMatchingFiltersWithFullRoles() throws Exception {
+    UserProfile jinsu = userService.findOrCreate("tasks-it-filter@momens.works", "신진수", null);
+    UUID workspace = insertWorkspace("tasks-filter");
+    addMember(workspace, jinsu.id(), "owner");
+    UUID project = insertProject(workspace, jinsu.id(), "tasks-filter-project");
+    LocalDate dueDate = LocalDate.of(2026, 10, 27);
+
+    UUID matching = insertTask(workspace, project, "matching", "todo", "high", "design");
+    jdbcTemplate.update("INSERT INTO task_roles (task_id, role) VALUES (?, 'pm')", matching);
+    assign(matching, jinsu.id(), dueDate);
+    assign(insertTask(workspace, project, "low", "todo", "low", "design"), jinsu.id(), dueDate);
+    assign(
+        insertTask(workspace, project, "unassigned", "in_progress", "urgent", "design"),
+        null,
+        dueDate);
+    UserProfile other =
+        userService.findOrCreate("tasks-it-filter-other@momens.works", "Other", null);
+    assign(
+        insertTask(workspace, project, "other-role", "todo", "high", "backend"),
+        jinsu.id(),
+        dueDate);
+    assign(
+        insertTask(workspace, project, "other-due-date", "todo", "high", "design"),
+        jinsu.id(),
+        dueDate.plusDays(1));
+    assign(
+        insertTask(workspace, project, "other-assignee", "todo", "high", "design"),
+        other.id(),
+        dueDate);
+    String token = "Bearer " + accessTokens.issueAccessToken(jinsu.id());
+
+    mockMvc
+        .perform(
+            get("/api/mobile/projects/{projectId}/tasks", project)
+                .header("Authorization", token)
+                .header("API-Version", "1")
+                .param("roles", "design")
+                .param("priorities", "high", "urgent")
+                .param("due_date", "2026-10-27")
+                .param("assignee_id", jinsu.id().toString()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.groups.length()").value(5))
+        .andExpect(jsonPath("$.groups[0].count").value(0))
+        .andExpect(jsonPath("$.groups[1].count").value(1))
+        .andExpect(jsonPath("$.groups[1].tasks[0].title").value("matching"))
+        .andExpect(jsonPath("$.groups[1].tasks[0].roles", contains("pm", "design")));
+
+    mockMvc
+        .perform(
+            get("/api/mobile/projects/{projectId}/tasks", project)
+                .header("Authorization", token)
+                .header("API-Version", "1")
+                .param("unassigned", "true"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.groups[0].count").value(1))
+        .andExpect(jsonPath("$.groups[0].tasks[0].title").value("unassigned"))
+        .andExpect(jsonPath("$.groups[1].count").value(0));
   }
 
   @Test
@@ -93,17 +160,85 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
         .andExpect(jsonPath("$.task.title").value("권한 요청 점검"))
         .andExpect(jsonPath("$.task.status").value("todo"))
         .andExpect(jsonPath("$.task.priority").value("high"))
-        .andExpect(jsonPath("$.task.role").value("backend"));
+        .andExpect(jsonPath("$.task.role").value("backend"))
+        .andExpect(jsonPath("$.task.roles", contains("backend")));
 
     Map<String, Object> row =
         jdbcTemplate.queryForMap(
-            "SELECT status, priority, role, label, workspace_id FROM tasks WHERE project_id = ?",
+            "SELECT status, priority, (SELECT role FROM task_roles WHERE task_id = tasks.id) AS role, label, workspace_id FROM tasks WHERE project_id = ?",
             project);
-    org.assertj.core.api.Assertions.assertThat(row.get("status")).isEqualTo("todo");
-    org.assertj.core.api.Assertions.assertThat(row.get("priority")).isEqualTo("high");
-    org.assertj.core.api.Assertions.assertThat(row.get("role")).isEqualTo("backend");
-    org.assertj.core.api.Assertions.assertThat((String) row.get("label")).startsWith("MOM-");
-    org.assertj.core.api.Assertions.assertThat(row.get("workspace_id")).isEqualTo(workspace);
+    assertThat(row.get("status")).isEqualTo("todo");
+    assertThat(row.get("priority")).isEqualTo("high");
+    assertThat(row.get("role")).isEqualTo("backend");
+    assertThat((String) row.get("label")).startsWith("MOM-");
+    assertThat(row.get("workspace_id")).isEqualTo(workspace);
+  }
+
+  @Test
+  void createWithTwoRolesReturnsBothRolesFromCreateDetailAndBoard() throws Exception {
+    UserProfile user = userService.findOrCreate("tasks-it-roles@momens.works", "user", null);
+    UUID workspace = insertWorkspace("tasks-roles");
+    addMember(workspace, user.id(), "owner");
+    UUID project = insertProject(workspace, user.id(), "tasks-roles-project");
+    String token = "Bearer " + accessTokens.issueAccessToken(user.id());
+
+    String created =
+        mockMvc
+            .perform(
+                post("/api/mobile/projects/{projectId}/tasks", project)
+                    .header("Authorization", token)
+                    .header("API-Version", "1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"title\":\"Roles\",\"roles\":[\"backend\",\"pm\"],\"priority\":\"high\"}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.task.roles", contains("pm", "backend")))
+            .andExpect(jsonPath("$.task.role").value("pm"))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String taskId = JsonPath.read(created, "$.task.id");
+
+    mockMvc
+        .perform(
+            get("/api/mobile/tasks/{taskId}", taskId)
+                .header("Authorization", token)
+                .header("API-Version", "1"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.roles", contains("pm", "backend")));
+    mockMvc
+        .perform(
+            get("/api/mobile/projects/{projectId}/tasks", project)
+                .header("Authorization", token)
+                .header("API-Version", "1"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.groups[1].tasks[0].roles", contains("pm", "backend")));
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "{\"title\":\"Roles\",\"priority\":\"high\"}",
+        "{\"title\":\"Roles\",\"roles\":[],\"priority\":\"high\"}",
+        "{\"title\":\"Roles\",\"roles\":[\"pm\",\"pm\"],\"priority\":\"high\"}"
+      })
+  void createRejectsMissingEmptyOrDuplicateRoles(String body) throws Exception {
+    UserProfile user =
+        userService.findOrCreate("tasks-it-invalid-roles@momens.works", "user", null);
+    UUID workspace = insertWorkspace("tasks-invalid-roles-" + UUID.randomUUID());
+    addMember(workspace, user.id(), "owner");
+    UUID project = insertProject(workspace, user.id(), "tasks-invalid-roles-project");
+
+    mockMvc
+        .perform(
+            post("/api/mobile/projects/{projectId}/tasks", project)
+                .header("Authorization", "Bearer " + accessTokens.issueAccessToken(user.id()))
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("roles"));
   }
 
   @Test
@@ -122,6 +257,103 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
                 .content("{\"title\":\"  \",\"role\":\"pm\",\"priority\":\"medium\"}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"));
+  }
+
+  @Test
+  void duplicateChecklistIdsReturnRequestField() throws Exception {
+    UserProfile user =
+        userService.findOrCreate("tasks-duplicate-checklist@momens.works", "사용자", null);
+    UUID workspace = insertWorkspace("tasks-duplicate-checklist");
+    addMember(workspace, user.id(), "owner");
+    UUID project = insertProject(workspace, user.id(), "tasks-duplicate-checklist");
+    UUID task = insertTask(workspace, project, "작업", "todo", "medium", "pm");
+    UUID item = UUID.randomUUID();
+    jdbcTemplate.update(
+        "INSERT INTO task_checklist_items(id, task_id, title, completed, position) VALUES (?, ?, '기준', false, 0)",
+        item,
+        task);
+    String body =
+        """
+        {"title":"작업","role":"pm","priority":"medium","status":"todo",
+         "checklist_items":[{"id":"%s","title":"기준"},{"id":"%s","title":"중복"}]}
+        """
+            .formatted(item, item);
+
+    mockMvc
+        .perform(
+            patch("/api/mobile/tasks/{taskId}", task)
+                .header("Authorization", "Bearer " + accessTokens.issueAccessToken(user.id()))
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("checklist_items"));
+  }
+
+  @Test
+  void createStoresDueDateAndUpdateWithNullClearsIt() throws Exception {
+    UserProfile jinsu = userService.findOrCreate("tasks-it-due-date@momens.works", "신진수", null);
+    UUID workspace = insertWorkspace("tasks-due-date");
+    addMember(workspace, jinsu.id(), "owner");
+    UUID project = insertProject(workspace, jinsu.id(), "tasks-due-date-project");
+    String authorization = "Bearer " + accessTokens.issueAccessToken(jinsu.id());
+
+    mockMvc
+        .perform(
+            post("/api/mobile/projects/{projectId}/tasks", project)
+                .header("Authorization", authorization)
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"title\":\"권한 요청 점검\",\"role\":\"backend\",\"priority\":\"high\","
+                        + "\"due_date\":\"2026-09-25\"}"))
+        .andExpect(status().isCreated());
+    UUID task =
+        jdbcTemplate.queryForObject(
+            "SELECT id FROM tasks WHERE project_id = ?", UUID.class, project);
+    assertThat(dueDateOf(task)).isEqualTo(LocalDate.of(2026, 9, 25));
+
+    mockMvc
+        .perform(
+            patch("/api/mobile/tasks/{taskId}", task)
+                .header("Authorization", authorization)
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"title\":\"권한 요청 점검\",\"role\":\"backend\",\"priority\":\"high\","
+                        + "\"status\":\"todo\",\"due_date\":null}"))
+        .andExpect(status().isNoContent());
+    assertThat(dueDateOf(task)).isNull();
+  }
+
+  @Test
+  void updateWithoutDueDateKeepsIt() throws Exception {
+    UserProfile jinsu =
+        userService.findOrCreate("tasks-it-keep-due-date@momens.works", "신진수", null);
+    UUID workspace = insertWorkspace("tasks-keep-due-date");
+    addMember(workspace, jinsu.id(), "owner");
+    UUID project = insertProject(workspace, jinsu.id(), "tasks-keep-due-date-project");
+    UUID task = insertTask(workspace, project, "before-edit", "todo", "high", "backend");
+    LocalDate dueDate = LocalDate.of(2026, 9, 25);
+    assign(task, null, dueDate);
+
+    mockMvc
+        .perform(
+            patch("/api/mobile/tasks/{taskId}", task)
+                .header("Authorization", "Bearer " + accessTokens.issueAccessToken(jinsu.id()))
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"title\":\"after-edit\",\"role\":\"backend\",\"assignee_id\":null,"
+                        + "\"priority\":\"high\",\"status\":\"todo\",\"purpose\":\"\","
+                        + "\"checklist_items\":[]}"))
+        .andExpect(status().isNoContent());
+
+    assertThat(
+            jdbcTemplate.queryForObject("SELECT title FROM tasks WHERE id = ?", String.class, task))
+        .isEqualTo("after-edit");
+    assertThat(dueDateOf(task)).isEqualTo(dueDate);
   }
 
   @Test
@@ -171,6 +403,16 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
     return id;
   }
 
+  private LocalDate dueDateOf(UUID taskId) {
+    return jdbcTemplate.queryForObject(
+        "SELECT due_date FROM tasks WHERE id = ?", LocalDate.class, taskId);
+  }
+
+  private void assign(UUID taskId, UUID assigneeId, LocalDate dueDate) {
+    jdbcTemplate.update(
+        "UPDATE tasks SET assignee_id = ?, due_date = ? WHERE id = ?", assigneeId, dueDate, taskId);
+  }
+
   private void addMember(UUID workspaceId, UUID userId, String role) {
     jdbcTemplate.update(
         "INSERT INTO workspace_members (workspace_id, user_id, role) VALUES (?, ?, ?)",
@@ -194,15 +436,17 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
       UUID workspaceId, UUID projectId, String title, String status, String priority, String role) {
     UUID id = UUID.randomUUID();
     jdbcTemplate.update(
-        "INSERT INTO tasks (id, workspace_id, project_id, title, status, priority, role)"
-            + " VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO tasks (id, workspace_id, project_id, title, status, priority)"
+            + " VALUES (?, ?, ?, ?, ?, ?)",
         id,
         workspaceId,
         projectId,
         title,
         status,
-        priority,
-        role);
+        priority);
+    if (role != null) {
+      jdbcTemplate.update("INSERT INTO task_roles (task_id, role) VALUES (?, ?)", id, role);
+    }
     return id;
   }
 }

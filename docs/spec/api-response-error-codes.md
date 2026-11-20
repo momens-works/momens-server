@@ -120,116 +120,38 @@ Standard 모드의 에러 응답은 아래 형태를 사용합니다.
 - 도메인 에러는 도메인 이름을 prefix로 사용합니다. 예: `WORKSPACE_`, `MEMORY_`, `SOURCE_`.
 - 같은 의미의 에러 코드는 HTTP status가 달라도 재사용하지 않습니다.
 - 코드는 삭제하거나 의미를 바꾸지 않습니다. 필요하면 새 코드를 추가합니다.
+- 도메인별 에러가 필요한 경우 공통 코드를 그대로 사용하지 않고, 의미가 명확하게 드러나는 도메인 에러 코드를 추가합니다.
 
-## 공통 에러 코드
+## 에러 코드 목록
 
-| HTTP status | Code | 사용 기준 |
-| --- | --- | --- |
-| 400 | `COMMON_BAD_REQUEST` | 요청 형식, 타입, JSON 파싱 오류 |
-| 400 | `COMMON_VALIDATION_FAILED` | Bean Validation 등 필드 검증 실패 |
-| 401 | `AUTH_UNAUTHORIZED` | 인증 정보 없음 |
-| 401 | `AUTH_INVALID_TOKEN` | 토큰 파싱/검증 실패 |
-| 403 | `AUTH_FORBIDDEN` | 인증은 되었지만 권한 없음 |
-| 404 | `COMMON_NOT_FOUND` | 특정 도메인 코드가 아직 없을 때의 기본 not found |
-| 405 | `COMMON_METHOD_NOT_ALLOWED` | 해당 경로에서 허용되지 않은 HTTP 메서드 |
-| 409 | `COMMON_CONFLICT` | 중복, 상태 충돌 등 기본 conflict |
-| 415 | `COMMON_UNSUPPORTED_MEDIA_TYPE` | 지원하지 않는 요청 Content-Type |
-| 500 | `COMMON_INTERNAL_SERVER_ERROR` | 서버 내부 오류. 상세 원인 노출 금지 |
-| 502 | `COMMON_BAD_GATEWAY` | 외부 서비스 호출 실패 |
+이 문서에는 구현된 에러 코드를 별도로 나열하지 않습니다. 엔드포인트별로 반환할 수 있는 Standard 모드 에러 코드와 HTTP status는 [OpenAPI 스냅샷](openapi.json)의 operation별 실패 응답 예시에서 확인합니다.
 
-도메인별 에러가 필요하면 공통 코드를 그대로 쓰기보다 의미가 드러나는 도메인 코드를 추가합니다.
+공통 에러 코드는 `CommonErrorCode`에 정의하고, 도메인 에러 코드는 해당 규칙을 소유한 모듈의 공개 계약에 정의합니다.
 
-예:
+하위 도메인을 `@NamedInterface`로 공개한 모듈에서는 에러 코드가 하나뿐이더라도 해당 하위 도메인에서 관리합니다. 반면 하위 패키지가 nested `@ApplicationModule`로 구성된 경우에는 다른 모듈에서 참조할 수 없으므로 모듈 루트에 정의합니다.
 
-| HTTP status | Code | 사용 기준 |
-| --- | --- | --- |
-| 400 | `WORKSPACE_INVALID_SLUG` | workspace slug 형식이 유효하지 않음 |
-| 400 | `WORKSPACE_RESERVED_SLUG` | 예약어로 지정되어 사용할 수 없는 workspace slug |
-| 409 | `WORKSPACE_SLUG_ALREADY_EXISTS` | workspace slug 중복 |
-| 404 | `WORKSPACE_NOT_FOUND` | workspace를 찾을 수 없음 |
-| 400 | `INVITATION_INVALID_TOKEN` | 초대 토큰 형식이 유효하지 않음 |
-| 404 | `INVITATION_NOT_FOUND` | 초대를 찾을 수 없음 |
-| 409 | `INVITATION_EXPIRED` | 초대가 만료됨 |
+에러 코드 문자열은 선언된 패키지 이름이 아닌 클라이언트에서 사용하는 도메인 용어를 기준으로 정합니다.
 
-### 구현된 도메인 코드
+엔드포인트의 호출 경로에서 도달할 수 있는 도메인 에러 코드와 `@ApiException` 선언이 일치하지 않으면 `ApiExceptionConsistencyTest`가 실패합니다. 검증 범위와 조건은 [OpenAPI](openapi.md)의 「선언 검증」 절을 따릅니다. 공통 에러 코드는 이 검증 대상에 포함되지 않습니다. 엔드포인트별 공통 에러 코드의 범위도 아직 정하지 않아 현재는 모든 엔드포인트에 전체 목록이 예시로 표시됩니다. 따라서 공통 에러 코드 예시는 해당 엔드포인트에서 실제로 반환될 수 있음을 의미하지 않습니다.
 
-| HTTP status | Code | 사용 기준 |
-| --- | --- | --- |
-| 401 | `AUTH_GOOGLE_TOKEN_INVALID` | Google ID 토큰 검증 실패 |
-| 401 | `AUTH_GOOGLE_EMAIL_NOT_VERIFIED` | Google 계정 이메일이 검증되지 않음 |
-| 401 | `AUTH_REFRESH_TOKEN_INVALID` | refresh token 형식·해시·만료·폐기 상태가 유효하지 않음 |
-| 400 | `AUTH_OAUTH_STATE_INVALID` | 웹 OAuth 콜백의 state 불일치·누락 또는 code 누락 |
-| 502 | `AUTH_OAUTH_EXCHANGE_FAILED` | 웹 OAuth code 교환·userinfo 조회 실패 |
-| 401 | `AUTH_DEV_TOKEN_SECRET_INVALID` | dev 토큰 발급 요청에서 공유 시크릿 헤더가 없거나 일치하지 않음 (dev 계열 프로필 전용) |
-| 403 | `AUTH_DEV_TOKEN_EMAIL_NOT_ALLOWED` | dev 토큰 발급 대상 이메일이 allowlist에 없음 (dev 계열 프로필 전용) |
-| 404 | `USER_NOT_FOUND` | 사용자를 찾을 수 없음 (`GET/PATCH /api/me` 등) |
-| 409 | `USER_EMAIL_LINKED_TO_ANOTHER_IDENTITY` | 이메일로 조회한 사용자에게 이미 다른 로그인 수단이 연결되어 있어 Google 계정을 연결할 수 없음 |
-| 409 | `SIGNAL_INVALID_STATE` | 이미 다른 action으로 처리된 Signal에 다른 action을 요청함(같은 action 재요청은 200 멱등 응답) |
-| 404 | `WORKSPACE_MEMBER_NOT_FOUND` | 대상 사용자가 해당 workspace의 멤버가 아님 |
-| 400 | `WORKSPACE_INVALID_ROLE` | 부여할 수 없는 역할. `admin`과 `member`만 허용하며, `owner`와 정의되지 않은 값이 해당함 |
-| 409 | `WORKSPACE_OWNER_PROTECTED` | 대상 사용자가 owner이므로 역할을 변경하거나 멤버십을 제거할 수 없음 |
-| 409 | `WORKSPACE_SELF_REMOVAL_NOT_ALLOWED` | 요청자가 자기 자신을 workspace에서 제거하려 함 |
-| 400 | `INVITATION_INVALID_EMAIL` | 초대할 이메일 형식이 올바르지 않음 |
-| 400 | `INVITATION_INVALID_TOKEN` | 초대 토큰이 비어 있거나 알 수 없는 상태의 초대를 가리킴 |
-| 403 | `INVITATION_EMAIL_MISMATCH` | 초대받은 이메일과 로그인한 계정의 이메일이 일치하지 않음 |
-| 404 | `INVITATION_NOT_FOUND` | 초대를 찾을 수 없음 |
-| 409 | `INVITATION_ALREADY_ACCEPTED` | 이미 수락된 초대이므로 재발송, 폐기, 재수락할 수 없음 |
-| 409 | `INVITATION_EXPIRED` | 만료된 초대를 수락하려 함 |
-| 409 | `INVITATION_REVOKED` | 폐기된 초대를 수락하려 함 |
-| 502 | `INVITATION_EMAIL_SEND_FAILED` | 초대 이메일 발송에 실패함 |
-| 409 | `WORKSPACE_MEMBER_ALREADY_EXISTS` | 초대 대상이 이미 워크스페이스 멤버임 |
-| 403 | `WORKSPACE_INVITEE_NOT_FOUND` | 멤버로 추가할 이메일에 해당하는 사용자가 없음 |
-| 403 | `WORKSPACE_MEMBER_ROLE_CONFLICT` | 대상 사용자가 이미 다른 역할로 워크스페이스에 참여 중임 |
+아직 구현되지 않은 에러 코드는 해당 기능의 설계 문서에서 관리합니다. 구현할 때 `ErrorCode` enum에 추가하고 해당 엔드포인트의 `@ApiException`에 선언합니다.
 
-`INVITATION_NOT_FOUND`, `INVITATION_INVALID_TOKEN`, `INVITATION_EXPIRED`는 예시 표에 정의되어 있던
-코드를 구현한 것이다. `WORKSPACE_INVITEE_NOT_FOUND`와 `WORKSPACE_MEMBER_ROLE_CONFLICT`를 403으로
-정의한 것은 레거시가 이 경로의 실패를 모두 403으로 응답하기 때문이다. 기존 HTTP status를 보존한다는
-이관 원칙을 따른 결과이다.
-
-### 모바일 MVP 예정 도메인 코드
-
-모바일 MVP API를 구현할 때는 다음 도메인 코드를 추가한다.
-
-| HTTP status | Code | 사용 기준 |
-| --- | --- | --- |
-| 404 | `PROJECT_NOT_FOUND` | 프로젝트를 찾을 수 없음 |
-| 404 | `SIGNAL_NOT_FOUND` | Signal을 찾을 수 없음 |
-| 404 | `TASK_NOT_FOUND` | 태스크를 찾을 수 없음 |
-| 404 | `TASK_CHECKLIST_ITEM_NOT_FOUND` | 태스크 체크리스트 항목을 찾을 수 없음 |
-
-웹 이관에서는 다음 도메인 코드를 추가한다.
-
-| HTTP status | Code | 사용 기준 |
-| --- | --- | --- |
-| 400 | `CONTEXT_CROSS_WORKSPACE_LINK_NOT_ALLOWED` | 연결할 두 대상이 서로 다른 워크스페이스에 속함 |
-| 404 | `CONTEXT_LINK_NOT_FOUND` | 해제할 연결이 없음 |
-
-### 웹 Google 로그인(Authorization Code) 리다이렉트 계약
+## 웹 Google 로그인(Authorization Code) 리다이렉트 계약
 
 `GET /api/auth/google/login`·`GET /api/auth/google/callback`은 브라우저 리다이렉트(302)로 동작하므로
-JSON 에러 본문을 쓰지 않습니다. 콜백 실패는 브라우저에 JSON을 노출하지 않도록 `failure-uri`로
-리다이렉트하며 `?error=`에 다음 값 중 하나를 싣습니다(민감정보 미포함).
-
-| `?error=` | 의미 | 매핑 에러 코드 |
-| --- | --- | --- |
-| `invalid_state` | state 불일치·누락 또는 code 누락 | `AUTH_OAUTH_STATE_INVALID` |
-| `email_not_verified` | Google 이메일 미검증 | `AUTH_GOOGLE_EMAIL_NOT_VERIFIED` |
-| `email_conflict` | 이메일로 조회한 사용자에게 이미 다른 로그인 수단이 연결되어 있음 | `USER_EMAIL_LINKED_TO_ANOTHER_IDENTITY` |
-| `google_error` | code 교환·userinfo 실패 | `AUTH_OAUTH_EXCHANGE_FAILED` |
-| `server_error` | 그 외 예기치 못한 오류 | (기타) |
+JSON 에러 본문을 쓰지 않습니다. 실패 시 `?error=`에 실패 사유를 포함해 리다이렉트하며, 민감정보는 포함하지 않습니다. `?error=` 값 목록은 OpenAPI 스냅샷의 `completeGoogleLogin` 설명에서 확인합니다.
 
 성공 시 access/refresh를 HttpOnly 쿠키로 설정하고 `success-uri`로 리다이렉트합니다.
 
-### 웹 쿠키 세션 갱신·로그아웃 계약
+## 웹 쿠키 세션 갱신·로그아웃 계약
 
 웹은 access 만료 시 refresh 쿠키로 회전 재발급하고 로그아웃 시 세션 쿠키를 정리합니다. 두 경로 모두
 `/api/auth` 하위라 refresh 쿠키(`Path=/api/auth`)가 전송되며, same-domain 배포라 CSRF는 SameSite로
 충족합니다(별도 토큰 없음). 토큰이 HttpOnly 쿠키에 있어 본문은 없습니다.
 
-| 메서드·경로 | 성공 | 실패 |
-| --- | --- | --- |
-| `POST /api/auth/web/refresh` | `204` + `Set-Cookie`로 access/refresh 회전 | refresh 쿠키 없음·무효 → `401` `AUTH_REFRESH_TOKEN_INVALID` |
-| `POST /api/auth/web/logout` | `204` + access/refresh/legacy session 쿠키 정리(`Max-Age=0`) | 없음(쿠키 유무·상태와 무관하게 `204`, 멱등) |
+갱신·로그아웃의 경로, 성공 status, 오류는 [OpenAPI 스냅샷](openapi.json)의
+`webRefreshSession`·`webLogout`에서 확인합니다. 로그아웃은 쿠키 유무·상태와 무관하게
+멱등하며 access·refresh·legacy session 쿠키를 모두 정리합니다.
 
 모바일 JSON 계약(`POST /api/auth/refresh`·`/api/auth/logout`, body의 `refresh_token`)은 그대로
 유지됩니다.
@@ -239,7 +161,8 @@ JSON 에러 본문을 쓰지 않습니다. 콜백 실패는 브라우저에 JSON
 Bean Validation과 `FieldValidationException`을 통한 필드 단위 검증 실패는 `details.fields`에
 정리합니다. 각 원소의 `field`는 JSON 요청의 `snake_case` 필드명을 사용하고, `reason`은 사람이
 문제를 이해하기 위한 설명으로 제공합니다. 클라이언트는 `reason` 문구나 배열 순서를 분기 기준으로
-사용하지 않습니다.
+사용하지 않습니다. 쿼리 파라미터와 경로 변수의 검증 실패도 선언된 이름의 표기와 관계없이
+`field`를 `snake_case`로 씁니다.
 
 ```json
 {
@@ -258,9 +181,20 @@ Bean Validation과 `FieldValidationException`을 통한 필드 단위 검증 실
 }
 ```
 
+요청 body의 enum 또는 날짜 필드를 해당 타입으로 변환할 수 없으면 `field`에 오류가 발생한 필드 이름을 포함해 `COMMON_VALIDATION_FAILED`로 응답합니다. 허용되지 않는 문자열뿐 아니라 숫자, 배열, 객체처럼 문자열이 아닌 값도 동일하게 처리합니다.
+
+날짜 필드는 RFC 3339 full-date 형식(`YYYY-MM-DD`)의 문자열과 `null`만 허용합니다. 날짜와 시각이 포함된 문자열, 빈 문자열, 공백 문자열, 연도가 다섯 자리 이상인 문자열은 거부합니다.
+
+쿼리 파라미터의 검증 실패도 동일한 형식으로 응답합니다. 쿼리 파라미터의 타입 변환에 실패하거나 필수 쿼리 파라미터가 누락되면 타입에 관계없이 `COMMON_VALIDATION_FAILED`를 반환하고, `field`에는 해당 쿼리 파라미터 이름을 포함합니다. `Optional`, 배열, 컬렉션으로 선언된 쿼리 파라미터도 원소의 타입 변환에 실패하면 동일하게 처리합니다. 경로 변수의 타입 변환에 실패한 경우에는 `COMMON_BAD_REQUEST`를 반환합니다.
+
 ## 권한 details
 
-권한이 부족해 `AUTH_FORBIDDEN`을 반환할 때는 `details.required_role`에 요청을 처리하는 데 필요한 최소 역할을 포함합니다.
+`web`의 `WorkspaceAccessChecker`가 워크스페이스 권한 부족으로 `AUTH_FORBIDDEN`을 반환할 때는
+`details.required_role`에 요청을 처리하는 데 필요한 최소 권한을 포함합니다. 모든 403 응답에 이 필드가 있는 것은 아닙니다.
+
+현재 memory 쓰기의 도메인 인가 거부는 `details`를 포함하지 않고, Signal action의 멤버십 거부는
+`details.signal_id`만 포함합니다. 이 경로들의 인가 위치와 응답 형식 통일은 별도 구현 작업이며,
+클라이언트는 `AUTH_FORBIDDEN` 코드만으로 `required_role`의 존재를 가정하면 안 됩니다.
 
 ```json
 {
@@ -275,9 +209,9 @@ Bean Validation과 `FieldValidationException`을 통한 필드 단위 검증 실
 }
 ```
 
-`required_role`에는 `workspace_members.role`에 저장하는 소문자 문자열을 사용하며, 값은 `owner`, `admin`, `member` 중 하나입니다. 역할에는 서열이 있으며, `required_role`은 해당 요청을 처리하는 데 필요한 최소 역할을 의미합니다. 예를 들어 값이 `admin`이면 `admin`과 `owner` 역할이 요청을 처리할 수 있습니다.
+`required_role`에는 `workspace_members.role`에 저장하는 소문자 문자열을 사용하며, 값은 `owner`, `admin`, `member` 중 하나입니다. 권한에는 서열이 있으며, `required_role`은 해당 요청을 처리하는 데 필요한 최소 권한을 의미합니다. 예를 들어 값이 `admin`이면 `admin`과 `owner` 권한이 요청을 처리할 수 있습니다.
 
-멤버가 아닌 경우와 멤버이지만 역할이 부족한 경우는 모두 같은 에러 코드로 응답합니다. 두 경우를 별도 코드로 구분하면 클라이언트가 워크스페이스 멤버십 여부를 추론할 수 있으므로 구분하지 않습니다.
+멤버가 아닌 경우와 멤버이지만 권한이 부족한 경우는 모두 같은 에러 코드로 응답합니다. 두 경우를 별도 코드로 구분하면 클라이언트가 워크스페이스 멤버십 여부를 추론할 수 있으므로 구분하지 않습니다.
 
 ## HTTP status 사용 기준
 
@@ -291,11 +225,43 @@ Bean Validation과 `FieldValidationException`을 통한 필드 단위 검증 실
 - `409 Conflict`: 이미 존재함, 상태 전이 불가, 만료/이미 처리됨 등 충돌.
 - `500 Internal Server Error`: 서버 내부 오류.
 - `502 Bad Gateway`: 외부 API 또는 downstream 서비스 호출 실패.
+- `503 Service Unavailable`: 운영 설정으로 일시 중단한 쓰기. 설정이 바뀌기 전에는 재시도해도 같은 응답입니다.
+
+403은 요청자의 권한이 부족한 경우에 사용합니다. 요청에서 지정한 대상 리소스를 찾을 수 없으면 404를, 다른 리소스의 속성으로 전달한 참조 값이 유효하지 않으면 400을 사용합니다.
 
 ## 구현 시 체크리스트
 
 - 기존 Go API 이관인지, 신규/개편 API인지 먼저 결정합니다.
 - 기존 Go API 이관이면 status와 body shape를 기존과 맞춥니다.
 - 신규/개편 API이면 Standard 에러 응답을 사용합니다.
-- 새 에러 코드를 추가하면 이 문서의 코드 표 또는 도메인별 명세에 반영합니다.
+- JSON 에러 응답으로 반환하는 새 에러 코드를 추가하면 해당 엔드포인트의 `@ApiException`에 선언하고, `./gradlew updateOpenApiSnapshot`으로 OpenAPI 스냅샷을 갱신합니다.
 - OpenAPI에 성공 예시와 주요 에러 예시를 함께 추가합니다.
+
+## 태스크·마일스톤 수정 충돌
+
+태스크와 마일스톤의 일반 수정·삭제는 항목 단위의 버전으로 충돌을 검사합니다. 서로 다른 필드를
+수정해도 같은 항목의 버전이 바뀌면 충돌입니다. 요청 값이 기존 값과 같아 UPDATE가 발생하지
+않더라도 커밋 시 조회한 버전을 검사합니다. 완료 기준 변경과 AI 초안 반영도 태스크
+버전에 반영됩니다. 단, AI 초안의 반영 허용 조건은 버전 비교가 아니라 기존 title·role·priority
+baseline 비교입니다. 다른 필드만 수정했거나 세 필드를 원래 값으로 되돌렸다면 초안이 반영될 수
+있습니다. 버전은 비교용 값이며 클라이언트가 다음 값을 계산하지 않습니다.
+
+조회 응답의 `version`을 수정 요청에 함께 보내면 조회 이후의 변경을 감지합니다. 웹 태스크
+삭제는 선택 쿼리 파라미터로 전달합니다. HTTP JSON 본문은 생략과 `null`을 허용하고, 삭제 쿼리와
+MCP는 생략할 수 있지만 명시적 `null`은 허용하지 않습니다. 버전을 생략하거나 HTTP JSON 본문에
+`null`을 보낸 요청은 서버가 읽은 시점부터 저장까지의 동시 변경만 검사하므로, 오래 열어 둔
+화면의 덮어쓰기를 막지는 못합니다.
+HTTP JSON 버전은 정수 또는 `null`이어야 하며 소수·문자열은 입력 오류입니다. 음수 버전은
+필드 검증 오류입니다. 구체적인 입력 위치와 응답 필드는 [OpenAPI](openapi.json)를 따릅니다.
+모바일 전체 수정의 204 응답 뒤에는 상세를 다시 조회해 새 버전을 받습니다.
+
+충돌하면 HTTP 409와 `COMMON_CONCURRENT_MODIFICATION`을 반환하고, 해당 요청의 데이터 변경과
+outbox 발행을 함께 롤백합니다. 서버는 자동 재시도하지 않습니다. 클라이언트는 최신 내용을
+조회하고 사용자가 변경 사항을 확인한 뒤 새 버전으로 요청해야 합니다. 삭제와 수정이 겹치면
+충돌로 실패할 수 있으며, 처음 조회할 때 이미 삭제된 항목은 기존 not-found 응답을 유지합니다.
+
+이 보장은 신규 서버 writer에 적용됩니다. 레거시 SQL이 태스크·마일스톤 내용을 바꾸면 DB
+트리거가 버전을 올리므로, 그 전에 조회한 버전으로 보낸 신규 서버 요청은 충돌로 실패합니다.
+레거시는 버전을 검사하지 않아 자신의 덮어쓰기를 막지 못하므로
+[컷오버의 legacy writer 차단·drain](../design/legacy-product-api-migration/cutover.md#1-전환-단위)
+조건을 유지합니다. AI 초안은 기존 baseline 검사와 행 잠금을 유지하면서 버전을 갱신합니다.

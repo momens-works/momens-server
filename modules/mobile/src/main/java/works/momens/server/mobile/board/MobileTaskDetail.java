@@ -1,6 +1,7 @@
 package works.momens.server.mobile.board;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import works.momens.server.project.task.TaskDetail;
@@ -8,9 +9,11 @@ import works.momens.server.project.task.TaskDetail;
 /**
  * 모바일 태스크 상세 조합 결과.
  *
- * <p>{@code purpose}는 도메인의 description을 화면 언어로 개명한 값이고(와이어프레임 task_002), {@code priority}는 모바일
- * 3종(low/medium/high)으로 매핑된 값입니다. 담당자가 없으면 {@code assignee}가 null입니다. 완료기준 항목은 모바일 규칙 없이 그대로 내려가므로
- * project public API 타입({@link TaskDetail.ChecklistItem})을 재사용합니다.
+ * <p>{@code purpose}는 도메인의 description을 화면 언어로 개명한 값이고(와이어프레임 task_002), {@code priority}에는 저장값을 변환
+ * 없이 사용합니다. 담당자가 없으면 {@code assignee}가 null입니다. 완료기준 항목은 모바일 규칙 없이 그대로 내려가므로 project public API
+ * 타입({@link TaskDetail.ChecklistItem})을 재사용합니다.
+ *
+ * <p>{@code dueDate}는 저장된 값을 그대로 반환하며, 지정되지 않은 경우 {@code null}입니다.
  *
  * <p>{@code materials}는 context의 연결과 source의 원본을 조합한 결과입니다. 연결된 자료가 없으면 빈 목록입니다.
  *
@@ -23,14 +26,16 @@ public record MobileTaskDetail(
     UUID projectId,
     String title,
     String status,
-    String role,
+    List<String> roles,
     Assignee assignee,
     String priority,
+    LocalDate dueDate,
     String purpose,
     List<TaskDetail.ChecklistItem> checklistItems,
     List<Material> materials,
     List<TaskDetail.OpenQuestion> openQuestions,
-    String nextAction) {
+    String nextAction,
+    long version) {
 
   /** 담당자 표시 정보. avatarUrl은 담당자의 구글 계정 프로필 이미지이고, 없으면 null입니다. */
   public record Assignee(UUID id, String name, String avatarUrl) {}

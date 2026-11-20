@@ -9,14 +9,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import works.momens.server.common.persistence.BaseEntity;
 
-/**
- * 사용자.
- *
- * <p>레거시 {@code momens-api}의 {@code users} 테이블과 호환됩니다. 식별자·감사 필드는 {@link BaseEntity}가 담당합니다.
- *
- * <p>엔티티가 cross-module API로 노출되지 않도록 모듈 {@code internal} 패키지에 package-private로 둡니다. 다른 모듈은 루트 패키지의
- * {@code UserService}/{@code UserProfile}만 사용합니다.
- */
 @Getter
 @Entity
 @Table(name = "users")
@@ -43,9 +35,7 @@ class User extends BaseEntity {
     this.jobRole = jobRole;
   }
 
-  /** 로그인 시점의 이름과 프로필 이미지를 기준으로 사용자 정보를 갱신합니다. 이메일은 다른 사용자와 충돌할 수 있으므로 리포지토리에서 별도로 처리합니다. */
-  void refreshLoginProfile(String name, String avatarUrl) {
-    this.name = name;
+  void refreshLoginProfile(String avatarUrl) {
     this.avatarUrl = avatarUrl;
   }
 

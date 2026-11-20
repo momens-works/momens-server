@@ -1,0 +1,361 @@
+package works.momens.server.mcp.oauth.infrastructure;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.HexFormat;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.context.annotation.Import;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
+import org.springframework.security.oauth2.core.OAuth2RefreshToken;
+import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationCode;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsent;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
+import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
+import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
+import org.springframework.test.context.ContextConfiguration;
+import works.momens.server.common.test.AbstractPostgresIntegrationTest;
+
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@ContextConfiguration(classes = McpOAuthPersistenceIntegrationTest.TestApplication.class)
+@Import({McpOAuthPersistenceConfig.class, McpUnusedClientRepository.class})
+@DisplayName("MCP OAuth 표준 persistence 통합 테스트")
+class McpOAuthPersistenceIntegrationTest extends AbstractPostgresIntegrationTest {
+
+  private static final Instant ISSUED_AT = Instant.parse("2026-09-24T00:00:00Z");
+  private static final Instant EXPIRES_AT = Instant.parse("2026-09-24T01:00:00Z");
+
+  @Autowired private RegisteredClientRepository registeredClientRepository;
+  @Autowired private OAuth2AuthorizationService authorizationService;
+  @Autowired private OAuth2AuthorizationConsentService consentService;
+  @Autowired private JdbcTemplate jdbcTemplate;
+
+  @Test
+  @DisplayName("Flyway는 access token 타임스탬프 제약의 기존 행 검증까지 완료한다")
+  void migrationValidatesExistingAccessTokenTimestamps() {
+    assertThat(
+            jdbcTemplate.queryForObject(
+                "SELECT convalidated FROM pg_constraint WHERE conrelid = 'oauth2_authorization'::regclass AND conname = 'chk_mcp_access_token_timestamps'",
+                Boolean.class))
+        .isTrue();
+  }
+
+  @Test
+  @DisplayName("제약 추가는 기존 위반 행 검사를 미루고 별도 검증 migration은 이를 거부한다")
+  void separateValidationRejectsExistingMalformedAccessTokens() throws IOException {
+    jdbcTemplate.execute(
+        "ALTER TABLE oauth2_authorization DROP CONSTRAINT chk_mcp_access_token_timestamps");
+    jdbcTemplate.update(
+        "INSERT INTO oauth2_authorization (id, registered_client_id, principal_name, authorization_grant_type, access_token_value) VALUES (?, ?, ?, ?, ?)",
+        "malformed-authorization",
+        "registered-client",
+        "user-1",
+        "authorization_code",
+        sha256("access-token"));
+
+    jdbcTemplate.execute(
+        new ClassPathResource(
+                "db/migration/V20260927020000__require_mcp_access_token_timestamps.sql")
+            .getContentAsString(StandardCharsets.UTF_8));
+    assertThat(
+            jdbcTemplate.queryForObject(
+                "SELECT convalidated FROM pg_constraint WHERE conrelid = 'oauth2_authorization'::regclass AND conname = 'chk_mcp_access_token_timestamps'",
+                Boolean.class))
+        .isFalse();
+
+    String validation =
+        new ClassPathResource(
+                "db/migration/V20260927020100__validate_mcp_access_token_timestamps.sql")
+            .getContentAsString(StandardCharsets.UTF_8);
+    assertThatThrownBy(() -> jdbcTemplate.execute(validation))
+        .isInstanceOf(DataIntegrityViolationException.class)
+        .hasMessageContaining("chk_mcp_access_token_timestamps");
+  }
+
+  @Test
+  @DisplayName("access token 발급 전 authorization은 토큰 타임스탬프 없이 저장할 수 있다")
+  void persistsAuthorizationBeforeAccessTokenIssuance() {
+    RegisteredClient client = registeredClient();
+    registeredClientRepository.save(client);
+    OAuth2Authorization authorization =
+        OAuth2Authorization.withRegisteredClient(client)
+            .principalName("user-1")
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .token(new OAuth2AuthorizationCode("authorization-code", ISSUED_AT, EXPIRES_AT))
+            .build();
+
+    authorizationService.save(authorization);
+
+    OAuth2Authorization persisted = authorizationService.findById(authorization.getId());
+    assertThat(persisted).isNotNull();
+    assertThat(persisted.getAccessToken()).isNull();
+    assertThat(persisted.getToken(OAuth2AuthorizationCode.class)).isNotNull();
+  }
+
+  @ParameterizedTest
+  @CsvSource({"false, true", "true, false", "false, false"})
+  @DisplayName("DB는 access token이 있으면 발급·만료 시간 누락을 거부한다")
+  void rejectsAccessTokenWithMissingTimestamps(boolean hasIssuedAt, boolean hasExpiresAt) {
+    RegisteredClient client = registeredClient();
+    registeredClientRepository.save(client);
+    OAuth2Authorization authorization =
+        OAuth2Authorization.withRegisteredClient(client)
+            .principalName("user-1")
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .build();
+    authorizationService.save(authorization);
+
+    assertThatThrownBy(() ->
+            jdbcTemplate.update(
+                "UPDATE oauth2_authorization SET access_token_value = ?, access_token_issued_at = ?, access_token_expires_at = ? WHERE id = ?",
+                sha256("access-token"),
+                hasIssuedAt ? Timestamp.from(ISSUED_AT) : null,
+                hasExpiresAt ? Timestamp.from(EXPIRES_AT) : null,
+                authorization.getId()))
+        .isInstanceOf(DataIntegrityViolationException.class)
+        .hasMessageContaining("chk_mcp_access_token_timestamps");
+  }
+
+  @Test
+  @DisplayName("토큰 조회와 grant별 폐기 SQL이 의도한 인덱스를 사용할 수 있다")
+  void tokenAndGrantLookupsCanUseIndexes() {
+    jdbcTemplate.execute("SET LOCAL enable_seqscan = off");
+    for (String column :
+        List.of("authorization_code_value", "access_token_value", "refresh_token_value")) {
+      String index =
+          switch (column) {
+            case "authorization_code_value" -> "idx_mcp_authorization_code";
+            case "access_token_value" -> "idx_mcp_access_token";
+            case "refresh_token_value" -> "idx_mcp_refresh_token";
+            default -> throw new IllegalArgumentException(column);
+          };
+      assertThat(
+              String.join(
+                  "\n",
+                  jdbcTemplate.queryForList(
+                      "EXPLAIN SELECT * FROM oauth2_authorization WHERE " + column + " = ?",
+                      String.class,
+                      "a".repeat(64))))
+          .contains(index);
+    }
+    assertThat(
+            String.join(
+                "\n",
+                jdbcTemplate.queryForList(
+                    "EXPLAIN SELECT authorization_id FROM mcp_token_families WHERE grant_id = ? ORDER BY authorization_id",
+                    String.class,
+                    UUID.randomUUID())))
+        .contains("idx_mcp_token_families_grant");
+  }
+
+  @Test
+  @DisplayName("RegisteredClient와 OAuth2AuthorizationConsent를 저장하고 조회한다")
+  void persistsRegisteredClientAndConsent() {
+    RegisteredClient client = registeredClient();
+
+    registeredClientRepository.save(client);
+    OAuth2AuthorizationConsent consent =
+        OAuth2AuthorizationConsent.withId(client.getId(), "user-1")
+            .scope("mcp:projects:read")
+            .authority(new SimpleGrantedAuthority("ROLE_USER"))
+            .build();
+    consentService.save(consent);
+
+    RegisteredClient persistedClient =
+        registeredClientRepository.findByClientId(client.getClientId());
+    OAuth2AuthorizationConsent persistedConsent = consentService.findById(client.getId(), "user-1");
+
+    assertThat(persistedClient).isEqualTo(client);
+    assertThat(persistedConsent).isEqualTo(consent);
+  }
+
+  @Test
+  @DisplayName("authorization code·access token·refresh token lifecycle을 저장하고 조회한다")
+  void persistsAuthorizationTokenLifecycle() {
+    RegisteredClient client = registeredClient();
+    registeredClientRepository.save(client);
+
+    OAuth2Authorization authorization =
+        OAuth2Authorization.withRegisteredClient(client)
+            .principalName("user-1")
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .authorizedScopes(Set.of("mcp:projects:read"))
+            .attribute("state", "oauth-state")
+            .token(new OAuth2AuthorizationCode("authorization-code", ISSUED_AT, EXPIRES_AT))
+            .accessToken(
+                new OAuth2AccessToken(
+                    OAuth2AccessToken.TokenType.BEARER,
+                    "access-token",
+                    ISSUED_AT,
+                    EXPIRES_AT,
+                    Set.of("mcp:projects:read")))
+            .refreshToken(new OAuth2RefreshToken("refresh-token", ISSUED_AT, EXPIRES_AT))
+            .build();
+
+    authorizationService.save(authorization);
+
+    OAuth2Authorization persistedState = authorizationService.findByToken("oauth-state", null);
+    assertThat(persistedState).isNotNull();
+    assertThat((String) persistedState.getAttribute("state")).isEqualTo("oauth-state");
+
+    OAuth2Authorization persistedCode =
+        authorizationService.findByToken("authorization-code", null);
+    assertThat(persistedCode).isNotNull();
+    assertThat(persistedCode.getToken(OAuth2AuthorizationCode.class).getToken().getTokenValue())
+        .isEqualTo("authorization-code");
+
+    OAuth2Authorization persistedAccessToken =
+        authorizationService.findByToken("access-token", OAuth2TokenType.ACCESS_TOKEN);
+    OAuth2Authorization persistedRefreshToken =
+        authorizationService.findByToken("refresh-token", OAuth2TokenType.REFRESH_TOKEN);
+    assertThat(persistedAccessToken).isNotNull();
+    assertThat(persistedRefreshToken).isNotNull();
+    assertThat(persistedAccessToken.getAccessToken().getToken().getTokenValue())
+        .isEqualTo("access-token");
+    assertThat(persistedRefreshToken.getRefreshToken().getToken().getTokenValue())
+        .isEqualTo("refresh-token");
+    assertThat(
+            jdbcTemplate.queryForObject(
+                "SELECT access_token_value FROM oauth2_authorization WHERE id = ?",
+                String.class,
+                authorization.getId()))
+        .isEqualTo(sha256("access-token"));
+    assertThat(
+            jdbcTemplate.queryForObject(
+                "SELECT authorization_code_value FROM oauth2_authorization WHERE id = ?",
+                String.class,
+                authorization.getId()))
+        .isEqualTo(sha256("authorization-code"));
+    assertThat(
+            jdbcTemplate.queryForObject(
+                "SELECT refresh_token_value FROM oauth2_authorization WHERE id = ?",
+                String.class,
+                authorization.getId()))
+        .isEqualTo(sha256("refresh-token"));
+
+    authorizationService.save(persistedAccessToken);
+
+    OAuth2Authorization persistedAfterUpdate =
+        authorizationService.findByToken("refresh-token", OAuth2TokenType.REFRESH_TOKEN);
+    assertThat(persistedAfterUpdate).isNotNull();
+    assertThat(persistedAfterUpdate.getRefreshToken().getToken().getTokenValue())
+        .isEqualTo("refresh-token");
+    assertThat(
+            jdbcTemplate.queryForObject(
+                "SELECT refresh_token_value FROM oauth2_authorization WHERE id = ?",
+                String.class,
+                authorization.getId()))
+        .isEqualTo(sha256("refresh-token"));
+
+    OAuth2Authorization persistedCodeAfterUpdate =
+        authorizationService.findByToken("authorization-code", null);
+    assertThat(persistedCodeAfterUpdate).isNotNull();
+    assertThat(
+            persistedCodeAfterUpdate
+                .getToken(OAuth2AuthorizationCode.class)
+                .getToken()
+                .getTokenValue())
+        .isEqualTo("authorization-code");
+
+    String rotatedAccessToken = "rotated-access-token";
+    OAuth2Authorization rotatedAuthorization =
+        OAuth2Authorization.from(persistedAccessToken)
+            .accessToken(
+                new OAuth2AccessToken(
+                    OAuth2AccessToken.TokenType.BEARER,
+                    rotatedAccessToken,
+                    ISSUED_AT,
+                    EXPIRES_AT,
+                    Set.of("mcp:projects:read")))
+            .build();
+    authorizationService.save(rotatedAuthorization);
+
+    assertThat(
+            jdbcTemplate.queryForObject(
+                "SELECT access_token_value FROM oauth2_authorization WHERE id = ?",
+                String.class,
+                authorization.getId()))
+        .isEqualTo(sha256(rotatedAccessToken));
+    OAuth2Authorization persistedRotatedAccessToken =
+        authorizationService.findByToken(rotatedAccessToken, OAuth2TokenType.ACCESS_TOKEN);
+    assertThat(persistedRotatedAccessToken).isNotNull();
+    assertThat(persistedRotatedAccessToken.getAccessToken().getToken().getTokenValue())
+        .isEqualTo(rotatedAccessToken);
+
+    String hexToken = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    OAuth2Authorization hexAuthorization =
+        OAuth2Authorization.withRegisteredClient(client)
+            .principalName("user-1")
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .accessToken(
+                new OAuth2AccessToken(
+                    OAuth2AccessToken.TokenType.BEARER, hexToken, ISSUED_AT, EXPIRES_AT))
+            .build();
+    authorizationService.save(hexAuthorization);
+
+    assertThat(
+            jdbcTemplate.queryForObject(
+                "SELECT access_token_value FROM oauth2_authorization WHERE id = ?",
+                String.class,
+                hexAuthorization.getId()))
+        .isEqualTo(sha256(hexToken));
+  }
+
+  private static RegisteredClient registeredClient() {
+    return RegisteredClient.withId("registered-client-1")
+        .clientId("mcp-client-1")
+        .clientIdIssuedAt(ISSUED_AT)
+        .clientName("MCP client")
+        .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
+        .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+        .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+        .redirectUri("http://127.0.0.1:43110/callback")
+        .scope("mcp:projects:read")
+        .clientSettings(ClientSettings.builder().requireProofKey(true).build())
+        .tokenSettings(TokenSettings.builder().build())
+        .build();
+  }
+
+  private static String sha256(String value) {
+    try {
+      return HexFormat.of()
+          .formatHex(
+              MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));
+    } catch (NoSuchAlgorithmException exception) {
+      throw new IllegalStateException(exception);
+    }
+  }
+
+  @SpringBootConfiguration
+  @EnableAutoConfiguration
+  static class TestApplication {}
+}

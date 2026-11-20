@@ -14,13 +14,6 @@ import works.momens.server.mobile.brief.dto.response.BriefResponse;
 import works.momens.server.mobile.brief.dto.response.BriefSignalSummaryPageResponse;
 import works.momens.server.project.core.ProjectErrorCode;
 
-/**
- * {@code /api/mobile/projects/{projectId}/brief} OpenAPI 문서. Swagger 애너테이션을 컨트롤러 구현과
- * 분리합니다(docs/spec/openapi.md).
- *
- * <p>401/403은 보안 필터가 Standard shape로 응답하고, 없는 project는 PROJECT_NOT_FOUND(404), project는 있는데
- * workspace 멤버가 아니면 AUTH_FORBIDDEN(403)입니다.
- */
 @Tag(name = "Mobile", description = "모바일 앱 진입 API")
 interface ProjectBriefControllerDocs {
 

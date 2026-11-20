@@ -2,41 +2,51 @@ package works.momens.server.mobile.board.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 import works.momens.server.mobile.MobileDraftStatus;
 import works.momens.server.mobile.board.MobileTaskDetail;
 import works.momens.server.mobile.board.MobileTaskDetailView;
 
 /**
- * {@code GET /api/mobile/tasks/{taskId}} 응답. 응답 형식은 docs/spec/mobile-api.md 태스크 상세 절을 따릅니다.
+ * {@code GET /api/mobile/tasks/{taskId}} 응답. 형식은 docs/spec/openapi.json에서 확인합니다.
  *
  * <p>완료 수와 전체 수는 항목 목록에서 파생합니다(별도 저장 없음). {@code materials}는 태스크에 연결된 source_ref를 조합한 값이고, 연결된 자료가
  * 없으면 빈 배열입니다. {@code open_questions}와 {@code next_action}은 민수가 생산한 값을 그대로 내려줍니다(ADR-0011). 열린질문이
  * 없으면 빈 배열이고, 다음행동을 아직 만들지 않았으면 null입니다.
  *
  * <p>{@code draft_status}는 이 태스크의 제목을 AI가 더 손볼 것이 남았는지를 알립니다(MOM-0822). 앱이 결과를 확인하는 경로는 convert 응답과
- * 이 상세 둘뿐이고, 보드·목록에는 노출하지 않습니다(설계 7.2절).
+ * 이 상세 둘뿐이고, 보드·목록에는 노출하지 않습니다.
  */
-@Schema(description = "태스크 상세 응답")
+@Schema(description = "작업 상세 응답")
 public record TaskDetailResponse(
-    @Schema(description = "태스크 식별자") UUID id,
+    @Schema(description = "작업 식별자") UUID id,
     @Schema(description = "소속 project 식별자") UUID projectId,
     @Schema(description = "제목") String title,
     @Schema(description = "상태. backlog/todo/in_progress/done/cancelled", example = "todo")
         String status,
     @Schema(
-            description = "역할. pm/design/backend/frontend 중 하나. 웹에서 만든 태스크는 미지정이면 null",
+            description =
+                "role 목록입니다. `pm`, `design`, `backend`, `frontend` 순서로 정렬하며, role이 지정되지 않은 경우 빈 배열을 반환합니다.")
+        List<String> roles,
+    @Schema(
+            description =
+                "구버전 앱과의 호환성을 위한 role 필드입니다. `roles`의 첫 번째 값을 반환하며, 지정된 role이 없으면 `null`을 반환합니다.",
             example = "pm",
-            nullable = true)
+            nullable = true,
+            deprecated = true)
         String role,
-    @Schema(description = "담당자. 미지정이면 null") AssigneeResponse assignee,
-    @Schema(description = "우선순위. low/medium/high", example = "medium") String priority,
-    @Schema(description = "목적. 작성 전이면 null") String purpose,
-    @Schema(description = "완료기준") ChecklistResponse checklist,
-    @Schema(description = "관련자료 목록. 연결된 자료가 없으면 빈 배열") List<MaterialResponse> materials,
-    @Schema(description = "열린질문 목록. 민수가 만든 질문이 없으면 빈 배열") List<OpenQuestionResponse> openQuestions,
-    @Schema(description = "다음행동. 민수가 아직 만들지 않았으면 null", nullable = true) String nextAction,
+    @Schema(description = "담당자. 미지정이면 null") @Nullable AssigneeResponse assignee,
+    @Schema(description = "우선순위 (urgent/high/medium/low)", example = "medium") String priority,
+    @Schema(description = "마감일. 미설정 시 null", example = "2026-09-25", nullable = true)
+        LocalDate dueDate,
+    @Schema(description = "설명. 작성 전이면 null") String purpose,
+    @Schema(description = "완료 기준") ChecklistResponse checklist,
+    @Schema(description = "연결된 소스 목록. 연결된 소스가 없으면 빈 배열") List<MaterialResponse> materials,
+    @Schema(description = "질문 목록. 민수가 만든 질문이 없으면 빈 배열") List<OpenQuestionResponse> openQuestions,
+    @Schema(description = "다음 행동. 민수가 아직 만들지 않았으면 null", nullable = true) String nextAction,
     @Schema(
             description =
                 "AI가 제목을 더 손볼 것이 남았는지. generating이면 나중에 다시 조회해야 합니다."
@@ -44,7 +54,8 @@ public record TaskDetailResponse(
                     + " 경우에만 뒤늦은 반영으로 한 번 더 바뀔 수 있습니다.",
             allowableValues = {"generating", "ready"},
             example = "ready")
-        String draftStatus) {
+        String draftStatus,
+    @Schema(description = "수정 충돌 확인용 버전", minimum = "0") long version) {
 
   @Schema(description = "담당자")
   public record AssigneeResponse(
@@ -52,21 +63,21 @@ public record TaskDetailResponse(
       @Schema(description = "이름") String name,
       @Schema(description = "구글 계정 프로필 이미지. 없으면 null") String avatarUrl) {}
 
-  @Schema(description = "완료기준")
+  @Schema(description = "완료 기준")
   public record ChecklistResponse(
       @Schema(description = "완료된 항목 수") int completedCount,
       @Schema(description = "전체 항목 수") int totalCount,
       @Schema(description = "항목 목록(저장 순서)") List<ChecklistItemResponse> items) {}
 
-  @Schema(description = "완료기준 항목")
+  @Schema(description = "완료 기준 항목")
   public record ChecklistItemResponse(
       @Schema(description = "항목 식별자") UUID id,
       @Schema(description = "항목 제목") String title,
       @Schema(description = "완료 여부") boolean completed) {}
 
-  @Schema(description = "관련자료")
+  @Schema(description = "연결된 소스")
   public record MaterialResponse(
-      @Schema(description = "자료 식별자(source_ref id)") UUID id,
+      @Schema(description = "소스 식별자(source_ref id)") UUID id,
       @Schema(description = "제목", nullable = true) String title,
       @Schema(description = "요약", nullable = true) String summary,
       @Schema(
@@ -77,7 +88,7 @@ public record TaskDetailResponse(
       @Schema(description = "원본이 생성된 시각", nullable = true) Instant occurredAt,
       @Schema(description = "원본 문서 링크", nullable = true) String sourceUrl) {}
 
-  @Schema(description = "열린질문")
+  @Schema(description = "질문")
   public record OpenQuestionResponse(
       @Schema(description = "질문 식별자") UUID id, @Schema(description = "질문 본문") String body) {}
 
@@ -103,15 +114,18 @@ public record TaskDetailResponse(
         detail.projectId(),
         detail.title(),
         detail.status(),
-        detail.role(),
+        detail.roles(),
+        detail.roles().isEmpty() ? null : detail.roles().getFirst(),
         assignee,
         detail.priority(),
+        detail.dueDate(),
         detail.purpose(),
         checklist,
         materials,
         openQuestions,
         detail.nextAction(),
-        MobileDraftStatus.key(view.draftStatus()));
+        MobileDraftStatus.key(view.draftStatus()),
+        detail.version());
   }
 
   private static MaterialResponse toMaterial(MobileTaskDetail.Material material) {

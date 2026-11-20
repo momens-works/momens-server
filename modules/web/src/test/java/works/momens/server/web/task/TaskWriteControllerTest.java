@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -15,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.security.Principal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -29,8 +31,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.servlet.config.annotation.ApiVersionConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import works.momens.server.project.task.TaskPolicy;
 import works.momens.server.project.task.TaskSnapshot;
 import works.momens.server.project.taskupdate.TaskUpdateDetail;
+import works.momens.server.project.taskupdate.TaskUpdateKind;
 
 @WebMvcTest(TaskWriteController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -49,7 +53,8 @@ class TaskWriteControllerTest {
   @Test
   @DisplayName("태스크 생성은 레거시 응답 형식으로 반환한다")
   void createsLegacyTaskShape() throws Exception {
-    when(taskWriteService.create(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+    when(taskWriteService.create(
+            any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(task());
 
     mockMvc
@@ -62,6 +67,118 @@ class TaskWriteControllerTest {
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.id").value(TASK_ID.toString()))
         .andExpect(jsonPath("$.due_date").value("2026-08-31"));
+  }
+
+  @Test
+  @DisplayName("legacy 값이나 대소문자가 다른 status를 보내면 서비스를 호출하지 않고 400을 응답합니다")
+  void rejectsLegacyAndCaseMismatchedStatus() throws Exception {
+    for (String status : new String[] {"progress", "Done"}) {
+      mockMvc
+          .perform(
+              post("/api/projects/{projectId}/tasks", PROJECT_ID)
+                  .principal(principal)
+                  .header("API-Version", "1")
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content("{\"title\":\"웹 태스크\",\"status\":\"" + status + "\"}"))
+          .andExpect(status().isBadRequest());
+    }
+    verifyNoInteractions(taskWriteService);
+  }
+
+  @Test
+  @DisplayName("웹 태스크 생성 및 수정 요청에 빈 roles 목록이나 중복된 role을 전달하면 요청을 거부합니다")
+  void rejectsEmptyOrDuplicateRolesOnCreateAndUpdate() throws Exception {
+    for (String roles : new String[] {"[]", "[\"pm\",\"pm\"]"}) {
+      mockMvc
+          .perform(
+              post("/api/projects/{projectId}/tasks", PROJECT_ID)
+                  .principal(principal)
+                  .header("API-Version", "1")
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content("{\"title\":\"Roles\",\"roles\":" + roles + "}"))
+          .andExpect(status().isBadRequest());
+      mockMvc
+          .perform(
+              patch("/api/tasks/{taskId}", TASK_ID)
+                  .principal(principal)
+                  .header("API-Version", "1")
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content("{\"roles\":" + roles + "}"))
+          .andExpect(status().isBadRequest());
+    }
+    verifyNoInteractions(taskWriteService);
+  }
+
+  @Test
+  @DisplayName("최대 길이와 같은 제목은 생성과 수정에서 모두 받아들인다")
+  void acceptsTitleAtMaxLengthOnCreateAndUpdate() throws Exception {
+    String atMaxLength = "가".repeat(TaskPolicy.TITLE_MAX_LENGTH);
+    when(taskWriteService.create(
+            any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(task());
+    when(taskWriteService.update(
+            any(),
+            any(),
+            any(),
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            isNull()))
+        .thenReturn(task());
+
+    mockMvc
+        .perform(
+            post("/api/projects/{projectId}/tasks", PROJECT_ID)
+                .principal(principal)
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"" + atMaxLength + "\"}"))
+        .andExpect(status().isCreated());
+    mockMvc
+        .perform(
+            patch("/api/tasks/{taskId}", TASK_ID)
+                .principal(principal)
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"" + atMaxLength + "\"}"))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("최대 길이를 초과한 제목은 생성과 수정에서 모두 거부한다")
+  void rejectsTitleOverMaxLengthOnCreateAndUpdate() throws Exception {
+    String overMaxLength = "가".repeat(TaskPolicy.TITLE_MAX_LENGTH + 1);
+
+    mockMvc
+        .perform(
+            post("/api/projects/{projectId}/tasks", PROJECT_ID)
+                .principal(principal)
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"" + overMaxLength + "\"}"))
+        .andExpect(status().isBadRequest());
+    mockMvc
+        .perform(
+            patch("/api/tasks/{taskId}", TASK_ID)
+                .principal(principal)
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"" + overMaxLength + "\"}"))
+        .andExpect(status().isBadRequest());
+
+    verifyNoInteractions(taskWriteService);
   }
 
   @Test
@@ -83,7 +200,10 @@ class TaskWriteControllerTest {
             any(),
             anyBoolean(),
             any(),
-            anyBoolean()))
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            isNull()))
         .thenReturn(task());
 
     mockMvc
@@ -110,22 +230,29 @@ class TaskWriteControllerTest {
             isNull(),
             eq(false),
             isNull(),
+            eq(false),
+            isNull(),
             eq(true),
             isNull(),
-            eq(false));
+            eq(false),
+            isNull());
     mockMvc
         .perform(
             delete("/api/tasks/{taskId}", TASK_ID).principal(principal).header("API-Version", "1"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.message").value("deleted"));
-    verify(taskWriteService).delete(TASK_ID, USER_ID);
+    verify(taskWriteService).delete(TASK_ID, USER_ID, null);
   }
 
   @Test
   @DisplayName("태스크 업데이트 생성과 삭제는 레거시 경로로 처리한다")
   void createsAndDeletesTaskUpdates() throws Exception {
     when(taskUpdateService.create(
-            eq(TASK_ID), eq(USER_ID), eq("첫 댓글"), eq("comment"), eq(Map.of("source", "web"))))
+            eq(TASK_ID),
+            eq(USER_ID),
+            eq("첫 댓글"),
+            eq(TaskUpdateKind.COMMENT),
+            eq(Map.of("source", "web"))))
         .thenReturn(update());
 
     mockMvc
@@ -139,7 +266,8 @@ class TaskWriteControllerTest {
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.id").value(UPDATE_ID.toString()))
         .andExpect(jsonPath("$.body").value("첫 댓글"));
-    verify(taskUpdateService).create(TASK_ID, USER_ID, "첫 댓글", "comment", Map.of("source", "web"));
+    verify(taskUpdateService)
+        .create(TASK_ID, USER_ID, "첫 댓글", TaskUpdateKind.COMMENT, Map.of("source", "web"));
 
     mockMvc
         .perform(
@@ -162,11 +290,12 @@ class TaskWriteControllerTest {
         null,
         "backlog",
         "medium",
-        null,
+        List.of(),
         null,
         LocalDate.parse("2026-08-31"),
         Instant.parse("2026-08-21T00:00:00Z"),
-        Instant.parse("2026-08-21T00:00:00Z"));
+        Instant.parse("2026-08-21T00:00:00Z"),
+        0L);
   }
 
   private static TaskUpdateDetail update() {

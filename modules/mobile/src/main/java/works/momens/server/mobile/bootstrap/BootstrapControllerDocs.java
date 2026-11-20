@@ -11,12 +11,6 @@ import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.mobile.bootstrap.dto.response.BootstrapResponse;
 import works.momens.server.user.UserErrorCode;
 
-/**
- * {@code /api/mobile/bootstrap} OpenAPI 문서. Swagger 애너테이션을 컨트롤러 구현과 분리합니다(docs/spec/openapi.md).
- *
- * <p>401/403은 보안 필터가 Standard shape로 응답하고, 유효한 토큰인데 사용자 행이 없는 경우는 {@code /api/me}와 같은
- * USER_NOT_FOUND(404)입니다.
- */
 @Tag(name = "Mobile", description = "모바일 앱 진입 API")
 interface BootstrapControllerDocs {
 

@@ -1,5 +1,6 @@
 package works.momens.server.web.workspace;
 
+import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -18,12 +19,6 @@ import works.momens.server.web.workspace.dto.request.CreateWorkspaceInvitationRe
 import works.momens.server.web.workspace.dto.response.WorkspaceInvitationResponse;
 import works.momens.server.web.workspace.dto.response.WorkspaceInvitationsResponse;
 
-/**
- * 웹에서 사용하는 워크스페이스 초대 엔드포인트입니다.
- *
- * <p>성공 응답은 레거시 형식을 유지합니다. 단건 응답은 {@code invitation}, 목록 응답은 {@code invitations}로 감싸서 반환합니다. 멤버를 바로
- * 추가하는 요청은 반환할 리소스가 없으므로 {@code message}만 포함해 응답합니다.
- */
 @RestController
 @RequestMapping("/api/workspaces/{workspaceId}")
 @RequiredArgsConstructor
@@ -43,7 +38,7 @@ class WorkspaceInvitationController implements WorkspaceInvitationControllerDocs
   @ResponseStatus(HttpStatus.CREATED)
   public WorkspaceInvitationResponse create(
       @PathVariable UUID workspaceId,
-      @RequestBody CreateWorkspaceInvitationRequest request,
+      @Valid @RequestBody CreateWorkspaceInvitationRequest request,
       Principal principal) {
     return WorkspaceInvitationResponse.from(
         workspaceInvitationService.create(
@@ -70,7 +65,7 @@ class WorkspaceInvitationController implements WorkspaceInvitationControllerDocs
   @PostMapping(path = "/invite", version = "1")
   public WebMessageResponse invite(
       @PathVariable UUID workspaceId,
-      @RequestBody AddWorkspaceMemberRequest request,
+      @Valid @RequestBody AddWorkspaceMemberRequest request,
       Principal principal) {
     workspaceInvitationService.addMember(
         workspaceId, CurrentUser.id(principal), request.email(), request.role());

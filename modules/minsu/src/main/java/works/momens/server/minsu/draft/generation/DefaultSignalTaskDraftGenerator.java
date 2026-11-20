@@ -18,8 +18,8 @@ import works.momens.server.minsu.llm.MinsuLlmProperties;
 /**
  * Minsu 공개 계약 구현.
  *
- * <p>비동기 활성 판정을 이 클래스가 소유한다(5.5절). 판정은 {@code prepare}에서 한 번만 하고 그 결과를 {@link PreparedTaskDraft}에
- * 담아 내보내므로, 한 요청 안에서 판정이 두 번 갈릴 수 없다.
+ * <p>비동기 활성 판정을 이 클래스가 소유한다. 판정은 {@code prepare}에서 한 번만 하고 그 결과를 {@link PreparedTaskDraft}에 담아
+ * 내보내므로, 한 요청 안에서 판정이 두 번 갈릴 수 없다.
  *
  * <p>실제 생성은 {@link TaskDraftAttempt}가 하고 이 클래스는 경로 선택만 한다. 같은 시도를 비동기 실행({@link
  * AsyncTaskDraftExecutor})도 쓰므로 프롬프트·검증·정규화가 두 경로에서 갈라지지 않는다.
@@ -56,12 +56,12 @@ class DefaultSignalTaskDraftGenerator implements SignalTaskDraftGenerator {
   public PreparedTaskDraft prepare(SignalTaskDraftInput input) {
     TaskDraft fallback = TaskDraftAttempt.fallbackOf(input);
     if (!configStatus.enabled()) {
-      // provider가 꺼져 있으면 enroll 값과 무관하게 적재하지 않는다(11.2절). 생성할 수단이 없는 원장은
+      // provider가 꺼져 있으면 enroll 값과 무관하게 적재하지 않는다. 생성할 수단이 없는 원장은
       // deadline까지 generating으로 남았다 닫힐 뿐이다.
       return synchronous(finish(fallback, GenerationOutcome.DISABLED));
     }
     if (asyncProperties.enroll()) {
-      // 비동기 활성 경로. 여기서 LLM을 부르면 이 설계의 목적 자체가 사라진다(5.5절).
+      // 비동기 활성 경로. 여기서 LLM을 부르면 이 설계의 목적 자체가 사라진다.
       return enroller.bind(finish(fallback, GenerationOutcome.DEFERRED), input);
     }
     TaskDraftAttempt.Result result =

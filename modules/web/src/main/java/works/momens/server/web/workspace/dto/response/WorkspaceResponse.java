@@ -8,7 +8,7 @@ import works.momens.server.workspace.core.WorkspaceDetail;
 
 /**
  * 워크스페이스 한 건의 응답. {@code GET /api/workspaces}의 배열 원소와 {@code GET /api/workspaces/{workspaceId}}(래퍼
- * 없음)가 공유합니다(docs/design/legacy-product-api-migration/slice-workspace-read.md 4.3).
+ * 없음)가 공유합니다.
  *
  * <p>{@code description}은 값이 없으면 응답에서 생략합니다(레거시 {@code omitempty} 동작 유지).
  */

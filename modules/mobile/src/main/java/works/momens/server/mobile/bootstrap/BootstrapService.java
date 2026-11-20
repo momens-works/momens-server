@@ -41,12 +41,9 @@ class BootstrapService {
                     UserWorkspaceMembership::workspaceId, UserWorkspaceMembership::role));
     List<AccessibleProject> projects =
         projectReader.listByWorkspaceIds(roleByWorkspaceId.keySet()).stream()
-            .map(
-                snapshot ->
-                    new AccessibleProject(
-                        snapshot.id(),
-                        snapshot.name(),
-                        roleByWorkspaceId.get(snapshot.workspaceId())))
+            .map(snapshot ->
+                new AccessibleProject(
+                    snapshot.id(), snapshot.name(), roleByWorkspaceId.get(snapshot.workspaceId())))
             .toList();
     // 기본 project는 임의의 1개면 충분하다고 기획이 확인했고(2026-07-04), 구현은 가장 최근에 만든
     // 것을 선택합니다. listByWorkspaceIds가 생성 최신순 정렬을 보장하므로 첫 번째를 쓰고, 하나도

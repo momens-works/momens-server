@@ -4,6 +4,11 @@
 - 날짜: 2026-08-14
 - 작성자: jsshin8128
 
+> [PR #149의 머지 전 기록](https://github.com/momens-works/momens-server/pull/149#issuecomment-5468598126)에
+> 따라 Proposed로 보관한 제안입니다. 아래 「확정한다」는 표현만으로 설계 승인으로 해석하지
+> 않습니다. 결정 1~3의 승인 범위 확인은 MOM-1066에서, 보류한 모바일 진입 계약의 재검토는
+> MOM-0846에서 추적합니다. 승인 전에는 이 문서로 현행 API 계약을 변경하지 않습니다.
+
 ## 맥락
 
 `GET /api/mobile/bootstrap`은 앱 진입 시 필요한 사용자 정보와 프로젝트 목록을 내려주는 API입니다.
@@ -94,7 +99,7 @@ kotlinx.serialization 문서에서도 기본값이 없는 프로퍼티는 JSON�
 서버인 `momens-api`의 요청을 처리하고 있습니다.
 
 prod 환경에서는 신규 서버인 `momens-server`의 Flyway가 비활성화되어 있고, `ddl-auto: validate`입니다. 따라서
-엔티티 매핑에 대한 검증만 수행하고 있습니다. [prod 운영 준비 대장](../prod-schema-ledger.md) 기준으로 아직
+엔티티 매핑에 대한 검증만 수행하고 있습니다. [당시 prod 운영 준비 대장](https://github.com/momens-works/momens-server/blob/36a10c63c7928ec419ae6e21aed14f73680ca350/docs/prod-schema-ledger.md) 기준으로 아직
 반영되지 않은 스키마가 16건 존재합니다. 따라서 현재 상태로는 신규 서버를 prod 환경에서 정상 기동할 수
 없습니다. 이 작업은 MOM-0840에서 처리할 예정입니다.
 
@@ -143,6 +148,12 @@ parameter로 워크스페이스 id를 직접 받거나, 단건 리소스 API의 
 현재까지 이런 문제가 실제로 발생했다는 기록은 확인되지 않았습니다. 하지만 DB 레벨에서 `tasks.workspace_id`와
 `projects.workspace_id`의 일치를 보장하지 않기 때문에, 프로젝트의 소속 워크스페이스를 변경하는 작업이 생길
 경우 두 값을 함께 갱신하는 책임은 개발자가 져야합니다.
+
+이 문제는 MOM-0854에서 태스크의 소속 워크스페이스를 `tasks.workspace_id`에서만 읽도록 통일해 정리했습니다.
+프로젝트의 소속 워크스페이스는 생성 이후 변경되는 경로가 없으므로, 태스크 생성 시 기록한 값은 프로젝트 행의
+값과 계속 동일하게 유지됩니다. 반면 프로젝트의 삭제 여부는 태스크 생성 이후에도 변경될 수 있으므로 태스크 행에
+별도로 기록하지 않고 `ProjectReader`에서 판단합니다. 이 기준을 모든 조회와 수정 경로에 적용하는 작업은
+MOM-1000에서 다룹니다.
 
 MCP는 URL이 없는 환경이기 때문에 다른 방식을 사용합니다. 동의 화면에서 워크스페이스를 하나 선택하도록 하고,
 선택된 값을 access token에 포함합니다. 하나의 grant는 하나의 워크스페이스에 바인딩되며, 다른 워크스페이스를
@@ -325,7 +336,7 @@ payload의 `workspace_id`가 현재 bootstrap 목록에 없으면 bootstrap을 �
 
 - `ProjectSnapshot`은 "멤버 role은 workspace 멤버십에서 관리하므로 여기 두지 않습니다"라고 설명한다.
 - [모바일 API](../spec/mobile-api.md)는 "`role`은 소속 workspace 멤버십 role입니다"라고 정의한다.
-- [모바일 MVP 서버 요구사항](../design/mobile-mvp-server-requirements.md)은 "별도 project 멤버 테이블 없이 소속
+- [모바일 MVP 서버 요구사항 보존본](https://github.com/momens-works/momens-server/blob/39c7f9db9afdbf5b81f0eb28338ff86d2e6a3aef/docs/design/mobile-mvp-server-requirements.md)은 "별도 project 멤버 테이블 없이 소속
   workspace 멤버십 role로 매핑한다"고 정한다.
 
 현재 `projects[].role`은 프로젝트의 속성처럼 보이지만 실제로는 워크스페이스 멤버십의 값을 프로젝트 수만큼
@@ -551,7 +562,7 @@ Spring Modulith는 모듈의 public API를 패키지와 접근 제어자를 기�
   초안 결정 3의 필드 제거가 해당 규칙의 적용 대상인지 확인한 뒤 처리 방식을 확정한다.
 
 - 초안 결정 7은 MOM-0851에서 `workspace` 모듈 root에 `WorkspaceReader`를 먼저 추가한 뒤 다시 검토한다.
-  [첫 웹 read 슬라이스 계약](../design/legacy-product-api-migration-workspace-read-design.md)에서도 웹
+  [첫 웹 read 슬라이스 계약 당시 기록](https://github.com/momens-works/momens-server/blob/93a8f733ffdfa5220348be321455ece5dd345d9e/docs/design/legacy-product-api-migration/slice-workspace-read.md)에서도 웹
   워크스페이스 조회를 위한 public API로 같은 이름을 사용하지만, 반환 타입은 `WorkspaceDetail`이며 단건 조회
   메서드는 `Optional`을 반환한다. 모듈 경계에 대한 판단은 이번 결정과 같지만, 구체적인 조회 계약은 다르다.
   bootstrap은 워크스페이스 id 집합으로 여러 건을 조회하며, 결과에서 `id`와 `name`만 사용한다. 따라서 이번

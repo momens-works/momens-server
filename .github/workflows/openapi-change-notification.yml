@@ -22,8 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # base와 head 시점의 파일을 git show로 가져와야 하므로 Git 전체 이력이 필요하다.
-          # 현재 .git 디렉터리 크기는 16MB로 작고, 이 워크플로는 스냅샷을 변경한 PR에서만 실행된다.
+          # 두 시점의 스냅샷을 git show로 읽기 위해 전체 이력을 가져옵니다.
           fetch-depth: 0
 
       - name: Extract snapshots

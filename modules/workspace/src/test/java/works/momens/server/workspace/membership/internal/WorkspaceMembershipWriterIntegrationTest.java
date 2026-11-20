@@ -15,12 +15,12 @@ import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.workspace.StubUserServiceConfig;
-import works.momens.server.workspace.WorkspaceErrorCode;
 import works.momens.server.workspace.WorkspaceSeedSql;
+import works.momens.server.workspace.membership.AssignableWorkspaceRole;
 import works.momens.server.workspace.membership.ChangeMembershipRoleCommand;
+import works.momens.server.workspace.membership.MembershipErrorCode;
 import works.momens.server.workspace.membership.RemoveMembershipCommand;
 import works.momens.server.workspace.membership.WorkspaceMembershipWriter;
-import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
  * 멤버십 변경을 담당하는 public API의 동작을 검증합니다.
@@ -46,7 +46,7 @@ class WorkspaceMembershipWriterIntegrationTest extends AbstractPostgresIntegrati
     entityManager.clear();
 
     workspaceMembershipWriter.changeRole(
-        new ChangeMembershipRoleCommand(workspaceId, member, WorkspaceRole.ADMIN));
+        new ChangeMembershipRoleCommand(workspaceId, member, AssignableWorkspaceRole.ADMIN));
     entityManager.flush();
     entityManager.clear();
 
@@ -61,13 +61,13 @@ class WorkspaceMembershipWriterIntegrationTest extends AbstractPostgresIntegrati
     addMember(workspaceId, owner, "owner");
     entityManager.flush();
 
-    assertThatThrownBy(
-            () ->
-                workspaceMembershipWriter.changeRole(
-                    new ChangeMembershipRoleCommand(workspaceId, owner, WorkspaceRole.MEMBER)))
+    assertThatThrownBy(() ->
+            workspaceMembershipWriter.changeRole(
+                new ChangeMembershipRoleCommand(
+                    workspaceId, owner, AssignableWorkspaceRole.MEMBER)))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
-        .isEqualTo(WorkspaceErrorCode.WORKSPACE_OWNER_PROTECTED);
+        .isEqualTo(MembershipErrorCode.WORKSPACE_OWNER_PROTECTED);
   }
 
   @Test
@@ -77,13 +77,13 @@ class WorkspaceMembershipWriterIntegrationTest extends AbstractPostgresIntegrati
     UUID stranger = WorkspaceSeedSql.insertUser(entityManager, "stranger@momens.works");
     entityManager.flush();
 
-    assertThatThrownBy(
-            () ->
-                workspaceMembershipWriter.changeRole(
-                    new ChangeMembershipRoleCommand(workspaceId, stranger, WorkspaceRole.ADMIN)))
+    assertThatThrownBy(() ->
+            workspaceMembershipWriter.changeRole(
+                new ChangeMembershipRoleCommand(
+                    workspaceId, stranger, AssignableWorkspaceRole.ADMIN)))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
-        .isEqualTo(WorkspaceErrorCode.WORKSPACE_MEMBER_NOT_FOUND);
+        .isEqualTo(MembershipErrorCode.WORKSPACE_MEMBER_NOT_FOUND);
   }
 
   @Test
@@ -112,13 +112,12 @@ class WorkspaceMembershipWriterIntegrationTest extends AbstractPostgresIntegrati
     UUID workspaceId = WorkspaceSeedSql.insertWorkspace(entityManager, "momens-self");
     UUID stranger = UUID.randomUUID();
 
-    assertThatThrownBy(
-            () ->
-                workspaceMembershipWriter.remove(
-                    new RemoveMembershipCommand(workspaceId, stranger, stranger)))
+    assertThatThrownBy(() ->
+            workspaceMembershipWriter.remove(
+                new RemoveMembershipCommand(workspaceId, stranger, stranger)))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
-        .isEqualTo(WorkspaceErrorCode.WORKSPACE_SELF_REMOVAL_NOT_ALLOWED);
+        .isEqualTo(MembershipErrorCode.WORKSPACE_SELF_REMOVAL_NOT_ALLOWED);
   }
 
   @Test
@@ -131,13 +130,12 @@ class WorkspaceMembershipWriterIntegrationTest extends AbstractPostgresIntegrati
     addMember(workspaceId, owner, "owner");
     entityManager.flush();
 
-    assertThatThrownBy(
-            () ->
-                workspaceMembershipWriter.remove(
-                    new RemoveMembershipCommand(workspaceId, admin, owner)))
+    assertThatThrownBy(() ->
+            workspaceMembershipWriter.remove(
+                new RemoveMembershipCommand(workspaceId, admin, owner)))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
-        .isEqualTo(WorkspaceErrorCode.WORKSPACE_OWNER_PROTECTED);
+        .isEqualTo(MembershipErrorCode.WORKSPACE_OWNER_PROTECTED);
   }
 
   @Test
@@ -149,13 +147,12 @@ class WorkspaceMembershipWriterIntegrationTest extends AbstractPostgresIntegrati
     addMember(workspaceId, admin, "admin");
     entityManager.flush();
 
-    assertThatThrownBy(
-            () ->
-                workspaceMembershipWriter.remove(
-                    new RemoveMembershipCommand(workspaceId, admin, stranger)))
+    assertThatThrownBy(() ->
+            workspaceMembershipWriter.remove(
+                new RemoveMembershipCommand(workspaceId, admin, stranger)))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
-        .isEqualTo(WorkspaceErrorCode.WORKSPACE_MEMBER_NOT_FOUND);
+        .isEqualTo(MembershipErrorCode.WORKSPACE_MEMBER_NOT_FOUND);
   }
 
   private void addMember(UUID workspaceId, UUID userId, String role) {

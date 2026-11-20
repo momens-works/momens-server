@@ -30,9 +30,8 @@ import works.momens.server.notification.device.PushInstallationDirectory.Install
 import works.momens.server.notification.fcm.FcmClient.FcmSendResult;
 
 /**
- * delivery 클레임(백오프 선반영·소유자 재확인)과 결과 기록(sent·invalid token·재시도 한도)을 실제 PostgreSQL로
- * 검증합니다(docs/design/signal-push-demo-design.md 10.2·10.3절). 설치 원장은 device nested 모듈 소유라 계약 ({@link
- * PushInstallationDirectory}) mock으로 둡니다.
+ * delivery 클레임(백오프 선반영·소유자 재확인)과 결과 기록(sent·invalid token·재시도 한도)을 실제 PostgreSQL로 검증합니다. 설치 원장은
+ * device nested 모듈 소유라 계약 ({@link PushInstallationDirectory}) mock으로 둡니다.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)

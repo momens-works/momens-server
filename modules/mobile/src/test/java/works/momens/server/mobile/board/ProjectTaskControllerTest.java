@@ -1,5 +1,7 @@
 package works.momens.server.mobile.board;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -10,8 +12,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.security.Principal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -23,6 +27,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.servlet.config.annotation.ApiVersionConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import works.momens.server.common.api.FieldValidationDetails;
+import works.momens.server.common.api.FieldValidationException;
+import works.momens.server.project.task.TaskPolicy;
+import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskSnapshot;
 
 /**
@@ -39,19 +47,28 @@ class ProjectTaskControllerTest {
 
   private static final UUID USER_ID = UUID.fromString("5d2f7f3a-5db1-4f2c-8b9e-13607dd1f5e8");
   private static final UUID PROJECT_ID = UUID.fromString("30d9e9fe-f43b-4097-a88e-dc19f0a5b025");
+  private static final UUID ASSIGNEE_ID = UUID.fromString("9d4a5b1c-2e3f-4a5b-8c9d-0e1f2a3b4c5d");
   private final Principal principal = USER_ID::toString;
 
   @Test
   void getBoardReturnsSnakeCaseGroups() throws Exception {
     UUID taskId = UUID.randomUUID();
-    when(projectTaskService.getBoard(eq(PROJECT_ID), eq(USER_ID)))
+    when(projectTaskService.getBoard(eq(PROJECT_ID), eq(USER_ID), any()))
         .thenReturn(
             List.of(
                 new MobileTaskGroup(
-                    BoardStatus.TODO,
-                    List.of(new MobileTaskCard(taskId, "투두 태스크", "frontend", "low", 2))),
-                new MobileTaskGroup(BoardStatus.IN_PROGRESS, List.of()),
-                new MobileTaskGroup(BoardStatus.DONE, List.of())));
+                    MobileTaskStatus.TODO,
+                    List.of(
+                        new MobileTaskCard(
+                            taskId,
+                            "투두 태스크",
+                            List.of("frontend"),
+                            new MobileTaskCard.Assignee(ASSIGNEE_ID, "홍길동"),
+                            "low",
+                            LocalDate.of(2026, 9, 25),
+                            2))),
+                new MobileTaskGroup(MobileTaskStatus.IN_PROGRESS, List.of()),
+                new MobileTaskGroup(MobileTaskStatus.DONE, List.of())));
 
     mockMvc
         .perform(
@@ -62,10 +79,13 @@ class ProjectTaskControllerTest {
         .andExpect(jsonPath("$.title").value("프로젝트 태스크"))
         .andExpect(jsonPath("$.groups.length()").value(3))
         .andExpect(jsonPath("$.groups[0].group_key").value("todo"))
-        .andExpect(jsonPath("$.groups[0].label").value("투두"))
+        .andExpect(jsonPath("$.groups[0].label").value("할 일"))
         .andExpect(jsonPath("$.groups[0].count").value(1))
         .andExpect(jsonPath("$.groups[0].tasks[0].id").value(taskId.toString()))
         .andExpect(jsonPath("$.groups[0].tasks[0].role").value("frontend"))
+        .andExpect(jsonPath("$.groups[0].tasks[0].assignee.id").value(ASSIGNEE_ID.toString()))
+        .andExpect(jsonPath("$.groups[0].tasks[0].assignee.name").value("홍길동"))
+        .andExpect(jsonPath("$.groups[0].tasks[0].due_date").value("2026-09-25"))
         .andExpect(jsonPath("$.groups[0].tasks[0].material_count").value(2))
         .andExpect(jsonPath("$.groups[1].tasks.length()").value(0));
   }
@@ -73,7 +93,8 @@ class ProjectTaskControllerTest {
   @Test
   void createTaskReturnsCreatedTask() throws Exception {
     UUID taskId = UUID.randomUUID();
-    when(projectTaskService.createTask(eq(PROJECT_ID), eq(USER_ID), eq("제목"), any(), eq("medium")))
+    when(projectTaskService.createTask(
+            eq(PROJECT_ID), eq(USER_ID), eq("제목"), any(), eq(TaskPriority.MEDIUM), any()))
         .thenReturn(
             new TaskSnapshot(
                 taskId,
@@ -85,11 +106,12 @@ class ProjectTaskControllerTest {
                 null,
                 "todo",
                 "medium",
-                "pm",
+                List.of(),
                 null,
                 null,
                 Instant.EPOCH,
-                Instant.EPOCH));
+                Instant.EPOCH,
+                0L));
 
     mockMvc
         .perform(
@@ -106,6 +128,44 @@ class ProjectTaskControllerTest {
   }
 
   @Test
+  @DisplayName("urgent로 태스크를 생성하면 응답에도 urgent가 그대로 반환됩니다")
+  void createTaskReturnsStoredUrgent() throws Exception {
+    UUID taskId = UUID.randomUUID();
+    when(projectTaskService.createTask(
+            eq(PROJECT_ID), eq(USER_ID), eq("제목"), any(), eq(TaskPriority.URGENT), any()))
+        .thenReturn(
+            new TaskSnapshot(
+                taskId,
+                UUID.randomUUID(),
+                PROJECT_ID,
+                null,
+                "MOM-0001",
+                "제목",
+                null,
+                "todo",
+                "urgent",
+                List.of(),
+                null,
+                null,
+                Instant.EPOCH,
+                Instant.EPOCH,
+                0L));
+
+    mockMvc
+        .perform(
+            post("/api/mobile/projects/{projectId}/tasks", PROJECT_ID)
+                .principal(principal)
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"제목\",\"role\":\"pm\",\"priority\":\"urgent\"}"))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.task.id").value(taskId.toString()))
+        .andExpect(jsonPath("$.task.project_id").value(PROJECT_ID.toString()))
+        .andExpect(jsonPath("$.task.status").value("todo"))
+        .andExpect(jsonPath("$.task.priority").value("urgent"));
+  }
+
+  @Test
   void createTaskRejectsBlankTitle() throws Exception {
     mockMvc
         .perform(
@@ -118,9 +178,8 @@ class ProjectTaskControllerTest {
   }
 
   @Test
-  void createTaskRejectsTitleOverFifteen() throws Exception {
-    // 제목은 공백 포함 15자 제한이고 수정과 같은 태스크 공통 규칙이다(task_001 화면설계서). 16자는 400으로 거절한다.
-    String sixteenChars = "가".repeat(16);
+  void createTaskRejectsTitleOverMaxLength() throws Exception {
+    String overMaxLength = "가".repeat(TaskPolicy.TITLE_MAX_LENGTH + 1);
     mockMvc
         .perform(
             post("/api/mobile/projects/{projectId}/tasks", PROJECT_ID)
@@ -128,39 +187,46 @@ class ProjectTaskControllerTest {
                 .header("API-Version", "1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"title\":\"" + sixteenChars + "\",\"role\":\"pm\",\"priority\":\"medium\"}"))
+                    "{\"title\":\""
+                        + overMaxLength
+                        + "\",\"role\":\"pm\",\"priority\":\"medium\"}"))
         .andExpect(status().isBadRequest());
   }
 
   @Test
-  void createTaskRejectsMissingRoleOrPriority() throws Exception {
-    // title, role, priority 모두 필수다(2026-07-06 기획 확정, 2026-07-07 role은 단일 선택으로 재확정).
-    mockMvc
-        .perform(
-            post("/api/mobile/projects/{projectId}/tasks", PROJECT_ID)
-                .principal(principal)
-                .header("API-Version", "1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\":\"제목\",\"priority\":\"medium\"}"))
-        .andExpect(status().isBadRequest());
+  void getBoardRejectsAssigneeIdTogetherWithUnassigned() {
+    assertThatThrownBy(() ->
+            mockMvc.perform(
+                get("/api/mobile/projects/{projectId}/tasks", PROJECT_ID)
+                    .principal(principal)
+                    .header("API-Version", "1")
+                    .param("assignee_id", USER_ID.toString())
+                    .param("unassigned", "true")))
+        .cause()
+        .isInstanceOfSatisfying(
+            FieldValidationException.class,
+            e ->
+                assertThat(((FieldValidationDetails) e.getDetails()).fields())
+                    .extracting(FieldValidationDetails.FieldViolation::field)
+                    .containsExactly("unassigned"));
+  }
 
-    mockMvc
-        .perform(
-            post("/api/mobile/projects/{projectId}/tasks", PROJECT_ID)
-                .principal(principal)
-                .header("API-Version", "1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\":\"제목\",\"role\":\"pm\"}"))
-        .andExpect(status().isBadRequest());
-
-    mockMvc
-        .perform(
-            post("/api/mobile/projects/{projectId}/tasks", PROJECT_ID)
-                .principal(principal)
-                .header("API-Version", "1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\":\"제목\",\"role\":\"\",\"priority\":\"medium\"}"))
-        .andExpect(status().isBadRequest());
+  @Test
+  void createTaskRejectsMissingRolesWithFieldName() {
+    assertThatThrownBy(() ->
+            mockMvc.perform(
+                post("/api/mobile/projects/{projectId}/tasks", PROJECT_ID)
+                    .principal(principal)
+                    .header("API-Version", "1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"title\":\"Roles\",\"priority\":\"medium\"}")))
+        .cause()
+        .isInstanceOfSatisfying(
+            FieldValidationException.class,
+            e ->
+                assertThat(((FieldValidationDetails) e.getDetails()).fields())
+                    .extracting(FieldValidationDetails.FieldViolation::field)
+                    .containsExactly("roles"));
   }
 
   @Test
@@ -180,14 +246,12 @@ class ProjectTaskControllerTest {
                 .principal(principal)
                 .header("API-Version", "1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\":\"제목\",\"role\":\"pm\",\"priority\":\"urgent\"}"))
+                .content("{\"title\":\"제목\",\"role\":\"pm\",\"priority\":\"critical\"}"))
         .andExpect(status().isBadRequest());
   }
 
   @Test
   void createTaskRejectsRolesOutsideCreationFour() throws Exception {
-    // 역할은 pm/design/backend/frontend 4종만 남기고 android, qa는 폐기했다(2026-07-08 기획 확정).
-    // 폐기된 값은 생성에서 400으로 거절한다.
     for (String role : new String[] {"android", "qa"}) {
       mockMvc
           .perform(

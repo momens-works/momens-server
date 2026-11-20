@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.lang.ref.Reference;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import works.momens.server.minsu.llm.LlmConfigStatus;
@@ -26,7 +27,7 @@ class MinsuConfigStatusTest {
 
     assertThat(status.enabled()).isFalse();
     assertThat(status.valid()).isTrue();
-    assertThat(registry.get("momens.minsu.llm.config.valid").gauge().value()).isEqualTo(1);
+    assertThat(configValid(registry, status)).isEqualTo(1);
   }
 
   @Test
@@ -42,6 +43,16 @@ class MinsuConfigStatusTest {
 
     assertThat(status.enabled()).isTrue();
     assertThat(status.valid()).isFalse();
-    assertThat(registry.get("momens.minsu.llm.config.valid").gauge().value()).isZero();
+    assertThat(configValid(registry, status)).isZero();
+  }
+
+  // gauge는 관찰 대상 객체를 weak reference로만 참조하므로, 객체가 GC되면 NaN을 반환합니다.
+  // 객체를 지역 변수에 할당해도 마지막 사용 이후에는 GC될 수 있으므로 이것만으로는 충분하지 않습니다.
+  // 따라서 관찰 대상 객체를 인자로 받고, gauge 값을 읽은 직후 reachabilityFence를 호출해
+  // 이 시점까지 객체가 strongly reachable한 상태를 유지합니다.
+  private static double configValid(SimpleMeterRegistry registry, MinsuConfigStatus status) {
+    double value = registry.get("momens.minsu.llm.config.valid").gauge().value();
+    Reference.reachabilityFence(status);
+    return value;
   }
 }

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
+import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.project.core.ProjectErrorCode;
 import works.momens.server.project.core.ProjectReader;
 import works.momens.server.signal.SignalListService;
@@ -24,8 +25,8 @@ import works.momens.server.workspace.membership.WorkspaceMembershipReader;
  * Signal 목록 조회 서비스. 프로젝트가 속한 workspace를 해석하고 요청자의 멤버십을 검사한 뒤 Signal을 반환한다. 시그널 탭은 미처리 Signal을 조회하고,
  * 브리프는 당일 생성 범위의 Signal을 조회한다.
  *
- * <p>Signal 처리 여부는 사용자별이 아니라 프로젝트 단위로 관리하므로 ({@code docs/design/mobile-mvp-server-requirements.md}의
- * 「Signal 요구사항」 참고), 요청자의 역할만 한 번 조회하면 충분합니다. 프로젝트 멤버 목록 조회와 달리 멤버 목록을 응답에 함께 포함하지 않습니다.
+ * <p>Signal 처리 여부는 사용자별이 아니라 프로젝트 단위로 관리하므로 요청자의 역할만 한 번 조회하면 충분합니다. 프로젝트 멤버 목록 조회와 달리 멤버 목록을 응답에
+ * 함께 포함하지 않습니다.
  *
  * <p>커서 페이지 조회는 전량 조회 뒤 메모리에서 자른다. 프로젝트당 시그널 규모가 크지 않아 지금은 이 방식으로 충분하고, AIP-158도 초기 규모가 작은 컬렉션에는 전량
  * 조회 뒤 자르는 구현을 인정한다. 목록이 커지면 응답 형식은 그대로 두고 조회 쿼리만 keyset 방식으로 바꾼다. 커서는 마지막으로 본 항목의 생성 시각과 id를
@@ -44,11 +45,11 @@ class SignalListServiceImpl implements SignalListService {
 
   @Override
   @Transactional(readOnly = true)
-  public List<SignalSummary> listUnprocessed(UUID projectId, UUID userId) {
+  public SignalSummaryPage listUnprocessed(UUID projectId, UUID userId, String cursor, int limit) {
     requireMember(projectId, userId);
-    return signalRepository.findUnprocessedByProjectId(projectId).stream()
-        .map(SignalListServiceImpl::toSummary)
-        .toList();
+    int pageSize = resolvePageSize(limit);
+    Cursor position = Cursor.decode(cursor);
+    return page(signalRepository.findUnprocessedByProjectId(projectId), null, position, pageSize);
   }
 
   @Override
@@ -81,7 +82,6 @@ class SignalListServiceImpl implements SignalListService {
         .collect(Collectors.groupingBy(Signal::getType, Collectors.counting()));
   }
 
-  /** limit을 검사하고 상한으로 줄인다. 1 미만은 인터페이스 계약 위반이라 COMMON_VALIDATION_FAILED로 실패한다. */
   private static int resolvePageSize(int limit) {
     if (limit < 1) {
       throw new BusinessException(
@@ -90,7 +90,6 @@ class SignalListServiceImpl implements SignalListService {
     return Math.min(limit, MAX_PAGE_SIZE);
   }
 
-  /** 전량 조회한 base를 type과 커서로 거른 뒤 한 페이지로 자른다. 페이지 조회의 공통 처리다. */
   private static SignalSummaryPage page(
       List<Signal> base, Collection<String> types, Cursor position, int pageSize) {
     boolean allTypes = types == null || types.isEmpty();
@@ -109,11 +108,10 @@ class SignalListServiceImpl implements SignalListService {
     UUID workspaceId =
         projectReader
             .workspaceIdOf(projectId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        ProjectErrorCode.PROJECT_NOT_FOUND,
-                        Map.of("project_id", projectId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    ProjectErrorCode.PROJECT_NOT_FOUND,
+                    Map.of("project_id", projectId.toString())));
     if (workspaceMembershipReader.roleOf(workspaceId, userId).isEmpty()) {
       throw new BusinessException(
           CommonErrorCode.AUTH_FORBIDDEN, Map.of("project_id", projectId.toString()));
@@ -149,8 +147,7 @@ class SignalListServiceImpl implements SignalListService {
         }
         return new Cursor(Instant.parse(parts[0]), UUID.fromString(parts[1]));
       } catch (RuntimeException e) {
-        throw new BusinessException(
-            CommonErrorCode.COMMON_VALIDATION_FAILED, Map.of("cursor", cursor));
+        throw FieldValidationException.forField("cursor");
       }
     }
 

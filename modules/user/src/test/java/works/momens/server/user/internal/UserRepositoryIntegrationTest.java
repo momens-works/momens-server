@@ -11,12 +11,6 @@ import org.springframework.context.annotation.Import;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 
-/**
- * 영속성 베이스 패턴 검증.
- *
- * <p>실제 PostgreSQL(Testcontainers) + Flyway 마이그레이션 + {@code ddl-auto: validate} 위에서 UUID PK 앱 생성과
- * 감사 필드 자동 주입을 확인합니다.
- */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(JpaAuditingConfig.class)

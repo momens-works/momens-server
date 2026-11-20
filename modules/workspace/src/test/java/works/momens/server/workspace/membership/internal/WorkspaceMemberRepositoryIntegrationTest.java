@@ -13,13 +13,6 @@ import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.workspace.WorkspaceSeedSql;
 
-/**
- * 멤버십 영속성 검증.
- *
- * <p>실제 PostgreSQL(Testcontainers) + Flyway 마이그레이션 + {@code ddl-auto: validate} 위에서, 복합 PK 멤버십을
- * 저장하고 감사 필드가 자동으로 채워지는지 확인합니다. 원래 워크스페이스 코어 검증과 한 테스트였고, access 하위 도메인 분리에 맞춰 멤버십 부분을 이 테스트로
- * 옮겼습니다(MOM-70).
- */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(JpaAuditingConfig.class)

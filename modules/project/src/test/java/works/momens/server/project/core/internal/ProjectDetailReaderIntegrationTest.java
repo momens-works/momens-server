@@ -19,14 +19,7 @@ import works.momens.server.project.ProjectSeedSql;
 import works.momens.server.project.core.ProjectDetail;
 import works.momens.server.project.core.ProjectDetailReader;
 
-/**
- * 웹 상세 조회 public API 검증.
- *
- * <p>레거시가 저장한 값을 그대로 읽는지, {@code owner_user_ids}의 정렬과 폴백이 레거시 집계와 같은지, 목록의 정렬과 소프트 삭제 필터가 계약대로인지
- * 확인합니다(웹 snapshot 계약 4.4).
- *
- * <p>웹 read 전용 컬럼과 {@code project_owners}는 이 서버에 쓰기 경로가 없어(쓰기는 MOM-0866) 레거시처럼 네이티브 SQL로 시드합니다.
- */
+/** 생성 경로와 독립적으로 기존 공유 DB 행의 소유자 정렬·폴백·삭제 필터를 검증하도록 SQL로 시드합니다. */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({JpaAuditingConfig.class, ProjectDetailReaderImpl.class})
@@ -89,7 +82,6 @@ class ProjectDetailReaderIntegrationTest extends AbstractPostgresIntegrationTest
     assertThat(detail.summary()).isNull();
     assertThat(detail.lastContextAt()).isNull();
     assertThat(detail.metadata()).isNull();
-    // 레거시 DEFAULT를 그대로 따른다.
     assertThat(detail.healthStatus()).isEqualTo("open");
     assertThat(detail.unresolvedCount()).isZero();
     assertThat(detail.vocSignalCount()).isZero();
@@ -118,9 +110,12 @@ class ProjectDetailReaderIntegrationTest extends AbstractPostgresIntegrationTest
     insertUserWithId(tieHigh, "tie-high@momens.works");
     insertUserWithId(tieLow, "tie-low@momens.works");
 
-    insertProjectOwner(projectId, tieHigh, Instant.parse("2026-06-01T00:00:00Z"));
-    insertProjectOwner(projectId, tieLow, Instant.parse("2026-06-01T00:00:00Z"));
-    insertProjectOwner(projectId, late, Instant.parse("2026-06-02T00:00:00Z"));
+    ProjectSeedSql.insertProjectOwner(
+        entityManager, projectId, tieHigh, Instant.parse("2026-06-01T00:00:00Z"));
+    ProjectSeedSql.insertProjectOwner(
+        entityManager, projectId, tieLow, Instant.parse("2026-06-01T00:00:00Z"));
+    ProjectSeedSql.insertProjectOwner(
+        entityManager, projectId, late, Instant.parse("2026-06-02T00:00:00Z"));
 
     assertThat(onlyDetailOf(workspaceId).ownerUserIds()).containsExactly(tieLow, tieHigh, late);
   }
@@ -149,7 +144,8 @@ class ProjectDetailReaderIntegrationTest extends AbstractPostgresIntegrationTest
     UUID deleted = saveProject(workspaceId, ownerId, "삭제됨").getId();
     softDelete(deleted);
     saveProject(otherWorkspace, ownerId, "다른 워크스페이스");
-    insertProjectOwner(newer, explicitOwner, Instant.parse("2026-06-01T00:00:00Z"));
+    ProjectSeedSql.insertProjectOwner(
+        entityManager, newer, explicitOwner, Instant.parse("2026-06-01T00:00:00Z"));
 
     List<ProjectDetail> details = projectDetailReader.listDetailsByWorkspaceId(workspaceId);
 
@@ -166,7 +162,6 @@ class ProjectDetailReaderIntegrationTest extends AbstractPostgresIntegrationTest
     assertThat(projectDetailReader.listDetailsByWorkspaceId(workspaceId)).isEmpty();
   }
 
-  /** project가 하나뿐인 workspace의 조회 결과를 꺼냅니다. 단건 조회 API를 두지 않아 목록으로 검증합니다. */
   private ProjectDetail onlyDetailOf(UUID workspaceId) {
     List<ProjectDetail> details = projectDetailReader.listDetailsByWorkspaceId(workspaceId);
     assertThat(details).hasSize(1);
@@ -186,19 +181,6 @@ class ProjectDetailReaderIntegrationTest extends AbstractPostgresIntegrationTest
         .setParameter(2, email)
         .setParameter(3, "이름")
         .executeUpdate();
-  }
-
-  private void insertProjectOwner(UUID projectId, UUID ownerUserId, Instant createdAt) {
-    entityManager
-        .getEntityManager()
-        .createNativeQuery(
-            "INSERT INTO project_owners (project_id, owner_user_id, created_at)"
-                + " VALUES (?1, ?2, ?3)")
-        .setParameter(1, projectId)
-        .setParameter(2, ownerUserId)
-        .setParameter(3, createdAt)
-        .executeUpdate();
-    entityManager.clear();
   }
 
   /** 목록 정렬을 결정적으로 만들기 위해 생성 시각을 지정합니다. 감사 필드라 앱에서 정할 수 없습니다. */
@@ -244,7 +226,7 @@ class ProjectDetailReaderIntegrationTest extends AbstractPostgresIntegrationTest
     entityManager.clear();
   }
 
-  /** 소프트 삭제 API는 아직 없으므로(read 기반 슬라이스) 삭제 상태를 네이티브 SQL로 만듭니다. */
+  /** 조회할 삭제 상태를 네이티브 SQL로 구성합니다. */
   private void softDelete(UUID projectId) {
     entityManager
         .getEntityManager()

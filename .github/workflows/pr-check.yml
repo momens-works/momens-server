@@ -76,15 +76,16 @@ jobs:
           fi
           echo "PR 제목/본문 형식 OK"
 
-      # 아래 두 단계는 별도 job이 아니라 pr-format 안에 둡니다. 보호 ruleset의
+      # 아래 검사는 별도 job이 아니라 pr-format 안에 둡니다. 보호 ruleset의
       # 필수 체크가 `build`·`pr-format` 둘뿐이라, 새 job으로 두면 실패해도 머지를 막지 못합니다
       # ([Git] docs/rules/git.md). 게이트는 차단해야 의미가 있으므로 이미 필수인 job에 싣습니다.
 
-      # prod 필수 설정 선언이 실제 설정과 맞는지 검사합니다. 규약은 docs/rules/configuration.md 입니다.
-      #
-      # 스키마 검사는 없습니다. prod 스키마 주도권이 이 서버로 넘어오면서(ADR-0019) 마이그레이션의
-      # prod 반영 헤더와 그것을 검사하던 게이트를 폐지했습니다. 잘못된 마이그레이션은 이제 배포
-      # 시점에 Flyway 가 막습니다.
+      - name: Check documentation links
+        run: |
+          bash scripts/check-doc-links-test.sh
+          bash scripts/check-doc-links.sh
+
+      # prod 필수 설정 선언을 실제 설정과 대조합니다(docs/rules/configuration.md).
       - name: Check prod required config ledger
         run: |
           ./scripts/prod-readiness-ledger-test.sh

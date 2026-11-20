@@ -6,8 +6,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.source.BeginInstallCommand;
+import works.momens.server.source.ConfigureFigmaCommand;
 import works.momens.server.source.SourceConnectionDetail;
 import works.momens.server.source.SourceConnectionReader;
+import works.momens.server.source.SourceConnectionWriter;
 import works.momens.server.source.SourceInstaller;
 import works.momens.server.web.WorkspaceAccessChecker;
 import works.momens.server.workspace.membership.WorkspaceRole;
@@ -27,6 +29,22 @@ class SourceConnectionService {
   private final WorkspaceAccessChecker workspaceAccessChecker;
   private final SourceConnectionReader sourceConnectionReader;
   private final SourceInstaller sourceInstaller;
+  private final SourceConnectionWriter sourceConnectionWriter;
+
+  public SourceConnectionDetail configureFigma(
+      UUID connectionId, UUID userId, ConfigureFigmaCommand command) {
+    UUID workspaceId = sourceConnectionReader.getWorkspaceId(connectionId);
+    workspaceAccessChecker.requireWorkspaceExists(workspaceId);
+    workspaceAccessChecker.requireRoleAtLeast(workspaceId, userId, WorkspaceRole.ADMIN);
+    return sourceConnectionWriter.configureFigma(workspaceId, connectionId, command);
+  }
+
+  public void disable(UUID connectionId, UUID userId) {
+    UUID workspaceId = sourceConnectionReader.getWorkspaceId(connectionId);
+    workspaceAccessChecker.requireWorkspaceExists(workspaceId);
+    workspaceAccessChecker.requireRoleAtLeast(workspaceId, userId, WorkspaceRole.ADMIN);
+    sourceConnectionWriter.disable(workspaceId, connectionId);
+  }
 
   @Transactional(readOnly = true)
   public List<SourceConnectionDetail> list(UUID workspaceId, UUID userId) {

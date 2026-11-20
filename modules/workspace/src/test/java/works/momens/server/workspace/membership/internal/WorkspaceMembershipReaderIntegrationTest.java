@@ -53,11 +53,10 @@ class WorkspaceMembershipReaderIntegrationTest extends AbstractPostgresIntegrati
         .extracting(WorkspaceMembershipDetail::userId, WorkspaceMembershipDetail::role)
         .containsExactlyInAnyOrder(tuple(owner, "owner"), tuple(member, "member"));
     assertThat(details)
-        .allSatisfy(
-            detail -> {
-              assertThat(detail.createdAt()).isNotNull();
-              assertThat(detail.updatedAt()).isNotNull();
-            });
+        .allSatisfy(detail -> {
+          assertThat(detail.createdAt()).isNotNull();
+          assertThat(detail.updatedAt()).isNotNull();
+        });
   }
 
   @Test

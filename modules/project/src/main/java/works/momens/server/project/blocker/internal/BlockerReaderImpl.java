@@ -1,6 +1,7 @@
 package works.momens.server.project.blocker.internal;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,12 @@ import works.momens.server.project.blocker.BlockerReader;
 class BlockerReaderImpl implements BlockerReader {
 
   private final BlockerRepository blockerRepository;
+
+  @Override
+  @Transactional(readOnly = true)
+  public Optional<UUID> workspaceIdOf(UUID blockerId) {
+    return blockerRepository.findWorkspaceIdById(blockerId);
+  }
 
   @Override
   @Transactional(readOnly = true)

@@ -1,6 +1,7 @@
 package works.momens.server.source.connection.oauth;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -17,6 +18,7 @@ import works.momens.server.source.SourceErrorCode;
 import works.momens.server.source.SourceInstaller;
 import works.momens.server.source.connection.SourceConnection;
 import works.momens.server.source.connection.SourceConnectionRepository;
+import works.momens.server.source.connection.SourceConnectionStatus;
 import works.momens.server.source.connection.SourceCredential;
 import works.momens.server.source.connection.SourceCredentialRepository;
 
@@ -31,9 +33,6 @@ import works.momens.server.source.connection.SourceCredentialRepository;
 @Component
 @RequiredArgsConstructor
 class SourceInstallerImpl implements SourceInstaller {
-
-  private static final String STATUS_ACTIVE = "ACTIVE";
-  private static final String STATUS_PENDING = "PENDING";
 
   private final OAuthProviderRegistry providerRegistry;
   private final OAuthStateSigner stateSigner;
@@ -69,15 +68,24 @@ class SourceInstallerImpl implements SourceInstaller {
     if (accessToken.isBlank() || "null".equals(accessToken)) {
       throw exchangeFailed(provider, "empty access token");
     }
+    // 만료 시각이나 refresh token이 없으면 Figma token을 다시 갱신할 수 없으므로 저장하지 않습니다. 저장하면 그 사용자의 모든 연결에 덮어씁니다.
+    if (OAuthProviderRegistry.FIGMA.equals(provider.sourceType())) {
+      if (ProviderOAuthClient.expiresAt(tokenResponse) == null) {
+        throw exchangeFailed(provider, "invalid expires_in");
+      }
+      if (stringOrNull(tokenResponse, "refresh_token") == null) {
+        throw exchangeFailed(provider, "empty refresh token");
+      }
+    }
     ProviderIdentity identity = readIdentity(provider, tokenResponse);
 
     SourceConnectionDetail saved =
-        transactionTemplate.execute(
-            status -> {
-              SourceConnection connection = upsertConnection(state, provider, identity);
-              upsertCredential(connection.getId(), tokenResponse, accessToken);
-              return toDetail(connection);
-            });
+        transactionTemplate.execute(status -> {
+          SourceConnection connection = upsertConnection(state, provider, identity);
+          credentialTargets(provider, identity, connection)
+              .forEach(id -> upsertCredential(id, tokenResponse, accessToken));
+          return toDetail(connection);
+        });
     return new CompletedInstall(saved, properties.successRedirectUri());
   }
 
@@ -85,11 +93,10 @@ class SourceInstallerImpl implements SourceInstaller {
     OAuthProvider provider =
         providerRegistry
             .find(sourceType)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        SourceErrorCode.SOURCE_UNSUPPORTED_PROVIDER,
-                        Map.of("provider", String.valueOf(sourceType))));
+            .orElseThrow(() ->
+                new BusinessException(
+                    SourceErrorCode.SOURCE_UNSUPPORTED_PROVIDER,
+                    Map.of("provider", String.valueOf(sourceType))));
     if (!provider.isConfigured()) {
       throw new BusinessException(
           SourceErrorCode.SOURCE_PROVIDER_UNCONFIGURED, Map.of("provider", provider.sourceType()));
@@ -124,19 +131,39 @@ class SourceInstallerImpl implements SourceInstaller {
 
   private SourceConnection upsertConnection(
       OAuthState state, OAuthProvider provider, ProviderIdentity identity) {
-    String status =
-        OAuthProviderRegistry.FIGMA.equals(provider.sourceType()) ? STATUS_PENDING : STATUS_ACTIVE;
+    SourceConnectionStatus status =
+        OAuthProviderRegistry.FIGMA.equals(provider.sourceType())
+            ? SourceConnectionStatus.PENDING
+            : SourceConnectionStatus.ACTIVE;
     Instant now = Instant.now();
+    boolean preserveMetadata =
+        OAuthProviderRegistry.FIGMA.equals(provider.sourceType())
+            || OAuthProviderRegistry.NOTION.equals(provider.sourceType());
     List<SourceConnection> existing =
-        sourceConnectionRepository
-            .findByWorkspaceIdAndSourceTypeAndExternalWorkspaceIdOrderByCreatedAtAsc(
-                state.workspaceId(), provider.sourceType(), identity.externalId());
+        preserveMetadata
+            ? sourceConnectionRepository.findForReconnect(
+                state.workspaceId(), provider.sourceType(), identity.externalId())
+            : sourceConnectionRepository
+                .findByWorkspaceIdAndSourceTypeAndExternalWorkspaceIdOrderByCreatedAtAsc(
+                    state.workspaceId(), provider.sourceType(), identity.externalId());
     if (!existing.isEmpty()) {
-      existing.forEach(
-          connection ->
-              connection.reconnect(
-                  status, identity.externalName(), state.userId(), now, identity.metadata()));
-      return sourceConnectionRepository.saveAllAndFlush(existing).getFirst();
+      existing.forEach(connection -> {
+        Map<String, Object> metadata = identity.metadata();
+        if (preserveMetadata) {
+          // OAuth 응답에는 연결 뒤 지정한 설정(Figma webhook, Notion 수집 대상 목록)이 없으므로 기존
+          // metadata에 identity 값만 덮어씁니다. 재승인 후에도 기존 webhook을 정리할 수 있어야 하고, 빈
+          // 수집 대상 목록도 지정된 설정으로 남아야 합니다. configure의 마지막 검증과 같은 행 잠금 아래에서
+          // 읽고 쓰므로 그 사이의 설정 변경을 덮어쓰지 않습니다.
+          metadata = new LinkedHashMap<>();
+          if (connection.getMetadata() != null) {
+            metadata.putAll(connection.getMetadata());
+          }
+          metadata.putAll(identity.metadata());
+        }
+        sourceConnectionRepository.reconnect(
+            connection.getId(), status, identity.externalName(), state.userId(), now, metadata);
+      });
+      return sourceConnectionRepository.findById(existing.getFirst().getId()).orElseThrow();
     }
     SourceConnection connection =
         SourceConnection.builder()
@@ -152,46 +179,47 @@ class SourceInstallerImpl implements SourceInstaller {
     return sourceConnectionRepository.saveAndFlush(connection);
   }
 
+  /**
+   * Figma는 앱·사용자당 access token을 하나만 유지하므로 새 token을 받으면 같은 Figma 사용자의 다른 연결이 가진 token은 무효가 됩니다. 그래서
+   * 워크스페이스와 상태를 가리지 않고 그 사용자의 모든 연결에 같은 token을 저장합니다.
+   */
+  private List<UUID> credentialTargets(
+      OAuthProvider provider, ProviderIdentity identity, SourceConnection connection) {
+    if (!OAuthProviderRegistry.FIGMA.equals(provider.sourceType())) {
+      return List.of(connection.getId());
+    }
+    return sourceConnectionRepository
+        .findBySourceTypeAndExternalWorkspaceIdOrderById(
+            OAuthProviderRegistry.FIGMA, identity.externalId())
+        .stream()
+        .map(SourceConnection::getId)
+        .toList();
+  }
+
   private void upsertCredential(
       UUID connectionId, Map<String, Object> tokenResponse, String accessToken) {
     byte[] accessTokenEnc = tokenEncryptor.encrypt(accessToken);
     byte[] refreshTokenEnc = tokenEncryptor.encrypt(stringOrNull(tokenResponse, "refresh_token"));
     String tokenType = stringOrNull(tokenResponse, "token_type");
     String scope = stringOrNull(tokenResponse, "scope");
-    Instant expiresAt = expiresAt(tokenResponse);
+    Instant expiresAt = ProviderOAuthClient.expiresAt(tokenResponse);
     SourceCredential credential =
         sourceCredentialRepository
             .findById(connectionId)
-            .map(
-                existing -> {
-                  existing.replaceTokens(
-                      accessTokenEnc, refreshTokenEnc, tokenType, scope, expiresAt);
-                  return existing;
-                })
-            .orElseGet(
-                () ->
-                    SourceCredential.builder()
-                        .connectionId(connectionId)
-                        .accessTokenEnc(accessTokenEnc)
-                        .refreshTokenEnc(refreshTokenEnc)
-                        .tokenType(tokenType)
-                        .scope(scope)
-                        .expiresAt(expiresAt)
-                        .build());
+            .map(existing -> {
+              existing.replaceTokens(accessTokenEnc, refreshTokenEnc, tokenType, scope, expiresAt);
+              return existing;
+            })
+            .orElseGet(() ->
+                SourceCredential.builder()
+                    .connectionId(connectionId)
+                    .accessTokenEnc(accessTokenEnc)
+                    .refreshTokenEnc(refreshTokenEnc)
+                    .tokenType(tokenType)
+                    .scope(scope)
+                    .expiresAt(expiresAt)
+                    .build());
     sourceCredentialRepository.save(credential);
-  }
-
-  private static Instant expiresAt(Map<String, Object> tokenResponse) {
-    Object expiresIn = tokenResponse.get("expires_in");
-    if (expiresIn == null) {
-      return null;
-    }
-    try {
-      long seconds = Long.parseLong(String.valueOf(expiresIn).split("\\.")[0]);
-      return seconds <= 0 ? null : Instant.now().plusSeconds(seconds);
-    } catch (NumberFormatException e) {
-      return null;
-    }
   }
 
   private static SourceConnectionDetail toDetail(SourceConnection connection) {
@@ -199,7 +227,7 @@ class SourceInstallerImpl implements SourceInstaller {
         connection.getId(),
         connection.getWorkspaceId(),
         connection.getSourceType(),
-        connection.getStatus(),
+        connection.getStatus().name(),
         connection.getExternalWorkspaceId(),
         connection.getExternalWorkspaceName(),
         connection.getConnectedByUserId(),

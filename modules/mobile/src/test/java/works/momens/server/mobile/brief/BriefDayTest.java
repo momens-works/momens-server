@@ -8,7 +8,6 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
 
-/** 오늘의 하루 경계를 KST 기준으로 계산하는지 확인합니다. */
 class BriefDayTest {
 
   @Test

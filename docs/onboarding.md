@@ -20,15 +20,17 @@ Momens는 여러 레포로 나뉘어 있습니다.
 
 | 레포 | 역할 |
 | --- | --- |
-| [`teams`](https://github.com/Momens-Works/teams) | PRD·ADR·용어집·product language (제품 단일 출처) |
+| [`teams`](https://github.com/momens-works/teams) | PRD·ADR·용어집·product language (제품 단일 출처) |
 | `momens-api` | 레거시 Go/Gin API (대체 대상) |
 | **`momens-server`** | **새 Java Spring 제품 API 서버 (여기)** |
 | `momens-worker` | 외부 소스 수집·큐레이션 워커 |
 | `momens-retrieval` | 검색 read-model 서버 (gRPC) |
-| `momens-proto` | 서버·워커가 공유하는 protobuf 계약 (Git submodule) |
+| `momens-proto` | 서비스 간 protobuf 계약 (현재 momens-server 빌드에서는 사용하지 않음) |
 | `k8s` | 쿠버네티스·인프라 정의 |
 
 제품 차원의 배경/용어가 궁금하면 먼저 `teams`를 보세요.
+MOM-1039~MOM-1043 용어 맞추기의 별도 적용 기준은
+[제품 문서 출처 안내](README.md#제품-레벨-문서는-어디에)를 확인하세요.
 
 ---
 
@@ -47,11 +49,8 @@ Momens는 여러 레포로 나뉘어 있습니다.
 
 ```bash
 # 1) 클론
-git clone --recurse-submodules https://github.com/Momens-Works/momens-server.git
+git clone https://github.com/momens-works/momens-server.git
 cd momens-server
-
-# 이미 클론한 리포라면 submodule 초기화
-git submodule update --init --recursive
 
 # 2) 로컬 환경변수 준비 (.env 는 커밋하지 않음)
 cp .env.example .env
@@ -111,9 +110,11 @@ git reset --hard
 CRLF가 섞인 상태로 두면 워킹 트리를 검사하는 `spotlessCheck`가 실패합니다. 이 경우 코드를
 수정하지 않은 커밋에서도 pre-commit 훅이 차단될 수 있습니다.
 
-`momens-proto`는 private 리포이므로 로컬 GitHub 자격 증명에 읽기 권한이 필요합니다.
-GitHub Actions는 같은 권한을 가진 repository secret `CI_SUBMODULES_TOKEN`으로 submodule을
-checkout합니다.
+`momens-server`는 `momens-proto`의 생성 클래스를 사용하지 않아 서브모듈과 빌드 의존성을
+제거했습니다(MOM-1030). outbox payload는 JSON으로 직렬화하며, Firebase 등 외부 라이브러리가
+사용하는 protobuf/gRPC 전이 의존성은 유지합니다. 서버 빌드에는 JDK 21만 필요하고, CI checkout은
+기본 `GITHUB_TOKEN`을 사용합니다. 레거시 비교 스크립트가 별도 `momens-api` checkout에 준비하는
+proto 서브모듈은 레거시 빌드에 필요하므로 유지합니다.
 
 `.env` 키 설명과 프로필 구성은 [로컬 개발](local-development.md)을 참고하세요.
 
@@ -150,21 +151,8 @@ momens-server
 │   └── src/main/java/works/momens/server/MomensServerApplication.java
 ├── common/                    # 최소 공유 기반 모듈
 ├── modules/                   # 기능/capability Gradle 모듈
-│   ├── auth/
-│   ├── context/
-│   ├── minsu/
-│   ├── mobile/
-│   ├── notification/
-│   ├── outbox/
-│   ├── project/
-│   ├── signal/
-│   ├── source/
-│   ├── user/
-│   └── workspace/
-├── third_party/
-│   └── momens-proto/          # 공유 protobuf 계약 submodule
 ├── build.gradle               # 루트(공통 설정)
-├── settings.gradle            # 멀티모듈·composite build 정의
+├── settings.gradle            # 멀티모듈 정의
 ├── docker-compose.yml         # 로컬 pgvector PostgreSQL
 └── docs/                      # 문서 (이 폴더)
 ```
@@ -173,7 +161,7 @@ momens-server
 - 실행 모듈은 `app`, 최소 공유 기반은 `common`입니다.
 - `modules/`는 물리적 그룹일 뿐 Gradle 프로젝트가 아니며, 기능 모듈의 논리 경로는 `:auth`처럼
   평면으로 유지합니다.
-- 확정된 모듈 목록과 책임 경계는 [상세설계 > 모듈 맵](design/module-map.md)을 따릅니다.
+- 실제 모듈 목록은 [settings.gradle](../settings.gradle), 책임 경계는 [상세설계 > 모듈 맵](design/module-map.md)을 따릅니다.
 - 구조/의존 방향은 [기반 규칙 > 아키텍처](rules/architecture.md)에 정리되어 있습니다.
 
 ---
@@ -183,52 +171,13 @@ momens-server
 브랜치 전략은 **GitFlow**입니다. `develop`이 기본 개발 브랜치, `main`이 릴리즈
 브랜치입니다. 일반 PR 대상은 `develop`입니다.
 
-### 브랜치 이름
+작업 상태·브랜치·커밋·PR·리뷰·머지 정책은 [Git 규칙](rules/git.md)을 따릅니다.
+아래 첫 기여 예제로 명령 흐름을 확인하세요.
 
-작업은 Momens에서 관리합니다. 브랜치를 만들기 전에 기존 Momens 작업을 조회하고, 없으면 Momens
-MCP 또는 웹에서 작업을 생성해 발급된 라벨을 브랜치 앞에 둡니다.
-
-```text
-<Momens-작업-라벨>-<type>/<work-description>
-# 예) MOM-0680-feat/create-category
-```
-
-새 작업은 제목, 배경·목적, 작업 범위, 완료 조건을 기록하고 `backlog` 또는 `todo`로 만듭니다. 구현에
-착수하면 `in_progress`로 변경합니다. 라벨을 브랜치명에 넣거나 `Fixes MOM-*`를 적어도 Momens 작업이
-자동으로 연결·완료되지는 않으므로, 실제 머지 후 Momens에서 직접 상태를 갱신합니다.
-
-### 커밋 메시지
-
-```text
-feat(<Momens-작업-라벨>/<domain>): 새로운 기능 추가
-fix(<Momens-작업-라벨>/<domain>): 버그 수정
-docs(<Momens-작업-라벨>): 문서 수정
-```
-
-타입과 형식 전체는 [기반 규칙 > Git](rules/git.md)을 참고하세요.
-
-### PR
-
-- 제목은 `[Feature] / [Bug] / [Refactor] / [Chore] / [Docs]` prefix로 시작합니다.
-- PR 템플릿이 자동으로 채워집니다(요약·작업 유형·검증·리뷰 포인트 등).
-- 열면 다음 체크가 돌고, **머지하려면 통과해야 합니다**:
-
-| 체크 | 내용 | 머지 차단? |
-| --- | --- | --- |
-| `build` | `check`(`spotlessCheck`, `verifyDockerModuleBuildScripts`, `verifyDependencyVersionsInCatalog`, `test`) → `bootJar` | 필수 |
-| `pr-format` | PR 제목/본문 형식, 브랜치명 정합성 검증 | ✅ 필수 |
-| CodeQL | 보안 정적 분석 | ℹ️ 비차단(Security 탭 알림) |
-
-### 머지
-
-- 일반 PR(`*` → `develop`)은 **rebase merge**, 릴리즈 PR(`develop` → `main`)과 hotfix PR
-  (`*` → `main`)은 **merge commit**으로 머지합니다. squash merge는 사용하지 않습니다.
-- `develop`/`main`은 **PR로만** 변경(직접 push 차단), 리뷰 대화는 모두 resolve 후 머지.
-- 머지된 일반 작업 브랜치는 자동 삭제되고, 기본 브랜치인 `develop`은 릴리즈 후에도 유지됩니다.
-- 머지하려면 **최소 1명의 승인이 필요합니다**(보호 ruleset 강제). 리뷰어는 PR을
-  열 때 직접 지정합니다(자동 요청 없음).
-
-머지 정책 전체는 [기반 규칙 > Git > 머지](rules/git.md#머지)에 있습니다.
+CI의 `build`는 `./gradlew check` 다음 `./gradlew bootJar`를 실행합니다.
+`check`에 연결된 포맷·테스트·구조 검증은 [루트 빌드](../build.gradle),
+빌드 입력 변경 시 추가되는 Docker 이미지 검증은 [CI workflow](../.github/workflows/ci.yml)를
+기준으로 확인합니다. 필수 체크와 승인 조건은 [Git 머지 규칙](rules/git.md#머지)에 있습니다.
 
 ---
 
@@ -283,21 +232,11 @@ git push -u origin MOM-0680-feat/create-category
 | PR 머지 후 | `finish-work` | 실제 머지 검증, Momens 작업 `done` 전환, 머지 정보 댓글 기록 |
 | 레거시 이관 전 | `migrate-slice` | Go API에서 Spring으로 옮길 최소 수직 슬라이스 계획 |
 
-권장 흐름:
-
-```text
-맥락 확인: sync
-작업 착수: start-work
-PR 전: diff-review
-PR 머지 후: finish-work
-레거시 기능 이관 전: migrate-slice
-```
-
 ---
 
 ## 10. 막히면
 
 - 로컬 실행/DB 문제 → [local-development.md](local-development.md)
 - 규칙/컨벤션 질문 → [기반 규칙](rules/README.md)
-- 제품 맥락/용어 → [`teams`](https://github.com/Momens-Works/teams)
-- 그래도 막히면 백엔드 팀(`@Momens-Works/momens-backend`)에 물어보세요.
+- 제품 맥락/용어 → [`teams`](https://github.com/momens-works/teams)
+- 그래도 막히면 백엔드 팀(`@momens-works/momens-backend`)에 물어보세요.

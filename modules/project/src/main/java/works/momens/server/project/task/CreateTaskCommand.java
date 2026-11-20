@@ -1,26 +1,31 @@
 package works.momens.server.project.task;
 
 import java.time.LocalDate;
+import java.util.Set;
 import java.util.UUID;
 
 /**
  * 태스크 생성 입력.
  *
- * <p>{@code workspaceId}는 호출하는 표면이 권한 검사 단계에서 이미 확정한 값을 넘깁니다. status·priority 별칭 같은 입력 정규화는 표면이
- * 끝내고, 이 모듈은 참조 유효성 검사와 저장 및 라벨 발급을 책임집니다.
+ * <p>{@code workspaceId}는 호출 모듈에서 권한 검사 과정에 확정한 값을 전달합니다. 요청 값은 각 호출 모듈의 요청 DTO에서 enum 타입으로
+ * validation하며, 이 모듈은 참조 유효성 검증과 저장, 라벨 발급을 책임집니다.
  *
  * <p>{@code origin}은 사람이 직접 만든 태스크({@link TaskOrigin#MANUAL})와 Signal을 수용해 만든 태스크({@link
  * TaskOrigin#SIGNAL})를 구분합니다(CO-6). {@code SIGNAL}은 {@code originSignalId}가 반드시 있어야 하고, {@code
  * MANUAL}은 반드시 없어야 합니다 — 이 불변식은 생성 시점에 강제하며 조용히 기본값으로 채우지 않습니다.
+ *
+ * <p>이 record에서 제목 길이를 직접 검증하며, 최대 길이를 초과하면 저장 전에 거부합니다. 요청 DTO의 검증을 거치지 않는 쓰기 경로에도 동일한 규칙을 적용합니다.
+ *
+ * <p>{@code roles}를 전달하지 않으면 role이 지정되지 않은 태스크를 생성합니다.
  */
 public record CreateTaskCommand(
     UUID projectId,
     UUID workspaceId,
     String title,
     String description,
-    String status,
-    String role,
-    String priority,
+    TaskStatus status,
+    Set<TaskRole> roles,
+    TaskPriority priority,
     UUID milestoneId,
     UUID assigneeId,
     LocalDate dueDate,
@@ -28,7 +33,9 @@ public record CreateTaskCommand(
     UUID originSignalId) {
 
   public CreateTaskCommand {
-    if (status == null || status.isBlank()) {
+    TaskPolicy.requireTitleWithinLimit(title);
+    roles = roles == null ? Set.of() : Set.copyOf(roles);
+    if (status == null) {
       throw new IllegalArgumentException("status는 필수입니다.");
     }
     if (origin == null) {
@@ -44,31 +51,43 @@ public record CreateTaskCommand(
   }
 
   public static CreateTaskCommand manual(
-      UUID projectId, UUID workspaceId, String title, String role, String priority) {
+      UUID projectId,
+      UUID workspaceId,
+      String title,
+      TaskStatus status,
+      Set<TaskRole> roles,
+      TaskPriority priority,
+      LocalDate dueDate) {
     return new CreateTaskCommand(
         projectId,
         workspaceId,
         title,
         null,
-        "todo",
-        role,
+        status,
+        roles,
         priority,
         null,
         null,
-        null,
+        dueDate,
         TaskOrigin.MANUAL,
         null);
   }
 
   public static CreateTaskCommand fromSignal(
-      UUID projectId, UUID workspaceId, String title, String role, String priority, UUID signalId) {
+      UUID projectId,
+      UUID workspaceId,
+      String title,
+      TaskStatus status,
+      TaskRole role,
+      TaskPriority priority,
+      UUID signalId) {
     return new CreateTaskCommand(
         projectId,
         workspaceId,
         title,
         null,
-        "todo",
-        role,
+        status,
+        Set.of(role),
         priority,
         null,
         null,

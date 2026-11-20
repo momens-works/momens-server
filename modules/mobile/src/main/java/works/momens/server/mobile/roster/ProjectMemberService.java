@@ -35,11 +35,10 @@ class ProjectMemberService {
     UUID workspaceId =
         projectReader
             .workspaceIdOf(projectId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        ProjectErrorCode.PROJECT_NOT_FOUND,
-                        Map.of("project_id", projectId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    ProjectErrorCode.PROJECT_NOT_FOUND,
+                    Map.of("project_id", projectId.toString())));
     // 멤버 목록은 한 번만 조회하고, 요청자의 접근 권한 확인과 응답 구성에 동일한 조회 결과를 사용합니다.
     // 요청자의 멤버십을 별도로 조회하면 READ COMMITTED에서는 각 SQL 문 실행 시 최신 커밋을 확인하므로,
     // 두 조회 사이에 멤버십이 회수된 사용자가 멤버 목록을 조회할 수 있습니다.
@@ -48,13 +47,19 @@ class ProjectMemberService {
       throw new BusinessException(
           CommonErrorCode.AUTH_FORBIDDEN, Map.of("project_id", projectId.toString()));
     }
-    // 검색은 이름 부분 일치에 대소문자 무시, 정렬은 이름 오름차순(같으면 id 보조)이다. 명세에 없는 세부라
-    // 2026-07-04 가결정으로 구현했고 규칙은 docs/spec/mobile-api.md 프로젝트 멤버 절에 적었다.
+    // 검색은 이름의 부분 일치 여부를 기준으로 하며, 대소문자를 구분하지 않습니다. 정렬 시 요청한 사용자를
+    // 첫 번째 항목에 배치하고, 나머지 구성원은 이름 오름차순으로 정렬합니다. 이름이 같으면 id 오름차순으로
+    // 정렬합니다.
+    //
+    // 정렬 규칙은 `docs/spec/mobile-api.md`의 프로젝트 멤버 절에 정리되어 있습니다.
     String needle = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
     return userService.getProfiles(memberUserIds).stream()
         .filter(
             profile -> needle.isEmpty() || profile.name().toLowerCase(Locale.ROOT).contains(needle))
-        .sorted(Comparator.comparing(UserProfile::name).thenComparing(UserProfile::id))
+        .sorted(
+            Comparator.comparing((UserProfile profile) -> !profile.id().equals(userId))
+                .thenComparing(UserProfile::name)
+                .thenComparing(UserProfile::id))
         .map(profile -> new ProjectMember(profile.id(), profile.name(), profile.avatarUrl()))
         .toList();
   }

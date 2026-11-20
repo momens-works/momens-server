@@ -5,10 +5,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
-import works.momens.server.workspace.WorkspaceErrorCode;
 import works.momens.server.workspace.core.UpdateWorkspaceCommand;
 import works.momens.server.workspace.core.WorkspaceDetail;
 import works.momens.server.workspace.core.WorkspaceEditor;
+import works.momens.server.workspace.core.WorkspaceErrorCode;
 
 @Service
 @RequiredArgsConstructor
@@ -22,11 +22,10 @@ class WorkspaceEditorImpl implements WorkspaceEditor {
     Workspace workspace =
         workspaceRepository
             .findById(command.workspaceId())
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        WorkspaceErrorCode.WORKSPACE_NOT_FOUND,
-                        Map.of("workspace_id", command.workspaceId().toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    WorkspaceErrorCode.WORKSPACE_NOT_FOUND,
+                    Map.of("workspace_id", command.workspaceId().toString())));
     workspace.update(
         keepWhenEmpty(command.name()),
         keepWhenEmpty(command.description()),

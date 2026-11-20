@@ -38,7 +38,7 @@ interface AuthControllerDocs {
       codes = {"AUTH_GOOGLE_TOKEN_INVALID", "AUTH_GOOGLE_EMAIL_NOT_VERIFIED"})
   @ApiException(
       value = UserErrorCode.class,
-      codes = {"USER_EMAIL_LINKED_TO_ANOTHER_IDENTITY"})
+      codes = {"USER_EMAIL_LINKED_TO_ANOTHER_IDENTITY", "USER_NOT_FOUND"})
   @ApiException(CommonErrorCode.class)
   TokenResponse loginWithGoogleToken(GoogleTokenRequest request);
 
@@ -63,9 +63,6 @@ interface AuthControllerDocs {
       description = "로그아웃 성공",
       content = @Content(schema = @Schema(implementation = AuthMessageResponse.class)))
   @SecurityRequirements
-  @ApiException(
-      value = AuthErrorCode.class,
-      codes = {"AUTH_REFRESH_TOKEN_INVALID"})
   @ApiException(CommonErrorCode.class)
   AuthMessageResponse logout(LogoutRequest request);
 }

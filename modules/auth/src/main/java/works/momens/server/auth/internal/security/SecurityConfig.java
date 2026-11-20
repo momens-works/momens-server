@@ -19,17 +19,10 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import works.momens.server.auth.internal.config.AuthProperties;
 
 /**
- * 전역 SecurityFilterChain. 코드 소유권은 auth 모듈에 둡니다(docs/design/module-map.md).
+ * 공개 경로에는 resource-server 필터를 적용하지 않습니다. 만료된 Bearer 헤더가 붙은 refresh 요청도 인증 필터가 먼저 거부하지 않아야 합니다.
  *
- * <p>두 개의 체인으로 나눕니다. 공개 경로(인증 엔드포인트·health·swagger)는 자원서버 필터를 태우지 않는 별도 체인으로 처리합니다. 그렇지 않으면 클라이언트가
- * 만료된 access token을 {@code Authorization} 헤더에 그대로 붙여 보낼 때(예: 토큰 갱신 직전 refresh 호출) 자원서버 필터가
- * permitAll 평가 전에 401을 내버려 갱신 흐름이 막힙니다. 보호 API 체인은 우리 HS256 디코더로 access를 검증하고, 거부 본문은 Standard 에러
- * shape로 통일합니다. 웹 쿠키 인증(MOM-22)은 {@link BearerTokenResolver}가 access 쿠키도 읽도록 교체해 보호 체인 위에 얹습니다.
- * same-domain 배포라 CSRF는 SameSite 쿠키 속성으로 막습니다(ADR-0003).
- *
- * <p>웹 프론트는 API와 origin이 달라, 두 체인 모두 {@link CorsConfigurationSource}를 물려 CORS를 처리합니다(MOM-55). 쿠키를
- * 실은 cross-origin 요청을 허용하려면 credentials를 켜고 origin을 명시해야 합니다. {@code /api/auth/web/*}는 공개 체인이라 여기에도
- * CORS가 필요하고, preflight(OPTIONS)는 Spring Security의 CORS 필터가 인증 전에 처리합니다.
+ * <p>쿠키를 실은 cross-origin 요청을 위해 공개·보호 체인 모두 {@link CorsConfigurationSource}로 CORS를 적용합니다. CSRF 정책은
+ * SameSite 쿠키를 전제로 합니다(ADR-0003).
  */
 @Configuration
 class SecurityConfig {
@@ -48,9 +41,6 @@ class SecurityConfig {
 
   private static final String[] PUBLIC_PATHS = {
     "/actuator/health/**",
-    "/v3/api-docs/**",
-    "/swagger-ui/**",
-    "/swagger-ui.html",
     "/api/auth/google/token",
     "/api/auth/google/login",
     "/api/auth/google/callback",
@@ -58,13 +48,11 @@ class SecurityConfig {
     "/api/auth/logout",
     "/api/auth/web/refresh",
     "/api/auth/web/logout",
-    "/api/source-connections/oauth/callback"
+    "/api/source-connections/oauth/callback",
+    "/api/mobile/app-update"
   };
 
-  /**
-   * 공개 경로 전용 체인. 자원서버를 얹지 않으므로 stale Bearer 헤더가 와도 401 없이 컨트롤러까지 도달합니다. 인증 엔드포인트는 바디 자격증명(idToken/
-   * refreshToken)으로 동작하고 거부는 컨트롤러의 도메인 에러로 처리합니다.
-   */
+  /** 만료된 Bearer 헤더가 공개 요청을 차단하지 않도록 Resource Server 필터를 적용하지 않습니다. */
   @Bean
   @Order(1)
   SecurityFilterChain publicSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -93,17 +81,15 @@ class SecurityConfig {
         // 무상태 Bearer/쿠키 API. same-domain 배포라 CSRF는 SameSite 쿠키 속성으로 막습니다(ADR-0003).
         .csrf(AbstractHttpConfigurer::disable)
         .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-        .oauth2ResourceServer(
-            oauth2 ->
-                oauth2
-                    .authenticationEntryPoint(authenticationEntryPoint)
-                    .accessDeniedHandler(accessDeniedHandler)
-                    .bearerTokenResolver(bearerTokenResolver)
-                    .jwt(jwt -> jwt.decoder(accessTokenDecoder)))
-        .exceptionHandling(
-            ex ->
-                ex.authenticationEntryPoint(authenticationEntryPoint)
-                    .accessDeniedHandler(accessDeniedHandler));
+        .oauth2ResourceServer(oauth2 ->
+            oauth2
+                .authenticationEntryPoint(authenticationEntryPoint)
+                .accessDeniedHandler(accessDeniedHandler)
+                .bearerTokenResolver(bearerTokenResolver)
+                .jwt(jwt -> jwt.decoder(accessTokenDecoder)))
+        .exceptionHandling(ex ->
+            ex.authenticationEntryPoint(authenticationEntryPoint)
+                .accessDeniedHandler(accessDeniedHandler));
     return http.build();
   }
 

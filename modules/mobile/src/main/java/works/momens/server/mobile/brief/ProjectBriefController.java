@@ -12,13 +12,6 @@ import works.momens.server.common.api.CurrentUser;
 import works.momens.server.mobile.brief.dto.response.BriefResponse;
 import works.momens.server.mobile.brief.dto.response.BriefSignalSummaryPageResponse;
 
-/**
- * 모바일 프로젝트 브리프 조회 엔드포인트. 브리프 본체는 초기 화면 로드 전용이고, 시그널 요약의 필터 전환과 더보기 페이지 이동은 하위 엔드포인트가
- * 담당합니다(docs/spec/mobile-api.md 브리프 절).
- *
- * <p>{@code /api/mobile/*}는 보호 체인의 기본 인증 대상이라 별도 보안 설정이 없고, 현재 사용자는 {@link
- * CurrentUser#id(Principal)}로 읽습니다(docs/rules/code-conventions.md 보호 API).
- */
 @RestController
 @RequestMapping("/api/mobile")
 @RequiredArgsConstructor

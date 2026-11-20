@@ -6,18 +6,10 @@ final class TaskSnapshotMapper {
 
   private TaskSnapshotMapper() {}
 
-  static TaskSnapshot toTaskWorkspaceSnapshot(Task task) {
-    return toSnapshot(task, task.getWorkspaceId());
-  }
-
-  static TaskSnapshot toProjectWorkspaceSnapshot(Task task, java.util.UUID workspaceId) {
-    return toSnapshot(task, workspaceId);
-  }
-
-  private static TaskSnapshot toSnapshot(Task task, java.util.UUID workspaceId) {
+  static TaskSnapshot toSnapshot(Task task) {
     return new TaskSnapshot(
         task.getId(),
-        workspaceId,
+        task.getWorkspaceId(),
         task.getProjectId(),
         task.getMilestoneId(),
         task.getLabel(),
@@ -25,10 +17,11 @@ final class TaskSnapshotMapper {
         task.getDescription(),
         task.getStatus(),
         task.getPriority(),
-        task.getRole(),
+        task.roleValues(),
         task.getAssigneeId(),
         task.getDueDate(),
         task.getCreatedAt(),
-        task.getUpdatedAt());
+        task.getUpdatedAt(),
+        task.getVersion());
   }
 }

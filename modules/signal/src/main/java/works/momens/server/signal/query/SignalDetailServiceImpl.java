@@ -41,11 +41,9 @@ class SignalDetailServiceImpl implements SignalDetailService {
     Signal signal =
         signalRepository
             .findUnprocessedById(signalId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        SignalErrorCode.SIGNAL_NOT_FOUND,
-                        Map.of("signal_id", signalId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    SignalErrorCode.SIGNAL_NOT_FOUND, Map.of("signal_id", signalId.toString())));
     if (workspaceMembershipReader.roleOf(signal.getWorkspaceId(), userId).isEmpty()) {
       throw new BusinessException(
           CommonErrorCode.AUTH_FORBIDDEN, Map.of("signal_id", signalId.toString()));

@@ -1,16 +1,12 @@
 package works.momens.server.project.task;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import works.momens.server.project.core.ProjectReader;
 
-/**
- * task 조회 public API.
- *
- * <p>모바일 보드(MOM-62)와 상세(MOM-63)가 project 내부 repository를 직접 참조하지 않고 태스크를 읽도록 합니다.
- */
 public interface TaskReader {
 
   /**
@@ -34,9 +30,26 @@ public interface TaskReader {
   /** 표면 응답으로 매핑할 태스크 저장값 한 건을 조회합니다. */
   Optional<TaskSnapshot> findSnapshot(UUID taskId);
 
+  /** MCP 조회용으로 태스크 자체의 workspace를 제한합니다. 소프트 삭제된 태스크는 제외합니다. */
+  Optional<TaskSnapshot> findSnapshotInWorkspace(UUID workspaceId, UUID taskId);
+
+  /** MCP의 MOM-label 조회입니다. 호출자는 label을 대문자로 정규화합니다. */
+  Optional<TaskSnapshot> findSnapshotByLabel(UUID workspaceId, String label);
+
   /** 프로젝트에 속한 태스크 저장값을 생성 시각 내림차순으로 조회합니다. */
   List<TaskSnapshot> listSnapshotsByProjectId(UUID projectId);
 
   /** 워크스페이스에 속한 태스크 저장값을 생성 시각 내림차순으로 조회합니다. */
   List<TaskSnapshot> listSnapshotsByWorkspaceId(UUID workspaceId);
+
+  /** 생성 시각·id 내림차순으로 cursor 이후 최대 limit개를 조회합니다. */
+  List<TaskSnapshot> listPage(
+      UUID workspaceId,
+      UUID projectId,
+      UUID assigneeId,
+      boolean unassignedOnly,
+      String status,
+      Instant before,
+      UUID beforeId,
+      int limit);
 }

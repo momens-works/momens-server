@@ -8,18 +8,25 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.ErrorResponseException;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,6 +47,15 @@ import works.momens.server.common.api.FieldValidationException;
 class GlobalExceptionHandlerTest {
 
   @Autowired private MockMvc mockMvc;
+
+  @Test
+  void optimisticConflictIs409WithoutInternalDetails() throws Exception {
+    mockMvc
+        .perform(get("/test/concurrent-modification"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.error.code").value("COMMON_CONCURRENT_MODIFICATION"))
+        .andExpect(content().string(not(containsString("private"))));
+  }
 
   @Test
   @DisplayName("BusinessException은 ErrorCode의 status·code·message와 details로 렌더링된다")
@@ -104,6 +120,150 @@ class GlobalExceptionHandlerTest {
   }
 
   @Test
+  @DisplayName("enum 필드에 허용하지 않는 값을 보내면 COMMON_VALIDATION_FAILED와 필드 이름을 응답합니다")
+  void rendersValidationFailureForUnknownEnumValue() throws Exception {
+    mockMvc
+        .perform(
+            post("/test/enum")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"test_level\":\"unknown\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @Test
+  @DisplayName("enum 필드에 빈 문자열을 보내도 COMMON_VALIDATION_FAILED와 필드 이름을 응답합니다")
+  void rendersValidationFailureForEmptyEnumValue() throws Exception {
+    mockMvc
+        .perform(
+            post("/test/enum")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"test_level\":\"\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @Test
+  @DisplayName("enum 필드에 숫자를 보내면 COMMON_VALIDATION_FAILED와 해당 필드 이름을 응답한다")
+  void rendersValidationFailureForNumericEnumValue() throws Exception {
+    mockMvc
+        .perform(
+            post("/test/enum")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"test_level\":0}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @ParameterizedTest
+  @DisplayName("날짜 필드에 YYYY-MM-DD 형식이 아닌 값을 전송하면 COMMON_VALIDATION_FAILED와 해당 필드 이름을 반환한다")
+  @ValueSource(
+      strings = {
+        "\"2026-13-01\"",
+        "20261112",
+        "\"2026-11-12T09:00:00Z\"",
+        "[2026,11,12]",
+        "[]",
+        "\"\"",
+        "\"  \"",
+        "\"+57443-01-16\""
+      })
+  void rendersValidationFailureForInvalidDateValue(String value) throws Exception {
+    mockMvc
+        .perform(
+            post("/test/date")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"due_date\":" + value + "}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("due_date"));
+  }
+
+  @Test
+  @DisplayName("enum 필드에 문자열이 아닌 값을 전송하면 COMMON_VALIDATION_FAILED와 해당 필드 이름을 반환한다")
+  void rendersValidationFailureForNonStringEnumValue() throws Exception {
+    mockMvc
+        .perform(
+            post("/test/enum")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"test_level\":true}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @Test
+  @DisplayName("쿼리 파라미터의 enum은 @JsonValue 값으로 받습니다")
+  void bindsEnumQueryParameterByJsonValue() throws Exception {
+    mockMvc.perform(get("/test/enum-query").param("test_level", "low")).andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("쿼리 파라미터의 enum에 허용하지 않는 값을 보내면 COMMON_VALIDATION_FAILED와 파라미터 이름을 응답합니다")
+  void rendersValidationFailureForUnknownEnumValueInQuery() throws Exception {
+    mockMvc
+        .perform(get("/test/enum-query").param("test_level", "unknown"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @Test
+  @DisplayName("쿼리 파라미터의 enum에 숫자 문자열을 보내면 COMMON_VALIDATION_FAILED와 파라미터 이름을 응답합니다")
+  void rendersValidationFailureForNumericEnumValueInQuery() throws Exception {
+    mockMvc
+        .perform(get("/test/enum-query").param("test_level", "0"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @Test
+  @DisplayName(
+      "Optional로 선언한 enum 쿼리 파라미터에 허용하지 않는 값을 보내면 COMMON_VALIDATION_FAILED와 파라미터 이름을 응답합니다")
+  void rendersValidationFailureForUnknownValueInOptionalEnumQuery() throws Exception {
+    mockMvc
+        .perform(get("/test/enum-query/optional").param("test_level", "unknown"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @Test
+  @DisplayName(
+      "List로 선언한 enum 쿼리 파라미터에 허용하지 않는 값이 하나라도 있으면 COMMON_VALIDATION_FAILED와 파라미터 이름을 응답합니다")
+  void rendersValidationFailureForUnknownValueInEnumListQuery() throws Exception {
+    mockMvc
+        .perform(get("/test/enum-query/list").param("test_level", "low", "unknown"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @Test
+  @DisplayName("배열로 선언한 enum 쿼리 파라미터에 허용하지 않는 값을 보내면 COMMON_VALIDATION_FAILED와 파라미터 이름을 응답합니다")
+  void rendersValidationFailureForUnknownValueInEnumArrayQuery() throws Exception {
+    mockMvc
+        .perform(get("/test/enum-query/array").param("test_level", "unknown"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @Test
+  @DisplayName("필수 쿼리 파라미터가 누락되면 COMMON_VALIDATION_FAILED와 파라미터 이름을 응답합니다")
+  void rendersValidationFailureForMissingRequiredQueryParameter() throws Exception {
+    mockMvc
+        .perform(get("/test/enum-query"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("test_level"));
+  }
+
+  @Test
   @DisplayName("잘못된 JSON은 COMMON_BAD_REQUEST로 매핑된다")
   void rendersBadRequestForMalformedJson() throws Exception {
     mockMvc
@@ -113,12 +273,13 @@ class GlobalExceptionHandlerTest {
   }
 
   @Test
-  @DisplayName("파라미터 타입 불일치는 COMMON_BAD_REQUEST로 매핑된다")
-  void rendersBadRequestForTypeMismatch() throws Exception {
+  @DisplayName("숫자 쿼리 파라미터에 변환할 수 없는 값을 전달하면 COMMON_VALIDATION_FAILED와 해당 파라미터 이름을 반환합니다")
+  void rendersValidationFailureForTypeMismatchInQuery() throws Exception {
     mockMvc
         .perform(get("/test/typed").param("value", "not-a-number"))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error.code").value("COMMON_BAD_REQUEST"));
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("value"));
   }
 
   @Test
@@ -170,6 +331,10 @@ class GlobalExceptionHandlerTest {
 
   @RestController
   static class TestController {
+    @GetMapping("/test/concurrent-modification")
+    String concurrentModification() {
+      throw new ObjectOptimisticLockingFailureException("private entity", "private id");
+    }
 
     @GetMapping("/test/business")
     void business() {
@@ -187,11 +352,29 @@ class GlobalExceptionHandlerTest {
     @PostMapping("/test/validate-acronym")
     void validateAcronym(@Valid @RequestBody AcronymRequest request) {}
 
+    @PostMapping("/test/enum")
+    void enumBody(@RequestBody EnumRequest request) {}
+
+    @PostMapping("/test/date")
+    void dateBody(@RequestBody DateRequest request) {}
+
     @GetMapping("/test/field-validation")
     void fieldValidation() {
       throw FieldValidationException.forField(
           "owner_user_ids", "must contain only workspace members");
     }
+
+    @GetMapping("/test/enum-query")
+    void enumQuery(@RequestParam(name = "test_level") TestLevel testLevel) {}
+
+    @GetMapping("/test/enum-query/optional")
+    void optionalEnumQuery(@RequestParam(name = "test_level") Optional<TestLevel> testLevel) {}
+
+    @GetMapping("/test/enum-query/list")
+    void enumListQuery(@RequestParam(name = "test_level") List<TestLevel> testLevels) {}
+
+    @GetMapping("/test/enum-query/array")
+    void enumArrayQuery(@RequestParam(name = "test_level") TestLevel[] testLevels) {}
 
     @GetMapping("/test/typed")
     void typed(@RequestParam int value) {}
@@ -209,6 +392,25 @@ class GlobalExceptionHandlerTest {
     record TestRequest(@NotBlank String displayName) {}
 
     record AcronymRequest(@NotBlank String userIDToken) {}
+
+    record EnumRequest(TestLevel testLevel) {}
+
+    record DateRequest(LocalDate dueDate) {}
+
+    enum TestLevel {
+      LOW("low");
+
+      private final String value;
+
+      TestLevel(String value) {
+        this.value = value;
+      }
+
+      @JsonValue
+      String value() {
+        return value;
+      }
+    }
   }
 
   @RequiredArgsConstructor

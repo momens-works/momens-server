@@ -17,7 +17,12 @@ public interface ProjectReader {
   /** projectId가 속한 workspace id를 조회합니다. project 리소스 접근 권한 검사의 앞 단계에 사용합니다. */
   Optional<UUID> workspaceIdOf(UUID projectId);
 
-  /** project 한 건의 스냅샷을 조회합니다. */
+  /**
+   * 활성 프로젝트에 공유 잠금을 걸고 workspace id를 반환합니다. 호출자의 쓰기 트랜잭션이 끝날 때까지 프로젝트 UPDATE/DELETE를 막아, 하위 리소스 생성과
+   * 프로젝트 삭제의 순서를 보장합니다. 트랜잭션이 필수입니다.
+   */
+  Optional<UUID> lockWorkspaceIdOf(UUID projectId);
+
   Optional<ProjectSnapshot> findSnapshot(UUID projectId);
 
   /**

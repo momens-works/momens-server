@@ -31,7 +31,7 @@ import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
 /**
- * 비동기 생성이 활성일 때 convert가 원장을 적재하는지 실제 배선으로 확인한다(MOM-0818, 설계 5.3·5.5절).
+ * 비동기 생성이 활성일 때 convert가 원장을 적재하는지 실제 배선으로 확인한다(MOM-0818).
  *
  * <p>Minsu를 mock으로 대체하지 않는다. 이 테스트가 보는 것이 <b>Minsu가 활성 여부를 판정하고 적재까지 수행하는 경로</b> 자체이기 때문이다. 대신
  * provider는 호출되지 않아야 하므로 Google 자격 증명이 없어도 성립한다. 호출되지 않았다는 사실은 {@code async_deferred} 지표로 확인한다.
@@ -73,7 +73,7 @@ class MobileSignalConvertAsyncEnrollmentIntegrationTest extends AbstractPostgres
         // 요청 경로는 고정 fallback만 돌려준다. 풍부한 draft는 scheduler가 나중에 반영한다.
         .andExpect(jsonPath("$.task.title").value("결제 실패율이 올라감"))
         // 적재했으므로 generating이다. 이 값은 적재가 돌려준 것이고 원장을 다시 읽어 얻은 것이 아니다.
-        // 재조회하면 위 fallback title과 짝이 맞지 않는 ready가 나올 수 있다(설계 7.3절, MOM-0822).
+        // 재조회하면 위 fallback title과 짝이 맞지 않는 ready가 나올 수 있다(MOM-0822).
         .andExpect(jsonPath("$.task.draft_status").value("generating"));
 
     Map<String, Object> ledger =
@@ -89,7 +89,7 @@ class MobileSignalConvertAsyncEnrollmentIntegrationTest extends AbstractPostgres
         .containsEntry("status", "pending")
         .containsEntry("attempt_count", 0)
         .containsEntry("signal_description", "카드 결제 실패")
-        // baseline은 같은 트랜잭션에서 tasks에 쓴 값이어야 한다(8.1절).
+        // baseline은 같은 트랜잭션에서 tasks에 쓴 값이어야 한다.
         .containsEntry("baseline_title", ledger.get("task_title"))
         .containsEntry("baseline_role", "pm")
         .containsEntry("baseline_priority", "medium");

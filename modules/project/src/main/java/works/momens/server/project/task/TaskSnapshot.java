@@ -2,6 +2,7 @@ package works.momens.server.project.task;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 /** 태스크의 표면 중립적인 저장값 투영입니다. 각 표면이 필요한 응답 폭으로 매핑합니다. */
@@ -15,8 +16,9 @@ public record TaskSnapshot(
     String description,
     String status,
     String priority,
-    String role,
+    List<String> roles,
     UUID assigneeId,
     LocalDate dueDate,
     Instant createdAt,
-    Instant updatedAt) {}
+    Instant updatedAt,
+    long version) {}

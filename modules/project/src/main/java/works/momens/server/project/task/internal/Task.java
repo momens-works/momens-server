@@ -1,46 +1,55 @@
 package works.momens.server.project.task.internal;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Immutable;
+import org.hibernate.annotations.SortNatural;
 import works.momens.server.common.persistence.BaseEntity;
 import works.momens.server.project.task.CreateTaskCommand;
+import works.momens.server.project.task.TaskDraftValues;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
+import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.UpdateTaskCommand;
 
 /**
- * 태스크.
+ * 태스크와 완료기준의 쓰기 aggregate입니다. 다른 aggregate는 식별자로 참조합니다.
  *
- * <p>레거시 {@code momens-api}의 {@code tasks} 테이블과 호환됩니다. 모바일 보드/생성(MOM-62)이 읽고 쓰는 컬럼에 태스크 상세(MOM-63)가
- * 읽는 description, assignee_id를 더해 매핑하고, 모바일이 안 쓰는 레거시 컬럼(milestone_id, due_date)은 웹 이관에서 추가합니다.
- * assignee_id는 다른 모듈(user) 소유 리소스라 엔티티 연관 없이 식별자로만 참조합니다(projectId와 같은 기준).
- *
- * <p>{@code status}와 {@code priority}는 {@code Project}와 같은 기준으로 문자열로 둡니다. DB CHECK 제약이 각각 레거시
- * 5종/4종만 허용합니다. {@code role}은 레거시 {@code tasks}에 없는 신규 속성이지만 단일 값이라 부가 테이블 없이 문자열 컬럼으로 두고,
- * priority와 같은 CHECK 제약 방식을 씁니다(MOM-76, 역할은 다중 선택이 아니라 단일 선택입니다). status/priority와 달리 레거시 DB
- * DEFAULT가 없고 null 기본값도 두지 않습니다. mobile의 {@code @NotBlank} 검증이 항상 값을 보장하므로, 불변식이 깨지면 조용히 기본 역할로 채우는
- * 대신 DB {@code NOT NULL} 제약으로 크게 실패합니다.
+ * <p>웹에서 생성한 태스크는 role이 지정되지 않을 수 있습니다.
  */
 @Getter
 @Entity
 @Table(name = "tasks")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 class Task extends BaseEntity {
+
+  @Version
+  @Column(nullable = false)
+  private long version;
 
   @Column(name = "workspace_id", nullable = false, columnDefinition = "uuid")
   private UUID workspaceId;
@@ -70,7 +79,19 @@ class Task extends BaseEntity {
   @Column(name = "due_date")
   private LocalDate dueDate;
 
-  @Column private String role;
+  /**
+   * 태스크에 지정된 role 목록입니다. role은 별도 식별자가 필요하지 않은 값이므로 엔티티로 분리하지 않고 {@code task_roles} 테이블에 저장합니다. 응답
+   * 순서를 일정하게 유지하기 위해 {@link TaskRole}의 선언 순서대로 정렬합니다.
+   *
+   * <p>join fetch를 사용하지 않는 조회에서도 태스크별로 role 목록 조회 쿼리가 발생하지 않도록, 여러 태스크의 role 목록을 한 번의 쿼리로 조회합니다.
+   */
+  @ElementCollection
+  @CollectionTable(name = "task_roles", joinColumns = @JoinColumn(name = "task_id"))
+  @Column(name = "role", nullable = false)
+  @Convert(converter = TaskRoleAttributeConverter.class)
+  @SortNatural
+  @BatchSize(size = 100)
+  private SortedSet<TaskRole> roles = new TreeSet<>();
 
   @Column(name = "origin_type", nullable = false)
   private String originType;
@@ -119,9 +140,9 @@ class Task extends BaseEntity {
     this.label = label;
     this.title = command.title();
     this.description = command.description();
-    this.status = command.status();
-    this.priority = command.priority() != null ? command.priority() : "medium";
-    this.role = command.role();
+    this.status = command.status().value();
+    this.priority = (command.priority() != null ? command.priority() : TaskPriority.MEDIUM).value();
+    this.roles.addAll(command.roles());
     this.milestoneId = command.milestoneId();
     this.assigneeId = command.assigneeId();
     this.dueDate = command.dueDate();
@@ -138,10 +159,12 @@ class Task extends BaseEntity {
       boolean titleSet,
       String description,
       boolean descriptionSet,
-      String status,
+      TaskStatus status,
       boolean statusSet,
-      String priority,
+      TaskPriority priority,
       boolean prioritySet,
+      Set<TaskRole> roles,
+      boolean rolesSet,
       UUID milestoneId,
       boolean milestoneSet,
       UUID assigneeId,
@@ -155,10 +178,13 @@ class Task extends BaseEntity {
       this.description = description;
     }
     if (statusSet) {
-      this.status = status;
+      this.status = status.value();
     }
     if (prioritySet) {
-      this.priority = priority;
+      this.priority = priority.value();
+    }
+    if (rolesSet) {
+      replaceRoles(roles);
     }
     if (milestoneSet) {
       this.milestoneId = milestoneId;
@@ -171,44 +197,64 @@ class Task extends BaseEntity {
     }
   }
 
+  List<String> roleValues() {
+    return roles.stream().map(TaskRole::value).toList();
+  }
+
+  void checklistChanged() {
+    markUpdated();
+  }
+
   void delete() {
     this.deletedAt = Instant.now();
   }
 
   /**
-   * 수정 화면이 저장한 편집 상태 전체로 태스크를 갱신합니다. title, role, priority, status는 mobile이 검증한 값이라 항상 채워집니다.
-   * description은 목적을 비운 경우 빈 문자열이나 null로 들어옵니다. assigneeId는 담당자를 지정하면 값이, 비우면 null이 들어옵니다.
+   * 수정 화면이 저장한 편집 상태 전체로 태스크를 갱신합니다. title, priority, status는 mobile에서 검증한 값이므로 항상 전달되며, roles는
+   * mobile에서 최소 1개 이상 포함되어 있는지 검증한 목록입니다. description은 목적을 비운 경우 빈 문자열이나 null로 들어옵니다. assigneeId는
+   * 담당자를 지정하면 값이, 비우면 null이 들어옵니다.
    */
   void update(
       String title,
-      String role,
-      String priority,
-      String status,
+      Set<TaskRole> roles,
+      TaskPriority priority,
+      TaskStatus status,
       String description,
-      UUID assigneeId) {
+      UUID assigneeId,
+      LocalDate dueDate) {
     this.title = title;
-    this.role = role;
-    this.priority = priority;
-    this.status = status;
+    replaceRoles(roles);
+    this.priority = priority.value();
+    this.status = status.value();
     this.description = description;
     this.assigneeId = assigneeId;
+    this.dueDate = dueDate;
   }
 
   /** draft 반영이 비교하는 세 필드가 주어진 값과 같은지. 하나라도 다르면 반영하지 않습니다. */
-  boolean matchesDraft(String title, String role, String priority) {
-    return Objects.equals(this.title, title)
-        && Objects.equals(this.role, role)
-        && Objects.equals(this.priority, priority);
+  boolean matchesDraft(TaskDraftValues draft) {
+    return Objects.equals(this.title, draft.title())
+        && this.roles.equals(Set.of(draft.role()))
+        && Objects.equals(this.priority, draft.priority().value());
   }
 
   /**
    * AI가 생성한 draft를 반영합니다. {@link #update}와 달리 세 필드만 바꿉니다. status·description·assignee는 사용자와 다른 경로가
    * 소유하는 값이라 생성 결과가 건드리지 않습니다.
    */
-  void applyDraft(String title, String role, String priority) {
-    this.title = title;
-    this.role = role;
-    this.priority = priority;
+  void applyDraft(TaskDraftValues draft) {
+    this.title = draft.title();
+    replaceRoles(Set.of(draft.role()));
+    this.priority = draft.priority().value();
+  }
+
+  /**
+   * 기존 role 목록을 전달받은 목록으로 교체합니다. 컬렉션 자체를 교체하지 않고 기존 목록에서 제외된 role만 삭제하고 새로 지정된 role만 추가합니다. 따라서
+   * 유지되는 role의 행과 {@code created_at} 값은 변경되지 않습니다.
+   */
+  private void replaceRoles(Set<TaskRole> roles) {
+    this.roles.retainAll(roles);
+    this.roles.addAll(roles);
   }
 
   /**
@@ -222,6 +268,16 @@ class Task extends BaseEntity {
    * <p>{@code @OrderBy}는 조회 정렬만 하므로 순서(position)는 여기서 목록 인덱스대로 0부터 연속으로 직접 부여합니다.
    */
   void replaceChecklist(List<UpdateTaskCommand.ChecklistItemEdit> edits) {
+    List<UpdateTaskCommand.ChecklistItemEdit> current =
+        checklistItems.stream()
+            .map(item ->
+                new UpdateTaskCommand.ChecklistItemEdit(
+                    item.getId(), item.getTitle(), item.isCompleted()))
+            .toList();
+    if (current.equals(edits)) {
+      return;
+    }
+    checklistChanged();
     Map<UUID, TaskChecklistItem> existingById =
         checklistItems.stream().collect(Collectors.toMap(TaskChecklistItem::getId, item -> item));
     List<TaskChecklistItem> rebuilt = new ArrayList<>();

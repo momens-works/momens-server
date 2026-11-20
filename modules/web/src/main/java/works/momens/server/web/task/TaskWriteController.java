@@ -1,5 +1,6 @@
 package works.momens.server.web.task;
 
+import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import works.momens.server.common.api.CurrentUser;
@@ -32,7 +34,7 @@ class TaskWriteController implements TaskWriteControllerDocs {
   @ResponseStatus(HttpStatus.CREATED)
   public WebTaskResponse create(
       @PathVariable UUID projectId,
-      @RequestBody CreateWebTaskRequest request,
+      @Valid @RequestBody CreateWebTaskRequest request,
       Principal principal) {
     return WebTaskResponse.from(
         taskWriteService.create(
@@ -43,13 +45,16 @@ class TaskWriteController implements TaskWriteControllerDocs {
             request.status(),
             request.milestoneId(),
             request.priority(),
+            request.roles(),
             request.assigneeId(),
             request.dueDate()));
   }
 
   @PatchMapping(path = "/tasks/{taskId}", version = "1")
   public WebTaskResponse update(
-      @PathVariable UUID taskId, @RequestBody UpdateWebTaskRequest request, Principal principal) {
+      @PathVariable UUID taskId,
+      @Valid @RequestBody UpdateWebTaskRequest request,
+      Principal principal) {
     return WebTaskResponse.from(
         taskWriteService.update(
             taskId,
@@ -62,17 +67,23 @@ class TaskWriteController implements TaskWriteControllerDocs {
             request.statusSet(),
             request.priority(),
             request.prioritySet(),
+            request.roles(),
+            request.rolesSet(),
             request.milestoneId(),
             request.milestoneIdSet(),
             request.assigneeId(),
             request.assigneeIdSet(),
             request.dueDate(),
-            request.dueDateSet()));
+            request.dueDateSet(),
+            request.version()));
   }
 
   @DeleteMapping(path = "/tasks/{taskId}", version = "1")
-  public WebMessageResponse delete(@PathVariable UUID taskId, Principal principal) {
-    taskWriteService.delete(taskId, CurrentUser.id(principal));
+  public WebMessageResponse delete(
+      @PathVariable UUID taskId,
+      @RequestParam(required = false) Long version,
+      Principal principal) {
+    taskWriteService.delete(taskId, CurrentUser.id(principal), version);
     return new WebMessageResponse("deleted");
   }
 

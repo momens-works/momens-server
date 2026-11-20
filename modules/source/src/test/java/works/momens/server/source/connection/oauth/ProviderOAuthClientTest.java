@@ -19,11 +19,6 @@ import works.momens.server.source.connection.oauth.ProviderDefinition.ClientAuth
 import works.momens.server.source.connection.oauth.ProviderDefinition.IdentityMethod;
 import works.momens.server.source.connection.oauth.ProviderDefinition.TokenBodyFormat;
 
-/**
- * provider에 보내는 토큰 교환 요청의 형식을 검증합니다.
- *
- * <p>로컬 HTTP 서버를 provider 대신 실행하고 실제 요청을 전송해 본문과 헤더를 확인합니다.
- */
 class ProviderOAuthClientTest {
 
   private HttpServer server;

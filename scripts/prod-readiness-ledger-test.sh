@@ -95,8 +95,7 @@ if ! check_config_release >/dev/null 2>&1; then
     exit 1
 fi
 
-# 마커 쌍 검증. 스키마 생성 구간이 폐지된 뒤(ADR-0019) 이 함수를 쓰는 곳은 선언 구간뿐이므로
-# 선언 마커로 검사한다.
+# 선언 마커 쌍이 올바르게 닫히는지 검증합니다.
 cat > "$repo_root/$ledger_doc" <<EOF
 # fixture
 $config_end

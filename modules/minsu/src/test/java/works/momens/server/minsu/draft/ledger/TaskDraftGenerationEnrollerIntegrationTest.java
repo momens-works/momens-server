@@ -19,15 +19,14 @@ import org.springframework.context.annotation.Import;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.minsu.PreparedTaskDraft;
-import works.momens.server.minsu.Priority;
-import works.momens.server.minsu.Role;
 import works.momens.server.minsu.SignalTaskDraftInput;
 import works.momens.server.minsu.TaskDraft;
 import works.momens.server.minsu.TaskDraftEnrollmentException;
 import works.momens.server.minsu.draft.config.MinsuAsyncProperties;
 import works.momens.server.minsu.draft.json.MinsuJson;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 
-/** convert 트랜잭션의 원장 적재를 실제 PostgreSQL로 검증한다(MOM-0818, 설계 5.3·5.6·8.6절). */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(JpaAuditingConfig.class)
@@ -46,7 +45,8 @@ class TaskDraftGenerationEnrollerIntegrationTest extends AbstractPostgresIntegra
           List.of(Duration.ofSeconds(10)),
           4);
 
-  private static final TaskDraft BASELINE = new TaskDraft("결제 실패율 대응", Role.BACKEND, Priority.HIGH);
+  private static final TaskDraft BASELINE =
+      new TaskDraft("결제 실패율 대응", TaskRole.BACKEND, TaskPriority.HIGH);
 
   @Autowired private TaskDraftGenerationRepository repository;
 
@@ -81,7 +81,7 @@ class TaskDraftGenerationEnrollerIntegrationTest extends AbstractPostgresIntegra
         () -> assertThat(saved.getSignalDescription()).isEqualTo("카드 결제 실패가 늘었다"),
         () -> assertThat(saved.getSignalImpact()).isEqualTo("결제 전환율 하락"),
         () -> assertThat(saved.getSignalEvidence()).contains("결제 화면"),
-        // baseline은 convert가 tasks에 쓴 값 그대로다(8.1절). 여기서 어긋나면 반영 CAS가 전부
+        // baseline은 convert가 tasks에 쓴 값 그대로다. 여기서 어긋나면 반영 CAS가 전부
         // user_edited로 오분류된다.
         () -> assertThat(saved.getBaselineTitle()).isEqualTo("결제 실패율 대응"),
         () -> assertThat(saved.getBaselineRole()).isEqualTo("backend"),
@@ -114,7 +114,7 @@ class TaskDraftGenerationEnrollerIntegrationTest extends AbstractPostgresIntegra
     enroller.enroll(prepared, taskId, UUID.randomUUID());
 
     // 상류의 signal_actions UNIQUE(signal_id)가 1차 방어라 실제로는 도달하기 어렵지만, 도달했을 때
-    // 호출자의 경합 흡수(DataIntegrityViolationException catch)에 삼켜지지 않아야 한다(5.3절).
+    // 호출자의 경합 흡수(DataIntegrityViolationException catch)에 삼켜지지 않아야 한다.
     assertThatThrownBy(() -> enroller.enroll(prepared, taskId, UUID.randomUUID()))
         .isInstanceOf(TaskDraftEnrollmentException.class)
         .hasMessageContaining(taskId.toString());

@@ -136,11 +136,10 @@ class WebAuthControllerTest {
     assertThat(result.getResponse().getHeaders("Set-Cookie"))
         .anyMatch(
             c -> c.startsWith("access_token=") && c.contains("Path=/;") && c.contains("Max-Age=0"))
-        .anyMatch(
-            c ->
-                c.startsWith("refresh_token=")
-                    && c.contains("Path=/api/auth;")
-                    && c.contains("Max-Age=0"))
+        .anyMatch(c ->
+            c.startsWith("refresh_token=")
+                && c.contains("Path=/api/auth;")
+                && c.contains("Max-Age=0"))
         .anyMatch(
             c -> c.startsWith("session_token=") && c.contains("Path=/;") && c.contains("Max-Age=0"))
         .hasSize(3);

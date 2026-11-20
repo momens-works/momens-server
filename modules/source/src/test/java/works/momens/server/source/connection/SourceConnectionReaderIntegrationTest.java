@@ -19,11 +19,6 @@ import works.momens.server.source.SourceConnectionReader;
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(SourceConnectionReaderImpl.class)
-/**
- * source 연결 목록 조회를 실제 PostgreSQL에서 검증합니다.
- *
- * <p>워크스페이스별 데이터 분리, 정렬 순서, 레거시 응답에 포함되는 필드가 모두 채워지는지 확인합니다.
- */
 class SourceConnectionReaderIntegrationTest extends AbstractPostgresIntegrationTest {
 
   @Autowired private SourceConnectionReader sourceConnectionReader;

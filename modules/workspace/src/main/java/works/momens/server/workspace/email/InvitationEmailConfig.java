@@ -8,15 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
-/**
- * 워크스페이스 초대 이메일 발송에 필요한 구성 요소를 등록합니다.
- *
- * <p>이메일 발송 provider를 지정하지 않으면 이메일을 발송하지 않는 구현을 등록합니다. Resend를 지정한 경우에만 발송에 필요한 설정값을 요구하며, 필수 값이 비어
- * 있으면 서버 기동 시점에 실패시킵니다.
- *
- * <p>레거시는 운영 환경이 아니면 설정 누락에 대한 경고만 남기고 이메일을 발송하지 않습니다. 신규 서버는 이메일이 발송되지 않는 상태로 조용히 동작하는 것보다 설정 오류를
- * 기동 시점에 드러내는 편이 적절하다고 판단해 이 부분만 다르게 처리합니다.
- */
+/** provider 미지정 시 발송하지 않는 구현을 등록합니다. Resend를 지정하면 누락 설정을 기동 시점에 거부합니다. */
 @Configuration
 @EnableConfigurationProperties(InvitationEmailProperties.class)
 class InvitationEmailConfig {

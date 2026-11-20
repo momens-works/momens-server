@@ -65,17 +65,14 @@ public class WebAuthCookies {
         .build();
   }
 
-  /** 설정된 refresh 쿠키 이름으로 요청에서 refresh token 값을 읽습니다(쿠키명 지식을 한곳에 둡니다). */
   public Optional<String> readRefreshToken(HttpServletRequest request) {
     return read(request, cookie().refreshName());
   }
 
-  /** 콜백 요청에서 핸드셰이크 state 값을 읽습니다. */
   public Optional<String> readState(HttpServletRequest request) {
     return read(request, STATE_COOKIE);
   }
 
-  /** 콜백 요청에서 핸드셰이크 PKCE verifier 값을 읽습니다. */
   public Optional<String> readPkceVerifier(HttpServletRequest request) {
     return read(request, PKCE_VERIFIER_COOKIE);
   }

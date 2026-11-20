@@ -15,6 +15,7 @@
 
 - [아키텍처](architecture.md) — modular modulith·모듈 경계·base package
 - [Git](git.md) — 브랜치·커밋·PR·머지
+- [문서·주석](documentation.md) — 작성·보존 기준과 참조 검증
 - [코드](code-conventions.md) — 코딩 스타일·Spring·DTO·로깅·테스트
 - [데이터](persistence.md) — 영속성(DB·JPA·Flyway)·시간/식별자
 - [설정 · 시크릿](configuration.md) — 설정(Configuration)·시크릿

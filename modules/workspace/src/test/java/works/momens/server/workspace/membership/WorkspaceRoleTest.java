@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-/** 역할 간 서열과 저장 값 해석 규칙을 검증합니다. */
 class WorkspaceRoleTest {
 
   @Test

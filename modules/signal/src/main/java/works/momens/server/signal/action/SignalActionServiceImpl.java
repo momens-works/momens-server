@@ -16,6 +16,7 @@ import works.momens.server.minsu.SignalTaskDraftInput;
 import works.momens.server.minsu.TaskDraftStatusReader;
 import works.momens.server.project.task.TaskDetail;
 import works.momens.server.project.task.TaskReader;
+import works.momens.server.project.task.TaskWriteGate;
 import works.momens.server.signal.SignalActionResult;
 import works.momens.server.signal.SignalActionService;
 import works.momens.server.signal.SignalErrorCode;
@@ -42,6 +43,7 @@ class SignalActionServiceImpl implements SignalActionService {
   private final TaskReader taskReader;
   private final SignalTaskDraftGenerator taskDraftGenerator;
   private final TaskDraftStatusReader taskDraftStatusReader;
+  private final TaskWriteGate writeGate;
 
   @Override
   public SignalActionResult convertToTask(UUID signalId, UUID userId) {
@@ -51,6 +53,9 @@ class SignalActionServiceImpl implements SignalActionService {
       return replayOrConflict(existing.get(), SignalActionType.CONVERT_TO_TASK);
     }
 
+    // replay는 쓰지 않으므로 쓰기 중단 중에도 응답한다. 막힐 요청이 evidence 조회와 모델 호출을 하지 않도록
+    // task writer보다 먼저 확인한다.
+    writeGate.requireOpen();
     PreparedTaskDraft prepared = prepareDraft(signal);
     try {
       return executor.convert(signal, userId, prepared);
@@ -82,11 +87,9 @@ class SignalActionServiceImpl implements SignalActionService {
     SignalReader.Snapshot signal =
         signalReader
             .findLive(signalId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        SignalErrorCode.SIGNAL_NOT_FOUND,
-                        Map.of("signal_id", signalId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    SignalErrorCode.SIGNAL_NOT_FOUND, Map.of("signal_id", signalId.toString())));
     if (workspaceMembershipReader.roleOf(signal.workspaceId(), userId).isEmpty()) {
       throw new BusinessException(
           CommonErrorCode.AUTH_FORBIDDEN, Map.of("signal_id", signalId.toString()));
@@ -105,9 +108,8 @@ class SignalActionServiceImpl implements SignalActionService {
   private PreparedTaskDraft prepareDraft(SignalReader.Snapshot signal) {
     List<SignalTaskDraftInput.Evidence> evidence =
         signalReader.findDraftEvidence(signal.id()).stream()
-            .map(
-                item ->
-                    new SignalTaskDraftInput.Evidence(item.target(), item.change(), item.impact()))
+            .map(item ->
+                new SignalTaskDraftInput.Evidence(item.target(), item.change(), item.impact()))
             .toList();
     return taskDraftGenerator.prepare(
         new SignalTaskDraftInput(
@@ -124,19 +126,18 @@ class SignalActionServiceImpl implements SignalActionService {
               "processed_action", existing.getActionType()));
     }
     if (requestedActionType == SignalActionType.CONVERT_TO_TASK) {
-      // 원장을 task보다 먼저 읽는다(7.3절). 역순이면 fallback title을 읽은 뒤 scheduler가 끝나는 창에서
+      // 원장을 task보다 먼저 읽는다. 역순이면 fallback title을 읽은 뒤 scheduler가 끝나는 창에서
       // "fallback title + ready"가 나오고, 앱은 재조회를 멈춘 채 그 title에 영구히 갇힌다.
       DraftStatus draftStatus = taskDraftStatusReader.statusOf(existing.getResultTaskId());
       TaskDetail detail =
           taskReader
               .findDetail(existing.getResultTaskId())
-              .orElseThrow(
-                  () ->
-                      new IllegalStateException(
-                          "signal_actions.result_task_id가 존재하지 않는 task를 가리킴: signal_id="
-                              + existing.getSignalId()
-                              + ", result_task_id="
-                              + existing.getResultTaskId()));
+              .orElseThrow(() ->
+                  new IllegalStateException(
+                      "signal_actions.result_task_id가 존재하지 않는 task를 가리킴: signal_id="
+                          + existing.getSignalId()
+                          + ", result_task_id="
+                          + existing.getResultTaskId()));
       return new SignalActionResult(
           existing.getSignalId(),
           SignalActionType.CONVERT_TO_TASK.value(),

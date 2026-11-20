@@ -21,12 +21,8 @@ import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
 /**
- * {@code GET /api/mobile/bootstrap} 실배선 통합 테스트.
- *
- * <p>실토큰(auth public testFixtures)과 실제 PostgreSQL로 보안 체인부터 조합 서비스, 응답 shape까지 끝까지 확인합니다. 사용자는 user
- * public API로 만들고, workspace/멤버십/project는 아직 생성 public API가 없어 소유 스키마에 SQL로 시드합니다. 기본 project 선정(가장
- * 최근 생성)은 기획이 임의의 1개면 충분하다고 확인해 준 조건(2026-07-04) 안의 구현 선택이고, 프로젝트 0개 정책(200, null, 빈 배열)은
- * 2026-07-04 가결정안이며 기획 확인 후 확정합니다.
+ * 실제 토큰·DB로 bootstrap을 검증합니다. 생성 시각을 제어하기 위해 SQL로 시드합니다. 프로젝트 0개의 200·null·빈 배열 정책은 기획 확인이 남은
+ * 가결정입니다.
  */
 @SpringBootTest
 @AutoConfigureMockMvc

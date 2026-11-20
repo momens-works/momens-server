@@ -22,7 +22,7 @@ import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 
 /**
- * 생성 원장의 컬럼 매핑과 DB 제약을 실제 PostgreSQL로 검증한다(MOM-0817).
+ * 생성 원장의 컬럼 매핑과 DB 제약을 실제 PostgreSQL로 검증한다.
  *
  * <p>여기서는 전이가 지켜야 할 불변식을 native update로 직접 위반시켜 DB가 막는지 확인한다. 반대 방향, 즉 실제 전이 코드가 그 제약을 통과하는지는
  * {@link TaskDraftGenerationTransitionIntegrationTest}가 본다.
@@ -69,7 +69,7 @@ class TaskDraftGenerationRepositoryIntegrationTest extends AbstractPostgresInteg
     assertThat(saved.getBaselineTitle()).isEqualTo("결제 실패율 대응");
     assertThat(saved.getBaselineRole()).isEqualTo("backend");
     assertThat(saved.getBaselinePriority()).isEqualTo("medium");
-    // 8.6절의 세 시각. timestamptz ↔ Instant 왕복이 깨지면 deadline 판정이 통째로 어긋난다.
+    // timestamptz ↔ Instant 왕복이 깨지면 deadline 판정이 통째로 어긋난다.
     assertThat(saved.getReadDeadlineAt()).isEqualTo(readDeadline);
     assertThat(saved.getApplyCutoffAt()).isEqualTo(applyCutoff);
     assertThat(saved.getNextAttemptAt()).isEqualTo(nextAttempt);
@@ -203,7 +203,7 @@ class TaskDraftGenerationRepositoryIntegrationTest extends AbstractPostgresInteg
         .baselineTitle("결제 실패율 대응")
         .baselineRole("backend")
         .baselinePriority("medium")
-        // 가드 밴드(8.6절). 두 값을 같게 두면 margin이 0인 행이라 제약이 막는다.
+        // 가드 밴드. 두 값을 같게 두면 margin이 0인 행이라 제약이 막는다.
         .readDeadlineAt(readDeadline)
         .applyCutoffAt(readDeadline.minus(1, ChronoUnit.MINUTES))
         .nextAttemptAt(Instant.now());

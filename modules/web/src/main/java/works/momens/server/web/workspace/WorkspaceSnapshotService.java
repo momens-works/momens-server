@@ -28,11 +28,10 @@ import works.momens.server.project.task.TaskSnapshot;
 import works.momens.server.source.LegacySourceRefDetail;
 import works.momens.server.source.SourceRefReader;
 import works.momens.server.web.workspace.dto.response.WorkspaceSnapshotResponse;
-import works.momens.server.workspace.WorkspaceErrorCode;
 import works.momens.server.workspace.core.WorkspaceDetail;
+import works.momens.server.workspace.core.WorkspaceErrorCode;
 import works.momens.server.workspace.core.WorkspaceReader;
 
-/** 웹 보드가 한 번의 요청으로 읽는 workspace snapshot을 조합합니다. */
 @Service
 @RequiredArgsConstructor
 class WorkspaceSnapshotService {
@@ -53,14 +52,14 @@ class WorkspaceSnapshotService {
     WorkspaceDetail workspace =
         workspaceReader
             .findById(workspaceId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        WorkspaceErrorCode.WORKSPACE_NOT_FOUND,
-                        Map.of("workspace_id", workspaceId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    WorkspaceErrorCode.WORKSPACE_NOT_FOUND,
+                    Map.of("workspace_id", workspaceId.toString())));
     List<WorkspaceMemberView> members = workspaceMemberListService.list(workspaceId, userId);
     List<ProjectDetail> projects = projectDetailReader.listDetailsByWorkspaceId(workspaceId);
-    List<MilestoneDetail> milestones = milestoneReader.listDetailsByWorkspaceId(workspaceId);
+    List<MilestoneDetail> milestones =
+        milestoneReader.listDetailsByProjectIds(projects.stream().map(ProjectDetail::id).toList());
     List<TaskSnapshot> tasks = taskReader.listSnapshotsByWorkspaceId(workspaceId);
     List<BlockerDetail> blockers = blockerReader.listDetailsByWorkspaceId(workspaceId);
     List<MemoryCandidateDetail> candidates =
@@ -75,11 +74,10 @@ class WorkspaceSnapshotService {
     LinkedHashSet<UUID> sourceRefIds = new LinkedHashSet<>();
     linksByTaskId
         .values()
-        .forEach(
-            links -> {
-              memoryIds.addAll(links.memoryIds());
-              sourceRefIds.addAll(links.sourceRefIds());
-            });
+        .forEach(links -> {
+          memoryIds.addAll(links.memoryIds());
+          sourceRefIds.addAll(links.sourceRefIds());
+        });
     List<ConfirmedMemoryDetail> linkedMemories =
         confirmedMemoryReader.findDetailsByIds(workspaceId, memoryIds);
     List<LegacySourceRefDetail> linkedSourceRefs =
@@ -91,41 +89,36 @@ class WorkspaceSnapshotService {
         new HashMap<>();
     Map<UUID, Set<UUID>> taskIdsByMemoryId = new HashMap<>();
     Map<UUID, Set<UUID>> taskIdsBySourceRefId = new HashMap<>();
-    linksByTaskId.forEach(
-        (taskId, links) -> {
-          memoriesByTaskId.put(taskId, new ArrayList<>());
-          sourceRefsByTaskId.put(taskId, new ArrayList<>());
-          links
-              .memoryIds()
-              .forEach(
-                  memoryId ->
-                      taskIdsByMemoryId
-                          .computeIfAbsent(memoryId, ignored -> new LinkedHashSet<>())
-                          .add(taskId));
-          links
-              .sourceRefIds()
-              .forEach(
-                  sourceRefId ->
-                      taskIdsBySourceRefId
-                          .computeIfAbsent(sourceRefId, ignored -> new LinkedHashSet<>())
-                          .add(taskId));
-        });
-    linkedMemories.forEach(
-        memory -> {
-          WorkspaceSnapshotResponse.SnapshotMemoryResponse response =
-              WorkspaceSnapshotResponse.SnapshotMemoryResponse.from(memory);
-          taskIdsByMemoryId
-              .getOrDefault(memory.id(), Set.of())
-              .forEach(taskId -> memoriesByTaskId.get(taskId).add(response));
-        });
-    linkedSourceRefs.forEach(
-        sourceRef -> {
-          WorkspaceSnapshotResponse.SnapshotSourceRefResponse response =
-              WorkspaceSnapshotResponse.SnapshotSourceRefResponse.from(sourceRef);
-          taskIdsBySourceRefId
-              .getOrDefault(sourceRef.id(), Set.of())
-              .forEach(taskId -> sourceRefsByTaskId.get(taskId).add(response));
-        });
+    linksByTaskId.forEach((taskId, links) -> {
+      memoriesByTaskId.put(taskId, new ArrayList<>());
+      sourceRefsByTaskId.put(taskId, new ArrayList<>());
+      links
+          .memoryIds()
+          .forEach(memoryId ->
+              taskIdsByMemoryId
+                  .computeIfAbsent(memoryId, ignored -> new LinkedHashSet<>())
+                  .add(taskId));
+      links
+          .sourceRefIds()
+          .forEach(sourceRefId ->
+              taskIdsBySourceRefId
+                  .computeIfAbsent(sourceRefId, ignored -> new LinkedHashSet<>())
+                  .add(taskId));
+    });
+    linkedMemories.forEach(memory -> {
+      WorkspaceSnapshotResponse.SnapshotMemoryResponse response =
+          WorkspaceSnapshotResponse.SnapshotMemoryResponse.from(memory);
+      taskIdsByMemoryId
+          .getOrDefault(memory.id(), Set.of())
+          .forEach(taskId -> memoriesByTaskId.get(taskId).add(response));
+    });
+    linkedSourceRefs.forEach(sourceRef -> {
+      WorkspaceSnapshotResponse.SnapshotSourceRefResponse response =
+          WorkspaceSnapshotResponse.SnapshotSourceRefResponse.from(sourceRef);
+      taskIdsBySourceRefId
+          .getOrDefault(sourceRef.id(), Set.of())
+          .forEach(taskId -> sourceRefsByTaskId.get(taskId).add(response));
+    });
 
     return WorkspaceSnapshotResponse.from(
         workspace,
@@ -138,13 +131,10 @@ class WorkspaceSnapshotService {
         memories,
         tasks.stream()
             .filter(task -> linksByTaskId.containsKey(task.id()))
-            .map(
-                task -> {
-                  return new WorkspaceSnapshotResponse.SnapshotTaskContextResponse(
-                      task.id(),
-                      memoriesByTaskId.get(task.id()),
-                      sourceRefsByTaskId.get(task.id()));
-                })
+            .map(task -> {
+              return new WorkspaceSnapshotResponse.SnapshotTaskContextResponse(
+                  task.id(), memoriesByTaskId.get(task.id()), sourceRefsByTaskId.get(task.id()));
+            })
             .toList());
   }
 }

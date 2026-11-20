@@ -9,14 +9,14 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * 원장 운영 지표(docs/design/minsu-async-task-draft-design.md 9.3절).
+ * 원장 운영 지표.
  *
  * <p><b>주기 스냅샷 방식이다.</b> gauge 콜백은 수집 시점마다 호출되므로 거기서 DB를 조회하면 수집 주기와 인스턴스 수만큼 쿼리가 곱해진다. 지표
  * 규약(docs/rules/observability.md)이 금지하는 형태다. 주기적으로 집계 한 번을 돌려 스냅샷을 갈아끼우고 gauge는 그 값을 읽기만 한다. 여섯 값이
  * 같은 시점의 일관된 단면이 되는 것은 덤이다.
  *
  * <p><b>drain 축에 걸지 않는다.</b> {@link MinsuDrainScheduler}와 다르다. 설정 rollback으로 drain을 끈 뒤 남은 {@code
- * pending}을 보는 것이 이 지표의 핵심 용도인데(11.1절), 같은 조건을 걸면 정작 그때 보이지 않는다.
+ * pending}을 보는 것이 이 지표의 핵심 용도인데, 같은 조건을 걸면 정작 그때 보이지 않는다.
  *
  * <p><b>스냅샷이 멈추면 낡은 값을 최신인 것처럼 보고한다.</b> 조회가 실패해도 직전 값이 남기 때문이다. 지표가 멀쩡해 보이는 것이 가장 나쁘므로 스냅샷 나이를 별도
  * gauge로 낸다. 그 값이 주기보다 훨씬 크면 아래 숫자들을 믿으면 안 된다는 뜻이다.
@@ -108,11 +108,7 @@ class MinsuLedgerMetrics {
     return (System.nanoTime() - refreshedAtNanos) / 1_000_000_000.0;
   }
 
-  /**
-   * 한 시점의 원장 단면.
-   *
-   * <p>첫 주기 전에는 {@link #EMPTY}다. 값이 0이라 "미종료 없음"과 구분되지 않지만, 그 구분은 스냅샷 나이 gauge가 한다.
-   */
+  /** 한 시점의 원장 단면. 첫 집계 전에는 {@link #EMPTY}를 사용한다. 집계 실패 시 직전 값이 남으므로 스냅샷 나이 gauge와 함께 해석한다. */
   private record Snapshot(
       long pending,
       long processing,

@@ -9,7 +9,5 @@ package works.momens.server.workspace.email;
 class NoopEmailClient implements EmailClient {
 
   @Override
-  public void send(EmailMessage message) {
-    // 이메일을 발송하지 않고 성공으로 처리합니다.
-  }
+  public void send(EmailMessage message) {}
 }

@@ -18,7 +18,6 @@ import works.momens.server.project.ProjectSeedSql;
 import works.momens.server.project.blocker.BlockerDetail;
 import works.momens.server.project.blocker.BlockerReader;
 
-/** 웹 snapshot이 소비하는 blocker read 기반 검증. */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({JpaAuditingConfig.class, BlockerReaderImpl.class})

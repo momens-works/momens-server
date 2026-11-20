@@ -1,14 +1,18 @@
 package works.momens.server.project.task;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
 /**
  * 상세 조회용 태스크 한 건.
  *
- * <p>{@code status}, {@code priority}, {@code description}은 저장된 원본 그대로입니다. 모바일 표기 매핑(urgent를 high로,
- * description을 purpose로)은 조회하는 쪽(mobile)이 정합니다({@link BoardTask}와 같은 원칙). {@code workspaceId}는 호출
- * 쪽이 태스크 접근 권한(멤버십)을 확인할 때 씁니다. {@code checklistItems}는 저장 순서 그대로입니다.
+ * <p>{@code status}, {@code priority}, {@code description}은 저장된 원본 그대로입니다. 모바일 응답의 필드
+ * 매핑(description → purpose)은 조회 모듈(mobile)에서 처리합니다({@link BoardTask}와 동일한 원칙). {@code workspaceId}는
+ * 호출 쪽이 태스크 접근 권한(멤버십)을 확인할 때 씁니다. {@code checklistItems}는 저장 순서 그대로입니다.
+ *
+ * <p>{@code dueDate}는 저장된 값을 그대로 반환하며, 지정되지 않은 경우 {@code null}입니다. 날짜 표시 형식과 요일 계산은 호출 측에서
+ * 처리합니다(MOM-1073).
  *
  * <p>{@code openQuestions}와 {@code nextAction}은 민수가 생산하고 이 서버는 읽기만 하는 값입니다(ADR-0011). 저장된 값을 자르거나
  * 만들지 않고 그대로 담습니다. 열린질문이 없으면 빈 목록이고, 다음행동을 아직 만들지 않았으면 null입니다.
@@ -20,16 +24,16 @@ public record TaskDetail(
     String title,
     String status,
     String priority,
-    String role,
+    List<String> roles,
     UUID assigneeId,
+    LocalDate dueDate,
     String description,
     List<ChecklistItem> checklistItems,
     List<OpenQuestion> openQuestions,
-    String nextAction) {
+    String nextAction,
+    long version) {
 
-  /** 완료기준 항목 한 건. */
   public record ChecklistItem(UUID id, String title, boolean completed) {}
 
-  /** 열린질문 한 건. */
   public record OpenQuestion(UUID id, String body) {}
 }

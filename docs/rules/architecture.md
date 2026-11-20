@@ -43,13 +43,18 @@ Gradle 논리 경로는 `:user`, `:auth`처럼 평면으로 유지합니다.
 
 ## 모듈 경계
 
-- 모듈은 기본적으로 비즈니스 capability 기준으로 나눕니다.
+모듈 경계는 다음 기준으로 검토합니다([ADR-0025](../adr/0025-module-boundary-criteria.md)).
+
+> 모듈은 응집된 책임과 명확한 공개 계약을 기준으로 경계를 검토합니다. 제품 도메인과 공유 기술 기능에 같은 기준을 적용합니다. 모듈 이름은 팀에서 사용하는 도메인 용어로 정하고, 각 모듈은 다른 모듈과 독립적으로 이해할 수 있어야 합니다. 독립 모듈로 분리할지는 의존성과 변경 영향을 격리하는 이점과 관리 비용을 함께 고려해 판단하며, 구체적인 배치와 근거는 해당 PR에 기록합니다.
+
 - 기술 계층(controller, service, repository 등)은 모듈 경계가 될 수 없습니다.
 - bounded context는 모델과 언어의 의미가 달라질 때 보조 기준으로 사용합니다.
-- workflow는 1차 모듈 경계로 삼지 않습니다. 필요하면 각 capability의 public API만 조합하는
-  얇은 orchestration module로 두며, orchestration module은 도메인 정책을 소유하지 않습니다.
-- 모듈별로 담당 영역을 나누지 않습니다. 각 모듈을 변경했을 때 어느 쪽에 영향을 미치는지는
-  [모듈 맵](../design/module-map.md)의 `영향 범위`에서 확인합니다.
+- workflow는 1차 모듈 경계로 삼지 않습니다. 필요한 경우 각 모듈의 public API만 조합하는 얇은 orchestration module로 구성하며, orchestration module은 도메인 정책을 소유하지 않습니다.
+- `common`은 여러 모듈이 필요로 하는 최소한의 기반 타입과 보조 기능을 담습니다. 재사용 여부나 상태 유무만으로 `common` 배치를 결정하지 않습니다.
+- HTTP 엔드포인트는 각 클라이언트별 모듈(`web`, `mobile`, `mcp`)이 소유하며, 엔드포인트의 배치는 이 기준으로 검토하지 않습니다. 해당 모듈이 자체 도메인을 함께 소유한다면 그 도메인은 검토 대상입니다(`mcp`의 MCP 권한 도메인).
+- orchestration module(`onboarding`)과 실행 및 조립 모듈(`app`)에는 이 기준을 적용하지 않습니다. 도메인 모델을 소유하지 않기 때문입니다.
+- 모듈별로 담당 영역을 나누지 않습니다. 모듈의 책임과 경계는 [모듈 맵](../design/module-map.md)에서,
+  변경 영향을 검토할 때 필요한 의존 관계는 각 모듈의 `build.gradle`에서 확인합니다.
 
 ## 모듈 내부 구조
 
@@ -112,8 +117,8 @@ Gradle 논리 경로는 `:user`, `:auth`처럼 평면으로 유지합니다.
 
 - base package는 `works.momens.server`입니다.
 - 분리 방식은 기능/도메인 단위 Gradle 서브프로젝트로 확정했습니다([ADR-0002](../adr/0002-gradle-multi-module-boundaries.md)).
-  공유 코드는 최소화된 `common` 모듈에 둡니다. 구체적인 도메인 모듈 목록과 책임 경계는
-  [상세설계 > 모듈 맵](../design/module-map.md)을 단일 출처로 두고, 기능이 추가되며 점진적으로
+  `common`에 배치할 코드는 「모듈 경계」 절의 기준에 따라 판단합니다. 구체적인 도메인 모듈 목록과 책임 경계는
+  [상세설계 > 모듈 맵](../design/module-map.md)을 단일 출처로 두고, 기능이 추가되면 점진적으로
   갱신합니다.
 
 시스템 맥락(레포 역할)은 [AGENTS.md](../../AGENTS.md)와 [온보딩](../onboarding.md)을

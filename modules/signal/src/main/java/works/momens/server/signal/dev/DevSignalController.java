@@ -17,8 +17,7 @@ import works.momens.server.signal.dev.dto.response.CreateDevSignalResponse;
 /**
  * dev 데모용 Signal 생성 엔드포인트. {@link DevOnly} 프로필에서만 등록되므로 prod에는 존재하지 않습니다.
  *
- * <p>보호 체인의 기본 인증 대상이라 유효한 Bearer access token이 필요하지만, 데모 도구라 호출자의 workspace 멤버십이나 role은 검사하지
- * 않습니다(docs/design/signal-push-demo-design.md 4.2절).
+ * <p>보호 체인의 기본 인증 대상이라 유효한 Bearer access token이 필요하지만, 데모 도구라 호출자의 workspace 멤버십이나 role은 검사하지 않습니다.
  */
 @DevOnly
 @RestController

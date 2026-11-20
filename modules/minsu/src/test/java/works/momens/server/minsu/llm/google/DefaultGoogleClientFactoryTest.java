@@ -7,6 +7,7 @@ import com.google.genai.types.Schema;
 import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import works.momens.server.minsu.llm.LlmResponseField;
 
 class DefaultGoogleClientFactoryTest {
 
@@ -22,7 +23,12 @@ class DefaultGoogleClientFactoryTest {
 
   @Test
   void structuredOutputSchemaHasRequiredClosedFieldsWithoutUnsupportedMaxLength() {
-    Schema schema = DefaultGoogleSdkClient.responseSchema();
+    Schema schema =
+        DefaultGoogleSdkClient.responseSchema(
+            List.of(
+                new LlmResponseField("title", null, List.of()),
+                new LlmResponseField("role", null, List.of("pm", "design", "backend", "frontend")),
+                new LlmResponseField("priority", null, List.of("low", "medium", "high"))));
 
     assertThat(schema.required()).contains(List.of("title", "role", "priority"));
     assertThat(schema.propertyOrdering()).contains(List.of("title", "role", "priority"));

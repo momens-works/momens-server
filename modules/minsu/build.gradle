@@ -11,11 +11,9 @@ dependencies {
     annotationProcessor platform(SpringBootPlugin.BOM_COORDINATES)
     testImplementation platform(SpringBootPlugin.BOM_COORDINATES)
 
-    // 생성 원장의 공유 영속성 베이스(BaseEntity). MOM-0817에서 minsu가 영속성을 소유하게 됐습니다.
     implementation project(':common')
 
-    // 생성 결과를 tasks에 반영하고 task.draft_generated를 발행합니다(ADR-0015). 둘 다 MOM-0820에서
-    // 추가한 의존이며, project 참조는 draft 반영 한 가지로 제한합니다.
+    // draft 반영과 outbox 발행에 사용합니다(ADR-0015). project 타입은 role·priority 계약에도 사용합니다.
     implementation project(':project')
     implementation project(':outbox')
 
@@ -35,6 +33,7 @@ dependencies {
 
     testFixturesImplementation platform(SpringBootPlugin.BOM_COORDINATES)
     testFixturesImplementation 'com.fasterxml.jackson.core:jackson-databind'
+    testFixturesImplementation project(':project')
     testFixturesImplementation 'org.springframework.boot:spring-boot-test'
     testFixturesImplementation 'org.springframework:spring-context'
 

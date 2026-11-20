@@ -5,6 +5,7 @@ import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
+import java.util.Locale;
 import org.springframework.stereotype.Component;
 import works.momens.server.minsu.llm.LlmResponse;
 import works.momens.server.minsu.llm.ModelSelection;
@@ -28,7 +29,7 @@ final class MinsuObservability {
     }
   }
 
-  /** {@code mode}는 동기 요청 경로와 비동기 실행 경로를 나눠 보기 위한 tag다(설계 9.3절). 값이 둘뿐이라 카디널리티가 늘지 않는다. */
+  /** {@code mode}는 동기 요청 경로와 비동기 실행 경로를 나눠 보기 위한 tag다. 값이 둘뿐이라 카디널리티가 늘지 않는다. */
   Observation startProvider(ModelSelection selection, String promptVersion, GenerationMode mode) {
     return Observation.start(OBSERVATION_NAME, observationRegistry)
         .lowCardinalityKeyValue("provider", selection.provider())
@@ -91,6 +92,6 @@ final class MinsuObservability {
   private static String safeFinishReason(String finishReason) {
     return finishReason == null || finishReason.isBlank()
         ? "none"
-        : finishReason.toLowerCase(java.util.Locale.ROOT);
+        : finishReason.toLowerCase(Locale.ROOT);
   }
 }

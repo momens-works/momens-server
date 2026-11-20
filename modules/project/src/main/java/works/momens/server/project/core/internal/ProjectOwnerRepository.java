@@ -7,11 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 interface ProjectOwnerRepository extends JpaRepository<ProjectOwner, ProjectOwnerId> {
 
-  /**
-   * projectIds의 소유자를 한 번에 조회합니다. 정렬은 레거시 집계와 같은 {@code created_at, owner_user_id}입니다.
-   *
-   * <p>project별로 나눠 읽지 않는 것은 계약이 행별 추가 조회를 금지하기 때문입니다(웹 snapshot 계약 4.7).
-   */
+  /** 소유자를 프로젝트 수와 무관하게 한 번 조회합니다. 결과는 생성 시각·소유자 id 순서입니다. */
   List<ProjectOwner> findByProjectIdInOrderByCreatedAtAscOwnerUserIdAsc(
       Collection<UUID> projectIds);
 }

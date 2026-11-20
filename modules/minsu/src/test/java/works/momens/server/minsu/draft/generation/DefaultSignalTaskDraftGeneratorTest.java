@@ -28,8 +28,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.LoggerFactory;
 import works.momens.server.minsu.PreparedTaskDraft;
-import works.momens.server.minsu.Priority;
-import works.momens.server.minsu.Role;
 import works.momens.server.minsu.SignalTaskDraftInput;
 import works.momens.server.minsu.TaskDraft;
 import works.momens.server.minsu.draft.config.MinsuAsyncProperties;
@@ -44,13 +42,16 @@ import works.momens.server.minsu.llm.LlmTimeoutException;
 import works.momens.server.minsu.llm.MinsuLlmProperties;
 import works.momens.server.minsu.llm.ModelSelection;
 import works.momens.server.minsu.llm.ModelSelectionPolicy;
+import works.momens.server.project.task.TaskPolicy;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 
 class DefaultSignalTaskDraftGeneratorTest {
 
   private static final ModelSelection SELECTION =
       new ModelSelection("google", "gemini-3.5-flash-lite", "project", "global");
 
-  /** 동기 경로의 SDK timeout(MOM-0806). 비동기 값과 별도 키다. */
+  /** 동기 경로의 SDK timeout. 비동기 값과 별도 키다. */
   private static final Duration SYNC_TIMEOUT = Duration.ofSeconds(8);
 
   /** 이 테스트는 요청 경로만 다루므로 실행 정책 값은 부등식을 만족하기만 하면 된다. */
@@ -69,11 +70,10 @@ class DefaultSignalTaskDraftGeneratorTest {
   void stubEnroller() {
     // 실제 적재기는 draft와 snapshot을 봉인한 자기 타입을 돌려준다. 여기서는 draft만 그대로 되비친다.
     when(enroller.bind(any(), any()))
-        .thenAnswer(
-            invocation -> {
-              TaskDraft bound = invocation.getArgument(0);
-              return (PreparedTaskDraft) () -> bound;
-            });
+        .thenAnswer(invocation -> {
+          TaskDraft bound = invocation.getArgument(0);
+          return (PreparedTaskDraft) () -> bound;
+        });
   }
 
   @Test
@@ -83,30 +83,32 @@ class DefaultSignalTaskDraftGeneratorTest {
 
     TaskDraft result = generator(client, true, true).prepare(input()).draft();
 
-    assertThat(result).isEqualTo(new TaskDraft("권한 흐름 점검", Role.BACKEND, Priority.HIGH));
+    assertThat(result).isEqualTo(new TaskDraft("권한 흐름 점검", TaskRole.BACKEND, TaskPriority.HIGH));
     assertThat(client.calls()).isEqualTo(1);
   }
 
   @Test
   void truncatesTitleWithoutSplittingSurrogatePair() {
+    String head = "가".repeat(TaskPolicy.TITLE_MAX_LENGTH - 1);
     CapturingClient client =
-        responding(
-            success("{\"title\":\"12345678901234😀끝\",\"role\":\"pm\",\"priority\":\"low\"}"));
+        responding(success("{\"title\":\"" + head + "😀끝\",\"role\":\"pm\",\"priority\":\"low\"}"));
 
     TaskDraft result = generator(client, true, true).prepare(input()).draft();
 
-    assertThat(result.title()).isEqualTo("12345678901234").hasSizeLessThanOrEqualTo(15);
+    assertThat(result.title())
+        .isEqualTo(head)
+        .hasSizeLessThanOrEqualTo(TaskPolicy.TITLE_MAX_LENGTH);
   }
 
   @Test
   void stripsTrailingSpaceAfterTruncatingTitle() {
+    String head = "가".repeat(TaskPolicy.TITLE_MAX_LENGTH - 1);
     CapturingClient client =
-        responding(
-            success("{\"title\":\"12345678901234 A\",\"role\":\"pm\",\"priority\":\"low\"}"));
+        responding(success("{\"title\":\"" + head + " A\",\"role\":\"pm\",\"priority\":\"low\"}"));
 
     TaskDraft result = generator(client, true, true).prepare(input()).draft();
 
-    assertThat(result.title()).isEqualTo("12345678901234").doesNotEndWith(" ");
+    assertThat(result.title()).isEqualTo(head).doesNotEndWith(" ");
   }
 
   @Test
@@ -118,7 +120,8 @@ class DefaultSignalTaskDraftGeneratorTest {
 
     TaskDraft result = generator(client, true, true).prepare(input).draft();
 
-    assertThat(result).isEqualTo(new TaskDraft("123456789012345", Role.DESIGN, Priority.MEDIUM));
+    assertThat(result)
+        .isEqualTo(new TaskDraft("12345678901234567890", TaskRole.DESIGN, TaskPriority.MEDIUM));
   }
 
   @Test
@@ -213,7 +216,7 @@ class DefaultSignalTaskDraftGeneratorTest {
 
   @Test
   void doesNotCallProviderWhenAsyncEnrollIsEnabled() {
-    // 이 설계의 목적 자체다(5.5절). 비동기 활성인데 요청 경로에서 provider를 부르면 8초 예산이 그대로 남는다.
+    // 이 설계의 목적 자체다. 비동기 활성인데 요청 경로에서 provider를 부르면 8초 예산이 그대로 남는다.
     SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
     CapturingClient client = responding(success("{}"));
 
@@ -224,7 +227,7 @@ class DefaultSignalTaskDraftGeneratorTest {
     assertAll(
         () -> assertThat(client.calls()).isZero(),
         () -> assertThat(prepared.draft()).isEqualTo(fallback()),
-        // 적재기가 draft와 입력 snapshot을 함께 봉인한다. baseline은 여기서 정해진다(8.1절).
+        // 적재기가 draft와 입력 snapshot을 함께 봉인한다. baseline은 여기서 정해진다.
         () -> verify(enroller).bind(fallback(), input()),
         () ->
             assertThat(
@@ -253,7 +256,7 @@ class DefaultSignalTaskDraftGeneratorTest {
     PreparedTaskDraft prepared = generator.prepare(input());
     generator.enroll(prepared, taskId, workspaceId);
 
-    // 준비 결과를 손대지 않고 그대로 넘긴다. baseline은 그 안에 이미 봉인돼 있다(8.1절).
+    // 준비 결과를 손대지 않고 그대로 넘긴다. baseline은 그 안에 이미 봉인돼 있다.
     verify(enroller).enroll(prepared, taskId, workspaceId);
   }
 
@@ -266,13 +269,13 @@ class DefaultSignalTaskDraftGeneratorTest {
     PreparedTaskDraft prepared = generator.prepare(input());
     generator.enroll(prepared, UUID.randomUUID(), UUID.randomUUID());
 
-    assertThat(prepared.draft()).isEqualTo(new TaskDraft("점검", Role.PM, Priority.MEDIUM));
+    assertThat(prepared.draft()).isEqualTo(new TaskDraft("점검", TaskRole.PM, TaskPriority.MEDIUM));
     verifyNoInteractions(enroller);
   }
 
   @Test
   void doesNotEnrollWhenProviderIsDisabledEvenIfEnrollIsOn() {
-    // 11.2절의 파생 규칙. 생성할 수단이 없는데 원장만 쌓이면 deadline까지 generating으로 남았다 닫힐 뿐이다.
+    // 생성할 수단이 없는데 원장만 쌓이면 deadline까지 generating으로 남았다 닫힐 뿐이다.
     CapturingClient client = responding(success("{}"));
 
     PreparedTaskDraft prepared =
@@ -330,7 +333,7 @@ class DefaultSignalTaskDraftGeneratorTest {
                     "provider=google",
                     "model=gemini-3.5-flash-lite",
                     "prompt.version=signal-task-draft-v1",
-                    // 동기 요청 경로와 비동기 실행 경로를 나눠 보기 위한 tag(9.3절).
+                    // 동기 요청 경로와 비동기 실행 경로를 나눠 보기 위한 tag.
                     "mode=sync",
                     "outcome=generated",
                     "fallback.reason=none",
@@ -419,17 +422,16 @@ class DefaultSignalTaskDraftGeneratorTest {
         .allSatisfy(counter -> assertThat(counter.count()).isZero());
     assertAll(
         Stream.of(GenerationOutcome.values())
-            .map(
-                outcome ->
-                    () ->
-                        assertThat(
-                                meterRegistry
-                                    .get("momens.minsu.task.draft.requests")
-                                    .tag("outcome", outcome.outcome())
-                                    .tag("fallback.reason", outcome.reason())
-                                    .counter()
-                                    .count())
-                            .isZero()));
+            .map(outcome ->
+                () ->
+                    assertThat(
+                            meterRegistry
+                                .get("momens.minsu.task.draft.requests")
+                                .tag("outcome", outcome.outcome())
+                                .tag("fallback.reason", outcome.reason())
+                                .counter()
+                                .count())
+                        .isZero()));
   }
 
   private static double tokenAmount(SimpleMeterRegistry meterRegistry, String type) {
@@ -439,16 +441,15 @@ class DefaultSignalTaskDraftGeneratorTest {
   @Test
   void logsInvalidResponseAtWarn() {
     List<ILoggingEvent> events =
-        captureLogs(
-            () ->
-                generator(
-                        responding(
-                            new LlmResponse(
-                                true, "SAFETY", "", "response-id", LlmResponse.TokenUsage.EMPTY)),
-                        true,
-                        true)
-                    .prepare(input())
-                    .draft());
+        captureLogs(() ->
+            generator(
+                    responding(
+                        new LlmResponse(
+                            true, "SAFETY", "", "response-id", LlmResponse.TokenUsage.EMPTY)),
+                    true,
+                    true)
+                .prepare(input())
+                .draft());
 
     assertThat(events)
         .filteredOn(
@@ -460,16 +461,14 @@ class DefaultSignalTaskDraftGeneratorTest {
   @Test
   void logsInvalidOutputAtWarn() {
     List<ILoggingEvent> events =
-        captureLogs(
-            () ->
-                generator(
-                        responding(
-                            success(
-                                "{\"title\":\"점검\",\"role\":\"invalid\",\"priority\":\"medium\"}")),
-                        true,
-                        true)
-                    .prepare(input())
-                    .draft());
+        captureLogs(() ->
+            generator(
+                    responding(
+                        success("{\"title\":\"점검\",\"role\":\"invalid\",\"priority\":\"medium\"}")),
+                    true,
+                    true)
+                .prepare(input())
+                .draft());
 
     assertThat(events)
         .filteredOn(event -> event.getFormattedMessage().contains("fallbackReason=invalid_output"))
@@ -480,15 +479,14 @@ class DefaultSignalTaskDraftGeneratorTest {
   @Test
   void logsGeneratedResponseAtDebug() {
     List<ILoggingEvent> events =
-        captureLogs(
-            () ->
-                generator(
-                        responding(
-                            success("{\"title\":\"점검\",\"role\":\"pm\",\"priority\":\"medium\"}")),
-                        true,
-                        true)
-                    .prepare(input())
-                    .draft());
+        captureLogs(() ->
+            generator(
+                    responding(
+                        success("{\"title\":\"점검\",\"role\":\"pm\",\"priority\":\"medium\"}")),
+                    true,
+                    true)
+                .prepare(input())
+                .draft());
 
     assertThat(events)
         .filteredOn(event -> event.getFormattedMessage().contains("outcome=generated"))
@@ -549,7 +547,7 @@ class DefaultSignalTaskDraftGeneratorTest {
   }
 
   private static TaskDraft fallback() {
-    return new TaskDraft("시그널 제목", Role.PM, Priority.MEDIUM);
+    return new TaskDraft("시그널 제목", TaskRole.PM, TaskPriority.MEDIUM);
   }
 
   private static LlmResponse success(String text) {
@@ -568,7 +566,7 @@ class DefaultSignalTaskDraftGeneratorTest {
   private static Stream<Arguments> invalidEnumResponses() {
     return Stream.of(
         Arguments.of("{\"title\":\"점검\",\"role\":\"invalid\",\"priority\":\"high\"}"),
-        Arguments.of("{\"title\":\"점검\",\"role\":\"pm\",\"priority\":\"urgent\"}"),
+        Arguments.of("{\"title\":\"점검\",\"role\":\"pm\",\"priority\":\"critical\"}"),
         Arguments.of("{\"title\":\"점검\",\"role\":\"\",\"priority\":\"medium\"}"),
         Arguments.of("{\"title\":\"점검\",\"role\":\"pm\",\"priority\":\"\"}"));
   }

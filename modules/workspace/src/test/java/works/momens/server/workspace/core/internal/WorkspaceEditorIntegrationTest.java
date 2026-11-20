@@ -16,17 +16,12 @@ import org.springframework.context.annotation.Import;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
-import works.momens.server.workspace.WorkspaceErrorCode;
 import works.momens.server.workspace.WorkspaceSeedSql;
 import works.momens.server.workspace.core.UpdateWorkspaceCommand;
 import works.momens.server.workspace.core.WorkspaceDetail;
 import works.momens.server.workspace.core.WorkspaceEditor;
+import works.momens.server.workspace.core.WorkspaceErrorCode;
 
-/**
- * 워크스페이스 수정이 레거시 {@code workspace.Update}와 동일하게 동작하는지 실제 PostgreSQL을 사용해 검증합니다.
- *
- * <p>빈 값을 기존 값 유지로 처리하는 규칙, slug 검증 시점, 상황별 에러 구분을 검증합니다.
- */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({JpaAuditingConfig.class, WorkspaceEditorImpl.class})
@@ -107,10 +102,9 @@ class WorkspaceEditorIntegrationTest extends AbstractPostgresIntegrationTest {
     entityManager.flush();
     entityManager.clear();
 
-    assertThatThrownBy(
-            () ->
-                workspaceEditor.update(
-                    new UpdateWorkspaceCommand(workspaceId, null, null, "Invalid-Slug")))
+    assertThatThrownBy(() ->
+            workspaceEditor.update(
+                new UpdateWorkspaceCommand(workspaceId, null, null, "Invalid-Slug")))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(WorkspaceErrorCode.WORKSPACE_INVALID_SLUG);
@@ -123,10 +117,8 @@ class WorkspaceEditorIntegrationTest extends AbstractPostgresIntegrationTest {
     entityManager.flush();
     entityManager.clear();
 
-    assertThatThrownBy(
-            () ->
-                workspaceEditor.update(
-                    new UpdateWorkspaceCommand(workspaceId, null, null, "settings")))
+    assertThatThrownBy(() ->
+            workspaceEditor.update(new UpdateWorkspaceCommand(workspaceId, null, null, "settings")))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(WorkspaceErrorCode.WORKSPACE_RESERVED_SLUG);
@@ -140,10 +132,9 @@ class WorkspaceEditorIntegrationTest extends AbstractPostgresIntegrationTest {
     entityManager.flush();
     entityManager.clear();
 
-    assertThatThrownBy(
-            () ->
-                workspaceEditor.update(
-                    new UpdateWorkspaceCommand(workspaceId, null, null, "editor-it-theirs")))
+    assertThatThrownBy(() ->
+            workspaceEditor.update(
+                new UpdateWorkspaceCommand(workspaceId, null, null, "editor-it-theirs")))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(WorkspaceErrorCode.WORKSPACE_SLUG_ALREADY_EXISTS);
@@ -237,10 +228,9 @@ class WorkspaceEditorIntegrationTest extends AbstractPostgresIntegrationTest {
   @Test
   @DisplayName("존재하지 않는 워크스페이스는 WORKSPACE_NOT_FOUND를 던진다")
   void throwsWorkspaceNotFoundWhenMissing() {
-    assertThatThrownBy(
-            () ->
-                workspaceEditor.update(
-                    new UpdateWorkspaceCommand(UUID.randomUUID(), "새 이름", null, null)))
+    assertThatThrownBy(() ->
+            workspaceEditor.update(
+                new UpdateWorkspaceCommand(UUID.randomUUID(), "새 이름", null, null)))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(WorkspaceErrorCode.WORKSPACE_NOT_FOUND);

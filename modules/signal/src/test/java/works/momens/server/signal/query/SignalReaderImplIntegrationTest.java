@@ -84,16 +84,15 @@ class SignalReaderImplIntegrationTest extends AbstractPostgresIntegrationTest {
     UUID signalId = insertSignal(workspaceId, UUID.randomUUID());
     insertEvidence(workspaceId, signalId, UUID.randomUUID(), 0, " \t", "\n", "\r");
     IntStream.range(0, 12)
-        .forEach(
-            index ->
-                insertEvidence(
-                    workspaceId,
-                    signalId,
-                    UUID.randomUUID(),
-                    index + 1,
-                    "대상" + index,
-                    "변화" + index,
-                    "영향" + index));
+        .forEach(index ->
+            insertEvidence(
+                workspaceId,
+                signalId,
+                UUID.randomUUID(),
+                index + 1,
+                "대상" + index,
+                "변화" + index,
+                "영향" + index));
 
     assertThat(signalReader.findDraftEvidence(signalId))
         .extracting(SignalReader.DraftEvidence::target)

@@ -1,71 +1,88 @@
 package works.momens.server.mobile.board.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
+import works.momens.server.mobile.board.MobileTaskCard;
 import works.momens.server.mobile.board.MobileTaskGroup;
 
 /**
- * 보드 응답.
+ * 태스크가 없는 상태 그룹도 빈 배열로 반환합니다. 웹 태스크의 role은 null일 수 있습니다.
  *
- * <p>보드는 todo, in_progress, done, backlog, cancelled 다섯 그룹을 이 순서대로 반환합니다. 수정 화면이 상태 5종을 모두 편집하므로,
- * backlog나 cancelled로 변경한 태스크도 보드에서 사라지지 않도록 다섯 그룹을 모두 포함합니다(MOM-75). 태스크가 없는 그룹도 항상 반환하며, 그때
- * {@code tasks}는 빈 배열입니다.
+ * <p>담당자와 마감일이 지정되지 않은 경우 해당 필드는 {@code null}로 반환합니다.
  *
- * <p>{@code priority}는 low, medium, high로 반환합니다. 저장된 값이 레거시 전용인 {@code urgent}이면 {@code high}로
- * 매핑합니다(2026-07-06 가결정).
- *
- * <p>{@code materialCount}는 태스크에 연결된 관련자료 개수이며, 연결이 없으면 0입니다.
- *
- * <p>웹에서 생성한 태스크는 역할 정보가 없으므로 {@code role}은 {@code null}일 수 있습니다. 공유 {@code tasks} 테이블은 {@code
- * role}을 nullable로 두고, 모바일 생성 API만 {@code role}을 필수로 받습니다.
+ * <p>부제는 화면에 표시하지 않습니다. 기존 앱의 응답 DTO에서 기본값이 없는 필수 필드로 선언되어 있으므로, 하위 호환성을 위해 필드를 유지하고 빈 문자열을 반환합니다.
  */
-@Schema(description = "프로젝트 태스크 보드 응답")
+@Schema(description = "프로젝트 작업 보드 응답")
 public record TaskBoardResponse(
     @Schema(description = "화면 제목", example = "프로젝트 태스크") String title,
-    @Schema(description = "화면 안내 문구") String description,
-    @Schema(description = "상태 그룹 목록(todo, in_progress, done, backlog, cancelled 순서)")
+    @Schema(description = "화면에 표시하지 않는 부제. 하위 호환성을 위해 필드를 유지하며, 항상 빈 문자열을 반환합니다.")
+        String description,
+    @Schema(description = "상태별 작업 그룹 목록(`in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서)")
         List<GroupResponse> groups) {
 
   private static final String BOARD_TITLE = "프로젝트 태스크";
-  private static final String BOARD_DESCRIPTION = "업무를 한눈에 확인하고 상세 내용을 확인하세요.";
 
   @Schema(description = "상태 그룹")
   public record GroupResponse(
       @Schema(description = "그룹 키", example = "todo") String groupKey,
-      @Schema(description = "그룹 라벨", example = "투두") String label,
-      @Schema(description = "그룹 태스크 수") int count,
-      @Schema(description = "그룹 태스크 목록") List<TaskCardResponse> tasks) {}
+      @Schema(description = "그룹 라벨", example = "할 일") String label,
+      @Schema(description = "그룹 작업 수") int count,
+      @Schema(description = "그룹 작업 목록") List<TaskCardResponse> tasks) {}
 
-  @Schema(description = "보드 태스크 카드")
+  @Schema(description = "보드 작업 카드")
   public record TaskCardResponse(
-      @Schema(description = "태스크 식별자") UUID id,
+      @Schema(description = "작업 식별자") UUID id,
       @Schema(description = "제목") String title,
       @Schema(
-              description = "역할. pm/design/backend/frontend 중 하나. 웹에서 만든 태스크는 미지정이면 null",
+              description =
+                  "role 목록입니다. `pm`, `design`, `backend`, `frontend` 순서로 정렬하며, role이 지정되지 않은 경우 빈 배열을 반환합니다.")
+          List<String> roles,
+      @Schema(
+              description =
+                  "구버전 앱과의 호환성을 위한 role 필드입니다. `roles`의 첫 번째 값을 반환하며, 지정된 role이 없으면 `null`을 반환합니다.",
               example = "pm",
-              nullable = true)
+              nullable = true,
+              deprecated = true)
           String role,
-      @Schema(description = "우선순위. low/medium/high", example = "low") String priority,
-      @Schema(description = "관련 자료 수") int materialCount) {}
+      @Schema(description = "담당자 정보. 미지정 시 null") @Nullable AssigneeResponse assignee,
+      @Schema(description = "우선순위 (urgent/high/medium/low)", example = "low") String priority,
+      @Schema(description = "마감일. 미설정 시 null", example = "2026-09-25", nullable = true)
+          LocalDate dueDate,
+      @Schema(description = "연결된 소스 수") int materialCount) {}
+
+  @Schema(name = "TaskCardAssignee", description = "카드에 표시할 담당자 정보")
+  public record AssigneeResponse(
+      @Schema(description = "사용자 식별자") UUID id, @Schema(description = "담당자 이름") String name) {}
 
   public static TaskBoardResponse from(List<MobileTaskGroup> groups) {
     return new TaskBoardResponse(
-        BOARD_TITLE, BOARD_DESCRIPTION, groups.stream().map(TaskBoardResponse::toGroup).toList());
+        BOARD_TITLE, "", groups.stream().map(TaskBoardResponse::toGroup).toList());
   }
 
   private static GroupResponse toGroup(MobileTaskGroup group) {
     List<TaskCardResponse> cards =
         group.tasks().stream()
-            .map(
-                card ->
-                    new TaskCardResponse(
-                        card.id(),
-                        card.title(),
-                        card.role(),
-                        card.priority(),
-                        card.materialCount()))
+            .map(card ->
+                new TaskCardResponse(
+                    card.id(),
+                    card.title(),
+                    card.roles(),
+                    card.roles().isEmpty() ? null : card.roles().getFirst(),
+                    toAssignee(card.assignee()),
+                    card.priority(),
+                    card.dueDate(),
+                    card.materialCount()))
             .toList();
     return new GroupResponse(group.status().key(), group.status().label(), cards.size(), cards);
+  }
+
+  private static AssigneeResponse toAssignee(MobileTaskCard.Assignee assignee) {
+    if (assignee == null) {
+      return null;
+    }
+    return new AssigneeResponse(assignee.id(), assignee.name());
   }
 }

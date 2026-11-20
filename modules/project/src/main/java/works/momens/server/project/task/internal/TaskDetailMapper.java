@@ -16,9 +16,8 @@ final class TaskDetailMapper {
   static TaskDetail toDetail(Task task) {
     List<TaskDetail.ChecklistItem> checklistItems =
         task.getChecklistItems().stream()
-            .map(
-                item ->
-                    new TaskDetail.ChecklistItem(item.getId(), item.getTitle(), item.isCompleted()))
+            .map(item ->
+                new TaskDetail.ChecklistItem(item.getId(), item.getTitle(), item.isCompleted()))
             .toList();
     List<TaskDetail.OpenQuestion> openQuestions =
         task.getOpenQuestions().stream()
@@ -31,11 +30,13 @@ final class TaskDetailMapper {
         task.getTitle(),
         task.getStatus(),
         task.getPriority(),
-        task.getRole(),
+        task.roleValues(),
         task.getAssigneeId(),
+        task.getDueDate(),
         task.getDescription(),
         checklistItems,
         openQuestions,
-        task.getNextAction());
+        task.getNextAction(),
+        task.getVersion());
   }
 }

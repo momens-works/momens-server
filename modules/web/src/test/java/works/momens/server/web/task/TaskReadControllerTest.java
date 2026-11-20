@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.security.Principal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -63,11 +64,12 @@ class TaskReadControllerTest {
         null,
         "todo",
         "medium",
-        null,
+        List.of(),
         null,
         LocalDate.parse("2026-08-31"),
         Instant.parse("2026-08-20T00:00:00Z"),
-        Instant.parse("2026-08-20T00:00:00Z"));
+        Instant.parse("2026-08-20T00:00:00Z"),
+        0L);
   }
 
   @TestConfiguration

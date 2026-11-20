@@ -15,10 +15,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * Firebase Admin SDK 기반 FCM adapter(docs/design/signal-push-demo-design.md 12절).
+ * Firebase Admin SDK 기반 FCM adapter.
  *
  * <p>multicast 요청은 Admin SDK 한도에 맞춰 최대 500개 token 단위로 분할한다. token·Firebase 인증 정보·notification 본문
- * 원문은 오류 로그에 남기지 않는다(10.3절).
+ * 원문은 오류 로그에 남기지 않는다.
  */
 @Slf4j
 @Component

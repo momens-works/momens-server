@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Import;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 
-/** refresh_tokens 마이그레이션과 JPA 매핑 검증. */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(JpaAuditingConfig.class)

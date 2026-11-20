@@ -14,7 +14,7 @@ import works.momens.server.memory.ConfirmedMemoryDetail;
  * <p>레거시 {@code domain.ConfirmedMemory}의 JSON 그대로입니다. 레거시가 대부분의 필드에 {@code omitempty}를 달아 값이 없으면
  * <b>키 자체를 내보내지 않으므로</b> {@code NON_NULL}과 {@code NON_EMPTY}로 그것을 재현합니다. 조회 모델({@link
  * ConfirmedMemoryDetail})을 그대로 반환하면 {@code "summary": null}·{@code "source_ref_ids": []}가 나가 레거시와
- * 갈립니다(웹 snapshot 계약 4.2, {@code WorkspaceSnapshotResponse}와 같은 처리).
+ * 갈립니다({@code WorkspaceSnapshotResponse}와 같은 처리).
  *
  * <p>{@code deleted_at}은 담지 않습니다. 확정 직후의 메모리라 항상 비어 있습니다.
  */

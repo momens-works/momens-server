@@ -3,7 +3,7 @@ package works.momens.server.minsu;
 import java.util.UUID;
 
 /**
- * task draft 생성 상태 조회(docs/design/minsu-async-task-draft-design.md 5.5절·8.6절).
+ * task draft 생성 상태 조회.
  *
  * <p>이 진입점이 <b>deadline 투영의 유일한 소유자</b>다. 조회하는 쪽마다 나이 상한을 각자 계산하면 반드시 어긋나므로, 원장을 읽는 모든 경로는 여기를 통한다.
  */

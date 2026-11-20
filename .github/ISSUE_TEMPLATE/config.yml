@@ -4,5 +4,5 @@ contact_links:
     url: https://app.momens.works/
     about: 개발 작업은 Momens에서 조회하거나 생성하세요.
   - name: 기반 규칙
-    url: https://github.com/Momens-Works/momens-server/blob/main/docs/rules/README.md
+    url: https://github.com/momens-works/momens-server/blob/main/docs/rules/README.md
     about: 브랜치·커밋·PR·머지 등 규칙을 먼저 확인하세요.

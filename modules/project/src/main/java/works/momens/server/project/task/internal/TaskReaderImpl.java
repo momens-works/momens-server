@@ -1,10 +1,12 @@
 package works.momens.server.project.task.internal;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.project.core.ProjectReader;
@@ -45,30 +47,41 @@ class TaskReaderImpl implements TaskReader {
   }
 
   /**
-   * 웹 상세 조회입니다. 소프트 삭제된 태스크와 소속 프로젝트를 모두 제외합니다.
+   * 웹 상세 조회에 사용합니다. soft delete된 태스크와 소속 프로젝트가 soft delete된 태스크를 모두 제외합니다.
    *
-   * <p>응답의 workspace는 태스크가 가진 값이 아니라 소속 프로젝트의 workspace를 기준으로 합니다. 레거시 웹 상세가 프로젝트를 조인해 workspace를
-   * 판정하므로 인가 기준도 같은 값을 씁니다.
+   * <p>프로젝트의 soft delete 여부는 {@code ProjectReader}를 통해 확인합니다. 응답의 workspace는 다른 조회 경로와 동일하게 태스크 행의
+   * 값을 사용합니다.
    */
   @Override
   @Transactional(readOnly = true)
   public Optional<TaskSnapshot> findSnapshot(UUID taskId) {
     return taskRepository
         .findByIdAndDeletedAtIsNull(taskId)
-        .flatMap(
-            task ->
-                projectReader
-                    .workspaceIdOf(task.getProjectId())
-                    .map(
-                        workspaceId ->
-                            TaskSnapshotMapper.toProjectWorkspaceSnapshot(task, workspaceId)));
+        .filter(task -> projectReader.workspaceIdOf(task.getProjectId()).isPresent())
+        .map(TaskSnapshotMapper::toSnapshot);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Optional<TaskSnapshot> findSnapshotInWorkspace(UUID workspaceId, UUID taskId) {
+    return taskRepository
+        .findByWorkspaceIdAndIdAndDeletedAtIsNull(workspaceId, taskId)
+        .map(TaskSnapshotMapper::toSnapshot);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Optional<TaskSnapshot> findSnapshotByLabel(UUID workspaceId, String label) {
+    return taskRepository
+        .findByWorkspaceIdAndLabelAndDeletedAtIsNull(workspaceId, label)
+        .map(TaskSnapshotMapper::toSnapshot);
   }
 
   @Override
   @Transactional(readOnly = true)
   public List<TaskSnapshot> listSnapshotsByProjectId(UUID projectId) {
     return taskRepository.findByProjectIdAndDeletedAtIsNullOrderByCreatedAtDesc(projectId).stream()
-        .map(TaskSnapshotMapper::toTaskWorkspaceSnapshot)
+        .map(TaskSnapshotMapper::toSnapshot)
         .toList();
   }
 
@@ -78,7 +91,7 @@ class TaskReaderImpl implements TaskReader {
     return taskRepository
         .findByWorkspaceIdAndDeletedAtIsNullOrderByCreatedAtDesc(workspaceId)
         .stream()
-        .map(TaskSnapshotMapper::toTaskWorkspaceSnapshot)
+        .map(TaskSnapshotMapper::toSnapshot)
         .toList();
   }
 
@@ -88,7 +101,35 @@ class TaskReaderImpl implements TaskReader {
         task.getTitle(),
         task.getStatus(),
         task.getPriority(),
-        task.getRole(),
+        task.roleValues(),
+        task.getAssigneeId(),
+        task.getDueDate(),
         task.getCreatedAt());
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<TaskSnapshot> listPage(
+      UUID workspaceId,
+      UUID projectId,
+      UUID assigneeId,
+      boolean unassignedOnly,
+      String status,
+      Instant before,
+      UUID beforeId,
+      int limit) {
+    return taskRepository
+        .findPage(
+            workspaceId,
+            projectId,
+            assigneeId,
+            unassignedOnly,
+            status,
+            before,
+            beforeId,
+            PageRequest.of(0, limit))
+        .stream()
+        .map(TaskSnapshotMapper::toSnapshot)
+        .toList();
   }
 }

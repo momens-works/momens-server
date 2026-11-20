@@ -35,7 +35,7 @@ interface PushDeliveryRepository extends JpaRepository<PushDelivery, PushDeliver
 
   /**
    * 재시도 시각이 지난 pending delivery를 {@code FOR UPDATE SKIP LOCKED}로 클레임해 여러 인스턴스가 같은 delivery를 이중 발송하지
-   * 않게 한다(10.3절).
+   * 않게 한다.
    */
   @Query(
       value =

@@ -1,48 +1,81 @@
 package works.momens.server.mobile.board.dto.request;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import org.hibernate.validator.constraints.UniqueElements;
+import org.openapitools.jackson.nullable.JsonNullable;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import works.momens.server.common.api.ExpectedVersionDeserializer;
+import works.momens.server.project.task.TaskPolicy;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
+import works.momens.server.project.task.TaskStatus;
 
 /**
- * 태스크 수정 요청. 요청 형식은 docs/spec/mobile-api.md 태스크 수정 절을 따릅니다.
- *
- * <p>수정 화면은 저장할 때 편집 상태 전체를 보내므로 title, role, priority, status는 항상 채워진 값입니다. title은 생성과 달리 빈 문자열을
- * 허용합니다. 제목을 비우면 상세 화면이 '새 태스크'로 표시하기 때문입니다. 그래서 값이 있는지만 확인하고 공백은 막지 않습니다. {@code assigneeId}는 값이면
- * 지정, null이면 담당자 비우기입니다. {@code purpose}는 목적이고 저장 시 description에 매핑됩니다. {@code checklistItems}는
- * 완료기준 최종 목록이며 0개에서 5개까지 허용합니다. 각 항목의 {@code completed}는 수정 화면이 저장한 완료 상태입니다. 글자 수는 공백을 포함해 제목 15자,
- * 목적 300자, 완료기준 항목 50자로 제한합니다.
+ * 편집 상태 전체를 저장하므로 생략한 선택 필드는 삭제됩니다. 다만 {@code due_date}는 생략하면 기존 마감일을 유지하고, {@code null}로 전달하면
+ * 삭제합니다. 이는 해당 필드를 전송하지 않는 구버전 앱에서 태스크를 수정하더라도 기존 마감일이 삭제되지 않도록 하기 위함입니다. 생성 요청과 달리 빈 제목을 허용하며,
+ * 앱에서는 이를 새 작업으로 표시합니다.
  */
-@Schema(description = "태스크 수정 요청")
+@Schema(description = "작업 수정 요청")
 public record UpdateTaskRequest(
-    @Schema(description = "제목. 값은 있어야 하고 빈 문자열은 허용합니다. 최대 15자(공백 포함).", example = "1차 와이어프레임")
+    @Schema(description = "태스크 제목. 필수 필드이며 빈 문자열을 허용합니다. 공백 포함 최대 70자.", example = "1차 와이어프레임")
         @NotNull
-        @Size(max = 15)
+        @Size(max = TaskPolicy.TITLE_MAX_LENGTH)
         String title,
-    @Schema(description = "역할. pm/design/backend/frontend 중 하나", example = "pm")
-        @NotBlank
-        @Pattern(regexp = "pm|design|backend|frontend")
-        String role,
-    @Schema(description = "담당자 식별자. 비우려면 null을 보냅니다.") UUID assigneeId,
-    @Schema(description = "우선순위. low/medium/high", example = "medium")
-        @NotBlank
-        @Pattern(regexp = "low|medium|high")
-        String priority,
+    @ArraySchema(
+            arraySchema =
+                @Schema(
+                    description =
+                        "role 목록입니다. `pm`, `design`, `backend`, `frontend` 중 최소 1개 이상 중복 없이 지정해야 하며, 전달한 목록으로 기존 role 목록을 교체합니다."),
+            uniqueItems = true)
+        @Size(min = 1)
+        @UniqueElements
+        List<@NotNull TaskRole> roles,
     @Schema(
-            description = "상태. backlog/todo/in_progress/done/cancelled 중 하나",
+            deprecated = true,
+            description =
+                "구버전 앱과의 호환성을 위한 role 필드입니다. 새 클라이언트는 `roles`를 사용합니다. `roles` 없이 `role`만 전달하면 기존 목록에 해당 role이 있는 경우 목록을 유지하고, 없는 경우 해당 role 하나로 교체합니다.",
+            example = "pm")
+        TaskRole role,
+    @Schema(description = "담당자 식별자. 생략하거나 null로 보내면 기존 담당자를 해제합니다.", nullable = true)
+        UUID assigneeId,
+    @Schema(description = "우선순위 (urgent/high/medium/low 중 하나)", example = "medium") @NotNull
+        TaskPriority priority,
+    @Schema(
+            description = "마감일(YYYY-MM-DD). 생략하면 기존 마감일을 유지하고, null로 전달하면 삭제합니다.",
+            example = "2026-09-25",
+            nullable = true)
+        JsonNullable<LocalDate> dueDate,
+    @Schema(
+            description =
+                "상태. backlog는 아직 일정을 잡지 않은 작업, todo는 할 일, in_progress는 진행 중인 작업, done은 완료한 작업, cancelled는 취소한 작업입니다.",
             example = "in_progress")
-        @NotBlank
-        @Pattern(regexp = "backlog|todo|in_progress|done|cancelled")
-        String status,
-    @Schema(description = "목적. 비우면 빈 문자열이나 null입니다. 최대 300자(공백 포함).") @Size(max = 300)
+        @NotNull
+        TaskStatus status,
+    @Schema(
+            description = "설명. 생략하거나 null로 보내면 기존 설명을 제거합니다. 빈 문자열도 허용합니다. 최대 300자(공백 포함).",
+            nullable = true)
+        @Size(max = 300)
         String purpose,
-    @Schema(description = "완료기준 최종 목록. 0개에서 5개까지 허용합니다.") @Size(max = 5) @Valid
-        List<ChecklistItemRequest> checklistItems) {
+    @Schema(
+            description =
+                "완료 기준 최종 목록으로 전체 교체합니다. 생략하거나 null로 보내면 빈 목록으로 처리해 기존 항목을 모두 삭제합니다. 0개에서 5개까지 허용합니다.")
+        @Size(max = 5)
+        @Valid
+        List<ChecklistItemRequest> checklistItems,
+    @Schema(
+            description = "조회한 작업 버전. 생략하거나 null이면 요청 처리 중의 동시 변경만 검사합니다.",
+            minimum = "0",
+            nullable = true)
+        @JsonDeserialize(using = ExpectedVersionDeserializer.class)
+        Long version) {
 
   public UpdateTaskRequest {
     // 수정 화면은 완료기준을 항상 보내지만, 필드가 빠져도 빈 목록으로 다뤄 전체 교체가 안전하게 동작하도록 한다.
@@ -50,7 +83,7 @@ public record UpdateTaskRequest(
   }
 
   /** 완료기준 한 항목. id가 있으면 기존 항목, 없으면 새 항목이고, completed는 수정 화면이 저장한 완료 상태입니다. */
-  @Schema(description = "완료기준 항목")
+  @Schema(description = "완료 기준 항목")
   public record ChecklistItemRequest(
       @Schema(description = "항목 식별자. 새 항목이면 생략합니다.") UUID id,
       @Schema(description = "항목 제목. 최대 50자(공백 포함).", example = "회원가입 에러 메시지 반영")

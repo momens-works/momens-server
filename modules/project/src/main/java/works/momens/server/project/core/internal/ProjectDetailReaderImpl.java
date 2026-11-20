@@ -1,10 +1,15 @@
 package works.momens.server.project.core.internal;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.project.core.ProjectDetail;
@@ -21,6 +26,13 @@ class ProjectDetailReaderImpl implements ProjectDetailReader {
   @Transactional(readOnly = true)
   public List<ProjectDetail> listDetailsByWorkspaceId(UUID workspaceId) {
     return withOwners(projectRepository.findDetailRowsByWorkspaceId(workspaceId));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<ProjectDetail> listPage(UUID workspaceId, Instant before, UUID beforeId, int limit) {
+    return withOwners(
+        projectRepository.findPage(workspaceId, before, beforeId, PageRequest.of(0, limit)));
   }
 
   /**
@@ -46,5 +58,50 @@ class ProjectDetailReaderImpl implements ProjectDetailReader {
     return rows.stream()
         .map(row -> row.toDetail(ownersByProjectId.getOrDefault(row.id(), List.of(row.ownerId()))))
         .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<ProjectDetail> listByIds(UUID workspaceId, Collection<UUID> ids) {
+    return ids.isEmpty()
+        ? List.of()
+        : withOwners(projectRepository.findRowsByIds(workspaceId, ids));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<ProjectDetail> findReferenceCandidates(
+      UUID workspaceId, UUID referenceId, String reference) {
+    if (referenceId != null) {
+      return listByIds(workspaceId, List.of(referenceId));
+    }
+    // DB의 trim/lower는 Java의 Unicode 공백·대소문자 비교와 다르므로 제한 전에 Java에서 판정합니다.
+    List<UUID> exact = new ArrayList<>();
+    List<UUID> partial = new ArrayList<>();
+    String lower = reference.toLowerCase(Locale.ROOT);
+    UUID afterId = null;
+    while (true) {
+      List<ProjectReferenceRow> batch =
+          projectRepository.findReferencePage(workspaceId, afterId, PageRequest.of(0, 100));
+      for (ProjectReferenceRow row : batch) {
+        if (reference.equalsIgnoreCase(row.label())) {
+          return listByIds(workspaceId, List.of(row.id()));
+        }
+        String name = row.name().strip();
+        if (name.equalsIgnoreCase(reference)) {
+          if (exact.size() < 2) {
+            exact.add(row.id());
+          }
+        } else if (partial.size() < 2 && name.toLowerCase(Locale.ROOT).contains(lower)) {
+          partial.add(row.id());
+        }
+      }
+      if (batch.size() < 100) {
+        break;
+      }
+      ProjectReferenceRow last = batch.getLast();
+      afterId = last.id();
+    }
+    return listByIds(workspaceId, exact.isEmpty() ? partial : exact);
   }
 }

@@ -3,7 +3,7 @@ package works.momens.server.minsu;
 import java.util.UUID;
 
 /**
- * Signal 근거로 검증된 task draft를 만드는 Minsu 공개 유스케이스(docs/design/minsu-async-task-draft-design.md 5.5절).
+ * Signal 근거로 검증된 task draft를 만드는 Minsu 공개 유스케이스.
  *
  * <p>두 진입점의 트랜잭션 경계가 다르다. {@link #prepare}는 동기 모드에서 LLM을 호출하므로 느린 네트워크가 DB connection을 점유하지 않도록 쓰기
  * 트랜잭션 <b>밖</b>에서 부르고, {@link #enroll}은 {@code tasks}·{@code signal_actions}와 원자적이어야 하므로 쓰기 트랜잭션
@@ -25,16 +25,16 @@ public interface SignalTaskDraftGenerator {
    * 준비 결과에 비동기 의사가 담겨 있으면 생성 원장을 {@code pending}으로 적재한다. 비동기가 비활성이면 아무것도 하지 않는다.
    *
    * <p>적재했으면 {@link DraftStatus#GENERATING}, 하지 않았으면 {@link DraftStatus#READY}를 돌려준다. 신규 convert
-   * 응답은 이 값을 그대로 쓰고 원장을 <b>다시 읽지 않는다</b>(7.3절). 재조회하면 응답에 담는 title은 방금 쓴 fallback인데 그 사이 scheduler가
-   * 끝나 {@code ready}가 나올 수 있고, 그 조합은 앱이 재조회를 멈춘 채 fallback title에 영구히 갇히는 경우다.
+   * 응답은 이 값을 그대로 쓰고 원장을 <b>다시 읽지 않는다</b>. 재조회하면 응답에 담는 title은 방금 쓴 fallback인데 그 사이 scheduler가 끝나
+   * {@code ready}가 나올 수 있고, 그 조합은 앱이 재조회를 멈춘 채 fallback title에 영구히 갇히는 경우다.
    *
    * <p>활성 여부를 미리 묻는 것이 아니라 <b>수행한 일을 보고하는</b> 값이므로, 판정을 {@link #prepare} 한 번으로 묶은 계약은 그대로다.
    *
-   * <p>fail-closed다(5.3절). 적재에 실패하면 예외를 던져 호출자 트랜잭션 전체를 롤백시킨다. 원장이 없는데 응답만 성공하면 그 task는 조용히 풍부화되지
-   * 않고 아무도 무엇이 빠졌는지 알 수 없다.
+   * <p>fail-closed다. 적재에 실패하면 예외를 던져 호출자 트랜잭션 전체를 롤백시킨다. 원장이 없는데 응답만 성공하면 그 task는 조용히 풍부화되지 않고 아무도
+   * 무엇이 빠졌는지 알 수 없다.
    *
-   * <p>반영 CAS의 기준값(baseline)은 {@code prepared.draft()}를 그대로 복사한다(8.1절). 호출자가 그 draft를 {@code
-   * tasks}에 썼다는 것이 이 계약의 전제이고, 다른 값을 썼다면 반영 시점에 사용자 편집으로 오분류된다.
+   * <p>반영 CAS의 기준값(baseline)은 {@code prepared.draft()}를 그대로 복사한다. 호출자가 그 draft를 {@code tasks}에 썼다는
+   * 것이 이 계약의 전제이고, 다른 값을 썼다면 반영 시점에 사용자 편집으로 오분류된다.
    *
    * <p><b>호출자 트랜잭션 안에서만 부를 수 있다</b>({@code MANDATORY}). 트랜잭션 밖에서 부르면 원장 insert가 자기 트랜잭션을 열어 커밋하므로
    * {@code tasks}가 롤백돼도 원장만 남는다. 그 행은 적재에 성공했으므로 실패율 지표에도 잡히지 않는다. 계약을 문서가 아니라 전파 속성으로 강제한다.

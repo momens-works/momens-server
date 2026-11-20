@@ -2,16 +2,7 @@ package works.momens.server.workspace.label;
 
 import java.util.UUID;
 
-/**
- * workspace 모듈의 라벨 발급 public API.
- *
- * <p>{@code project} 모듈이 task를 만들 때 이 인터페이스로 {@code MOM} 라벨을 발급받습니다(MOM-37). 동기 반환값이 필요한 협력이라
- * application event가 아니라 public API 직접 참조로 둡니다(docs/rules/architecture.md). 발급 카운터 테이블과 repository는
- * 하위 도메인 {@code label}에 숨깁니다.
- *
- * <p>{@code MOM}, {@code MEM}, {@code PRJ} 라벨을 발급합니다. {@code SUG}는 worker가 제안하는 후보에 사용하는 라벨이므로 이
- * 서버에서는 발급하지 않습니다.
- */
+/** 워크스페이스 단위 라벨을 발급합니다. worker 후보용 {@code SUG}는 이 서버에서 발급하지 않습니다. */
 public interface LabelAllocator {
 
   /**
@@ -20,7 +11,6 @@ public interface LabelAllocator {
    */
   String allocateMomLabel(UUID workspaceId);
 
-  /** workspace 범위에서 다음 {@code MEM} 라벨을 발급합니다. */
   String allocateMemoryLabel(UUID workspaceId);
 
   /**

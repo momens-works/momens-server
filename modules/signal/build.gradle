@@ -22,11 +22,11 @@ dependencies {
     implementation project(':outbox')
     // convert-to-task의 task draft 생성 public API(ADR-0014, module-map 의존 방향).
     implementation project(':minsu')
-    // worker가 발행하는 Signal·Outbox 이벤트의 공용 protobuf 계약.
-    implementation libs.momens.proto
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    // dev 데모용 Signal 생성 컨트롤러(@DevOnly, docs/design/signal-push-demo-design.md 11.2절).
+    // 도메인 enum의 value()에 @JsonValue를 적용해 request binding과 OpenAPI 문서의 값 목록에 실제 저장 값을 사용합니다.
+    implementation 'com.fasterxml.jackson.core:jackson-annotations'
+    // dev 데모용 Signal 생성 컨트롤러.
     // 앱이 호출하는 /api/mobile/* 표면과 달리 dev 도구 표면이라 이 모듈이 소유합니다.
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-validation'

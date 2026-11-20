@@ -11,18 +11,20 @@ import org.springframework.transaction.support.TransactionTemplate;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
-import works.momens.server.workspace.WorkspaceErrorCode;
 import works.momens.server.workspace.core.WorkspaceDetail;
+import works.momens.server.workspace.core.WorkspaceErrorCode;
 import works.momens.server.workspace.core.WorkspaceReader;
 import works.momens.server.workspace.email.EmailSendFailedException;
 import works.momens.server.workspace.email.InvitationEmail;
 import works.momens.server.workspace.email.InvitationEmailSender;
 import works.momens.server.workspace.invitation.CreateInvitationCommand;
 import works.momens.server.workspace.invitation.InvitationErrorCode;
+import works.momens.server.workspace.invitation.InvitationStatus;
 import works.momens.server.workspace.invitation.ResendInvitationCommand;
 import works.momens.server.workspace.invitation.RevokeInvitationCommand;
 import works.momens.server.workspace.invitation.WorkspaceInvitationDetail;
 import works.momens.server.workspace.invitation.WorkspaceInvitationWriter;
+import works.momens.server.workspace.membership.MembershipErrorCode;
 import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 /**
@@ -83,16 +85,15 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
     Instant now = clock.instant();
     Instant expiresAt = now.plus(TIME_TO_LIVE);
     UUID invitationId =
-        transactionTemplate.execute(
-            status ->
-                upserter.upsert(
-                    command.workspaceId(),
-                    email,
-                    command.role().value(),
-                    command.inviterUserId(),
-                    InvitationToken.hash(rawToken),
-                    expiresAt,
-                    now));
+        transactionTemplate.execute(status ->
+            upserter.upsert(
+                command.workspaceId(),
+                email,
+                command.role().value(),
+                command.inviterUserId(),
+                InvitationToken.hash(rawToken),
+                expiresAt,
+                now));
 
     return sendAndMarkSent(
         invitationId,
@@ -117,10 +118,9 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
     Instant now = clock.instant();
     Instant expiresAt = now.plus(TIME_TO_LIVE);
     int rotated =
-        transactionTemplate.execute(
-            status ->
-                repository.rotateToken(
-                    invitation.id(), InvitationToken.hash(rawToken), expiresAt, now));
+        transactionTemplate.execute(status ->
+            repository.rotateToken(
+                invitation.id(), InvitationToken.hash(rawToken), expiresAt, now));
     if (rotated == 0) {
       throw alreadyAccepted(invitation.id());
     }
@@ -139,14 +139,13 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
   public WorkspaceInvitationDetail revoke(RevokeInvitationCommand command) {
     WorkspaceInvitationDetail invitation =
         requireNotAccepted(command.workspaceId(), command.invitationId());
-    return transactionTemplate.execute(
-        status -> {
-          Instant now = clock.instant();
-          if (repository.revoke(invitation.id(), now) == 0) {
-            throw alreadyAccepted(invitation.id());
-          }
-          return detail(invitation.id());
-        });
+    return transactionTemplate.execute(status -> {
+      Instant now = clock.instant();
+      if (repository.revoke(invitation.id(), now) == 0) {
+        throw alreadyAccepted(invitation.id());
+      }
+      return detail(invitation.id());
+    });
   }
 
   private WorkspaceInvitationDetail sendAndMarkSent(
@@ -172,13 +171,12 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
           InvitationErrorCode.INVITATION_EMAIL_SEND_FAILED,
           Map.of("invitation_id", invitationId.toString()));
     }
-    return transactionTemplate.execute(
-        status -> {
-          WorkspaceInvitation invitation = requireInvitation(invitationId);
-          invitation.markSent(clock.instant());
-          repository.flush();
-          return InvitationDetailMapper.toDetail(invitation, clock.instant());
-        });
+    return transactionTemplate.execute(status -> {
+      WorkspaceInvitation invitation = requireInvitation(invitationId);
+      invitation.markSent(clock.instant());
+      repository.flush();
+      return InvitationDetailMapper.toDetail(invitation, clock.instant());
+    });
   }
 
   private void requireNotMember(UUID workspaceId, String normalizedEmail) {
@@ -188,23 +186,21 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
             .anyMatch(profile -> normalizeEmail(profile.email()).equals(normalizedEmail));
     if (alreadyMember) {
       throw new BusinessException(
-          WorkspaceErrorCode.WORKSPACE_MEMBER_ALREADY_EXISTS, Map.of("email", normalizedEmail));
+          MembershipErrorCode.WORKSPACE_MEMBER_ALREADY_EXISTS, Map.of("email", normalizedEmail));
     }
   }
 
   private WorkspaceInvitationDetail requireNotAccepted(UUID workspaceId, UUID invitationId) {
     WorkspaceInvitationDetail invitation =
-        transactionTemplate.execute(
-            status ->
-                repository
-                    .findByIdAndWorkspaceId(invitationId, workspaceId)
-                    .map(found -> InvitationDetailMapper.toDetail(found, clock.instant()))
-                    .orElseThrow(
-                        () ->
-                            new BusinessException(
-                                InvitationErrorCode.INVITATION_NOT_FOUND,
-                                Map.of("invitation_id", invitationId.toString()))));
-    if (invitation.status() == works.momens.server.workspace.invitation.InvitationStatus.ACCEPTED) {
+        transactionTemplate.execute(status ->
+            repository
+                .findByIdAndWorkspaceId(invitationId, workspaceId)
+                .map(found -> InvitationDetailMapper.toDetail(found, clock.instant()))
+                .orElseThrow(() ->
+                    new BusinessException(
+                        InvitationErrorCode.INVITATION_NOT_FOUND,
+                        Map.of("invitation_id", invitationId.toString()))));
+    if (invitation.status() == InvitationStatus.ACCEPTED) {
       throw alreadyAccepted(invitationId);
     }
     return invitation;
@@ -213,11 +209,10 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
   private WorkspaceDetail requireWorkspace(UUID workspaceId) {
     return workspaceReader
         .findById(workspaceId)
-        .orElseThrow(
-            () ->
-                new BusinessException(
-                    WorkspaceErrorCode.WORKSPACE_NOT_FOUND,
-                    Map.of("workspace_id", workspaceId.toString())));
+        .orElseThrow(() ->
+            new BusinessException(
+                WorkspaceErrorCode.WORKSPACE_NOT_FOUND,
+                Map.of("workspace_id", workspaceId.toString())));
   }
 
   private WorkspaceInvitationDetail detail(UUID invitationId) {
@@ -227,11 +222,10 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
   private WorkspaceInvitation requireInvitation(UUID invitationId) {
     return repository
         .findById(invitationId)
-        .orElseThrow(
-            () ->
-                new BusinessException(
-                    InvitationErrorCode.INVITATION_NOT_FOUND,
-                    Map.of("invitation_id", invitationId.toString())));
+        .orElseThrow(() ->
+            new BusinessException(
+                InvitationErrorCode.INVITATION_NOT_FOUND,
+                Map.of("invitation_id", invitationId.toString())));
   }
 
   private static BusinessException alreadyAccepted(UUID invitationId) {

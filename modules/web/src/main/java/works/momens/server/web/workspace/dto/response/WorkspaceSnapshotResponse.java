@@ -16,7 +16,6 @@ import works.momens.server.source.LegacySourceRefDetail;
 import works.momens.server.web.workspace.WorkspaceMemberView;
 import works.momens.server.workspace.core.WorkspaceDetail;
 
-/** 레거시 H023과 호환되는 웹 보드의 단일 read 응답입니다. */
 public record WorkspaceSnapshotResponse(
     WorkspaceResponse workspace,
     List<WorkspaceMemberResponse> members,
@@ -105,7 +104,8 @@ public record WorkspaceSnapshotResponse(
       String summary,
       Instant lastContextAt,
       Instant createdAt,
-      Instant updatedAt) {
+      Instant updatedAt,
+      long version) {
     static SnapshotMilestoneResponse from(MilestoneDetail milestone) {
       return new SnapshotMilestoneResponse(
           milestone.id(),
@@ -120,7 +120,8 @@ public record WorkspaceSnapshotResponse(
           milestone.summary(),
           milestone.lastContextAt(),
           milestone.createdAt(),
-          milestone.updatedAt());
+          milestone.updatedAt(),
+          milestone.version());
     }
   }
 
@@ -134,10 +135,12 @@ public record WorkspaceSnapshotResponse(
       String description,
       String status,
       String priority,
+      List<String> roles,
       UUID assigneeId,
       LocalDate dueDate,
       Instant createdAt,
-      Instant updatedAt) {
+      Instant updatedAt,
+      long version) {
     static SnapshotTaskResponse from(TaskSnapshot task) {
       return new SnapshotTaskResponse(
           task.id(),
@@ -148,10 +151,12 @@ public record WorkspaceSnapshotResponse(
           task.description(),
           task.status(),
           task.priority(),
+          task.roles(),
           task.assigneeId(),
           task.dueDate(),
           task.createdAt(),
-          task.updatedAt());
+          task.updatedAt(),
+          task.version());
     }
   }
 

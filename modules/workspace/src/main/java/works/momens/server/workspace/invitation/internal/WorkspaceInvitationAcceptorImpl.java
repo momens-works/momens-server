@@ -8,8 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
-import works.momens.server.workspace.WorkspaceErrorCode;
 import works.momens.server.workspace.core.WorkspaceDetail;
+import works.momens.server.workspace.core.WorkspaceErrorCode;
 import works.momens.server.workspace.core.WorkspaceReader;
 import works.momens.server.workspace.invitation.AcceptInvitationCommand;
 import works.momens.server.workspace.invitation.AcceptedInvitation;
@@ -17,6 +17,8 @@ import works.momens.server.workspace.invitation.InvitationErrorCode;
 import works.momens.server.workspace.invitation.InvitationStatus;
 import works.momens.server.workspace.invitation.WorkspaceInvitationAcceptor;
 import works.momens.server.workspace.membership.AddMembershipCommand;
+import works.momens.server.workspace.membership.AssignableWorkspaceRole;
+import works.momens.server.workspace.membership.MembershipErrorCode;
 import works.momens.server.workspace.membership.WorkspaceMembershipDetail;
 import works.momens.server.workspace.membership.WorkspaceMembershipWriter;
 import works.momens.server.workspace.membership.WorkspaceRole;
@@ -67,32 +69,30 @@ class WorkspaceInvitationAcceptorImpl implements WorkspaceInvitationAcceptor {
     requireAcceptable(invitation, user.email(), now);
 
     WorkspaceRole role =
-        WorkspaceRole.from(invitation.getRole())
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        WorkspaceErrorCode.WORKSPACE_INVALID_ROLE,
-                        Map.of("role", invitation.getRole())));
+        AssignableWorkspaceRole.from(invitation.getRole())
+            .map(AssignableWorkspaceRole::workspaceRole)
+            .orElseThrow(() ->
+                new BusinessException(
+                    MembershipErrorCode.WORKSPACE_INVALID_ROLE,
+                    Map.of("role", invitation.getRole())));
     invitation.markAccepted(now);
     repository.flush();
 
     WorkspaceMembershipDetail membership =
         membershipWriter
             .addIfAbsent(new AddMembershipCommand(invitation.getWorkspaceId(), user.id(), role))
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        WorkspaceErrorCode.WORKSPACE_MEMBER_ALREADY_EXISTS,
-                        Map.of("user_id", user.id().toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    MembershipErrorCode.WORKSPACE_MEMBER_ALREADY_EXISTS,
+                    Map.of("user_id", user.id().toString())));
 
     WorkspaceDetail workspace =
         workspaceReader
             .findById(invitation.getWorkspaceId())
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        WorkspaceErrorCode.WORKSPACE_NOT_FOUND,
-                        Map.of("workspace_id", invitation.getWorkspaceId().toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    WorkspaceErrorCode.WORKSPACE_NOT_FOUND,
+                    Map.of("workspace_id", invitation.getWorkspaceId().toString())));
     return new AcceptedInvitation(workspace, membership);
   }
 
@@ -100,9 +100,8 @@ class WorkspaceInvitationAcceptorImpl implements WorkspaceInvitationAcceptor {
       WorkspaceInvitation invitation, String userEmail, Instant now) {
     InvitationStatus stored =
         InvitationStatus.from(invitation.getStatus())
-            .orElseThrow(
-                () ->
-                    new BusinessException(InvitationErrorCode.INVITATION_INVALID_TOKEN, Map.of()));
+            .orElseThrow(() ->
+                new BusinessException(InvitationErrorCode.INVITATION_INVALID_TOKEN, Map.of()));
     switch (stored) {
       case PENDING -> {}
       case ACCEPTED ->

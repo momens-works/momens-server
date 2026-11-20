@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.outbox.OutboxEventReader;
 import works.momens.server.outbox.OutboxEventView;
 
-/** consumer 조회 구현. 발행 로그를 읽기만 하고 소비 상태는 쓰지 않는다(ADR-0009). */
 @Component
 @RequiredArgsConstructor
 class OutboxEventReaderImpl implements OutboxEventReader {

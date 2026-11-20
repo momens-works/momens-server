@@ -1,96 +1,133 @@
 package works.momens.server.web.task.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonSetter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
+import org.hibernate.validator.constraints.UniqueElements;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import works.momens.server.common.api.ExpectedVersionDeserializer;
+import works.momens.server.project.task.TaskPolicy;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
+import works.momens.server.project.task.TaskStatus;
 
 /** PATCH의 누락과 null을 구분하는 웹 task 요청입니다. */
-@Schema(description = "웹 태스크 수정 요청")
+@Schema(description = "웹 작업 수정 요청")
 public final class UpdateWebTaskRequest {
-  @Schema(description = "태스크 제목. 빈 문자열은 기존 값을 유지하며 null은 허용하지 않습니다.")
+  private Long version;
+
+  @Schema(
+      description = "조회한 작업 버전. 생략하거나 null이면 요청 처리 중의 동시 변경만 검사합니다.",
+      minimum = "0",
+      nullable = true)
+  @JsonDeserialize(using = ExpectedVersionDeserializer.class)
+  @JsonSetter("version")
+  public void setVersion(Long value) {
+    version = value;
+  }
+
+  public Long version() {
+    return version;
+  }
+
+  @Size(max = TaskPolicy.TITLE_MAX_LENGTH)
   private String title;
 
   private boolean titleSet;
 
-  @Schema(description = "태스크 설명. null이면 설명을 제거합니다.")
   private String description;
 
   private boolean descriptionSet;
 
-  @Schema(
-      description = "태스크 상태. 빈 문자열은 기존 값을 유지하며 null은 허용하지 않습니다.",
-      allowableValues = {
-        "backlog",
-        "todo",
-        "in_progress",
-        "progress",
-        "in-progress",
-        "done",
-        "cancelled"
-      })
-  private String status;
+  private TaskStatus status;
 
   private boolean statusSet;
 
-  @Schema(
-      description = "태스크 우선순위. 빈 문자열은 기존 값을 유지하며 null은 허용하지 않습니다.",
-      allowableValues = {"low", "medium", "med", "high", "urgent"})
-  private String priority;
+  private TaskPriority priority;
 
   private boolean prioritySet;
 
-  @Schema(description = "마일스톤 식별자. null이면 연결을 해제합니다.", format = "uuid")
+  @Size(min = 1)
+  @UniqueElements
+  private List<@NotNull TaskRole> roles;
+
+  private boolean rolesSet;
+
   private UUID milestoneId;
 
   private boolean milestoneIdSet;
 
-  @Schema(description = "담당자 식별자. null이면 담당자를 해제합니다.", format = "uuid")
   private UUID assigneeId;
 
   private boolean assigneeIdSet;
 
-  @Schema(description = "마감일. null이면 마감일을 제거합니다.", format = "date")
   private LocalDate dueDate;
 
   private boolean dueDateSet;
 
+  @Schema(
+      description = "작업 제목. 빈 문자열은 기존 값을 유지하며 null은 허용하지 않습니다.",
+      maxLength = TaskPolicy.TITLE_MAX_LENGTH)
   @JsonSetter("title")
   public void setTitle(String value) {
     title = value;
     titleSet = true;
   }
 
+  @Schema(description = "작업 설명. null이면 설명을 제거합니다.")
   @JsonSetter("description")
   public void setDescription(String value) {
     description = value;
     descriptionSet = true;
   }
 
+  @Schema(description = "작업 상태. 생략하면 기존 값을 유지하며, null은 허용하지 않습니다.")
   @JsonSetter("status")
-  public void setStatus(String value) {
+  public void setStatus(TaskStatus value) {
     status = value;
     statusSet = true;
   }
 
+  @Schema(description = "작업 우선순위. 생략하면 기존 값을 유지하며, null은 허용하지 않습니다.")
   @JsonSetter("priority")
-  public void setPriority(String value) {
+  public void setPriority(TaskPriority value) {
     priority = value;
     prioritySet = true;
   }
 
+  @ArraySchema(
+      arraySchema =
+          @Schema(
+              description =
+                  "role 목록입니다. 생략하면 기존 값을 유지합니다. 지정할 경우 `pm`, `design`, `backend`, `frontend` 중 최소 1개 이상을 중복 없이 전달해야 하며, `null`은 허용하지 않습니다."),
+      minItems = 1,
+      uniqueItems = true)
+  @JsonSetter("roles")
+  public void setRoles(List<TaskRole> value) {
+    roles = value;
+    rolesSet = true;
+  }
+
+  @Schema(description = "마일스톤 식별자. null이면 연결을 해제합니다.", format = "uuid")
   @JsonSetter("milestone_id")
   public void setMilestoneId(UUID value) {
     milestoneId = value;
     milestoneIdSet = true;
   }
 
+  @Schema(description = "담당자 식별자. null이면 담당자를 해제합니다.", format = "uuid")
   @JsonSetter("assignee_id")
   public void setAssigneeId(UUID value) {
     assigneeId = value;
     assigneeIdSet = true;
   }
 
+  @Schema(description = "마감일. null이면 마감일을 제거합니다.", format = "date")
   @JsonSetter("due_date")
   public void setDueDate(LocalDate value) {
     dueDate = value;
@@ -115,7 +152,7 @@ public final class UpdateWebTaskRequest {
     return descriptionSet;
   }
 
-  public String status() {
+  public TaskStatus status() {
     return status;
   }
 
@@ -124,13 +161,22 @@ public final class UpdateWebTaskRequest {
     return statusSet;
   }
 
-  public String priority() {
+  public TaskPriority priority() {
     return priority;
   }
 
   @Schema(hidden = true)
   public boolean prioritySet() {
     return prioritySet;
+  }
+
+  public List<TaskRole> roles() {
+    return roles;
+  }
+
+  @Schema(hidden = true)
+  public boolean rolesSet() {
+    return rolesSet;
   }
 
   public UUID milestoneId() {

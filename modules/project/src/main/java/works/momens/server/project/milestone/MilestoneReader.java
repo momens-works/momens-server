@@ -1,21 +1,25 @@
 package works.momens.server.project.milestone;
 
+import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * project 모듈의 마일스톤 조회 public API.
+ * 소프트 삭제된 마일스톤은 조회에서 제외합니다.
  *
- * <p>마일스톤은 {@code project_id}만 갖고 워크스페이스를 직접 알지 못하므로, 조회가 project를 거쳐 올라갑니다. 그래서 별도 모듈이 아니라 project
- * 모듈이 소유합니다(웹 snapshot 계약 5절).
- *
- * <p>소프트 삭제된 마일스톤은 없는 것으로 취급하며, 소속 project가 소프트 삭제된 마일스톤도 마찬가지입니다.
- *
- * <p>프로젝트별 목록과 단건 조회는 두지 않습니다. snapshot 합성(MOM-0862)이 워크스페이스 단위 목록만 쓰고, 레거시 단건 endpoint(H056)는 웹
- * 클라이언트에 호출 코드가 아예 없으며, 프로젝트별 목록(H051)의 유일한 호출자는 snapshot이 없을 때만 타는 FE 폴백입니다. 필요해지면 그때 추가합니다.
+ * <p>{@code milestones}에는 workspace id가 없으므로 워크스페이스 범위와 소속 프로젝트의 삭제 여부는 호출자가 정합니다. 호출자는 같은 워크스페이스의
+ * 삭제되지 않은 project id만 넘겨야 하며, 빈 목록이면 조회 없이 빈 결과를 반환합니다.
  */
 public interface MilestoneReader {
 
-  /** workspaceId에 속한 project들의 마일스톤을 모두 조회합니다. 정렬은 레거시와 같은 생성 시각 내림차순입니다. */
-  List<MilestoneDetail> listDetailsByWorkspaceId(UUID workspaceId);
+  /** projectIds에 속한 마일스톤을 모두 조회합니다. 정렬은 레거시와 같은 생성 시각 내림차순입니다. */
+  List<MilestoneDetail> listDetailsByProjectIds(Collection<UUID> projectIds);
+
+  /** 생성 시각·id 내림차순으로 cursor 이후 최대 limit개를 DB에서 조회합니다. */
+  List<MilestoneDetail> listPage(
+      Collection<UUID> projectIds, Instant before, UUID beforeId, int limit);
+
+  /** 요청한 id 중 projectIds에 속한 마일스톤만 조회합니다. */
+  List<MilestoneDetail> listByIds(Collection<UUID> projectIds, Collection<UUID> ids);
 }

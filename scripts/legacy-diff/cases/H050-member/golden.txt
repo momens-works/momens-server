@@ -1,14 +1,15 @@
 legacy_status: 201
 server_status: 201
 --- body ---
-@@ -9,6 +9,6 @@
+@@ -9,6 +9,7 @@
    "progress": 0,
    "project_id": "Uuid_3",
    "status": "planned",
 -  "target_date": "Time_2",
 -  "updated_at": "Time_3"
 +  "target_date": "2026-09-30",
-+  "updated_at": "Time_1"
++  "updated_at": "Time_1",
++  "version": 0
  }
 --- db ---
 동일

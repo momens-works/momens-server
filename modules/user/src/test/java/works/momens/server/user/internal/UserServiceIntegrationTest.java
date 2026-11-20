@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.tuple;
 
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -19,11 +20,6 @@ import works.momens.server.user.UserErrorCode;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
-/**
- * user public API의 실제 DB(Testcontainers) 동작 검증.
- *
- * <p>{@code findOrCreate}의 조회와 생성, 프로필 갱신, 사용자를 찾지 못했을 때의 에러를 Flyway 스키마에서 검증합니다.
- */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({JpaAuditingConfig.class, UserServiceImpl.class})
@@ -44,7 +40,8 @@ class UserServiceIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
-  void findOrCreateReusesExistingUserAndRefreshesProfile() {
+  @DisplayName("기존 사용자를 조회하면 이름을 유지하고 프로필 이미지를 갱신한다")
+  void findOrCreateReusesExistingUserAndPreservesName() {
     UserProfile first = userService.findOrCreate("same@momens.works", "이전", null);
 
     // 로그인 요청마다 별도의 트랜잭션을 사용합니다.
@@ -57,7 +54,7 @@ class UserServiceIntegrationTest extends AbstractPostgresIntegrationTest {
     UserProfile second = userService.findOrCreate("same@momens.works", "변경", "https://a/y.png");
 
     assertThat(second.id()).isEqualTo(first.id());
-    assertThat(second.name()).isEqualTo("변경");
+    assertThat(second.name()).isEqualTo("이전");
     assertThat(second.avatarUrl()).isEqualTo("https://a/y.png");
 
     userRepository.deleteById(second.id());

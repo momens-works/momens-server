@@ -3,7 +3,7 @@ package works.momens.server.minsu.draft.generation;
 import works.momens.server.minsu.TaskDraft;
 
 /**
- * 비동기 경로의 내부 실행 결과(설계 9.2절).
+ * 비동기 경로의 내부 실행 결과.
  *
  * <p>공개 {@code SignalTaskDraftGenerator}는 실패를 전파하지 않고 항상 유효한 {@link TaskDraft}를 돌려준다. 반환값만 보면 그
  * draft가 모델 결과인지, 재시도하면 될 일시 실패인지, 재시도해도 같은 확정 fallback인지 구분할 수 없어 <b>그 계약만으로는 재시도를 구현할 수 없다.</b>

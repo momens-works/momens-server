@@ -16,10 +16,10 @@ import works.momens.server.project.core.ProjectReader;
 import works.momens.server.signal.SignalReader;
 
 /**
- * 클레임된 delivery를 FCM으로 발송하는 발송기(docs/design/signal-push-demo-design.md 10.3절).
+ * 클레임된 delivery를 FCM으로 발송하는 발송기.
  *
  * <p>클레임(DB 트랜잭션)과 FCM 호출(트랜잭션 밖)을 분리하고, event 단위로 저장된 Signal·Project를 hydrate해 push 문구와 data
- * payload를 만든다(6절). 문구·data 계약은 7절을 따르며, 서버는 프로젝트명과 Signal 제목을 임의로 자르지 않는다.
+ * payload를 만든다. 서버는 프로젝트명과 Signal 제목을 임의로 자르지 않는다.
  */
 @Slf4j
 @Component
@@ -36,7 +36,6 @@ class PushSender {
   private final ProjectReader projectReader;
   private final FcmClient fcmClient;
 
-  /** 재시도 시각이 지난 pending delivery가 소진될 때까지 클레임·발송한다. 최초 전송과 재시도가 같은 경로를 지난다. */
   public void runSendPass() {
     for (int round = 0; round < MAX_ROUNDS_PER_PASS; round++) {
       List<ClaimedPushDelivery> claims = pushDeliveryLedger.claimDue(CLAIM_BATCH_SIZE);
@@ -80,20 +79,18 @@ class PushSender {
     return outboxEventReader
         .findById(outboxEventId)
         .flatMap(event -> signalReader.findLive(UUID.fromString(event.aggregateId())))
-        .flatMap(
-            signal ->
-                projectReader
-                    .findSnapshot(signal.projectId())
-                    .map(
-                        project ->
-                            new PushMessage(
-                                project.name() + "에 새 시그널이 발견되었습니다.",
-                                signal.title(),
-                                Map.of(
-                                    "notification_type", "signal_created",
-                                    "destination", "signal_detail",
-                                    "signal_id", signal.id().toString(),
-                                    "project_id", signal.projectId().toString(),
-                                    "workspace_id", signal.workspaceId().toString()))));
+        .flatMap(signal ->
+            projectReader
+                .findSnapshot(signal.projectId())
+                .map(project ->
+                    new PushMessage(
+                        project.name() + "에 새 시그널이 발견되었습니다.",
+                        signal.title(),
+                        Map.of(
+                            "notification_type", "signal_created",
+                            "destination", "signal_detail",
+                            "signal_id", signal.id().toString(),
+                            "project_id", signal.projectId().toString(),
+                            "workspace_id", signal.workspaceId().toString()))));
   }
 }

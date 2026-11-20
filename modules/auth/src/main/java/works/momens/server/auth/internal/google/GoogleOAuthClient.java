@@ -27,7 +27,6 @@ public class GoogleOAuthClient {
     this.config = properties.web().googleOauth();
   }
 
-  /** consent로 보낼 Google authorization URL을 만듭니다. state와 PKCE code_challenge(S256)를 싣습니다. */
   public String authorizationUrl(String state, String codeChallenge) {
     return UriComponentsBuilder.fromUriString(config.authorizationUri())
         .queryParam("client_id", config.clientId())
@@ -42,7 +41,6 @@ public class GoogleOAuthClient {
         .toUriString();
   }
 
-  /** authorization code를 Google access token으로 교환합니다(PKCE code_verifier 포함). */
   public String exchangeCode(String code, String codeVerifier) {
     MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
     form.add("grant_type", "authorization_code");

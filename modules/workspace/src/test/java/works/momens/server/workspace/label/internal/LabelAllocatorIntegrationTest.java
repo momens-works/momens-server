@@ -25,12 +25,6 @@ import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.workspace.WorkspaceSeedSql;
 import works.momens.server.workspace.label.LabelAllocator;
 
-/**
- * 라벨 발급 동작 검증.
- *
- * <p>PostgreSQL(Testcontainers)에 Flyway 마이그레이션을 적용한 환경에서 세 가지를 검증합니다. 워크스페이스마다 라벨 번호가 1부터 독립적으로
- * 증가하는지, 동일한 워크스페이스 안에서도 접두사별로 번호가 독립적으로 증가하는지, 동일한 워크스페이스에서 라벨을 동시에 발급해도 번호가 중복되지 않는지 확인합니다.
- */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({JpaAuditingConfig.class, LabelAllocatorImpl.class})
@@ -86,16 +80,13 @@ class LabelAllocatorIntegrationTest extends AbstractPostgresIntegrationTest {
       CountDownLatch start = new CountDownLatch(1);
       List<Future<String>> futures =
           IntStream.range(0, threads)
-              .mapToObj(
-                  i ->
-                      pool.submit(
-                          () -> {
-                            start.await();
-                            // 발급은 MANDATORY라 호출자 트랜잭션이 있어야 한다. 각 스레드가 자기
-                            // 트랜잭션을 열어 커밋하므로 실제로 같은 행을 동시에 두드리는 상황이 된다.
-                            return tx.execute(
-                                status -> labelAllocator.allocateMomLabel(workspaceId));
-                          }))
+              .mapToObj(i ->
+                  pool.submit(() -> {
+                    start.await();
+                    // 발급은 MANDATORY라 호출자 트랜잭션이 있어야 한다. 각 스레드가 자기
+                    // 트랜잭션을 열어 커밋하므로 실제로 같은 행을 동시에 두드리는 상황이 된다.
+                    return tx.execute(status -> labelAllocator.allocateMomLabel(workspaceId));
+                  }))
               .toList();
       start.countDown();
 
@@ -113,13 +104,12 @@ class LabelAllocatorIntegrationTest extends AbstractPostgresIntegrationTest {
       assertThat(labels.stream().sorted().toList()).isEqualTo(expected);
     } finally {
       pool.shutdownNow();
-      tx.executeWithoutResult(
-          status ->
-              entityManager
-                  .getEntityManager()
-                  .createNativeQuery("DELETE FROM workspaces WHERE id = ?1")
-                  .setParameter(1, workspaceId)
-                  .executeUpdate());
+      tx.executeWithoutResult(status ->
+          entityManager
+              .getEntityManager()
+              .createNativeQuery("DELETE FROM workspaces WHERE id = ?1")
+              .setParameter(1, workspaceId)
+              .executeUpdate());
     }
   }
 }

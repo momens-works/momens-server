@@ -2,7 +2,6 @@ package works.momens.server.context;
 
 import java.util.UUID;
 
-/** entity_relations를 변경하는 context capability의 public API입니다. */
 public interface EntityRelationWriter {
 
   /**

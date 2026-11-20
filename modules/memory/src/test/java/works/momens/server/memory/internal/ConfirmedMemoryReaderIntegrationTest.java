@@ -19,14 +19,7 @@ import works.momens.server.memory.ConfirmedMemoryDetail;
 import works.momens.server.memory.ConfirmedMemoryReader;
 import works.momens.server.memory.MemorySeedSql;
 
-/**
- * 확정 메모리 조회 public API 검증.
- *
- * <p>레거시가 저장한 값을 그대로 읽는지, 목록의 정렬과 소프트 삭제 필터가 계약대로인지, 상태로는 거르지 않는 동작이 보존되는지 확인합니다(웹 snapshot 계약
- * 2.2·4.4).
- *
- * <p>메모리는 이 서버에 쓰기 경로가 전혀 없어(쓰기는 MOM-0869) 모든 시드를 레거시처럼 네이티브 SQL로 넣습니다.
- */
+/** 레거시 형태의 데이터를 네이티브 SQL로 구성해 상태와 독립적인 소프트 삭제 필터를 검증합니다. */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({JpaAuditingConfig.class, ConfirmedMemoryReaderImpl.class})
@@ -113,7 +106,6 @@ class ConfirmedMemoryReaderIntegrationTest extends AbstractPostgresIntegrationTe
     // id 배열은 컬럼이 비어 있어도 빈 목록이다. 레거시가 SQL NULL과 빈 배열을 모두 키 생략으로 내보내 둘을 구분하지 않는다.
     assertThat(detail.sourceRefIds()).isEmpty();
     assertThat(detail.relatedEntityIds()).isEmpty();
-    // 레거시 DEFAULT를 그대로 따른다.
     assertThat(detail.status()).isEqualTo("ACTIVE");
   }
 
@@ -203,7 +195,6 @@ class ConfirmedMemoryReaderIntegrationTest extends AbstractPostgresIntegrationTe
     assertThat(confirmedMemoryReader.findWorkspaceId(UUID.randomUUID())).isEmpty();
   }
 
-  /** 워크스페이스 하나와 그 안의 메모리를 다루는 테스트 픽스처입니다. */
   private final class Fixture {
 
     private final UUID workspaceId;

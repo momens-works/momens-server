@@ -22,10 +22,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.minsu.PreparedTaskDraft;
-import works.momens.server.minsu.Priority;
-import works.momens.server.minsu.Role;
 import works.momens.server.minsu.SignalTaskDraftGenerator;
 import works.momens.server.minsu.TaskDraft;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.signal.SignalActionResult;
 import works.momens.server.signal.SignalActionService;
 import works.momens.server.user.UserProfile;
@@ -67,12 +67,11 @@ class SignalConvertConcurrencyIntegrationTest extends AbstractPostgresIntegratio
 
     CyclicBarrier barrier = new CyclicBarrier(CONCURRENT_REQUESTS);
     when(taskDraftGenerator.prepare(any()))
-        .thenAnswer(
-            invocation -> {
-              barrier.await(10, TimeUnit.SECONDS);
-              TaskDraft draft = new TaskDraft("이탈 가능성 점검", Role.PM, Priority.MEDIUM);
-              return (PreparedTaskDraft) () -> draft;
-            });
+        .thenAnswer(invocation -> {
+          barrier.await(10, TimeUnit.SECONDS);
+          TaskDraft draft = new TaskDraft("이탈 가능성 점검", TaskRole.PM, TaskPriority.MEDIUM);
+          return (PreparedTaskDraft) () -> draft;
+        });
     Callable<SignalActionResult> convert =
         () -> signalActionService.convertToTask(signal, jinsu.id());
     ExecutorService pool = Executors.newFixedThreadPool(CONCURRENT_REQUESTS);

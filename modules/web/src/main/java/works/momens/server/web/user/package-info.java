@@ -7,5 +7,7 @@
  * <p>{@code /api/me/push-devices/*}는 앱이 호출하는 표면이라 같은 경로 접두사여도 mobile 모듈이 소유합니다. 소유 단위는 경로 접두사가 아니라
  * 호출 표면입니다.
  */
-@org.springframework.modulith.ApplicationModule
+@ApplicationModule
 package works.momens.server.web.user;
+
+import org.springframework.modulith.ApplicationModule;

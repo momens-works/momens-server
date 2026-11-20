@@ -13,7 +13,6 @@ import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import io.swagger.v3.oas.annotations.Operation;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -22,8 +21,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.json.JsonMapper;
 
 /**
  * 모든 엔드포인트에 {@code operationId}가 명시되어 있고 ADR-0021의 명명 규칙을 준수하는지 검증합니다.
@@ -40,8 +37,8 @@ import tools.jackson.databind.json.JsonMapper;
  *       해당 접두사를 사용할 수 없습니다. 이는 ADR-0021의 규칙 3에 해당합니다.
  * </ul>
  *
- * <p>이 테스트는 Spring 컨텍스트를 기동하지 않습니다. ArchUnit으로 클래스를 한 번만 읽어 세 검사에서 공유하며, 스냅샷은 {@link
- * OpenApiSnapshotFile}이 가리키는 파일에서 읽습니다. {@code DO_NOT_INCLUDE_JARS}를 적용하면 다른 Gradle 모듈에 있는 {@code
+ * <p>이 테스트는 Spring 컨텍스트를 기동하지 않습니다. ArchUnit으로 클래스를 한 번만 읽어 세 가지 검사에서 공유하고, 스냅샷은 {@link
+ * OpenApiSnapshot}을 통해 읽습니다. {@code DO_NOT_INCLUDE_JARS}를 적용하면 다른 Gradle 모듈의 {@code
  * *ControllerDocs}가 검사 대상에서 제외되므로 해당 옵션은 사용하지 않습니다.
  */
 class OpenApiOperationIdTest {
@@ -49,9 +46,6 @@ class OpenApiOperationIdTest {
   private static final String BASE_PACKAGE = "works.momens.server";
 
   private static final Pattern OPERATION_ID_PATTERN = Pattern.compile("^[a-z][A-Za-z0-9]*$");
-
-  private static final Set<String> HTTP_METHODS =
-      Set.of("get", "put", "post", "delete", "options", "head", "patch", "trace");
 
   private static final Map<String, String> CLIENT_PREFIX_BY_PATH =
       Map.of(
@@ -66,8 +60,6 @@ class OpenApiOperationIdTest {
           .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
           .importPackages(BASE_PACKAGE);
 
-  private record SnapshotOperation(String path, String method, String operationId) {}
-
   @Test
   void everyOperationDeclaresOperationId() {
     methods()
@@ -81,8 +73,8 @@ class OpenApiOperationIdTest {
   void snapshotOperationIdsAreDeclared() throws IOException {
     Set<String> declared = declaredOperationIds();
 
-    List<SnapshotOperation> undeclared =
-        snapshotOperations().stream()
+    List<OpenApiOperation> undeclared =
+        OpenApiSnapshot.operations().stream()
             .filter(operation -> !declared.contains(operation.operationId()))
             .toList();
 
@@ -94,7 +86,7 @@ class OpenApiOperationIdTest {
   @Test
   void operationIdPrefixFollowsClientPath() throws IOException {
     List<String> violations = new ArrayList<>();
-    for (SnapshotOperation operation : snapshotOperations()) {
+    for (OpenApiOperation operation : OpenApiSnapshot.operations()) {
       Optional<String> expectedPrefix = clientPrefixOf(operation.path());
       String operationId = operation.operationId();
       boolean hasClientPrefix = CLIENT_PREFIX_PATTERN.matcher(operationId).find();
@@ -136,27 +128,6 @@ class OpenApiOperationIdTest {
         .map(Operation::operationId)
         .filter(operationId -> !operationId.isBlank())
         .collect(Collectors.toSet());
-  }
-
-  private static List<SnapshotOperation> snapshotOperations() throws IOException {
-    JsonNode paths =
-        JsonMapper.builder()
-            .build()
-            .readTree(Files.readString(OpenApiSnapshotFile.path()))
-            .path("paths");
-    List<SnapshotOperation> operations = new ArrayList<>();
-    for (Map.Entry<String, JsonNode> pathItem : paths.properties()) {
-      for (Map.Entry<String, JsonNode> entry : pathItem.getValue().properties()) {
-        if (HTTP_METHODS.contains(entry.getKey())) {
-          operations.add(
-              new SnapshotOperation(
-                  pathItem.getKey(),
-                  entry.getKey(),
-                  entry.getValue().path("operationId").asString()));
-        }
-      }
-    }
-    return operations;
   }
 
   private static Optional<String> clientPrefixOf(String path) {

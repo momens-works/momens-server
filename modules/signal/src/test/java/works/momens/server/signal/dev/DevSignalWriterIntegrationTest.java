@@ -27,6 +27,7 @@ import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.outbox.OutboxAppender;
 import works.momens.server.project.core.ProjectReader;
+import works.momens.server.signal.SignalType;
 import works.momens.server.signal.dev.dto.request.CreateDevSignalRequest;
 import works.momens.server.source.DevSourceRefWriter;
 
@@ -62,7 +63,7 @@ class DevSignalWriterIntegrationTest extends AbstractPostgresIntegrationTest {
         writer.create(
             PROJECT_ID,
             new CreateDevSignalRequest(
-                "risk",
+                SignalType.RISK,
                 "결제 정책 결정 3일째 보류",
                 "결제 정책 결정이 3일 동안 보류된 상태입니다.",
                 "Q2 Activation 일정 지연 가능성",
@@ -134,7 +135,8 @@ class DevSignalWriterIntegrationTest extends AbstractPostgresIntegrationTest {
 
     UUID signalId =
         writer.create(
-            PROJECT_ID, new CreateDevSignalRequest("decision", "제목", "설명", null, null, null, null));
+            PROJECT_ID,
+            new CreateDevSignalRequest(SignalType.DECISION, "제목", "설명", null, null, null, null));
 
     assertThat(
             jdbcClient
@@ -160,16 +162,14 @@ class DevSignalWriterIntegrationTest extends AbstractPostgresIntegrationTest {
   void rejectsUnknownProject() {
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(
-            () ->
-                writer.create(
-                    PROJECT_ID,
-                    new CreateDevSignalRequest("risk", "제목", "설명", null, null, null, null)))
+    assertThatThrownBy(() ->
+            writer.create(
+                PROJECT_ID,
+                new CreateDevSignalRequest(SignalType.RISK, "제목", "설명", null, null, null, null)))
         .isInstanceOf(BusinessException.class)
-        .satisfies(
-            e ->
-                assertThat(((BusinessException) e).getErrorCode().code())
-                    .isEqualTo("PROJECT_NOT_FOUND"));
+        .satisfies(e ->
+            assertThat(((BusinessException) e).getErrorCode().code())
+                .isEqualTo("PROJECT_NOT_FOUND"));
     verifyNoInteractions(outboxAppender);
   }
 }

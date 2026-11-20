@@ -32,7 +32,6 @@ public class WebAuthService {
   private final JwtTokenService jwtTokenService;
   private final SecureRandom secureRandom = new SecureRandom();
 
-  /** state·PKCE를 생성하고 consent로 보낼 authorization URL을 만듭니다. */
   public LoginRedirect startLogin() {
     String state = randomToken();
     String codeVerifier = randomToken();
@@ -76,12 +75,10 @@ public class WebAuthService {
     return value == null || value.isBlank();
   }
 
-  /** 모바일과 같은 코어로 refresh token을 회전합니다(전송수단만 쿠키). */
   public TokenPair refresh(String refreshToken) {
     return jwtTokenService.refresh(refreshToken);
   }
 
-  /** refresh token을 폐기합니다. */
   public void logout(String refreshToken) {
     jwtTokenService.revoke(refreshToken);
   }

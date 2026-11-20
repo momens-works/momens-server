@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.project.core.ProjectReader;
 import works.momens.server.project.core.ProjectSnapshot;
@@ -20,6 +21,12 @@ class ProjectReaderImpl implements ProjectReader {
   @Transactional(readOnly = true)
   public Optional<UUID> workspaceIdOf(UUID projectId) {
     return projectRepository.findByIdAndDeletedAtIsNull(projectId).map(Project::getWorkspaceId);
+  }
+
+  @Override
+  @Transactional(propagation = Propagation.MANDATORY)
+  public Optional<UUID> lockWorkspaceIdOf(UUID projectId) {
+    return projectRepository.findActiveWithLock(projectId).map(Project::getWorkspaceId);
   }
 
   @Override

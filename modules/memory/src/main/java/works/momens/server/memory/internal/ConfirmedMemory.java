@@ -16,17 +16,9 @@ import org.hibernate.type.SqlTypes;
 import works.momens.server.common.persistence.BaseEntity;
 
 /**
- * 리뷰를 거쳐 확정된 메모리.
+ * 조회는 DTO projection, 후보 검토·해결은 네이티브 SQL, 새 행 생성은 엔티티를 사용합니다.
  *
- * <p>레거시 {@code momens-api}의 {@code confirmed_memories} 테이블과 호환됩니다. snapshot 응답 키는 {@code memories}
- * 지만 테이블 이름은 레거시를 따릅니다. prod는 공유 DB라 이름을 고를 여지가 없습니다.
- *
- * <p>조회는 {@link works.momens.server.memory.ConfirmedMemoryReader}의 DTO projection이 담당하고, 후보 검토와
- * 해결(MOM-0869)은 네이티브 SQL로 처리합니다. 레거시가 소유한 테이블이므로 해당 경로에서는 신규 서버가 담당하는 컬럼만 명시적으로 변경해야 합니다. 반면 새 행을
- * 생성하는 경로(MOM-0897)는 해당 엔티티로 저장하므로 {@code @Immutable}을 선언하지 않습니다.
- *
- * <p>후보와 달리 {@code deleted_at}이 있습니다. 레거시 삭제(H094)가 상태를 {@code DELETED}로 바꾸면서 이 컬럼을 함께 채우고, 모든 조회가
- * 이 컬럼으로 거릅니다. 상태값 {@code DELETED}가 아니라 이 컬럼이 조회 기준입니다.
+ * <p>삭제 판정은 상태값이 아닌 {@code deleted_at}을 기준으로 합니다.
  */
 @Getter
 @Entity

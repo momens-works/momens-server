@@ -80,10 +80,9 @@ class OutboxAtomicityIntegrationTest extends AbstractPostgresIntegrationTest {
                 .header("Authorization", "Bearer " + accessTokens.issueAccessToken(user.id()))
                 .header("API-Version", "1"))
         .andExpect(status().is5xxServerError())
-        .andExpect(
-            result ->
-                assertThat(result.getResolvedException())
-                    .hasStackTraceContaining("signal.converted_to_task outbox insert 실패(테스트 유도)"));
+        .andExpect(result ->
+            assertThat(result.getResolvedException())
+                .hasStackTraceContaining("signal.converted_to_task outbox insert 실패(테스트 유도)"));
 
     Integer taskCount =
         jdbcTemplate.queryForObject(

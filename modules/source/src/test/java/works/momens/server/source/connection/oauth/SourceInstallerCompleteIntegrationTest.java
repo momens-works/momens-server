@@ -2,16 +2,22 @@ package works.momens.server.source.connection.oauth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,12 +28,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -57,7 +66,7 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
 
   private static final String SECRET = "state-secret-that-is-long-enough-for-hs256";
   private static final String TOKEN_KEY =
-      java.util.Base64.getEncoder()
+      Base64.getEncoder()
           .encodeToString("0123456789abcdef0123456789abcdef".getBytes(StandardCharsets.UTF_8));
   private static final Instant NOW = Instant.parse("2026-08-21T00:00:00Z");
 
@@ -114,6 +123,10 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
   }
 
   private SourceInstallerImpl installer() {
+    return installer(connectionRepository);
+  }
+
+  private SourceInstallerImpl installer(SourceConnectionRepository connections) {
     SourceOAuthProperties properties = properties();
     String base = "http://localhost:" + server.getAddress().getPort();
     ProviderDefinition definition =
@@ -143,10 +156,85 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
         signer(),
         new ProviderOAuthClient(RestClient.builder().build()),
         new TokenEncryptor(TOKEN_KEY),
+        connections,
+        credentialRepository,
+        properties,
+        new TransactionTemplate(transactionManager));
+  }
+
+  private SourceInstallerImpl figmaInstaller() {
+    String base = "http://localhost:" + server.getAddress().getPort();
+    return localInstaller(
+        new ProviderDefinition(
+            OAuthProviderRegistry.FIGMA,
+            base + "/authorize",
+            base + "/token",
+            List.of(),
+            Map.of(),
+            TokenBodyFormat.FORM,
+            ClientAuthStyle.BASIC_HEADER,
+            null,
+            IdentityMethod.NONE,
+            ProviderIdentities::figma));
+  }
+
+  private SourceInstallerImpl notionInstaller() {
+    String base = "http://localhost:" + server.getAddress().getPort();
+    return localInstaller(
+        new ProviderDefinition(
+            OAuthProviderRegistry.NOTION,
+            base + "/authorize",
+            base + "/token",
+            List.of(),
+            Map.of(),
+            TokenBodyFormat.JSON,
+            ClientAuthStyle.BASIC_HEADER,
+            null,
+            IdentityMethod.NONE,
+            ProviderIdentities::notion));
+  }
+
+  private SourceInstallerImpl localInstaller(ProviderDefinition definition) {
+    SourceOAuthProperties properties = properties();
+    OAuthProviderRegistry registry =
+        new OAuthProviderRegistry(properties) {
+          @Override
+          Optional<OAuthProvider> find(String sourceType) {
+            return definition.sourceType().equals(OAuthStateSigner.normalize(sourceType))
+                ? Optional.of(
+                    new OAuthProvider(definition, "cid", "secret", properties.redirectUri()))
+                : Optional.empty();
+          }
+        };
+    return new SourceInstallerImpl(
+        registry,
+        signer(),
+        new ProviderOAuthClient(RestClient.builder().build()),
+        new TokenEncryptor(TOKEN_KEY),
         connectionRepository,
         credentialRepository,
         properties,
         new TransactionTemplate(transactionManager));
+  }
+
+  private UUID insertFigmaConnection(
+      UUID workspace, String status, String figmaUserId, String accessToken) {
+    UUID id = UUID.randomUUID();
+    jdbcTemplate.update(
+        "INSERT INTO source_connections (id, workspace_id, source_type, status,"
+            + " external_workspace_id, created_at, updated_at)"
+            + " VALUES (?, ?, 'FIGMA', ?, ?, NOW(), NOW())",
+        id,
+        workspace,
+        status,
+        figmaUserId);
+    if (accessToken != null) {
+      jdbcTemplate.update(
+          "INSERT INTO source_credentials (connection_id, access_token_enc) VALUES (?, ?)",
+          id,
+          new TokenEncryptor(TOKEN_KEY).encrypt(accessToken));
+    }
+    return id;
   }
 
   private OAuthStateSigner signer() {
@@ -225,6 +313,160 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
   }
 
   @Test
+  @DisplayName("재연결 조회 이후 다른 트랜잭션이 기록한 재동기화 요청과 worker 값을 보존한다")
+  void reconnectPreservesConcurrentResyncAndWorkerUpdates() {
+    UUID firstUser = insertUser();
+    UUID id =
+        installer()
+            .completeInstall(new CompleteInstallCommand("first", state(firstUser)))
+            .connection()
+            .id();
+    UUID secondUser = insertUser();
+    Instant requestedAt = Instant.parse("2026-09-01T00:00:00Z");
+    Instant syncedAt = requestedAt.minusSeconds(10);
+    Instant workerUpdatedAt = Instant.now().plusSeconds(3600).truncatedTo(ChronoUnit.MICROS);
+    SourceConnectionRepository interleaved =
+        mock(SourceConnectionRepository.class, delegatesTo(connectionRepository));
+    doAnswer(
+            invocation -> {
+              var stale =
+                  connectionRepository
+                      .findByWorkspaceIdAndSourceTypeAndExternalWorkspaceIdOrderByCreatedAtAsc(
+                          workspaceId, "GITHUB", "jsshin");
+              TransactionTemplate concurrent = new TransactionTemplate(transactionManager);
+              concurrent.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+              concurrent.executeWithoutResult(status ->
+                  jdbcTemplate.update(
+                      "UPDATE source_connections SET resync_requested_at = ?, last_synced_at = ?,"
+                          + " captures_read_count = 42, candidates_extracted_count = 7, updated_at = ? WHERE id = ?",
+                      Timestamp.from(requestedAt),
+                      Timestamp.from(syncedAt),
+                      Timestamp.from(workerUpdatedAt),
+                      id));
+              return stale;
+            })
+        .when(interleaved)
+        .findByWorkspaceIdAndSourceTypeAndExternalWorkspaceIdOrderByCreatedAtAsc(
+            workspaceId, "GITHUB", "jsshin");
+
+    CompletedInstall completed =
+        installer(interleaved)
+            .completeInstall(new CompleteInstallCommand("second", state(secondUser)));
+
+    var saved = connectionRepository.findById(id).orElseThrow();
+    assertThat(saved.getResyncRequestedAt()).isEqualTo(requestedAt);
+    assertThat(saved.getLastSyncedAt()).isEqualTo(syncedAt);
+    assertThat(saved.getUpdatedAt()).isEqualTo(workerUpdatedAt);
+    assertThat(saved.getCapturesReadCount()).isEqualTo(42);
+    assertThat(saved.getCandidatesExtractedCount()).isEqualTo(7);
+    assertThat(saved.getConnectedByUserId()).isEqualTo(secondUser);
+    assertThat(completed.connection().resyncRequestedAt()).isEqualTo(requestedAt);
+    assertThat(completed.connection().updatedAt()).isEqualTo(workerUpdatedAt);
+    assertThat(completed.connection().capturesReadCount()).isEqualTo(42);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"[\"page-a\"]", "[]"})
+  @DisplayName("Notion 재승인은 빈 목록을 포함한 연결의 페이지 목록을 보존하고 워크스페이스 아이콘을 갱신한다")
+  void preservesNotionPageSelectionOnReconnect(String pageIds) {
+    tokenBody.set(
+        "{\"access_token\":\"tok-1\",\"workspace_id\":\"notion-ws\",\"workspace_icon\":\"old\"}");
+    String signedState =
+        signer().sign(new OAuthState(workspaceId, insertUser(), OAuthProviderRegistry.NOTION));
+    UUID id =
+        notionInstaller()
+            .completeInstall(new CompleteInstallCommand("first", signedState))
+            .connection()
+            .id();
+    jdbcTemplate.update(
+        "UPDATE source_connections SET metadata = metadata || jsonb_build_object('page_ids', ?::jsonb)"
+            + " WHERE id = ?",
+        pageIds,
+        id);
+
+    tokenBody.set(
+        "{\"access_token\":\"tok-2\",\"workspace_id\":\"notion-ws\",\"workspace_icon\":\"new\"}");
+    UUID reconnectedId =
+        notionInstaller()
+            .completeInstall(new CompleteInstallCommand("second", signedState))
+            .connection()
+            .id();
+
+    assertThat(reconnectedId).isEqualTo(id);
+    assertThat(connectionRepository.findById(id).orElseThrow().getMetadata())
+        .containsEntry("page_ids", pageIds.equals("[]") ? List.of() : List.of("page-a"))
+        .containsEntry("workspace_icon", "new");
+  }
+
+  @Test
+  @DisplayName("Figma 재연결은 같은 Figma 사용자의 모든 연결에 새 token을 저장한다")
+  void storesFigmaTokenOnEveryConnectionOfTheSameUser() {
+    UUID otherWorkspace = insertWorkspace();
+    try {
+      UUID elsewhere = insertFigmaConnection(otherWorkspace, "DISABLED", "figma-user", "old");
+      UUID duplicate = insertFigmaConnection(workspaceId, "ACTIVE", "figma-user", null);
+      UUID otherUser = insertFigmaConnection(workspaceId, "ACTIVE", "other-user", "other");
+      tokenBody.set(
+          "{\"access_token\":\"tok-1\",\"refresh_token\":\"ref-1\",\"expires_in\":7776000,"
+              + "\"user_id_string\":\"figma-user\"}");
+
+      CompletedInstall completed =
+          figmaInstaller()
+              .completeInstall(
+                  new CompleteInstallCommand(
+                      "code-1",
+                      signer()
+                          .sign(
+                              new OAuthState(
+                                  workspaceId, insertUser(), OAuthProviderRegistry.FIGMA))));
+
+      TokenEncryptor encryptor = new TokenEncryptor(TOKEN_KEY);
+      for (UUID id : List.of(completed.connection().id(), elsewhere, duplicate)) {
+        var credential = credentialRepository.findById(id).orElseThrow();
+        assertThat(encryptor.decrypt(credential.getAccessTokenEnc())).isEqualTo("tok-1");
+        assertThat(encryptor.decrypt(credential.getRefreshTokenEnc())).isEqualTo("ref-1");
+      }
+      assertThat(
+              encryptor.decrypt(
+                  credentialRepository.findById(otherUser).orElseThrow().getAccessTokenEnc()))
+          .isEqualTo("other");
+    } finally {
+      jdbcTemplate.update("DELETE FROM source_connections WHERE workspace_id = ?", otherWorkspace);
+      jdbcTemplate.update("DELETE FROM workspaces WHERE id = ?", otherWorkspace);
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "{\"access_token\":\"tok-1\",\"refresh_token\":\"ref-1\",\"user_id_string\":\"figma-user\"}",
+        "{\"access_token\":\"tok-1\",\"expires_in\":7776000,\"user_id_string\":\"figma-user\"}",
+        "{\"access_token\":\"tok-1\",\"refresh_token\":\" \",\"expires_in\":7776000,"
+            + "\"user_id_string\":\"figma-user\"}"
+      })
+  @DisplayName("Figma가 만료 시각이나 refresh token 없이 token을 반환하면 저장하지 않고 502로 응답한다")
+  void rejectsFigmaTokenThatCannotBeRefreshed(String body) {
+    UUID existing = insertFigmaConnection(workspaceId, "ACTIVE", "figma-user", "old");
+    tokenBody.set(body);
+
+    assertThatThrownBy(() ->
+            figmaInstaller()
+                .completeInstall(
+                    new CompleteInstallCommand(
+                        "code-1",
+                        signer()
+                            .sign(
+                                new OAuthState(
+                                    workspaceId, insertUser(), OAuthProviderRegistry.FIGMA)))))
+        .isInstanceOf(BusinessException.class)
+        .hasFieldOrPropertyWithValue("errorCode", SourceErrorCode.SOURCE_OAUTH_EXCHANGE_FAILED);
+    assertThat(
+            new TokenEncryptor(TOKEN_KEY)
+                .decrypt(credentialRepository.findById(existing).orElseThrow().getAccessTokenEnc()))
+        .isEqualTo("old");
+  }
+
+  @Test
   @DisplayName("승인 코드나 state가 없으면 거부한다")
   void rejectsRequestWithoutCodeOrState() {
     assertThatThrownBy(
@@ -247,11 +489,9 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
   void reportsBadGatewayWhenTheProviderRejectsTheExchange() {
     tokenStatus.set(500);
 
-    assertThatThrownBy(
-            () ->
-                installer()
-                    .completeInstall(
-                        new CompleteInstallCommand("code-1", state(UUID.randomUUID()))))
+    assertThatThrownBy(() ->
+            installer()
+                .completeInstall(new CompleteInstallCommand("code-1", state(UUID.randomUUID()))))
         .isInstanceOf(BusinessException.class)
         .hasFieldOrPropertyWithValue("errorCode", SourceErrorCode.SOURCE_OAUTH_EXCHANGE_FAILED);
   }
@@ -261,11 +501,9 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
   void reportsBadGatewayWhenTheProviderReturnsNoAccessToken() {
     tokenBody.set("{\"token_type\":\"bearer\"}");
 
-    assertThatThrownBy(
-            () ->
-                installer()
-                    .completeInstall(
-                        new CompleteInstallCommand("code-1", state(UUID.randomUUID()))))
+    assertThatThrownBy(() ->
+            installer()
+                .completeInstall(new CompleteInstallCommand("code-1", state(UUID.randomUUID()))))
         .isInstanceOf(BusinessException.class)
         .hasFieldOrPropertyWithValue("errorCode", SourceErrorCode.SOURCE_OAUTH_EXCHANGE_FAILED);
   }

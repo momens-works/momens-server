@@ -3,6 +3,7 @@ package works.momens.server.auth.internal.google;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -15,7 +16,6 @@ import works.momens.server.auth.AuthErrorCode;
 import works.momens.server.auth.internal.config.AuthProperties;
 import works.momens.server.common.api.BusinessException;
 
-/** 웹 Authorization Code 교환·userinfo 조회를 로컬 HttpServer 목으로 검증합니다. */
 class GoogleOAuthClientTest {
 
   private static final String TOKEN_BODY = "{\"access_token\":\"google-access-token\"}";
@@ -169,7 +169,7 @@ class GoogleOAuthClientTest {
       return new GoogleServer(server, base + "/token", base + "/userinfo");
     }
 
-    private static com.sun.net.httpserver.HttpHandler jsonHandler(int status, String body) {
+    private static HttpHandler jsonHandler(int status, String body) {
       return exchange -> {
         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().add("Content-Type", "application/json");

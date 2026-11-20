@@ -98,7 +98,7 @@ given_changes "$(jq -n '
   + [range(0;3) | {id:"x",text:"warn",level:2,operation:"POST",path:"/api/w"}]
   + [range(0;40) | {id:"endpoint-added",text:"endpoint added",level:1,operation:"POST",path:("/api/v1/workspaces/{workspaceId}/projects/{projectId}/tasks/" + (.|tostring))}]')"
 long_title="$(printf '아주 긴 PR 제목입니다 %0.s' {1..20})"
-long_url="https://github.com/Momens-Works/momens-server/pull/999"
+long_url="https://github.com/momens-works/momens-server/pull/999"
 body="$(PR_TITLE="$long_title" PR_URL="$long_url" run_notify)"
 [[ "${#body}" -le 2000 ]] || fail "긴 머리말: 본문이 2,000자를 넘었습니다(${#body})"
 expect_contains "$body" "$long_url>" "긴 머리말"

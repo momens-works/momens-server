@@ -16,15 +16,9 @@ import works.momens.server.mobile.signal.dto.response.DismissResponse;
 import works.momens.server.mobile.signal.dto.response.SignalDetailResponse;
 import works.momens.server.mobile.signal.dto.response.SignalListResponse;
 import works.momens.server.project.core.ProjectErrorCode;
+import works.momens.server.project.task.TaskErrorCode;
 import works.momens.server.signal.SignalErrorCode;
 
-/**
- * {@code /api/mobile/projects/{projectId}/signals} OpenAPI 문서. Swagger 애너테이션을 컨트롤러 구현과
- * 분리합니다(docs/spec/openapi.md).
- *
- * <p>401/403은 보안 필터가 Standard shape로 응답하고, 없는 project는 PROJECT_NOT_FOUND(404), project는 있는데
- * workspace 멤버가 아니면 AUTH_FORBIDDEN(403)입니다.
- */
 @Tag(name = "Signal", description = "모바일 Signal API")
 interface SignalControllerDocs {
 
@@ -32,17 +26,25 @@ interface SignalControllerDocs {
       operationId = "mobileListSignals",
       summary = "시그널 목록 조회",
       description =
-          "프로젝트의 아직 처리되지 않은 시그널을 생성 시각 내림차순(동률 시 id 내림차순)으로 조회합니다. 처리된 시그널을 다시 보는 흐름은 MVP 이후입니다.")
+          "프로젝트의 처리되지 않은 시그널을 생성 시각 내림차순으로 조회하며, 생성 시각이 같으면 id 내림차순으로 정렬합니다. "
+              + "cursor pagination을 사용하며, 첫 요청은 cursor 없이 보내고 목록 끝에 도달하면 직전 응답의 `next_cursor`를 cursor로 전달해 다음 페이지를 조회합니다. "
+              + "`next_cursor`가 `null`이면 더 조회할 데이터가 없습니다.")
   @ApiResponse(
       responseCode = "200",
-      description = "미처리 시그널 목록. 없으면 signals는 빈 배열입니다.",
+      description = "미처리 시그널 목록의 한 페이지입니다. 조회 결과가 없으면 `signals`는 빈 배열입니다.",
       content = @Content(schema = @Schema(implementation = SignalListResponse.class)))
   @ApiException(
       value = ProjectErrorCode.class,
       codes = {"PROJECT_NOT_FOUND"})
   @ApiException(CommonErrorCode.class)
   SignalListResponse listSignals(
-      @Parameter(description = "project 식별자") UUID projectId, Principal principal);
+      @Parameter(description = "project 식별자") UUID projectId,
+      @Parameter(description = "직전 응답의 `next_cursor`입니다. 없으면 첫 페이지를 조회합니다.") String cursor,
+      @Parameter(
+              description =
+                  "페이지 크기입니다. 없거나 0이면 기본값 5를 사용합니다. 최대 50까지 요청할 수 있으며, 50을 초과하면 50으로 제한합니다.")
+          Integer limit,
+      Principal principal);
 
   @Operation(
       operationId = "mobileGetSignal",
@@ -63,10 +65,13 @@ interface SignalControllerDocs {
 
   @Operation(
       operationId = "mobileConvertSignalToTask",
-      summary = "시그널을 태스크로 전환",
+      summary = "시그널을 작업으로 전환",
       description =
-          "시그널을 원탭으로 태스크에 등록합니다. 요청 body는 없습니다(ADR-0011). 서버가 민수 task draft(title은 시그널 제목, role은 pm,"
-              + " priority는 medium)로 태스크를 만듭니다. 같은 시그널에 같은 action을 재요청하면 새 태스크를 만들지 않고 기존 결과를 200으로"
+          "시그널을 원탭으로 작업에 등록합니다. 요청 body는 없습니다. 동기 경로에서는 민수가 생성한 draft(title, role, priority)로 작업을 만듭니다."
+              + " 생성 비활성·설정 무효·입력 부족·생성 실패·출력 무효 시에는 fallback(title은 정규화된 시그널 제목이며, 최대 70자, role은 pm, priority는 medium)을 사용합니다."
+              + " 비동기 경로에서는 fallback으로 먼저 생성하고 draft_status가 generating인 동안 후속 생성을 진행합니다. 생성 결과는 title, role, priority가 초기 값과 같을 때만 반영하며, 생성 실패나 선행 편집 등으로 반영되지 않을 수 있습니다."
+              + " draft_status가 ready가 되면 후속 생성이 종료된 상태이며 성공 여부를 뜻하지 않습니다. 최신 값은 작업 상세 조회로 확인합니다."
+              + " 같은 시그널에 같은 action을 재요청하면 새 작업을 만들지 않고 기존 결과를 200으로"
               + " 반환합니다.")
   @ApiResponse(
       responseCode = "201",
@@ -79,6 +84,9 @@ interface SignalControllerDocs {
   @ApiException(
       value = SignalErrorCode.class,
       codes = {"SIGNAL_NOT_FOUND", "SIGNAL_INVALID_STATE"})
+  @ApiException(
+      value = TaskErrorCode.class,
+      codes = {"TASK_WRITES_PAUSED"})
   @ApiException(CommonErrorCode.class)
   ResponseEntity<ConvertToTaskResponse> convertToTask(
       @Parameter(description = "signal 식별자") UUID signalId, Principal principal);
@@ -87,7 +95,7 @@ interface SignalControllerDocs {
       operationId = "mobileDismissSignal",
       summary = "시그널을 처리하지 않고 닫음(dismiss)",
       description =
-          "시그널을 태스크로 전환하지 않고 처리 완료로 기록합니다. 물리 삭제가 아니며, 같은 시그널에 dismiss를 재요청하면 기존 결과를 200으로"
+          "시그널을 작업으로 전환하지 않고 처리 완료로 기록합니다. 물리 삭제가 아니며, 같은 시그널에 dismiss를 재요청하면 기존 결과를 200으로"
               + " 반환합니다.")
   @ApiResponse(
       responseCode = "200",

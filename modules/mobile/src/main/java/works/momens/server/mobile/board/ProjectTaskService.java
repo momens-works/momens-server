@@ -1,9 +1,13 @@
 package works.momens.server.mobile.board;
 
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -12,15 +16,18 @@ import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.minsu.DraftStatus;
 import works.momens.server.minsu.TaskDraftStatusReader;
-import works.momens.server.mobile.MobilePriority;
+import works.momens.server.mobile.MobileTaskPriority;
 import works.momens.server.project.core.ProjectErrorCode;
 import works.momens.server.project.core.ProjectReader;
 import works.momens.server.project.task.BoardTask;
 import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.TaskDetail;
 import works.momens.server.project.task.TaskErrorCode;
+import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskReader;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskSnapshot;
+import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.project.task.UpdateTaskCommand;
 import works.momens.server.user.UserProfile;
@@ -31,8 +38,9 @@ import works.momens.server.workspace.membership.WorkspaceMembershipReader;
  * 모바일 태스크 표면(보드 조회, 생성, 상세 조회)의 조합 서비스입니다. project(태스크 도메인), workspace(멤버십), user(프로필), minsu(draft
  * 생성 상태) public API를 조합하고 도메인 정책을 소유하지 않습니다.
  *
- * <p>보드 그룹 구성과 상세의 purpose 개명은 모바일 조합 규칙이므로 이 서비스가 소유하고, 저장 priority 해석(urgent를 high로 반환)은 {@link
- * MobilePriority}가 소유합니다.
+ * <p>보드의 상태별 그룹 구성, 필터 적용, 상세 응답의 purpose 필드명 변경은 모바일 응답 구성 규칙이므로 이 서비스에서 처리합니다. 저장된 priority를 모바일
+ * 응답에 맞게 변환하는 규칙은 {@link MobileTaskPriority}에서 관리합니다. 필터는 프로젝트의 모든 태스크를 조회한 뒤 {@link
+ * MobileTaskFilter}를 통해 적용하며, 상태 그룹별 태스크 수는 필터링된 결과를 기준으로 계산합니다.
  *
  * <p>태스크 관련자료 목록과 개수는 {@link TaskMaterialAssembler}에 위임합니다.
  *
@@ -51,45 +59,53 @@ class ProjectTaskService {
   private final TaskDraftStatusReader taskDraftStatusReader;
 
   @Transactional(readOnly = true)
-  public List<MobileTaskGroup> getBoard(UUID projectId, UUID userId) {
+  public List<MobileTaskGroup> getBoard(UUID projectId, UUID userId, MobileTaskFilter filter) {
     UUID workspaceId = requireProjectMember(projectId, userId);
-    List<BoardTask> tasks = taskReader.listTasksByStatus(projectId, BoardStatus.keys());
+    List<BoardTask> tasks =
+        taskReader.listTasksByStatus(projectId, MobileTaskStatus.keys()).stream()
+            .filter(filter::matches)
+            .toList();
     Map<UUID, Integer> materialCounts =
         taskMaterialAssembler.countMaterials(
             workspaceId, tasks.stream().map(BoardTask::id).toList());
-    Map<String, List<MobileTaskCard>> cardsByStatus =
+    Map<UUID, UserProfile> assignees = assigneeProfiles(tasks);
+    Map<MobileTaskStatus, List<MobileTaskCard>> cardsByStatus =
         tasks.stream()
             .collect(
                 Collectors.groupingBy(
-                    BoardTask::status,
+                    task -> MobileTaskStatus.of(storedStatus(task.status())),
                     Collectors.mapping(
-                        task -> toCard(task, materialCounts.getOrDefault(task.id(), 0)),
+                        task -> toCard(task, materialCounts.getOrDefault(task.id(), 0), assignees),
                         Collectors.toList())));
-    return Arrays.stream(BoardStatus.values())
-        .map(
-            status ->
-                new MobileTaskGroup(status, cardsByStatus.getOrDefault(status.key(), List.of())))
+    return Arrays.stream(MobileTaskStatus.values())
+        .map(status -> new MobileTaskGroup(status, cardsByStatus.getOrDefault(status, List.of())))
         .toList();
   }
 
   @Transactional
   public TaskSnapshot createTask(
-      UUID projectId, UUID userId, String title, String role, String priority) {
+      UUID projectId,
+      UUID userId,
+      String title,
+      Set<TaskRole> roles,
+      TaskPriority priority,
+      LocalDate dueDate) {
     UUID workspaceId = requireProjectMember(projectId, userId);
     return taskWriter.create(
-        CreateTaskCommand.manual(projectId, workspaceId, title, role, priority));
+        CreateTaskCommand.manual(
+            projectId, workspaceId, title, TaskStatus.TODO, roles, priority, dueDate));
   }
 
   /**
-   * 태스크 상세를 조합한다. <b>원장 상태를 task보다 먼저 읽는다</b>(설계 7.3절). 순서를 뒤집으면 fallback title을 읽은 뒤 생성이 끝나는 창에서
-   * "이전 title + {@code ready}"가 나가고, 앱은 재조회를 멈춰 갱신을 영구히 놓친다. 반대 순서에서 나올 수 있는 "새 title + {@code
-   * generating}"은 앱이 한 번 더 조회할 뿐이라 안전하다.
+   * 태스크 상세를 조합한다. <b>원장 상태를 task보다 먼저 읽는다</b>. 순서를 뒤집으면 fallback title을 읽은 뒤 생성이 끝나는 창에서 "이전 title
+   * + {@code ready}"가 나가고, 앱은 재조회를 멈춰 갱신을 영구히 놓친다. 반대 순서에서 나올 수 있는 "새 title + {@code generating}"은
+   * 앱이 한 번 더 조회할 뿐이라 안전하다.
    *
    * <p>이 성질은 {@code READ COMMITTED}에서 두 SELECT가 각자 snapshot을 뜨는 데 기댄다. 격리 수준을 올리거나 두 값을 한 번에 뜨도록
    * 최적화하면 순서만으로는 정합성이 유지되지 않는다.
    *
-   * <p>권한은 상세가 아니라 {@code workspaceIdOf}로 먼저 확인한다. 원장 조회가 deadline으로 닫는 경로에서 counter를 올리므로(비동기 생성
-   * 설계 9.3절), 권한 없는 호출자가 경보 대상 지표를 건드리게 두지 않기 위해서다. 그 조회는 title을 읽지 않아 위 순서 계약과 무관하다.
+   * <p>권한은 상세가 아니라 {@code workspaceIdOf}로 먼저 확인한다. 원장 조회가 deadline으로 닫는 경로에서 counter를 올리므로, 권한 없는
+   * 호출자가 경보 대상 지표를 건드리게 두지 않기 위해서다. 그 조회는 title을 읽지 않아 위 순서 계약과 무관하다.
    */
   @Transactional(readOnly = true)
   public MobileTaskDetailView getTaskDetail(UUID taskId, UUID userId) {
@@ -98,10 +114,9 @@ class ProjectTaskService {
     TaskDetail detail =
         taskReader
             .findDetail(taskId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())));
     return new MobileTaskDetailView(draftStatus, toMobileDetail(detail));
   }
 
@@ -110,31 +125,60 @@ class ProjectTaskService {
       UUID taskId,
       UUID userId,
       String title,
-      String role,
+      List<TaskRole> requestedRoles,
+      TaskRole legacyRole,
       UUID assigneeId,
-      String priority,
-      String status,
+      TaskPriority priority,
+      LocalDate requestedDueDate,
+      boolean dueDateSet,
+      TaskStatus status,
       String purpose,
-      List<ChecklistEdit> checklistItems) {
+      List<ChecklistEdit> checklistItems,
+      Long version) {
     requireTaskMember(taskId, userId);
+    Set<TaskRole> roles =
+        requestedRoles != null
+            ? Set.copyOf(requestedRoles)
+            : rolesKeepingExisting(taskId, legacyRole);
+    LocalDate dueDate = dueDateSet ? requestedDueDate : existingDueDate(taskId);
     List<UpdateTaskCommand.ChecklistItemEdit> items =
         checklistItems.stream()
-            .map(
-                edit ->
-                    new UpdateTaskCommand.ChecklistItemEdit(
-                        edit.id(), edit.title(), edit.completed()))
+            .map(edit ->
+                new UpdateTaskCommand.ChecklistItemEdit(edit.id(), edit.title(), edit.completed()))
             .toList();
     // 저장만 하고 상세는 반환하지 않는다. 저장 후 최신 상태는 클라이언트가 상세 조회로 다시 읽는다.
     taskWriter.update(
-        new UpdateTaskCommand(taskId, title, role, assigneeId, priority, status, purpose, items));
+        new UpdateTaskCommand(
+            taskId, title, roles, assigneeId, priority, dueDate, status, purpose, items, version));
   }
 
   @Transactional
   public MobileTaskDetail toggleChecklistItem(
-      UUID taskId, UUID userId, UUID itemId, boolean completed) {
+      UUID taskId, UUID userId, UUID itemId, boolean completed, Long version) {
     requireTaskMember(taskId, userId);
-    TaskDetail updated = taskWriter.toggleChecklistItem(taskId, itemId, completed);
+    TaskDetail updated = taskWriter.toggleChecklistItem(taskId, itemId, completed, version);
     return toMobileDetail(updated);
+  }
+
+  /**
+   * 구버전 앱은 단일 role만 전달합니다. 전달받은 role이 기존 목록에 포함되어 있으면 목록을 유지하고, 포함되어 있지 않으면 해당 role 하나로 교체합니다. 이를
+   * 통해 구버전 앱에서 태스크를 수정할 때 다른 role이 의도치 않게 삭제되는 것을 방지합니다.
+   */
+  private Set<TaskRole> rolesKeepingExisting(UUID taskId, TaskRole role) {
+    Set<TaskRole> current =
+        taskReader.findDetail(taskId).stream()
+            .flatMap(detail -> detail.roles().stream())
+            .map(value -> TaskRole.from(value).orElseThrow(IllegalStateException::new))
+            .collect(Collectors.toSet());
+    return current.contains(role) ? current : Set.of(role);
+  }
+
+  /**
+   * 구버전 앱은 태스크 수정 요청에 {@code due_date}를 포함하지 않습니다. 따라서 해당 필드가 생략되면 기존 마감일을 조회해 유지합니다. 이를 통해 구버전 앱에서
+   * 태스크를 수정하더라도 웹에서 설정한 마감일이 삭제되지 않도록 합니다.
+   */
+  private LocalDate existingDueDate(UUID taskId) {
+    return taskReader.findDetail(taskId).map(TaskDetail::dueDate).orElse(null);
   }
 
   private void requireTaskMember(UUID taskId, UUID userId) {
@@ -143,10 +187,9 @@ class ProjectTaskService {
         taskReader
             .findScope(taskId)
             .map(scope -> scope.workspaceId())
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())));
     if (workspaceMembershipReader.roleOf(workspaceId, userId).isEmpty()) {
       throw new BusinessException(
           CommonErrorCode.AUTH_FORBIDDEN, Map.of("task_id", taskId.toString()));
@@ -159,14 +202,16 @@ class ProjectTaskService {
         detail.projectId(),
         detail.title(),
         detail.status(),
-        detail.role(),
+        detail.roles(),
         toAssignee(detail.assigneeId()),
-        MobilePriority.fromStored(detail.priority()).key(),
+        MobileTaskPriority.key(detail.priority()),
+        detail.dueDate(),
         detail.description(),
         detail.checklistItems(),
         taskMaterialAssembler.getMaterials(detail.workspaceId(), detail.id()),
         detail.openQuestions(),
-        detail.nextAction());
+        detail.nextAction(),
+        detail.version());
   }
 
   private MobileTaskDetail.Assignee toAssignee(UUID assigneeId) {
@@ -183,11 +228,10 @@ class ProjectTaskService {
     UUID workspaceId =
         projectReader
             .workspaceIdOf(projectId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        ProjectErrorCode.PROJECT_NOT_FOUND,
-                        Map.of("project_id", projectId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    ProjectErrorCode.PROJECT_NOT_FOUND,
+                    Map.of("project_id", projectId.toString())));
     if (workspaceMembershipReader.roleOf(workspaceId, userId).isEmpty()) {
       throw new BusinessException(
           CommonErrorCode.AUTH_FORBIDDEN, Map.of("project_id", projectId.toString()));
@@ -195,12 +239,35 @@ class ProjectTaskService {
     return workspaceId;
   }
 
-  private static MobileTaskCard toCard(BoardTask task, int materialCount) {
+  private static TaskStatus storedStatus(String value) {
+    return TaskStatus.from(value).orElseThrow(IllegalStateException::new);
+  }
+
+  /**
+   * 카드에 표시할 담당자 이름을 조회하기 위해 user 모듈의 공개 계약을 한 번 호출합니다. 담당자가 지정된 카드가 없으면 호출하지 않습니다.
+   *
+   * <p>조회되지 않은 담당자 식별자는 결과에서 제외하며, 해당 카드의 담당자는 {@code null}로 반환합니다. 상세 조회와 달리 목록 조회에서는 특정 담당자 정보를
+   * 조회하지 못하더라도 전체 조회를 실패 처리하지 않습니다.
+   */
+  private Map<UUID, UserProfile> assigneeProfiles(List<BoardTask> tasks) {
+    List<UUID> assigneeIds =
+        tasks.stream().map(BoardTask::assigneeId).filter(Objects::nonNull).distinct().toList();
+    return assigneeIds.isEmpty()
+        ? Map.of()
+        : userService.getProfiles(assigneeIds).stream()
+            .collect(Collectors.toMap(UserProfile::id, Function.identity()));
+  }
+
+  private static MobileTaskCard toCard(
+      BoardTask task, int materialCount, Map<UUID, UserProfile> assignees) {
+    UserProfile assignee = task.assigneeId() == null ? null : assignees.get(task.assigneeId());
     return new MobileTaskCard(
         task.id(),
         task.title(),
-        task.role(),
-        MobilePriority.fromStored(task.priority()).key(),
+        task.roles(),
+        assignee == null ? null : new MobileTaskCard.Assignee(assignee.id(), assignee.name()),
+        MobileTaskPriority.key(task.priority()),
+        task.dueDate(),
         materialCount);
   }
 }

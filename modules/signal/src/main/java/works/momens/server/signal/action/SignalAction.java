@@ -12,11 +12,8 @@ import lombok.NoArgsConstructor;
 import works.momens.server.common.persistence.BaseEntity;
 
 /**
- * 사용자 Signal action 처리 원장(ledger).
- *
- * <p>{@code signal_id}에 {@code UNIQUE} 제약이 있어 Signal 한 건당 action은 하나만 기록된다(멱등성의 단일 출처, SD-4).
- * {@code resultTaskId}는 convert-to-task일 때만 값이 있고, dismiss는 {@code null}이다. 레거시 공유 스키마 반영은
- * B1(momens-api 마이그레이션)에서 확정하고, 이 엔티티는 local/test 미러({@code V20260707110000})를 그대로 매핑한다.
+ * Signal당 action은 하나만 저장합니다. {@code signal_id}의 UNIQUE 제약으로 동시 요청의 멱등성을 보장합니다. convert만 결과 task를
+ * 가지며 dismiss는 {@code null}입니다.
  */
 @Getter
 @Entity

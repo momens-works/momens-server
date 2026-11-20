@@ -19,11 +19,8 @@ import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
 /**
- * dev 전용 토큰 발급 엔드포인트(MOM-90) 통합테스트. test 프로필은 {@link
- * works.momens.server.auth.internal.config.DevOnly} 대상이라 엔드포인트가 등록됩니다.
- *
- * <p>공유 시크릿과 allowlist는 {@code application-test.yml}의 {@code momens.auth.dev-token}에서 옵니다. 발급된 토큰이
- * 운영과 같은 HS256이라 보호 API(`/api/me`)에서 실제로 인증되는지까지 확인합니다.
+ * test 프로필은 {@link works.momens.server.common.config.DevOnly} 대상입니다. 설정의 공유 시크릿·allowlist로 발급한 토큰이
+ * 실제 보호 API를 통과하는지 검증합니다.
  */
 @SpringBootTest
 @AutoConfigureMockMvc

@@ -1,0 +1,180 @@
+[
+  {
+    "name": "get_task",
+    "description": "Get task details and up to 10 recent activities, with total activity count. Use list_task_updates to read older activities. Long text is explicitly truncated.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "the task to fetch: its MOM-label or id"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "task"
+      ]
+    }
+  },
+  {
+    "name": "list_members",
+    "description": "List the members of your workspace (name, email, role) so you can pick an assignee. Returns a bounded page; follow the returned cursor with the same filters for more results. Long text is explicitly truncated.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20,
+          "description": "maximum items per page; default 20, maximum 100; byte limits may return fewer"
+        },
+        "cursor": {
+          "type": "string",
+          "description": "opaque next-page cursor from the previous response; keep the same tool and filters"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_milestones",
+    "description": "List milestones in your workspace, optionally filtered by project. Returns a bounded page; follow the returned cursor with the same filters for more results. Long text is explicitly truncated.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "project": {
+          "type": "string",
+          "description": "filter by project: its PRJ-label, exact name, or id"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20,
+          "description": "maximum items per page; default 20, maximum 100; byte limits may return fewer"
+        },
+        "cursor": {
+          "type": "string",
+          "description": "opaque next-page cursor from the previous response; keep the same tool and filters"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_projects",
+    "description": "List the projects in your workspace (PRJ-label, name, status). Use this to find the project to create a task in. Returns a bounded page; follow the returned cursor with the same filters for more results. Long text is explicitly truncated.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20,
+          "description": "maximum items per page; default 20, maximum 100; byte limits may return fewer"
+        },
+        "cursor": {
+          "type": "string",
+          "description": "opaque next-page cursor from the previous response; keep the same tool and filters"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_tasks",
+    "description": "List tasks in your workspace, optionally filtered by project, assignee, or status. Use assignee \"me\" for your own tasks. Returns a bounded page; follow the returned cursor with the same filters for more results. Long text is explicitly truncated.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "project": {
+          "type": "string",
+          "description": "filter by project: its PRJ-label, name, or id"
+        },
+        "assignee": {
+          "type": "string",
+          "description": "filter by assignee: me, a member name, or an email"
+        },
+        "status": {
+          "type": "string",
+          "description": "filter by status: backlog, todo, in_progress, done, or cancelled"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20,
+          "description": "maximum items per page; default 20, maximum 100; byte limits may return fewer"
+        },
+        "cursor": {
+          "type": "string",
+          "description": "opaque next-page cursor from the previous response; keep the same tool and filters"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_tasks_v2",
+    "description": "List tasks with explicit unassigned filtering and validated status. Prefer this tool for new calls; list_tasks retains its legacy filter behavior. Returns a bounded page; follow the returned cursor with the same filters for more results. Long text is explicitly truncated.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "project": {
+          "type": "string",
+          "description": "filter by project: its PRJ-label, name, or id"
+        },
+        "assignee": {
+          "type": "string",
+          "description": "filter by assignee: me, member UUID, name, or email; none/unassign/unassigned means unassigned only. Omit or leave blank for all assignees. Whitespace is trimmed and matching is case-insensitive."
+        },
+        "status": {
+          "type": "string",
+          "description": "filter by status: backlog, todo, in_progress, done, or cancelled. Whitespace is trimmed and matching is case-insensitive. Omit for all statuses; blank or unknown values return a tool error."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20,
+          "description": "maximum items per page; default 20, maximum 100; byte limits may return fewer"
+        },
+        "cursor": {
+          "type": "string",
+          "description": "opaque next-page cursor from the previous response; keep the same tool and filters"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_task_updates",
+    "description": "Read task activities (comments and progress updates), newest first. Follow the returned cursor with the same task reference to read older activities. Returns a bounded page; follow the returned cursor with the same filters for more results. Long text is explicitly truncated.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "the task MOM-label or id; keep the same reference when following a cursor"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20,
+          "description": "maximum items per page; default 20, maximum 100; byte limits may return fewer"
+        },
+        "cursor": {
+          "type": "string",
+          "description": "opaque next-page cursor from the previous response; keep the same tool and filters"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "task"
+      ]
+    }
+  }
+]

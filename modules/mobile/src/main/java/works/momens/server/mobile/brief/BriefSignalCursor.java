@@ -3,9 +3,7 @@ package works.momens.server.mobile.brief;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Base64;
-import java.util.Map;
-import works.momens.server.common.api.BusinessException;
-import works.momens.server.common.api.CommonErrorCode;
+import works.momens.server.common.api.FieldValidationException;
 
 /**
  * 브리프 시그널 요약 페이지네이션의 mobile 전용 커서. signal 모듈의 커서를 기준일(KST) 앵커와 함께 감쌉니다.
@@ -27,8 +25,7 @@ record BriefSignalCursor(LocalDate anchor, String signalCursor) {
       }
       return new BriefSignalCursor(LocalDate.parse(parts[0]), parts[1]);
     } catch (RuntimeException e) {
-      throw new BusinessException(
-          CommonErrorCode.COMMON_VALIDATION_FAILED, Map.of("cursor", cursor));
+      throw FieldValidationException.forField("cursor");
     }
   }
 

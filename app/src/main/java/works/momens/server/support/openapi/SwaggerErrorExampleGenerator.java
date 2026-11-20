@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import works.momens.server.common.api.ErrorCode;
 
-/** {@link ErrorCode} 목록을 OpenAPI 실패 응답 예시로 변환합니다. */
 public class SwaggerErrorExampleGenerator {
 
   private static final String APPLICATION_JSON = "application/json";

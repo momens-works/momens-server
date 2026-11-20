@@ -8,6 +8,5 @@ package works.momens.server.workspace.core;
  */
 public interface WorkspaceEditor {
 
-  /** 워크스페이스를 수정하고 변경된 상태를 반환합니다. */
   WorkspaceDetail update(UpdateWorkspaceCommand command);
 }

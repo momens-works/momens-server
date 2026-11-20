@@ -28,7 +28,6 @@ public class AccessTokenTestFactory {
     this.accessTokenEncoder = accessTokenEncoder;
   }
 
-  /** 정상 access token(운영 경로와 동일). */
   public String issueAccessToken(UUID userId) {
     return jwtTokenService.issueAccessToken(userId);
   }

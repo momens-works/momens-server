@@ -13,20 +13,13 @@ import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.mobile.roster.dto.response.ProjectMembersResponse;
 import works.momens.server.project.core.ProjectErrorCode;
 
-/**
- * {@code /api/mobile/projects/{projectId}/members} OpenAPI 문서. Swagger 애너테이션을 컨트롤러 구현과
- * 분리합니다(docs/spec/openapi.md).
- *
- * <p>401/403은 보안 필터가 Standard shape로 응답하고, 없는 project는 PROJECT_NOT_FOUND(404), project는 있는데
- * workspace 멤버가 아니면 AUTH_FORBIDDEN(403)입니다.
- */
 @Tag(name = "Mobile", description = "모바일 앱 진입 API")
 interface ProjectMemberControllerDocs {
 
   @Operation(
       operationId = "mobileListProjectMembers",
       summary = "프로젝트 멤버 조회",
-      description = "태스크 담당자 선택에 사용할 프로젝트 멤버 목록을 조회합니다. 멤버 범위는 project가 속한 workspace의 멤버십입니다.")
+      description = "작업 담당자 선택에 사용할 프로젝트 멤버 목록을 조회합니다. 멤버 범위는 project가 속한 workspace의 멤버십입니다.")
   @ApiResponse(
       responseCode = "200",
       description = "멤버 목록 조회 성공. 이름 오름차순으로 정렬되고, 검색 결과가 없으면 members는 빈 배열입니다.",

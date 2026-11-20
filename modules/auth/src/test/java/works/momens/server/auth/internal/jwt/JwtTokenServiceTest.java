@@ -10,6 +10,7 @@ import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,6 @@ import works.momens.server.auth.internal.refresh.RefreshToken;
 import works.momens.server.auth.internal.refresh.RefreshTokenStore;
 import works.momens.server.common.api.BusinessException;
 
-/** 우리 access token 발급/검증 round-trip과 거부 경로 단위 검증. */
 class JwtTokenServiceTest {
 
   private static final String SECRET = "unit-test-momens-auth-jwt-secret-0123456789abcdef";
@@ -134,12 +134,11 @@ class JwtTokenServiceTest {
     assertThat(store.tokens.values())
         .singleElement()
         .extracting(RefreshToken::getDevice)
-        .satisfies(
-            device -> {
-              String storedDevice = (String) device;
-              assertThat(storedDevice.codePointCount(0, storedDevice.length())).isEqualTo(255);
-              assertThat(storedDevice).endsWith("😀");
-            });
+        .satisfies(device -> {
+          String storedDevice = (String) device;
+          assertThat(storedDevice.codePointCount(0, storedDevice.length())).isEqualTo(255);
+          assertThat(storedDevice).endsWith("😀");
+        });
   }
 
   private static AuthProperties properties(String secret) {
@@ -181,7 +180,7 @@ class JwtTokenServiceTest {
       tokens.values().stream()
           .filter(token -> token.getUserId().equals(userId))
           .filter(token -> token.getClientType() == clientType)
-          .filter(token -> java.util.Objects.equals(token.getDevice(), device))
+          .filter(token -> Objects.equals(token.getDevice(), device))
           .filter(token -> token.isActive(revokedAt))
           .forEach(token -> token.revoke(revokedAt));
     }

@@ -11,7 +11,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import works.momens.server.minsu.draft.generation.GenerationOutcome;
 
 /**
- * 원장의 사건 지표(docs/design/minsu-async-task-draft-design.md 9.3절).
+ * 원장의 사건 지표.
  *
  * <p>상태 gauge는 {@link MinsuLedgerMetrics}가 주기 스냅샷으로 낸다. 여기는 사건이 일어난 그 자리에서 올리는 counter·timer만 모은다.
  * 원장 전이가 여러 파일에 흩어져 있어 {@code MeterRegistry}를 직접 쓰게 두면 이름과 태그 어휘가 갈리기 쉽다.
@@ -33,7 +33,7 @@ class MinsuLedgerObservability {
   private static final String CLAIM_WAIT = "momens.minsu.ledger.claim.wait.duration";
   private static final String GENERATION_DURATION = "momens.minsu.ledger.generation.duration";
 
-  /** 소진에 이를 수 있는 outcome만 선등록한다. 나머지는 재시도 없이 자기 사유로 닫히므로 이 지표에 도달하지 않는다(9.2절 표). */
+  /** 소진에 이를 수 있는 outcome만 선등록한다. 나머지는 재시도 없이 자기 사유로 닫히므로 이 지표에 도달하지 않는다. */
   private static final GenerationOutcome[] RETRYABLE_OUTCOMES = {
     GenerationOutcome.TIMEOUT,
     GenerationOutcome.PROVIDER_ERROR,
@@ -73,8 +73,8 @@ class MinsuLedgerObservability {
    * 이 값을 provider 비용 추정에 쓰면 진행 중 물량만큼 과소 집계된다. 종료 counter를 따로 두면 그 값이 {@code _count}와 항상 같아 순수한 중복이
    * 되고, 대시보드가 서로 다른 쪽을 참조하기 시작하면 되돌릴 수 없다.
    *
-   * <p>시도 횟수는 claim 시점에 증가하므로(7.1절) <b>provider 호출 수가 아니라 claim 수</b>다. 실행되지 못하고 소모된 시도가 포함되며, 그
-   * 차이는 hung attempt gauge와 같이 봐야 드러난다.
+   * <p>시도 횟수는 claim 시점에 증가하므로 <b>provider 호출 수가 아니라 claim 수</b>다. 실행되지 못하고 소모된 시도가 포함되며, 그 차이는 hung
+   * attempt gauge와 같이 봐야 드러난다.
    */
   void recordCompletion(CompletionReason reason, int attemptCount) {
     afterCommit(() -> completionAttempts(reason).record(attemptCount));
@@ -92,7 +92,7 @@ class MinsuLedgerObservability {
     }
   }
 
-  /** claim token 불일치로 버린 결과 수. 위 회수 수와 짝을 이룬다(8.2절). */
+  /** claim token 불일치로 버린 결과 수. 위 회수 수와 짝을 이룬다. */
   void recordStaleResult() {
     staleResults().increment();
   }
@@ -100,9 +100,9 @@ class MinsuLedgerObservability {
   /**
    * 재시도 시각이 지난 뒤 실제로 claim되기까지의 지연.
    *
-   * <p>설계 9.3절이 적은 "claim 이후 모델 호출 시작까지의 queue delay"는 지금 구조에서 항상 0에 가깝다. scheduler가 빈 슬롯 수만큼만
-   * claim하고 그만큼만 제출하므로 제출된 시도는 즉시 시작한다. 실제 지연은 그 앞에 있다. {@code fixedDelay}가 배치의 결과 기록까지 기다리므로 직전
-   * 배치의 가장 느린 시도만큼 다음 claim이 밀린다({@link MinsuDrainScheduler} 참고). 그래서 재는 구간을 이쪽으로 옮겼다.
+   * <p>claim 이후 모델 호출 시작까지의 queue delay는 지금 구조에서 항상 0에 가깝다. scheduler가 빈 슬롯 수만큼만 claim하고 그만큼만 제출하므로
+   * 제출된 시도는 즉시 시작한다. 실제 지연은 그 앞에 있다. {@code fixedDelay}가 배치의 결과 기록까지 기다리므로 직전 배치의 가장 느린 시도만큼 다음
+   * claim이 밀린다({@link MinsuDrainScheduler} 참고). 그래서 재는 구간을 이쪽으로 옮겼다.
    */
   void recordClaimWait(Duration wait) {
     afterCommit(() -> timer(CLAIM_WAIT).record(clampToZero(wait)));
@@ -113,7 +113,7 @@ class MinsuLedgerObservability {
    *
    * <p>{@code completion.attempts}만으로는 {@code timeout}으로 소진된 것과 {@code invalid_output}으로 소진된 것이 같은
    * 시계열에 섞인다. 두 실패의 대응이 정반대라 그대로 두면 값을 조정할 근거가 되지 못한다. 앞쪽이 편중되면 {@code attempt-timeout}·lease 조정이고
-   * 뒤쪽이면 프롬프트·스키마 수정이다(9.2절).
+   * 뒤쪽이면 프롬프트·스키마 수정이다.
    *
    * <p>사유를 {@code completion.attempts}의 태그로 더하지 않는 이유는 카디널리티다. 종료 사유 8 × 실패 종류가 곱해져 규약의 "10 미만 목표"를
    * 크게 넘는다. 소진에 이르는 실패 종류만 따로 세면 값 집합이 다섯으로 유계다.
@@ -135,7 +135,7 @@ class MinsuLedgerObservability {
   }
 
   /**
-   * 원장 적재의 성패. 실패율은 fail-closed 선택의 대가를 보는 값이다(5.3절).
+   * 원장 적재의 성패. 실패율은 fail-closed 선택의 대가를 보는 값이다.
    *
    * <p>성공은 호출자인 convert 트랜잭션이 커밋된 뒤에 올린다. 적재 자체가 성공해도 그 트랜잭션이 다른 이유로 뒤집히면 원장에 남는 것이 없기 때문이다. 실패는
    * 반대로 즉시 올린다. 그 트랜잭션은 어차피 커밋되지 않으므로 미루면 기록이 사라진다.

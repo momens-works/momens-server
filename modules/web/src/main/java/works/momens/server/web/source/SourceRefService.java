@@ -30,11 +30,10 @@ class SourceRefService {
     UUID workspaceId =
         sourceRefReader
             .findWorkspaceId(sourceRefId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        SourceErrorCode.SOURCE_REF_NOT_FOUND,
-                        Map.of("source_ref_id", sourceRefId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    SourceErrorCode.SOURCE_REF_NOT_FOUND,
+                    Map.of("source_ref_id", sourceRefId.toString())));
     workspaceAccessChecker.requireRoleAtLeast(workspaceId, userId, WorkspaceRole.MEMBER);
     return sourceRefVerifier.verify(sourceRefId, userId);
   }

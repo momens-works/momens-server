@@ -9,10 +9,6 @@ import works.momens.server.common.api.ApiException;
 import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.mobile.pushdevice.dto.request.RegisterPushDeviceRequest;
 
-/**
- * {@code /api/me/push-devices/{firebaseInstallationId}} OpenAPI 문서. Swagger 애너테이션을 컨트롤러 구현과
- * 분리합니다(docs/spec/openapi.md).
- */
 @Tag(name = "PushDevice", description = "push 설치(FID/FCM token) 등록·해제 API")
 interface PushDeviceControllerDocs {
 

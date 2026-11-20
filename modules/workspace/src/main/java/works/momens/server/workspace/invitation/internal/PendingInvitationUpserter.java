@@ -1,5 +1,6 @@
 package works.momens.server.workspace.invitation.internal;
 
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -50,8 +51,8 @@ class PendingInvitationUpserter {
         .param("role", role)
         .param("inviterId", inviterId)
         .param("tokenHash", tokenHash)
-        .param("expiresAt", java.sql.Timestamp.from(expiresAt))
-        .param("now", java.sql.Timestamp.from(now))
+        .param("expiresAt", Timestamp.from(expiresAt))
+        .param("now", Timestamp.from(now))
         .query(UUID.class)
         .single();
   }

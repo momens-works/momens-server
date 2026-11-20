@@ -11,9 +11,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,9 +34,12 @@ import works.momens.server.project.task.BoardTask;
 import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.TaskDetail;
 import works.momens.server.project.task.TaskErrorCode;
+import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskReader;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskScope;
 import works.momens.server.project.task.TaskSnapshot;
+import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.project.task.UpdateTaskCommand;
 import works.momens.server.user.UserProfile;
@@ -63,12 +68,14 @@ class ProjectTaskServiceTest {
   private static final UUID CALLER_ID = UUID.randomUUID();
   private static final Instant CREATED_AT = Instant.parse("2026-07-01T00:00:00Z");
   private static final UUID TASK_ID = UUID.randomUUID();
+  private static final LocalDate DUE_DATE = LocalDate.of(2026, 9, 25);
 
   @Test
   void getBoardThrowsProjectNotFoundWhenProjectMissing() {
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> projectTaskService.getBoard(PROJECT_ID, CALLER_ID))
+    assertThatThrownBy(
+            () -> projectTaskService.getBoard(PROJECT_ID, CALLER_ID, MobileTaskFilter.none()))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(ProjectErrorCode.PROJECT_NOT_FOUND);
@@ -79,7 +86,8 @@ class ProjectTaskServiceTest {
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.of(WORKSPACE_ID));
     when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> projectTaskService.getBoard(PROJECT_ID, CALLER_ID))
+    assertThatThrownBy(
+            () -> projectTaskService.getBoard(PROJECT_ID, CALLER_ID, MobileTaskFilter.none()))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(CommonErrorCode.AUTH_FORBIDDEN);
@@ -95,40 +103,134 @@ class ProjectTaskServiceTest {
     when(taskReader.listTasksByStatus(eq(PROJECT_ID), any()))
         .thenReturn(
             List.of(
-                new BoardTask(backlogId, "백로그 태스크", "backlog", "medium", "pm", CREATED_AT),
-                new BoardTask(todoId, "투두 태스크", "todo", "low", "frontend", CREATED_AT),
-                new BoardTask(inProgressId, "진행중 태스크", "in_progress", "medium", "pm", CREATED_AT),
-                new BoardTask(cancelledId, "취소 태스크", "cancelled", "high", "pm", CREATED_AT)));
+                new BoardTask(
+                    backlogId,
+                    "백로그 태스크",
+                    "backlog",
+                    "medium",
+                    List.of("pm"),
+                    null,
+                    null,
+                    CREATED_AT),
+                new BoardTask(
+                    todoId, "투두 태스크", "todo", "low", List.of("frontend"), null, null, CREATED_AT),
+                new BoardTask(
+                    inProgressId,
+                    "진행중 태스크",
+                    "in_progress",
+                    "medium",
+                    List.of("pm"),
+                    null,
+                    null,
+                    CREATED_AT),
+                new BoardTask(
+                    cancelledId,
+                    "취소 태스크",
+                    "cancelled",
+                    "high",
+                    List.of("pm"),
+                    null,
+                    null,
+                    CREATED_AT)));
 
-    List<MobileTaskGroup> groups = projectTaskService.getBoard(PROJECT_ID, CALLER_ID);
+    List<MobileTaskGroup> groups =
+        projectTaskService.getBoard(PROJECT_ID, CALLER_ID, MobileTaskFilter.none());
 
     assertThat(groups)
         .extracting(MobileTaskGroup::status)
         .containsExactly(
-            BoardStatus.TODO,
-            BoardStatus.IN_PROGRESS,
-            BoardStatus.DONE,
-            BoardStatus.BACKLOG,
-            BoardStatus.CANCELLED);
-    assertThat(groups.get(0).tasks()).extracting(MobileTaskCard::id).containsExactly(todoId);
-    assertThat(groups.get(1).tasks()).extracting(MobileTaskCard::id).containsExactly(inProgressId);
+            MobileTaskStatus.IN_PROGRESS,
+            MobileTaskStatus.TODO,
+            MobileTaskStatus.DONE,
+            MobileTaskStatus.CANCELLED,
+            MobileTaskStatus.BACKLOG);
+    assertThat(groups.get(0).tasks()).extracting(MobileTaskCard::id).containsExactly(inProgressId);
+    assertThat(groups.get(1).tasks()).extracting(MobileTaskCard::id).containsExactly(todoId);
     assertThat(groups.get(2).tasks()).isEmpty();
-    assertThat(groups.get(3).tasks()).extracting(MobileTaskCard::id).containsExactly(backlogId);
-    assertThat(groups.get(4).tasks()).extracting(MobileTaskCard::id).containsExactly(cancelledId);
+    assertThat(groups.get(3).tasks()).extracting(MobileTaskCard::id).containsExactly(cancelledId);
+    assertThat(groups.get(4).tasks()).extracting(MobileTaskCard::id).containsExactly(backlogId);
   }
 
   @Test
-  void getBoardMapsUrgentToHigh() {
+  void getBoardFillsAssigneeFromProfilesInOneBatch() {
+    stubMember();
+    UUID assigned = UUID.randomUUID();
+    UUID sameAssignee = UUID.randomUUID();
+    UUID unassigned = UUID.randomUUID();
+    UUID assigneeId = UUID.randomUUID();
+    when(taskReader.listTasksByStatus(eq(PROJECT_ID), any()))
+        .thenReturn(
+            List.of(
+                new BoardTask(
+                    assigned,
+                    "담당자 있는 태스크",
+                    "todo",
+                    "medium",
+                    List.of("pm"),
+                    assigneeId,
+                    DUE_DATE,
+                    CREATED_AT),
+                new BoardTask(
+                    sameAssignee,
+                    "담당자가 같은 태스크",
+                    "todo",
+                    "medium",
+                    List.of("pm"),
+                    assigneeId,
+                    null,
+                    CREATED_AT),
+                new BoardTask(
+                    unassigned,
+                    "담당자 없는 태스크",
+                    "todo",
+                    "medium",
+                    List.of("pm"),
+                    null,
+                    null,
+                    CREATED_AT)));
+    when(userService.getProfiles(List.of(assigneeId)))
+        .thenReturn(
+            List.of(
+                new UserProfile(
+                    assigneeId,
+                    "board-assignee@momens.works",
+                    "홍길동",
+                    null,
+                    null,
+                    CREATED_AT,
+                    CREATED_AT)));
+
+    List<MobileTaskCard> cards =
+        cardsOf(
+            projectTaskService.getBoard(PROJECT_ID, CALLER_ID, MobileTaskFilter.none()),
+            MobileTaskStatus.TODO);
+
+    assertThat(cards)
+        .extracting(MobileTaskCard::assignee, MobileTaskCard::dueDate)
+        .containsExactly(
+            tuple(new MobileTaskCard.Assignee(assigneeId, "홍길동"), DUE_DATE),
+            tuple(new MobileTaskCard.Assignee(assigneeId, "홍길동"), null),
+            tuple(null, null));
+  }
+
+  @Test
+  void getBoardReturnsStoredUrgent() {
     stubMember();
     UUID taskId = UUID.randomUUID();
     when(taskReader.listTasksByStatus(eq(PROJECT_ID), any()))
-        .thenReturn(List.of(new BoardTask(taskId, "긴급 태스크", "todo", "urgent", "pm", CREATED_AT)));
+        .thenReturn(
+            List.of(
+                new BoardTask(
+                    taskId, "긴급 태스크", "todo", "urgent", List.of("pm"), null, null, CREATED_AT)));
 
-    // 보드 그룹 순서는 todo, in_progress, ... 이므로 todo 그룹은 인덱스 0이다.
-    MobileTaskCard card = projectTaskService.getBoard(PROJECT_ID, CALLER_ID).get(0).tasks().get(0);
+    MobileTaskCard card =
+        cardsOf(
+                projectTaskService.getBoard(PROJECT_ID, CALLER_ID, MobileTaskFilter.none()),
+                MobileTaskStatus.TODO)
+            .get(0);
 
-    assertThat(card.priority()).isEqualTo("high");
-    assertThat(card.role()).isEqualTo("pm");
+    assertThat(card.priority()).isEqualTo("urgent");
+    assertThat(card.roles()).containsExactly("pm");
   }
 
   @Test
@@ -139,12 +241,24 @@ class ProjectTaskServiceTest {
     when(taskReader.listTasksByStatus(eq(PROJECT_ID), any()))
         .thenReturn(
             List.of(
-                new BoardTask(linked, "자료 있는 태스크", "todo", "medium", "pm", CREATED_AT),
-                new BoardTask(unlinked, "자료 없는 태스크", "todo", "medium", "pm", CREATED_AT)));
+                new BoardTask(
+                    linked, "자료 있는 태스크", "todo", "medium", List.of("pm"), null, null, CREATED_AT),
+                new BoardTask(
+                    unlinked,
+                    "자료 없는 태스크",
+                    "todo",
+                    "medium",
+                    List.of("pm"),
+                    null,
+                    null,
+                    CREATED_AT)));
     when(taskMaterialAssembler.countMaterials(WORKSPACE_ID, List.of(linked, unlinked)))
         .thenReturn(Map.of(linked, 2));
 
-    List<MobileTaskCard> cards = projectTaskService.getBoard(PROJECT_ID, CALLER_ID).get(0).tasks();
+    List<MobileTaskCard> cards =
+        cardsOf(
+            projectTaskService.getBoard(PROJECT_ID, CALLER_ID, MobileTaskFilter.none()),
+            MobileTaskStatus.TODO);
 
     assertThat(cards)
         .extracting(MobileTaskCard::id, MobileTaskCard::materialCount)
@@ -158,16 +272,20 @@ class ProjectTaskServiceTest {
     TaskSnapshot created = snapshot(UUID.randomUUID(), "제목", "pm", "high", "todo");
     when(taskWriter.create(any())).thenReturn(created);
 
-    TaskSnapshot result = projectTaskService.createTask(PROJECT_ID, CALLER_ID, "제목", "pm", "high");
+    TaskSnapshot result =
+        projectTaskService.createTask(
+            PROJECT_ID, CALLER_ID, "제목", Set.of(TaskRole.PM), TaskPriority.HIGH, DUE_DATE);
 
     ArgumentCaptor<CreateTaskCommand> captor = ArgumentCaptor.forClass(CreateTaskCommand.class);
-    org.mockito.Mockito.verify(taskWriter).create(captor.capture());
+    verify(taskWriter).create(captor.capture());
     CreateTaskCommand command = captor.getValue();
     assertThat(command.projectId()).isEqualTo(PROJECT_ID);
     assertThat(command.workspaceId()).isEqualTo(WORKSPACE_ID);
     assertThat(command.title()).isEqualTo("제목");
-    assertThat(command.role()).isEqualTo("pm");
-    assertThat(command.priority()).isEqualTo("high");
+    assertThat(command.status()).isEqualTo(TaskStatus.TODO);
+    assertThat(command.roles()).containsExactly(TaskRole.PM);
+    assertThat(command.priority()).isEqualTo(TaskPriority.HIGH);
+    assertThat(command.dueDate()).isEqualTo(DUE_DATE);
     assertThat(result).isSameAs(created);
   }
 
@@ -176,7 +294,8 @@ class ProjectTaskServiceTest {
     when(projectReader.workspaceIdOf(PROJECT_ID)).thenReturn(Optional.of(WORKSPACE_ID));
     when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> projectTaskService.createTask(PROJECT_ID, CALLER_ID, "제목", null, null))
+    assertThatThrownBy(
+            () -> projectTaskService.createTask(PROJECT_ID, CALLER_ID, "제목", null, null, null))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(CommonErrorCode.AUTH_FORBIDDEN);
@@ -202,7 +321,7 @@ class ProjectTaskServiceTest {
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(CommonErrorCode.AUTH_FORBIDDEN);
-    // 원장 조회는 deadline으로 닫는 경로에서 counter를 올린다(비동기 생성 설계 9.3절). 권한 없는
+    // 원장 조회는 deadline으로 닫는 경로에서 counter를 올린다. 권한 없는
     // 호출자가 경보 대상 지표를 건드리지 못하도록 권한 확인이 앞선다.
     verify(taskDraftStatusReader, never()).statusOf(any());
   }
@@ -219,7 +338,7 @@ class ProjectTaskServiceTest {
     MobileTaskDetailView view = projectTaskService.getTaskDetail(TASK_ID, CALLER_ID);
 
     assertThat(view.draftStatus()).isEqualTo(DraftStatus.GENERATING);
-    // 순서가 계약이다(설계 7.3절). 역순이면 이전 title과 ready가 함께 나가는 창이 열리고, 그때 앱은
+    // 순서가 계약이다. 역순이면 이전 title과 ready가 함께 나가는 창이 열리고, 그때 앱은
     // 재조회를 멈춰 갱신을 영구히 놓친다.
     InOrder order = inOrder(taskDraftStatusReader, taskReader);
     order.verify(taskDraftStatusReader).statusOf(TASK_ID);
@@ -228,7 +347,7 @@ class ProjectTaskServiceTest {
 
   @Test
   void getTaskDetailReturnsReadyWhenTaskHasNoLedgerRow() {
-    // 비동기 도입 이전·비활성·Signal을 거치지 않은 task가 여기 해당한다(설계 7.1절).
+    // 비동기 도입 이전·비활성·Signal을 거치지 않은 task가 여기 해당한다.
     when(taskDraftStatusReader.statusOf(TASK_ID)).thenReturn(DraftStatus.READY);
     when(taskReader.findScope(TASK_ID))
         .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
@@ -241,7 +360,7 @@ class ProjectTaskServiceTest {
   }
 
   @Test
-  void getTaskDetailJoinsAssigneeProfileAndMapsUrgentToHigh() {
+  void getTaskDetailJoinsAssigneeProfileAndReturnsStoredUrgent() {
     UUID assigneeId = UUID.randomUUID();
     when(taskReader.findScope(TASK_ID))
         .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
@@ -262,7 +381,8 @@ class ProjectTaskServiceTest {
         .isEqualTo(
             new MobileTaskDetail.Assignee(
                 assigneeId, "김규일", "https://lh3.googleusercontent.com/a/gyuil"));
-    assertThat(result.priority()).isEqualTo("high");
+    assertThat(result.priority()).isEqualTo("urgent");
+    assertThat(result.dueDate()).isEqualTo(DUE_DATE);
     assertThat(result.purpose()).isEqualTo("화면 흐름 정리");
     assertThat(result.checklistItems())
         .extracting(TaskDetail.ChecklistItem::title)
@@ -306,7 +426,7 @@ class ProjectTaskServiceTest {
 
     MobileTaskDetail result = projectTaskService.getTaskDetail(TASK_ID, CALLER_ID).detail();
 
-    // 민수 산출물은 모바일 표기 매핑 없이 그대로 내려간다(priority의 urgent→high 매핑과 대비).
+    // 민수 산출물은 모바일 응답 표기 변환 없이 그대로 반환합니다.
     assertThat(result.openQuestions())
         .containsExactly(new TaskDetail.OpenQuestion(questionId, "권한 거부 시 대체 흐름을 둘지 검토 필요"));
     assertThat(result.nextAction()).isEqualTo("권한 거부 흐름을 PM과 확정하세요.");
@@ -340,10 +460,21 @@ class ProjectTaskServiceTest {
   void updateTaskThrowsTaskNotFoundWhenTaskMissing() {
     when(taskReader.findScope(TASK_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(
-            () ->
-                projectTaskService.updateTask(
-                    TASK_ID, CALLER_ID, "제목", "pm", null, "medium", "todo", null, List.of()))
+    assertThatThrownBy(() ->
+            projectTaskService.updateTask(
+                TASK_ID,
+                CALLER_ID,
+                "제목",
+                List.of(TaskRole.PM),
+                null,
+                null,
+                TaskPriority.MEDIUM,
+                null,
+                true,
+                TaskStatus.TODO,
+                null,
+                List.of(),
+                null))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(TaskErrorCode.TASK_NOT_FOUND);
@@ -355,13 +486,79 @@ class ProjectTaskServiceTest {
         .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
     when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(
-            () ->
-                projectTaskService.updateTask(
-                    TASK_ID, CALLER_ID, "제목", "pm", null, "medium", "todo", null, List.of()))
+    assertThatThrownBy(() ->
+            projectTaskService.updateTask(
+                TASK_ID,
+                CALLER_ID,
+                "제목",
+                List.of(TaskRole.PM),
+                null,
+                null,
+                TaskPriority.MEDIUM,
+                null,
+                true,
+                TaskStatus.TODO,
+                null,
+                List.of(),
+                null))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(CommonErrorCode.AUTH_FORBIDDEN);
+  }
+
+  @Test
+  void updateTaskKeepsExistingRolesWhenRequestedRoleIsAlreadyAssigned() {
+    assertThat(rolesSentForSingleRoleUpdate(TaskRole.PM))
+        .containsExactlyInAnyOrder(TaskRole.PM, TaskRole.BACKEND);
+  }
+
+  @Test
+  void updateTaskReplacesRolesWhenRequestedRoleIsNotAssigned() {
+    assertThat(rolesSentForSingleRoleUpdate(TaskRole.DESIGN)).containsExactly(TaskRole.DESIGN);
+  }
+
+  private Set<TaskRole> rolesSentForSingleRoleUpdate(TaskRole requested) {
+    when(taskReader.findScope(TASK_ID))
+        .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
+        .thenReturn(Optional.of(WorkspaceRole.MEMBER));
+    when(taskReader.findDetail(TASK_ID))
+        .thenReturn(
+            Optional.of(
+                new TaskDetail(
+                    TASK_ID,
+                    PROJECT_ID,
+                    WORKSPACE_ID,
+                    "title",
+                    "todo",
+                    "medium",
+                    List.of("pm", "backend"),
+                    null,
+                    null,
+                    null,
+                    List.of(),
+                    List.of(),
+                    null,
+                    0L)));
+
+    projectTaskService.updateTask(
+        TASK_ID,
+        CALLER_ID,
+        "title",
+        null,
+        requested,
+        null,
+        TaskPriority.MEDIUM,
+        null,
+        true,
+        TaskStatus.TODO,
+        null,
+        List.of(),
+        null);
+
+    ArgumentCaptor<UpdateTaskCommand> captor = ArgumentCaptor.forClass(UpdateTaskCommand.class);
+    verify(taskWriter).update(captor.capture());
+    return captor.getValue().roles();
   }
 
   @Test
@@ -373,17 +570,30 @@ class ProjectTaskServiceTest {
     List<ChecklistEdit> items = List.of(new ChecklistEdit(null, "A", true));
 
     projectTaskService.updateTask(
-        TASK_ID, CALLER_ID, "제목", "backend", null, "high", "in_progress", "수정한 목적", items);
+        TASK_ID,
+        CALLER_ID,
+        "제목",
+        List.of(TaskRole.BACKEND),
+        null,
+        null,
+        TaskPriority.HIGH,
+        DUE_DATE,
+        true,
+        TaskStatus.IN_PROGRESS,
+        "수정한 목적",
+        items,
+        null);
 
     ArgumentCaptor<UpdateTaskCommand> captor = ArgumentCaptor.forClass(UpdateTaskCommand.class);
-    org.mockito.Mockito.verify(taskWriter).update(captor.capture());
+    verify(taskWriter).update(captor.capture());
     UpdateTaskCommand command = captor.getValue();
     assertThat(command.taskId()).isEqualTo(TASK_ID);
     assertThat(command.title()).isEqualTo("제목");
-    assertThat(command.role()).isEqualTo("backend");
+    assertThat(command.roles()).containsExactly(TaskRole.BACKEND);
     assertThat(command.assigneeId()).isNull();
-    assertThat(command.priority()).isEqualTo("high");
-    assertThat(command.status()).isEqualTo("in_progress");
+    assertThat(command.priority()).isEqualTo(TaskPriority.HIGH);
+    assertThat(command.dueDate()).isEqualTo(DUE_DATE);
+    assertThat(command.status()).isEqualTo(TaskStatus.IN_PROGRESS);
     assertThat(command.purpose()).isEqualTo("수정한 목적");
     assertThat(command.checklistItems())
         .containsExactly(new UpdateTaskCommand.ChecklistItemEdit(null, "A", true));
@@ -393,9 +603,9 @@ class ProjectTaskServiceTest {
   void toggleChecklistItemThrowsTaskNotFoundWhenTaskMissing() {
     when(taskReader.findScope(TASK_ID)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(
-            () ->
-                projectTaskService.toggleChecklistItem(TASK_ID, CALLER_ID, UUID.randomUUID(), true))
+    assertThatThrownBy(() ->
+            projectTaskService.toggleChecklistItem(
+                TASK_ID, CALLER_ID, UUID.randomUUID(), true, null))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(TaskErrorCode.TASK_NOT_FOUND);
@@ -408,12 +618,12 @@ class ProjectTaskServiceTest {
         .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
     when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID))
         .thenReturn(Optional.of(WorkspaceRole.MEMBER));
-    when(taskWriter.toggleChecklistItem(TASK_ID, itemId, true))
+    when(taskWriter.toggleChecklistItem(TASK_ID, itemId, true, null))
         .thenReturn(
             detail(null, null, List.of(new TaskDetail.ChecklistItem(itemId, "완료기준", true))));
 
     MobileTaskDetail result =
-        projectTaskService.toggleChecklistItem(TASK_ID, CALLER_ID, itemId, true);
+        projectTaskService.toggleChecklistItem(TASK_ID, CALLER_ID, itemId, true, null);
 
     assertThat(result.checklistItems())
         .extracting(TaskDetail.ChecklistItem::completed)
@@ -438,12 +648,14 @@ class ProjectTaskServiceTest {
         "1차 와이어프레임",
         "todo",
         "urgent",
-        "pm",
+        List.of("pm"),
         assigneeId,
+        DUE_DATE,
         description,
         checklistItems,
         openQuestions,
-        nextAction);
+        nextAction,
+        0L);
   }
 
   private static TaskSnapshot snapshot(
@@ -458,11 +670,21 @@ class ProjectTaskServiceTest {
         null,
         status,
         priority,
-        role,
+        List.of(),
         null,
         null,
         CREATED_AT,
-        CREATED_AT);
+        CREATED_AT,
+        0L);
+  }
+
+  private static List<MobileTaskCard> cardsOf(
+      List<MobileTaskGroup> groups, MobileTaskStatus status) {
+    return groups.stream()
+        .filter(group -> group.status() == status)
+        .findFirst()
+        .orElseThrow()
+        .tasks();
   }
 
   private static UserProfile profile(UUID id, String name) {

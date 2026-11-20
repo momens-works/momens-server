@@ -27,9 +27,9 @@
 -
 
 <details>
-<summary>상세 변경 · 설계 의도 (선택)</summary>
+<summary>설계 의도 · 판단 근거</summary>
 
-<!-- 맥락이 필요한 결정, 대안 비교, 트레이드오프가 있으면 여기에 적습니다. -->
+<!-- 설계 의도·선택 근거·실제로 검토한 대안과 트레이드오프를 적습니다. 본문의 다른 위치나 티켓에 기록했다면 해당 위치를 참조합니다. -->
 
 </details>
 
@@ -41,9 +41,10 @@
 ## 검증
 
 <!-- 실제로 무엇을 어떻게 확인했는지. 자동 검증과 수동 확인 모두. -->
-- [ ] `./gradlew spotlessCheck` 통과
-- [ ] `./gradlew test` 통과
+- [ ] `./gradlew check` 통과 (포맷·테스트·Javadoc)
 - [ ] `./gradlew bootJar` 통과
+- 문서 변경 시 `bash scripts/check-doc-links.sh`, 링크 검사 도구 변경 시
+  `bash scripts/check-doc-links-test.sh` 실행 결과:
 - 수동 확인:
 
 ## 리뷰 포인트
@@ -61,4 +62,4 @@
 - [ ] PR 제목이 컨벤션(`[유형] 제목`)을 따릅니다.
 - [ ] 셀프 리뷰를 마쳤습니다.
 - [ ] 시크릿·`.env`·민감 값이 포함되지 않았습니다.
-- [ ] 필요한 문서(README / docs)를 갱신했습니다.
+- [ ] [문서·주석 기준](https://github.com/momens-works/momens-server/blob/develop/docs/rules/documentation.md)에 따라 필요한 설명을 갱신하고 정본·중복·이력 보존 위치를 확인했습니다.

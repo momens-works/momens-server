@@ -13,13 +13,6 @@ import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.source.SourceErrorCode;
 import works.momens.server.web.source.dto.response.WebSourceRefResponse;
 
-/**
- * {@code /api/source-refs} endpoint의 OpenAPI 문서입니다. Swagger 애너테이션은 컨트롤러 구현과 분리합니다({@code
- * docs/spec/openapi.md}).
- *
- * <p>401 응답은 보안 필터에서 처리합니다. source-ref가 없거나 소프트 삭제된 경우에는 {@code SOURCE_REF_NOT_FOUND}(404), 요청자가
- * source-ref가 속한 워크스페이스의 멤버가 아니면 {@code AUTH_FORBIDDEN}(403)을 반환합니다.
- */
 @Tag(name = "Web", description = "웹 진입 API")
 interface SourceRefControllerDocs {
 

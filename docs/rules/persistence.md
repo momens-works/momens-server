@@ -44,14 +44,16 @@
 
 - 컬럼의 허용 값 집합은 공유 DB의 CHECK 제약을 기준으로 하며, 이 레포지토리의 Flyway 마이그레이션을 통해서만
   변경합니다([ADR-0022](../adr/0022-column-value-set-ownership.md)).
-- 테이블을 관리하는 모듈에는 컬럼별로 해당 값 집합을 표현하는 도메인 enum을 하나만 둡니다. CHECK 제약과 enum의
-  값 집합이 다르면 그 차이를 `CheckConstraintEnumLinks`에 선언합니다. 값 집합을 제한하는 모든 CHECK 제약은 해당
-  목록에 등록해야 하며, 등록되지 않았거나 선언한 차이와 실제 값 집합이 일치하지 않으면
-  `CheckConstraintEnumConsistencyTest`가 실패합니다. 도메인 enum과 동일한 값 집합을 가진 별도의 enum은 이 목록에
-  등록하지 않습니다.
-- mobile과 web 모듈은 값 집합을 별도로 선언하지 않고 도메인 enum을 참조합니다. 표시 순서와 라벨, 레거시 입력
-  별칭은 각 모듈에서 관리합니다. 컬럼별로 도메인 enum을 하나만 두는 원칙과 이 참조 규칙은 테스트로 검출할 수
-  없으므로 리뷰에서 확인합니다.
+- 테이블을 관리하는 모듈에는 컬럼별로 해당 값 집합을 표현하는 도메인 enum을 하나만 둡니다. 다른 컬럼의 값을 복사해
+  보관하는 snapshot 컬럼은 원본 컬럼의 domain enum을 사용합니다. CHECK 제약과 enum의 값 집합이 다르면 그 차이를
+  `CheckConstraintEnumLinks`에 선언합니다. 값 집합을 제한하는 모든 CHECK 제약은 해당 목록에 등록해야 하며, 등록되지
+  않았거나 선언한 차이와 실제 값 집합이 일치하지 않으면 `CheckConstraintEnumConsistencyTest`가 실패합니다. 도메인 enum과
+  동일한 값 집합을 가진 별도의 enum은 이 목록에 등록하지 않습니다.
+- 요청 DTO와 모듈 간 command는 허용 값이 정해진 필드를 도메인 enum 타입으로 받습니다. 도메인보다 좁은 값 집합이 필요한
+  모듈은 도메인 enum을 참조하는 별도 enum을 둡니다. 표시 순서와 라벨은 각 모듈에서 관리합니다. 컬럼별로 도메인 enum을
+  하나만 두는 원칙은 테스트로 검출할 수 없으므로 리뷰에서 확인합니다.
+- 요청으로 값을 받는 컬럼에는 도메인 enum을 둡니다. 그 밖의 컬럼은 해당 코드를 수정할 때 enum을 추가하며, 그전까지는
+  `CheckConstraintEnumLinks`의 enum이 없는 컬럼 목록에 사유와 함께 등록합니다.
 - 값을 추가할 때는 Flyway 마이그레이션, 도메인 enum과 `CheckConstraintEnumLinks`를 같은 PR에서 변경합니다. 값을
   제거할 때는 쓰기 경로에서 해당 값을 먼저 제거하고 기존 데이터를 정리한 뒤 CHECK 제약을 축소합니다.
 
@@ -62,11 +64,18 @@
 Flyway의 `flyway_schema_history`와는 별개의 이력이라 한 DB에서 공존합니다.
 
 **이 서버가 마이그레이션 파일을 가진 객체의 DDL은 레거시와 worker가 쓰지 않습니다.** 경계는
-"이 리포에 그 객체를 만드는 파일이 있는가"이고, 겹치는 20개 테이블이 실제 동결 대상입니다
-(목록은 [설계 5절](../design/prod-schema-ownership-transfer.md)). 기간 한정이 아니라 영구입니다.
+"이 리포에 그 객체를 만드는 파일이 있는가"입니다. 겹치는 **20개 테이블**은
+[부트스트랩 당시 목록](https://github.com/momens-works/momens-server/blob/93a8f733ffdfa5220348be321455ece5dd345d9e/docs/design/prod-schema-ownership-transfer.md#5-결정-3--레거시-마이그레이션-정책)이며
+현재 전체 목록이 아닙니다. 이후 추가된 migration도 확인하며 동결은 기간 한정이 아니라 영구입니다.
 
-바깥쪽은 각자 계속 소유합니다 — 레거시 전용(`oauth_*`, `decisions`, `retrieval_*`, `sync_states`)과
+바깥쪽은 각자 계속 소유합니다 — 레거시 전용(`oauth_*`, `retrieval_*`, `sync_states`)과
 worker 전용(`raw_source_events` 등)입니다. 이 서버는 그 객체들의 파일도 엔티티도 갖지 않습니다.
+
+`decisions`는 MOM-1017에서 서버의 [생성 migration](../../modules/project/src/main/resources/db/migration/V20261004103000__create_decisions.sql)과
+Decision 엔티티를 추가했으므로 레거시 전용 객체가 아닙니다. 다만 파일 존재가 운영 전환 완료를
+뜻하지는 않습니다. 기존 테이블의 DDL 소유권 전환·서버 DML 권한은 migration 주석대로 운영 전환 전에
+별도 확인하며, legacy writer 중단과 신규 writer 활성화는
+[이관 원장 H054](../design/legacy-product-api-migration/ledger.md#http-진입점-원장)를 따릅니다.
 
 동결에 강제 수단은 없습니다. 위반은 다음 배포의 `ddl-auto=validate`가 기동에서 사후에 잡는데,
 `validate`는 매핑된 컬럼의 존재와 타입만 보고 제약·기본값·UNIQUE는 보지 않으므로 완전하지 않습니다.
@@ -117,11 +126,14 @@ Flyway가 만듭니다. 위 표는 **레거시가 만든 부분**에만 적용�
 충실도가 아니라 위 양방향 원칙이고, 인덱스는 「인덱스와 존재하는 환경」의 기준을 따릅니다. 파일은
 checksum 때문에 고치지 않으니 그 주석을 보고 되돌아가지 않도록 여기에 적어 둡니다.
 
-알려진 어긋남이 둘 있습니다. 둘 다 기록만 남기고 고치지 않습니다.
+MOM-0909에서 기록한 어긋남은 다음과 같습니다. 당시 조사 목록을 현재의 누락 목록으로 간주하지
+않으며, 변경을 검토할 때 후속 migration과 대상 환경의 실제 스키마를 함께 확인합니다.
 
-- prod에는 있으나 서버 파일이 만들지 않는 컬럼이 5개 있습니다 — `entity_relations`의 `metadata`·
+- 당시 조사에서는 prod에 있으나 서버 파일이 만들지 않는 컬럼 5개를 기록했습니다 — `entity_relations`의 `metadata`·
   `source_ref_ids`·`weight`, `source_refs.content_hash`, `workspace_members.onboarding_state`.
-  매핑하지 않아 `validate` 대상이 아닙니다([설계 2.6절](../design/prod-schema-ownership-transfer.md)).
+  매핑하지 않아 `validate` 대상이 아니라는 조사였습니다([MOM-0909 조사 기록](https://github.com/momens-works/momens-server/blob/93a8f733ffdfa5220348be321455ece5dd345d9e/docs/design/prod-schema-ownership-transfer.md#26-미러가-재현하지-않는-prod-컬럼이-5개-있다)).
+  현재 서버 파일의 누락 목록은 아닙니다. `source_refs.content_hash`와 부분 UNIQUE 인덱스는
+  [add_source_ref_content_hash](../../modules/source/src/main/resources/db/migration/V20260823100000__add_source_ref_content_hash.sql)가 생성합니다.
 - `tasks.workspace_id`가 서버 파일에서는 `NOT NULL`이지만 레거시(`000006_fe_contract.sql`)에서는
   nullable입니다. 레거시가 백필하고 트리거로 채워 실제 `NULL` 행은 사실상 없고, `validate`도
   nullability를 보지 않습니다.
@@ -200,6 +212,9 @@ GRANT USAGE, SELECT ON SEQUENCE some_shared_table_id_seq TO postgres;
   `NOT NULL DEFAULT NOW()`는 안전망으로 둡니다.
 - 예외: append-only 발행 로그(`outbox_events`)는 행이 수정되지 않으므로 `updated_at`을 두지 않고
   `created_at`만 둡니다.
+- 예외: 태스크의 role 목록을 저장하는 `task_roles` 테이블은 행을 수정하지 않고 추가하거나 삭제하는 방식으로
+  관리하므로 `updated_at` 없이 `created_at`만 사용합니다. `created_at` 값은 스키마에 정의된 `DEFAULT NOW()`로
+  설정합니다.
 
 ### 소프트 삭제
 

@@ -12,12 +12,6 @@ import works.momens.server.user.UserErrorCode;
 import works.momens.server.web.user.dto.request.UpdateMeRequest;
 import works.momens.server.web.user.dto.response.MeResponse;
 
-/**
- * {@code /api/me} OpenAPI 문서. Swagger 애너테이션을 컨트롤러 구현과 분리합니다(docs/spec/openapi.md).
- *
- * <p>path는 {@code /api/me} 단일 경로이며 {@code version = "1"} mapping을 둡니다(레거시 path alias 없음). 실패 응답 예시는
- * {@link ApiExceptions}로 선언하고 {@code SwaggerOperationCustomizer}가 보강합니다.
- */
 @Tag(name = "User", description = "사용자 프로필 API")
 interface UserControllerDocs {
 

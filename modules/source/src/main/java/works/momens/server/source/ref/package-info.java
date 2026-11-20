@@ -7,5 +7,7 @@
  * <p>공개 계약은 {@code source} 모듈 root에 그대로 둡니다. nested application module은 다른 상위 모듈이 참조할 수 없으므로 이 패키지는
  * 외부에 아무것도 공개하지 않습니다.
  */
-@org.springframework.modulith.ApplicationModule
+@ApplicationModule
 package works.momens.server.source.ref;
+
+import org.springframework.modulith.ApplicationModule;

@@ -2,3 +2,6 @@
 spring:
   jackson:
     property-naming-strategy: SNAKE_CASE
+    datatype:
+      enum:
+        fail-on-numbers-for-enums: true

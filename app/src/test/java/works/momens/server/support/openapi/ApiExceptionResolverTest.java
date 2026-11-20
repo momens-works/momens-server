@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import works.momens.server.common.api.ApiException;
 import works.momens.server.common.api.CommonErrorCode;
@@ -44,7 +45,7 @@ class ApiExceptionResolverTest {
         .hasMessageContaining("COMMON_NO_SUCH_CODE");
   }
 
-  private java.util.List<ErrorCode> resolve(String methodName) {
+  private List<ErrorCode> resolve(String methodName) {
     return apiExceptionResolver.resolve(declarationsOf(methodName));
   }
 

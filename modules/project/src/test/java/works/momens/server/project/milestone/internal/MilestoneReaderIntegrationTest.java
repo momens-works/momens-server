@@ -19,14 +19,7 @@ import works.momens.server.project.ProjectSeedSql;
 import works.momens.server.project.milestone.MilestoneDetail;
 import works.momens.server.project.milestone.MilestoneReader;
 
-/**
- * 마일스톤 조회 public API 검증.
- *
- * <p>레거시가 저장한 값을 그대로 읽는지, {@code owner_user_ids}의 정렬과 빈 목록 동작이 레거시 집계와 같은지, 목록의 정렬과 두 겹의 소프트 삭제 필터가
- * 계약대로인지 확인합니다(웹 snapshot 계약 2.3·4.4).
- *
- * <p>마일스톤은 이 서버에 쓰기 경로가 전혀 없어(쓰기는 MOM-0866) 모든 시드를 레거시처럼 네이티브 SQL로 넣습니다.
- */
+/** 생성 경로와 독립적으로 기존 공유 DB 행의 소유자·정렬·삭제 필터를 검증하도록 SQL로 시드합니다. */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({JpaAuditingConfig.class, MilestoneReaderImpl.class})
@@ -96,16 +89,6 @@ class MilestoneReaderIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
-  @DisplayName("소속 project가 소프트 삭제되면 그 마일스톤도 제외한다")
-  void milestoneOfSoftDeletedProjectIsGoneFromTheList() {
-    Fixture fixture = new Fixture("gone-project");
-    fixture.insertMilestone("살아있는 마일스톤");
-    softDeleteProject(fixture.projectId);
-
-    assertThat(fixture.details()).isEmpty();
-  }
-
-  @Test
   @DisplayName("owner_user_ids를 created_at, owner_user_id 순으로 반환한다")
   void ownerUserIdsFollowCreatedAtThenOwnerUserId() {
     Fixture fixture = new Fixture("owners");
@@ -131,13 +114,13 @@ class MilestoneReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     Fixture fixture = new Fixture("no-owners");
     fixture.insertMilestone("소유자 행 없음");
 
-    // project와 달리 폴백할 소유자 컬럼이 없어 빈 목록이 그대로 결과가 된다(웹 snapshot 계약 2.3).
+    // project와 달리 폴백할 소유자 컬럼이 없어 빈 목록이 그대로 결과가 된다.
     assertThat(fixture.onlyDetail().ownerUserIds()).isEmpty();
   }
 
   @Test
-  @DisplayName("워크스페이스의 여러 project에 걸친 마일스톤을 생성 시각 내림차순으로 합치고 각자의 소유자를 붙인다")
-  void listDetailsSpansProjectsOfTheWorkspaceNewestFirstWithOwnOwners() {
+  @DisplayName("넘긴 여러 project의 마일스톤을 생성 시각 내림차순으로 합치고 각자의 소유자를 붙인다")
+  void listDetailsSpansGivenProjectsNewestFirstWithOwnOwners() {
     Fixture fixture = new Fixture("list");
     UUID otherProject =
         ProjectSeedSql.insertProject(entityManager, fixture.workspaceId, fixture.ownerId);
@@ -157,9 +140,10 @@ class MilestoneReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     insertMilestoneOwner(newer, newerOwner, Instant.parse("2026-06-01T00:00:00Z"));
     insertMilestoneOwner(outside, outsideOwner, Instant.parse("2026-06-01T00:00:00Z"));
 
-    List<MilestoneDetail> details = fixture.details();
+    List<MilestoneDetail> details =
+        milestoneReader.listDetailsByProjectIds(List.of(fixture.projectId, otherProject));
 
-    // 워크스페이스 안의 여러 project에 걸친 마일스톤이 한 목록으로 합쳐지고, 정렬은 project와 무관하게 생성 시각을 따른다.
+    // 넘긴 여러 project의 마일스톤이 한 목록으로 합쳐지고, 정렬은 project와 무관하게 생성 시각을 따른다. 넘기지 않은 project는 제외된다.
     assertThat(details).extracting(MilestoneDetail::id).containsExactly(newer, older);
     // 소유자를 배치로 한 번 읽어 붙이므로, 각 마일스톤이 자기 소유자만 갖는지가 그룹핑의 유일한 방어선이다.
     assertThat(details.get(0).ownerUserIds()).containsExactly(newerOwner);
@@ -167,14 +151,55 @@ class MilestoneReaderIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
-  @DisplayName("마일스톤이 없는 워크스페이스는 빈 목록을 반환한다")
-  void listDetailsIsEmptyForWorkspaceWithoutMilestones() {
-    UUID workspaceId = ProjectSeedSql.insertWorkspace(entityManager, "list-milestone-empty");
+  @DisplayName("project id 목록이 비면 빈 목록을 반환한다")
+  void listsAreEmptyForNoProjects() {
+    Fixture fixture = new Fixture("list-empty");
+    UUID milestoneId = fixture.insertMilestone("범위 밖");
 
-    assertThat(milestoneReader.listDetailsByWorkspaceId(workspaceId)).isEmpty();
+    assertThat(milestoneReader.listDetailsByProjectIds(List.of())).isEmpty();
+    assertThat(milestoneReader.listPage(List.of(), null, null, 10)).isEmpty();
+    assertThat(milestoneReader.listByIds(List.of(), List.of(milestoneId))).isEmpty();
   }
 
-  /** 사용자·워크스페이스·project 한 벌과, 그 위에서 조회를 돌리는 헬퍼. */
+  @Test
+  @DisplayName("페이지 조회는 넘긴 project에 한정하고 생성 시각·id 내림차순 cursor 이후를 반환한다")
+  void listPageIsScopedToGivenProjectsAfterCursor() {
+    Fixture fixture = new Fixture("page");
+    UUID otherProject =
+        ProjectSeedSql.insertProject(entityManager, fixture.workspaceId, fixture.ownerId);
+    UUID first = fixture.insertMilestone("첫째", Instant.parse("2026-06-01T00:00:00Z"));
+    UUID second = fixture.insertMilestone("둘째", Instant.parse("2026-06-02T00:00:00Z"));
+    UUID third = fixture.insertMilestone("셋째", Instant.parse("2026-06-03T00:00:00Z"));
+    insertMilestone(otherProject, "범위 밖", Instant.parse("2026-06-04T00:00:00Z"));
+
+    List<MilestoneDetail> page =
+        milestoneReader.listPage(List.of(fixture.projectId), null, null, 2);
+    MilestoneDetail last = page.getLast();
+
+    assertThat(page).extracting(MilestoneDetail::id).containsExactly(third, second);
+    assertThat(milestoneReader.listPage(List.of(fixture.projectId), last.createdAt(), last.id(), 2))
+        .extracting(MilestoneDetail::id)
+        .containsExactly(first);
+  }
+
+  @Test
+  @DisplayName("id 조회는 넘긴 project에 속한 살아 있는 마일스톤만 반환한다")
+  void listByIdsIsScopedToGivenProjects() {
+    Fixture fixture = new Fixture("by-ids");
+    UUID otherProject =
+        ProjectSeedSql.insertProject(entityManager, fixture.workspaceId, fixture.ownerId);
+    UUID inside = fixture.insertMilestone("범위 안");
+    UUID deleted = fixture.insertMilestone("삭제됨");
+    softDeleteMilestone(deleted);
+    UUID outside = insertMilestone(otherProject, "범위 밖", null);
+
+    assertThat(
+            milestoneReader.listByIds(
+                List.of(fixture.projectId), List.of(inside, deleted, outside)))
+        .extracting(MilestoneDetail::id)
+        .containsExactly(inside);
+  }
+
   private final class Fixture {
 
     private final UUID ownerId;
@@ -196,10 +221,9 @@ class MilestoneReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     }
 
     private List<MilestoneDetail> details() {
-      return milestoneReader.listDetailsByWorkspaceId(workspaceId);
+      return milestoneReader.listDetailsByProjectIds(List.of(projectId));
     }
 
-    /** 마일스톤이 하나뿐인 workspace의 조회 결과를 꺼냅니다. 단건 조회 API를 두지 않아 목록으로 검증합니다. */
     private MilestoneDetail onlyDetail() {
       List<MilestoneDetail> details = details();
       assertThat(details).hasSize(1);
@@ -277,21 +301,12 @@ class MilestoneReaderIntegrationTest extends AbstractPostgresIntegrationTest {
     entityManager.clear();
   }
 
-  /** 소프트 삭제 API는 아직 없으므로(read 기반 슬라이스) 삭제 상태를 네이티브 SQL로 만듭니다. */
+  /** 조회할 삭제 상태를 네이티브 SQL로 구성합니다. */
   private void softDeleteMilestone(UUID milestoneId) {
     entityManager
         .getEntityManager()
         .createNativeQuery("UPDATE milestones SET deleted_at = NOW() WHERE id = ?1")
         .setParameter(1, milestoneId)
-        .executeUpdate();
-    entityManager.clear();
-  }
-
-  private void softDeleteProject(UUID projectId) {
-    entityManager
-        .getEntityManager()
-        .createNativeQuery("UPDATE projects SET deleted_at = NOW() WHERE id = ?1")
-        .setParameter(1, projectId)
         .executeUpdate();
     entityManager.clear();
   }

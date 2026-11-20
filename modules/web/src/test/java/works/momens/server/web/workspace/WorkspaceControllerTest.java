@@ -29,10 +29,8 @@ import works.momens.server.workspace.core.WorkspaceDetail;
 import works.momens.server.workspace.core.WorkspaceSlugAvailability;
 
 /**
- * 컨트롤러가 Principal을 조합 서비스에 그대로 전달하고
- * 계약(docs/design/legacy-product-api-migration/slice-workspace-read.md 4.3)의 snake_case 응답 shape를
- * 내는지 검증합니다. versioning은 모듈 경계상 app 설정을 못 가져오므로 슬라이스 안에서 동일하게 구성합니다. 인증 실패(401)와 에러 응답 shape는 app의
- * 통합 테스트가 봅니다.
+ * 컨트롤러가 Principal을 조합 서비스에 그대로 전달하고 계약의 snake_case 응답 shape를 내는지 검증합니다. versioning은 모듈 경계상 app 설정을
+ * 못 가져오므로 슬라이스 안에서 동일하게 구성합니다. 인증 실패(401)와 에러 응답 shape는 app의 통합 테스트가 봅니다.
  */
 @WebMvcTest(WorkspaceController.class)
 @AutoConfigureMockMvc(addFilters = false)

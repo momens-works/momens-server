@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -27,13 +28,16 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import works.momens.server.auth.AccessTokenTestFactory;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
+import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.project.task.UpdateTaskCommand;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
 /**
- * 비동기 생성 결과가 실제 배선으로 {@code tasks}에 반영되는지 확인한다(MOM-0820, 설계 5.4·8.1·8.3·7.3절).
+ * 비동기 생성 결과가 실제 배선으로 {@code tasks}에 반영되는지 확인한다(MOM-0820).
  *
  * <p>모듈 대역 없이 convert부터 scheduler 반영까지 그대로 태운다. 이 티켓이 새로 만든 두 모듈 의존({@code minsu → project}, {@code
  * minsu → outbox})이 실제 트랜잭션 안에서 함께 커밋되는지가 여기서만 보이기 때문이다. provider만 대역으로 두어 Google 자격 증명 없이 성립하게 한다.
@@ -77,7 +81,9 @@ class MinsuAsyncDraftApplyEndToEndIntegrationTest extends AbstractPostgresIntegr
     awaitCompletion(taskId);
 
     Map<String, Object> task =
-        jdbcTemplate.queryForMap("SELECT title, role, priority FROM tasks WHERE id = ?", taskId);
+        jdbcTemplate.queryForMap(
+            "SELECT title, (SELECT role FROM task_roles WHERE task_id = tasks.id) AS role, priority FROM tasks WHERE id = ?",
+            taskId);
     assertAll(
         () -> assertThat(task).containsEntry("title", GENERATED_TITLE),
         () -> assertThat(task).containsEntry("role", "backend"),
@@ -94,7 +100,7 @@ class MinsuAsyncDraftApplyEndToEndIntegrationTest extends AbstractPostgresIntegr
   @DisplayName("사용자가 먼저 편집했으면 편집을 보존하고 event를 발행하지 않는다")
   void userEditBeforeApplyKeepsEditAndSkipsEvent() throws Exception {
     // provider를 붙들어 두고 그 사이에 편집한다. 사용자가 convert 직후 제목을 고치는 것이 이 경합의 실제
-    // 모습이고, 뒤늦게 도착한 AI 결과가 그것을 덮으면 명시적으로 한 편집이 사라진다(8.1절).
+    // 모습이고, 뒤늦게 도착한 AI 결과가 그것을 덮으면 명시적으로 한 편집이 사라진다.
     CountDownLatch release = latchProvider();
     UUID taskId = convert("apply-user-edit").taskId();
     editTitle(taskId, "사용자가 고친 제목");
@@ -105,7 +111,7 @@ class MinsuAsyncDraftApplyEndToEndIntegrationTest extends AbstractPostgresIntegr
     assertAll(
         () -> assertThat(taskTitle(taskId)).isEqualTo("사용자가 고친 제목"),
         () -> assertThat(completionReason(taskId)).isEqualTo("user_edited"),
-        // tasks가 그대로이므로 projection도 바뀔 것이 없다(5.4절).
+        // tasks가 그대로이므로 projection도 바뀔 것이 없다.
         () -> assertThat(draftGeneratedEvents(taskId)).isZero());
   }
 
@@ -116,23 +122,22 @@ class MinsuAsyncDraftApplyEndToEndIntegrationTest extends AbstractPostgresIntegr
     UUID taskId = convert("apply-read-order").taskId();
 
     new TransactionTemplate(transactionManager)
-        .executeWithoutResult(
-            transaction -> {
-              // 응답 조립이 하는 순서 그대로다. 원장을 먼저 읽고 그다음 task를 읽는다(7.3절).
-              assertThat(draftStatusReader.statusOf(taskId)).isEqualTo(DraftStatus.GENERATING);
-              assertThat(taskTitle(taskId)).isEqualTo(SIGNAL_TITLE);
+        .executeWithoutResult(transaction -> {
+          // 응답 조립이 하는 순서 그대로다. 원장을 먼저 읽고 그다음 task를 읽는다.
+          assertThat(draftStatusReader.statusOf(taskId)).isEqualTo(DraftStatus.GENERATING);
+          assertThat(taskTitle(taskId)).isEqualTo(SIGNAL_TITLE);
 
-              // 응답 조립 도중에 scheduler가 반영과 종료를 원자적으로 커밋한다.
-              release.countDown();
-              awaitCompletion(taskId);
+          // 응답 조립 도중에 scheduler가 반영과 종료를 원자적으로 커밋한다.
+          release.countDown();
+          awaitCompletion(taskId);
 
-              // 같은 트랜잭션이지만 READ COMMITTED라 두 SELECT가 각각 그 시점의 snapshot을 뜬다. 따라서
-              // 나중에 읽은 값이 더 최신이고, ready 뒤에 읽는 title은 반영이 끝난 값이다. 격리 수준을
-              // REPEATABLE READ 이상으로 올리면 첫 문장이 snapshot을 고정해 이 계약이 조용히 깨진다.
-              assertAll(
-                  () -> assertThat(draftStatusReader.statusOf(taskId)).isEqualTo(DraftStatus.READY),
-                  () -> assertThat(taskTitle(taskId)).isEqualTo(GENERATED_TITLE));
-            });
+          // 같은 트랜잭션이지만 READ COMMITTED라 두 SELECT가 각각 그 시점의 snapshot을 뜬다. 따라서
+          // 나중에 읽은 값이 더 최신이고, ready 뒤에 읽는 title은 반영이 끝난 값이다. 격리 수준을
+          // REPEATABLE READ 이상으로 올리면 첫 문장이 snapshot을 고정해 이 계약이 조용히 깨진다.
+          assertAll(
+              () -> assertThat(draftStatusReader.statusOf(taskId)).isEqualTo(DraftStatus.READY),
+              () -> assertThat(taskTitle(taskId)).isEqualTo(GENERATED_TITLE));
+        });
   }
 
   @Test
@@ -141,7 +146,7 @@ class MinsuAsyncDraftApplyEndToEndIntegrationTest extends AbstractPostgresIntegr
     CountDownLatch release = latchProvider();
     Converted converted = convert("apply-detail-status");
 
-    // 앱이 재조회로 종료를 확인하는 경로다(설계 7.2절). 생성 중에는 generating이고, title은 그동안에도
+    // 앱이 재조회로 종료를 확인하는 경로다. 생성 중에는 generating이고, title은 그동안에도
     // 항상 유효한 fallback이다.
     getTaskDetail(converted)
         .andExpect(jsonPath("$.draft_status").value("generating"))
@@ -171,13 +176,11 @@ class MinsuAsyncDraftApplyEndToEndIntegrationTest extends AbstractPostgresIntegr
   }
 
   private static TaskDraft generated() {
-    return new TaskDraft(GENERATED_TITLE, Role.BACKEND, Priority.HIGH);
+    return new TaskDraft(GENERATED_TITLE, TaskRole.BACKEND, TaskPriority.HIGH);
   }
 
-  /** convert 결과. 상세 조회에 호출자 토큰이 필요해 함께 돌려준다. */
   private record Converted(UUID taskId, String authorization) {}
 
-  /** convert-to-task를 호출하고 생성된 task의 식별자를 돌려준다. */
   private Converted convert(String slug) throws Exception {
     UserProfile actor = userService.findOrCreate(slug + "@momens.works", "홍길동", null);
     UUID workspace = insertWorkspace(slug);
@@ -202,7 +205,17 @@ class MinsuAsyncDraftApplyEndToEndIntegrationTest extends AbstractPostgresIntegr
 
   private void editTitle(UUID taskId, String title) {
     taskWriter.update(
-        new UpdateTaskCommand(taskId, title, "pm", null, "medium", "todo", null, List.of()));
+        new UpdateTaskCommand(
+            taskId,
+            title,
+            Set.of(TaskRole.PM),
+            null,
+            TaskPriority.MEDIUM,
+            null,
+            TaskStatus.TODO,
+            null,
+            List.of(),
+            null));
   }
 
   private void awaitCompletion(UUID taskId) {

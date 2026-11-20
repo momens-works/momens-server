@@ -29,7 +29,7 @@ class UserServiceImpl implements UserService {
     Optional<UserIdentity> identity =
         userIdentityRepository.findByProviderAndProviderUserId(provider, providerUserId);
     if (identity.isPresent()) {
-      return refreshProfile(identity.get().getUserId(), email, name, avatarUrl);
+      return refreshProfile(identity.get().getUserId(), email, avatarUrl);
     }
 
     Optional<User> byEmail = userRepository.findByEmail(email);
@@ -54,7 +54,7 @@ class UserServiceImpl implements UserService {
           userIdentityRepository.insertIgnoringConflict(
               UUID.randomUUID(), userId, provider, providerUserId);
       UUID linkedUserId = linked == 0 ? winnerUserId(provider, providerUserId) : userId;
-      return refreshProfile(linkedUserId, email, name, avatarUrl);
+      return refreshProfile(linkedUserId, email, avatarUrl);
     }
 
     // 같은 이메일로 최초 로그인 요청이 동시에 들어오면 먼저 생성된 행과 충돌한 나머지 삽입은 아무 작업도 하지 않습니다.
@@ -71,7 +71,7 @@ class UserServiceImpl implements UserService {
         userIdentityRepository.insertIgnoringConflict(
             UUID.randomUUID(), created.getId(), provider, providerUserId);
     if (inserted == 0) {
-      return refreshProfile(winnerUserId(provider, providerUserId), email, name, avatarUrl);
+      return refreshProfile(winnerUserId(provider, providerUserId), email, avatarUrl);
     }
     return toProfile(created);
   }
@@ -83,12 +83,11 @@ class UserServiceImpl implements UserService {
         .getUserId();
   }
 
-  /** 로그인 시점의 최신 프로필을 반영합니다. 이메일은 충돌 시 건너뛰므로 별도 쿼리로 처리합니다. */
-  private UserProfile refreshProfile(UUID userId, String email, String name, String avatarUrl) {
+  /** 로그인 시점의 프로필 이미지와 이메일을 반영합니다. 이메일은 충돌 시 건너뜁니다. */
+  private UserProfile refreshProfile(UUID userId, String email, String avatarUrl) {
     User user = userRepository.findById(userId).orElseThrow(() -> notFound(userId));
-    user.refreshLoginProfile(name, avatarUrl);
+    user.refreshLoginProfile(avatarUrl);
     if (userRepository.updateEmailIfUnused(userId, email) == 0) {
-      // 개인정보(email)는 로그에 남기지 않으며, 식별은 userId로만 수행한다. (code-conventions 규칙)
       log.warn("로그인 이메일을 갱신하지 않았습니다. 해당 이메일은 이미 다른 사용자가 사용 중입니다. userId={}", userId);
     }
     return toProfile(userRepository.findById(userId).orElseThrow());
@@ -99,16 +98,11 @@ class UserServiceImpl implements UserService {
   public UserProfile findOrCreate(String email, String name, String avatarUrl) {
     // 조회보다 삽입을 먼저 시도합니다.
     // 조회를 먼저 수행하면 같은 신규 이메일로 동시에 들어온 두 요청이 모두 삽입을 시도해 한쪽 요청이 실패할 수 있습니다.
-    //
-    // 이름과 프로필 이미지는 엔티티 변경으로 갱신합니다.
-    // 삽입이 충돌하면 SQL은 아무 작업도 하지 않으므로 기존 행의 값은 변경되지 않습니다.
-    // 엔티티의 값이 기존 값과 같으면 UPDATE 쿼리도 실행되지 않습니다.
-    //
     // @LastModifiedDate는 flush 시점에 updated_at을 갱신합니다.
     // flush하지 않으면 반환하는 프로필에 갱신 전 updated_at이 포함되므로 명시적으로 호출합니다.
     userRepository.insertIgnoringConflict(UUID.randomUUID(), email, name, avatarUrl);
     User user = userRepository.findByEmail(email).orElseThrow();
-    user.refreshLoginProfile(name, avatarUrl);
+    user.refreshLoginProfile(avatarUrl);
     userRepository.flush();
     return toProfile(user);
   }

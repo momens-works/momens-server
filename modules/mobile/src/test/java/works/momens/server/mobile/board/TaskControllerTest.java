@@ -2,7 +2,9 @@ package works.momens.server.mobile.board;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -12,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.security.Principal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -28,6 +31,7 @@ import org.springframework.web.servlet.config.annotation.ApiVersionConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import works.momens.server.minsu.DraftStatus;
 import works.momens.server.project.task.TaskDetail;
+import works.momens.server.project.task.TaskPolicy;
 
 /**
  * 태스크 상세 컨트롤러가 경로 변수와 Principal을 조합 서비스에 전달하고 명세의 snake_case 응답 형식(checklist 카운트 파생 포함)을 내는지 검증합니다.
@@ -47,6 +51,8 @@ class TaskControllerTest {
   private static final UUID MATERIAL_ID = UUID.fromString("9f1c2b3a-4d5e-4f60-8a71-2b3c4d5e6f70");
   private static final Instant OCCURRED_AT = Instant.parse("2026-06-28T00:48:00Z");
   private static final UUID QUESTION_ID = UUID.fromString("3f2a1b4c-5d6e-4f70-8a91-b2c3d4e5f6a7");
+  private static final LocalDate DUE_DATE = LocalDate.of(2026, 9, 25);
+
   private final Principal principal = USER_ID::toString;
 
   @Test
@@ -63,10 +69,11 @@ class TaskControllerTest {
                     PROJECT_ID,
                     "1차 와이어프레임",
                     "todo",
-                    "frontend",
+                    List.of("frontend"),
                     new MobileTaskDetail.Assignee(
                         assigneeId, "김규일", "https://lh3.googleusercontent.com/a/gyuil"),
                     "medium",
+                    DUE_DATE,
                     "이번 범위의 화면 흐름을 정리한다",
                     List.of(
                         new TaskDetail.ChecklistItem(doneItemId, "완료된 기준", true),
@@ -80,7 +87,8 @@ class TaskControllerTest {
                             OCCURRED_AT,
                             "https://figma.example/p")),
                     List.of(new TaskDetail.OpenQuestion(QUESTION_ID, "권한 거부 시 대체 흐름을 둘지 검토 필요")),
-                    "권한 거부 흐름을 PM과 확정한 뒤 화면 카피를 수정하세요.")));
+                    "권한 거부 흐름을 PM과 확정한 뒤 화면 카피를 수정하세요.",
+                    0L)));
 
     mockMvc
         .perform(get("/api/mobile/tasks/{taskId}", TASK_ID).principal(principal))
@@ -95,6 +103,7 @@ class TaskControllerTest {
         .andExpect(
             jsonPath("$.assignee.avatar_url").value("https://lh3.googleusercontent.com/a/gyuil"))
         .andExpect(jsonPath("$.priority").value("medium"))
+        .andExpect(jsonPath("$.due_date").value("2026-09-25"))
         .andExpect(jsonPath("$.purpose").value("이번 범위의 화면 흐름을 정리한다"))
         .andExpect(jsonPath("$.checklist.completed_count").value(1))
         .andExpect(jsonPath("$.checklist.total_count").value(2))
@@ -112,7 +121,7 @@ class TaskControllerTest {
         .andExpect(jsonPath("$.open_questions[0].id").value(QUESTION_ID.toString()))
         .andExpect(jsonPath("$.open_questions[0].body").value("권한 거부 시 대체 흐름을 둘지 검토 필요"))
         .andExpect(jsonPath("$.next_action").value("권한 거부 흐름을 PM과 확정한 뒤 화면 카피를 수정하세요."))
-        // 원장이 아직 열려 있으면 앱은 이 값을 보고 재조회한다(설계 7.2절).
+        // 원장이 아직 열려 있으면 앱은 이 값을 보고 재조회한다.
         .andExpect(jsonPath("$.draft_status").value("generating"));
   }
 
@@ -127,14 +136,16 @@ class TaskControllerTest {
                     PROJECT_ID,
                     "빈 상세",
                     "todo",
-                    "pm",
+                    List.of("pm"),
                     null,
                     "low",
                     null,
+                    null,
                     List.of(),
                     List.of(),
                     List.of(),
-                    null)));
+                    null,
+                    0L)));
 
     mockMvc
         .perform(get("/api/mobile/tasks/{taskId}", TASK_ID).principal(principal))
@@ -181,7 +192,19 @@ class TaskControllerTest {
     ArgumentCaptor<List<ChecklistEdit>> captor = ArgumentCaptor.forClass(List.class);
     verify(projectTaskService)
         .updateTask(
-            eq(TASK_ID), eq(USER_ID), any(), any(), any(), any(), any(), any(), captor.capture());
+            eq(TASK_ID),
+            eq(USER_ID),
+            any(),
+            any(),
+            any(),
+            any(),
+            any(),
+            any(),
+            anyBoolean(),
+            any(),
+            any(),
+            captor.capture(),
+            isNull());
     assertThat(captor.getValue()).extracting(ChecklistEdit::completed).containsExactly(true, false);
   }
 
@@ -226,8 +249,8 @@ class TaskControllerTest {
   }
 
   @Test
-  void updateTaskRejectsTitleLongerThan15() throws Exception {
-    String title = "가".repeat(16);
+  void updateTaskRejectsTitleOverMaxLength() throws Exception {
+    String title = "가".repeat(TaskPolicy.TITLE_MAX_LENGTH + 1);
     mockMvc
         .perform(
             patch("/api/mobile/tasks/{taskId}", TASK_ID)
@@ -277,23 +300,25 @@ class TaskControllerTest {
   void toggleChecklistItemReturnsChecklistSummary() throws Exception {
     UUID itemId = UUID.randomUUID();
     UUID otherId = UUID.randomUUID();
-    when(projectTaskService.toggleChecklistItem(TASK_ID, USER_ID, itemId, true))
+    when(projectTaskService.toggleChecklistItem(TASK_ID, USER_ID, itemId, true, null))
         .thenReturn(
             new MobileTaskDetail(
                 TASK_ID,
                 PROJECT_ID,
                 "제목",
                 "todo",
-                "pm",
+                List.of("pm"),
                 null,
                 "medium",
+                null,
                 null,
                 List.of(
                     new TaskDetail.ChecklistItem(itemId, "바꾼 기준", true),
                     new TaskDetail.ChecklistItem(otherId, "다른 기준", false)),
                 List.of(),
                 List.of(),
-                null));
+                null,
+                0L));
 
     mockMvc
         .perform(

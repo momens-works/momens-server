@@ -4,13 +4,6 @@ import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * {@link ProjectOwner}의 복합 식별자.
- *
- * <p>레거시 {@code project_owners}는 {@code (project_id, owner_user_id)} 복합 PK라 단일 UUID PK용 {@link
- * works.momens.server.common.persistence.BaseEntity}를 쓰지 않고 {@code @IdClass}로 둡니다. JPA
- * {@code @IdClass} 규약대로 public 클래스와 public no-arg 생성자, {@code equals}/{@code hashCode}를 둡니다.
- */
 public class ProjectOwnerId implements Serializable {
 
   private UUID projectId;

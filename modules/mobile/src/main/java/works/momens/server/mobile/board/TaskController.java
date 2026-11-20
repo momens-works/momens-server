@@ -14,18 +14,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import works.momens.server.common.api.CurrentUser;
+import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.mobile.board.dto.request.ToggleChecklistItemRequest;
 import works.momens.server.mobile.board.dto.request.UpdateTaskRequest;
 import works.momens.server.mobile.board.dto.response.ChecklistToggleResponse;
 import works.momens.server.mobile.board.dto.response.TaskDetailResponse;
 
-/**
- * 모바일 태스크 단건 엔드포인트. task 식별자로 접근하는 {@code /api/mobile/tasks/*} 표면을 담당하고, project 경로의 보드/생성은 {@link
- * ProjectTaskController}가 담당합니다. 수정 계열(MOM-75)이 이 표면에 추가될 예정입니다.
- *
- * <p>{@code /api/mobile/*}는 보호 체인의 기본 인증 대상이라 별도 보안 설정이 없고, 현재 사용자는 {@link
- * CurrentUser#id(Principal)}로 읽습니다(docs/rules/code-conventions.md 보호 API).
- */
 @RestController
 @RequestMapping("/api/mobile")
 @RequiredArgsConstructor
@@ -51,16 +45,23 @@ class TaskController implements TaskControllerDocs {
         request.checklistItems().stream()
             .map(item -> new ChecklistEdit(item.id(), item.title(), item.completed()))
             .toList();
+    if (request.roles() == null && request.role() == null) {
+      throw FieldValidationException.forField("roles");
+    }
     projectTaskService.updateTask(
         taskId,
         CurrentUser.id(principal),
         request.title(),
+        request.roles(),
         request.role(),
         request.assigneeId(),
         request.priority(),
+        request.dueDate().orElse(null),
+        request.dueDate().isPresent(),
         request.status(),
         request.purpose(),
-        checklistItems);
+        checklistItems,
+        request.version());
   }
 
   @Override
@@ -72,7 +73,7 @@ class TaskController implements TaskControllerDocs {
       Principal principal) {
     MobileTaskDetail updated =
         projectTaskService.toggleChecklistItem(
-            taskId, CurrentUser.id(principal), itemId, request.completed());
+            taskId, CurrentUser.id(principal), itemId, request.completed(), request.version());
     return ChecklistToggleResponse.from(updated, itemId);
   }
 }

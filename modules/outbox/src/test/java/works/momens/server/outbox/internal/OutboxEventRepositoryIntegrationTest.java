@@ -11,9 +11,6 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 
-/**
- * {@code idempotency_key UNIQUE} + {@code ON CONFLICT DO NOTHING} dedup(SD-3)을 실제 PostgreSQL로 검증한다.
- */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class OutboxEventRepositoryIntegrationTest extends AbstractPostgresIntegrationTest {
@@ -77,5 +74,28 @@ class OutboxEventRepositoryIntegrationTest extends AbstractPostgresIntegrationTe
     entityManager.clear();
 
     assertThat(outboxEventRepository.findAll()).hasSize(1);
+  }
+
+  @Test
+  @DisplayName("같은 태스크의 서로 다른 변경 멱등키는 각각 저장한다")
+  void storesSeparateChangesToSameAggregate() {
+    UUID taskId = UUID.randomUUID();
+    String key = "task.updated:" + taskId + ":";
+    for (int change = 1; change <= 2; change++) {
+      outboxEventRepository.insertIgnoringConflict(
+          "api-server",
+          WORKSPACE_ID,
+          "task",
+          taskId.toString(),
+          "task.updated",
+          "{}",
+          key + change);
+    }
+    entityManager.flush();
+    entityManager.clear();
+
+    assertThat(outboxEventRepository.findAll())
+        .extracting(OutboxEvent::getIdempotencyKey)
+        .containsExactlyInAnyOrder(key + 1, key + 2);
   }
 }

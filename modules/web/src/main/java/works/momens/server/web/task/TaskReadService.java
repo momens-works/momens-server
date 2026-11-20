@@ -36,11 +36,10 @@ class TaskReadService {
     UUID workspaceId =
         projectReader
             .workspaceIdOf(projectId)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        ProjectErrorCode.PROJECT_NOT_FOUND,
-                        Map.of("project_id", projectId.toString())));
+            .orElseThrow(() ->
+                new BusinessException(
+                    ProjectErrorCode.PROJECT_NOT_FOUND,
+                    Map.of("project_id", projectId.toString())));
     requireMember(workspaceId, userId);
     return taskReader.listSnapshotsByProjectId(projectId);
   }
@@ -66,10 +65,9 @@ class TaskReadService {
   private TaskSnapshot requireTask(UUID taskId) {
     return taskReader
         .findSnapshot(taskId)
-        .orElseThrow(
-            () ->
-                new BusinessException(
-                    TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())));
+        .orElseThrow(() ->
+            new BusinessException(
+                TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())));
   }
 
   private void requireMember(UUID workspaceId, UUID userId) {

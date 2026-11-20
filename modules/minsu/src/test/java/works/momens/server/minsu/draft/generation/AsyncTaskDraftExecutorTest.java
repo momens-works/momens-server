@@ -13,14 +13,14 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import works.momens.server.minsu.Priority;
-import works.momens.server.minsu.Role;
 import works.momens.server.minsu.SignalTaskDraftInput;
 import works.momens.server.minsu.TaskDraft;
 import works.momens.server.minsu.draft.config.MinsuAsyncProperties;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 
 /**
- * 시도 전체를 감싸는 wall-clock 상한과 포화 동작을 검증한다(MOM-0819, 설계 9.1절).
+ * 시도 전체를 감싸는 wall-clock 상한과 포화 동작을 검증한다.
  *
  * <p>핵심은 <b>interrupt를 무시하는 호출</b>이다. SDK나 ADC 호출이 interrupt에 응답하지 않으면 {@code cancel(true)}는 효과가 없고
  * underlying thread는 계속 점유된다. 상한이 하는 일은 호출을 취소하는 것이 아니라 <b>호출자를 대기에서 푸는 것</b>이고, 그래야 원장에 결과를 남겨
@@ -48,13 +48,12 @@ class AsyncTaskDraftExecutorTest {
   void preservesInputOrder() {
     executor = executor();
     when(attempt.run(any(), any(), any()))
-        .thenAnswer(
-            invocation -> {
-              SignalTaskDraftInput input = invocation.getArgument(0);
-              return new TaskDraftAttempt.Result(
-                  new TaskDraft(input.title(), Role.PM, Priority.MEDIUM),
-                  GenerationOutcome.GENERATED);
-            });
+        .thenAnswer(invocation -> {
+          SignalTaskDraftInput input = invocation.getArgument(0);
+          return new TaskDraftAttempt.Result(
+              new TaskDraft(input.title(), TaskRole.PM, TaskPriority.MEDIUM),
+              GenerationOutcome.GENERATED);
+        });
 
     List<AsyncGenerationResult> results = executor.executeAll(List.of(input("첫째"), input("둘째")));
 
@@ -72,9 +71,9 @@ class AsyncTaskDraftExecutorTest {
     List<AsyncGenerationResult> results = executor.executeAll(List.of(input("멈춘 호출")));
 
     assertThat(results).hasSize(1);
-    // 원장은 이를 retryable로 보고 백오프 뒤 다시 집는다(9.2절).
+    // 원장은 이를 retryable로 보고 백오프 뒤 다시 집는다.
     assertThat(results.getFirst().outcome()).isEqualTo(GenerationOutcome.TIMEOUT);
-    // 고정 fallback은 그대로 유효하다. 실패해도 tasks가 갖는 draft의 품질 하한은 내려가지 않는다(8.5절).
+    // 고정 fallback은 그대로 유효하다. 실패해도 tasks가 갖는 draft의 품질 하한은 내려가지 않는다.
     assertThat(results.getFirst().draft().title()).isEqualTo("멈춘 호출");
     assertThat(Duration.ofNanos(System.nanoTime() - startedAt))
         .isLessThan(ATTEMPT_TIMEOUT.multipliedBy(4));
@@ -90,7 +89,7 @@ class AsyncTaskDraftExecutorTest {
     executor.executeAll(List.of(input("하나"), input("둘")));
 
     // 상한이 지나 호출자는 풀려났지만 interrupt를 무시하는 호출은 여전히 스레드를 잡고 있다. 설계가
-    // 수용한 포화가 이 상태다(9.1절). 슬롯이 0이면 다음 주기는 아무것도 claim하지 않으므로, 실행하지도
+    // 수용한 포화가 이 상태다. 슬롯이 0이면 다음 주기는 아무것도 claim하지 않으므로, 실행하지도
     // 못할 작업이 시도 횟수만 소모하는 일은 생기지 않는다.
     assertThat(executor.availableSlots()).isZero();
 
@@ -113,8 +112,8 @@ class AsyncTaskDraftExecutorTest {
 
     executor.executeAll(List.of(input("하나"), input("둘")));
 
-    // 상한이 지났는데 두 시도 모두 반환하지 않았다. availableSlots가 activeCount 기반이라 이 값이 곧
-    // 영구히 잃은 슬롯 수다.
+    // 상한을 넘겨도 반환하지 않은 두 시도는 activeCount에 남아 슬롯을 점유한다.
+    // 늦게 반환하면 해당 슬롯은 다시 사용할 수 있다.
     assertThat(hungAttempts(meterRegistry)).isEqualTo(2);
 
     // 늦게라도 돌아오면 슬롯이 회수된다. 실행 스레드와 대기 스레드가 결말을 한 번만 가져가지 않으면
@@ -187,7 +186,7 @@ class AsyncTaskDraftExecutorTest {
       }
     }
     return new TaskDraftAttempt.Result(
-        new TaskDraft("늦게 도착", Role.PM, Priority.MEDIUM), GenerationOutcome.GENERATED);
+        new TaskDraft("늦게 도착", TaskRole.PM, TaskPriority.MEDIUM), GenerationOutcome.GENERATED);
   }
 
   private static SignalTaskDraftInput input(String title) {

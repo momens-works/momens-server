@@ -16,8 +16,7 @@ import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 
 /**
- * consume에 여는 발송 위임 계약을 실제 PostgreSQL로 검증합니다. 동일 event replay의 중복 발송 방지(복합 PK 멱등 기록)를 이 경계가
- * 소유합니다(설계 10.1절).
+ * consume에 여는 발송 위임 계약을 실제 PostgreSQL로 검증합니다. 동일 event replay의 중복 발송 방지(복합 PK 멱등 기록)를 이 경계가 소유합니다.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)

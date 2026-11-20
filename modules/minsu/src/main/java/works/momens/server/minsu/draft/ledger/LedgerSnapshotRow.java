@@ -1,7 +1,7 @@
 package works.momens.server.minsu.draft.ledger;
 
 /**
- * 원장 지표 집계 한 행(docs/design/minsu-async-task-draft-design.md 9.3절).
+ * 원장 지표 집계 한 행.
  *
  * <p>집계 쿼리라 {@code GROUP BY}가 없어 행이 항상 정확히 하나다. 미종료 행이 없으면 건수는 0, 나이는 {@code COALESCE}로 0이 된다.
  */

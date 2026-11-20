@@ -8,23 +8,24 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import works.momens.server.minsu.PreparedTaskDraft;
-import works.momens.server.minsu.Priority;
-import works.momens.server.minsu.Role;
 import works.momens.server.minsu.SignalTaskDraftGenerator;
 import works.momens.server.minsu.TaskDraft;
 import works.momens.server.outbox.OutboxAppender;
 import works.momens.server.project.task.CreateTaskCommand;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskSnapshot;
+import works.momens.server.project.task.TaskStatus;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.signal.SignalActionResult;
 import works.momens.server.signal.SignalReader;
 
-/** convert/dismiss가 CO-6 이벤트 계약대로 outbox를 발행하는지 검증한다(DB 없이 협력 대상 mock). */
 class SignalActionExecutorTest {
 
   private static final UUID SIGNAL_ID = UUID.randomUUID();
@@ -53,12 +54,18 @@ class SignalActionExecutorTest {
     when(taskWriter.create(any())).thenReturn(snapshot(taskId, title, "design", "high"));
 
     SignalActionResult result =
-        executor.convert(signal, USER_ID, prepared(title, Role.DESIGN, Priority.HIGH));
+        executor.convert(signal, USER_ID, prepared(title, TaskRole.DESIGN, TaskPriority.HIGH));
 
     verify(taskWriter)
         .create(
             CreateTaskCommand.fromSignal(
-                PROJECT_ID, WORKSPACE_ID, title, "design", "high", SIGNAL_ID));
+                PROJECT_ID,
+                WORKSPACE_ID,
+                title,
+                TaskStatus.TODO,
+                TaskRole.DESIGN,
+                TaskPriority.HIGH,
+                SIGNAL_ID));
     verify(outboxAppender)
         .append(
             WORKSPACE_ID,
@@ -78,7 +85,7 @@ class SignalActionExecutorTest {
             SIGNAL_ID, WORKSPACE_ID, PROJECT_ID, "decision", "제목", "설명", "전체 영향");
     UUID taskId = UUID.randomUUID();
     when(taskWriter.create(any())).thenReturn(snapshot(taskId, "제목", "pm", "medium"));
-    PreparedTaskDraft prepared = prepared("제목", Role.PM, Priority.MEDIUM);
+    PreparedTaskDraft prepared = prepared("제목", TaskRole.PM, TaskPriority.MEDIUM);
 
     executor.convert(signal, USER_ID, prepared);
 
@@ -103,7 +110,7 @@ class SignalActionExecutorTest {
   }
 
   /** 실제 준비 결과는 Minsu 내부 타입이라 밖에서 만들 수 없다. 여기서는 draft만 담은 대역을 쓴다. */
-  private static PreparedTaskDraft prepared(String title, Role role, Priority priority) {
+  private static PreparedTaskDraft prepared(String title, TaskRole role, TaskPriority priority) {
     return new TestPreparedDraft(new TaskDraft(title, role, priority));
   }
 
@@ -118,11 +125,12 @@ class SignalActionExecutorTest {
         null,
         "todo",
         priority,
-        role,
+        List.of(),
         null,
         null,
         Instant.EPOCH,
-        Instant.EPOCH);
+        Instant.EPOCH,
+        0L);
   }
 
   private record TestPreparedDraft(TaskDraft draft) implements PreparedTaskDraft {}

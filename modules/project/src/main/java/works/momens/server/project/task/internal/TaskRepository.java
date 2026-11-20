@@ -1,18 +1,31 @@
 package works.momens.server.project.task.internal;
 
 import jakarta.persistence.LockModeType;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import works.momens.server.project.task.TaskScope;
 
 interface TaskRepository extends JpaRepository<Task, UUID> {
 
+  /** 값이 바뀌지 않는 수정 요청도 커밋 시 읽은 버전을 검사합니다. */
+  @Lock(LockModeType.OPTIMISTIC)
+  @Query("select e from Task e where e.id = :id and e.deletedAt is null")
+  Optional<Task> findForMutation(UUID id);
+
   /** 상세용 단건 조회. 소프트 삭제된 태스크는 제외합니다. */
   Optional<Task> findByIdAndDeletedAtIsNull(UUID taskId);
+
+  Optional<Task> findByWorkspaceIdAndIdAndDeletedAtIsNull(UUID workspaceId, UUID taskId);
+
+  Optional<Task> findByWorkspaceIdAndLabelAndDeletedAtIsNull(UUID workspaceId, String label);
 
   /**
    * draft 반영용 단건 조회. 조회한 행을 잠가 조건 검사와 갱신 사이에 다른 트랜잭션의 수정이 끼어들지 않게 합니다.
@@ -31,17 +44,20 @@ interface TaskRepository extends JpaRepository<Task, UUID> {
       from Task t
       where t.id = :taskId and t.deletedAt is null
       """)
-  Optional<works.momens.server.project.task.TaskScope> findScopeById(UUID taskId);
+  Optional<TaskScope> findScopeById(UUID taskId);
 
   /**
    * 보드용 조회. 주어진 상태의 소프트 삭제되지 않은 태스크를 생성 시각 내림차순으로, 같은 시각은 id 내림차순으로 정렬합니다. id 보조 정렬은 같은 마이크로초 생성 행의
    * 순서를 고정하기 위한 것입니다(pagination-tiebreaker 규칙).
    */
+  @EntityGraph(attributePaths = "roles")
   List<Task> findByProjectIdAndStatusInAndDeletedAtIsNullOrderByCreatedAtDescIdDesc(
       UUID projectId, Collection<String> statuses);
 
+  @EntityGraph(attributePaths = "roles")
   List<Task> findByProjectIdAndDeletedAtIsNullOrderByCreatedAtDesc(UUID projectId);
 
+  @EntityGraph(attributePaths = "roles")
   List<Task> findByWorkspaceIdAndDeletedAtIsNullOrderByCreatedAtDesc(UUID workspaceId);
 
   /**
@@ -60,4 +76,25 @@ interface TaskRepository extends JpaRepository<Task, UUID> {
       group by t.status
       """)
   List<StatusCount> countByStatus(UUID projectId, Collection<String> statuses);
+
+  @Query(
+      """
+      select t from Task t
+      where t.workspaceId = :workspaceId and t.deletedAt is null
+        and (:projectId is null or t.projectId = :projectId)
+        and (:assigneeId is null or t.assigneeId = :assigneeId)
+        and (:unassignedOnly = false or t.assigneeId is null)
+        and (:status is null or t.status = :status)
+        and (:beforeId is null or t.createdAt < :before or (t.createdAt = :before and t.id < :beforeId))
+      order by t.createdAt desc, t.id desc
+      """)
+  List<Task> findPage(
+      UUID workspaceId,
+      UUID projectId,
+      UUID assigneeId,
+      boolean unassignedOnly,
+      String status,
+      Instant before,
+      UUID beforeId,
+      Pageable pageable);
 }

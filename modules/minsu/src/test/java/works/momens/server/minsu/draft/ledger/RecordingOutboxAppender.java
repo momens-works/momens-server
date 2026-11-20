@@ -28,6 +28,17 @@ class RecordingOutboxAppender implements OutboxAppender {
     appended.add(new Appended(workspaceId, aggregateType, aggregateId, eventType, payload));
   }
 
+  @Override
+  public void appendWithIdempotencyKey(
+      UUID workspaceId,
+      String aggregateType,
+      String aggregateId,
+      String eventType,
+      Map<String, Object> payload,
+      String idempotencyKey) {
+    append(workspaceId, aggregateType, aggregateId, eventType, payload);
+  }
+
   List<Appended> appended() {
     return List.copyOf(appended);
   }

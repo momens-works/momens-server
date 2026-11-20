@@ -3,6 +3,7 @@ package works.momens.server.workspace.core.internal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import java.util.UUID;
@@ -17,11 +18,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
-import works.momens.server.workspace.WorkspaceErrorCode;
 import works.momens.server.workspace.WorkspaceSeedSql;
 import works.momens.server.workspace.core.CreateWorkspaceCommand;
 import works.momens.server.workspace.core.WorkspaceCreator;
 import works.momens.server.workspace.core.WorkspaceDetail;
+import works.momens.server.workspace.core.WorkspaceErrorCode;
 import works.momens.server.workspace.membership.AddMembershipCommand;
 import works.momens.server.workspace.membership.WorkspaceMembershipWriter;
 import works.momens.server.workspace.membership.WorkspaceRole;
@@ -83,29 +84,25 @@ class WorkspaceCreatorIntegrationTest extends AbstractPostgresIntegrationTest {
     entityManager.flush();
     entityManager.clear();
 
-    assertThatThrownBy(
-            () ->
-                workspaceCreator.create(
-                    new CreateWorkspaceCommand(REQUESTER_ID, "", null, "momens-free")))
+    assertThatThrownBy(() ->
+            workspaceCreator.create(
+                new CreateWorkspaceCommand(REQUESTER_ID, "", null, "momens-free")))
         .isInstanceOf(BusinessException.class);
-    assertThatThrownBy(
-            () ->
-                workspaceCreator.create(
-                    new CreateWorkspaceCommand(REQUESTER_ID, "모먼스", null, "Momens")))
+    assertThatThrownBy(() ->
+            workspaceCreator.create(
+                new CreateWorkspaceCommand(REQUESTER_ID, "모먼스", null, "Momens")))
         .isInstanceOf(BusinessException.class)
         .hasFieldOrPropertyWithValue("errorCode", WorkspaceErrorCode.WORKSPACE_INVALID_SLUG);
-    assertThatThrownBy(
-            () ->
-                workspaceCreator.create(
-                    new CreateWorkspaceCommand(REQUESTER_ID, "모먼스", null, "settings")))
+    assertThatThrownBy(() ->
+            workspaceCreator.create(
+                new CreateWorkspaceCommand(REQUESTER_ID, "모먼스", null, "settings")))
         .isInstanceOf(BusinessException.class)
         .hasFieldOrPropertyWithValue("errorCode", WorkspaceErrorCode.WORKSPACE_RESERVED_SLUG);
-    assertThatThrownBy(
-            () ->
-                workspaceCreator.create(
-                    new CreateWorkspaceCommand(REQUESTER_ID, "모먼스", null, "momens-taken")))
+    assertThatThrownBy(() ->
+            workspaceCreator.create(
+                new CreateWorkspaceCommand(REQUESTER_ID, "모먼스", null, "momens-taken")))
         .isInstanceOf(BusinessException.class)
         .hasFieldOrPropertyWithValue("errorCode", WorkspaceErrorCode.WORKSPACE_SLUG_ALREADY_EXISTS);
-    verify(workspaceMembershipWriter, org.mockito.Mockito.never()).addIfAbsent(any());
+    verify(workspaceMembershipWriter, never()).addIfAbsent(any());
   }
 }

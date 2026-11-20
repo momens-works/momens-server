@@ -6,5 +6,7 @@
  * works.momens.server.workspace.email.InvitationEmail} 계약만 공개하며, HTTP 호출과 템플릿 구현은 이 패키지 외부로 노출하지
  * 않습니다.
  */
-@org.springframework.modulith.ApplicationModule
+@ApplicationModule
 package works.momens.server.workspace.email;
+
+import org.springframework.modulith.ApplicationModule;

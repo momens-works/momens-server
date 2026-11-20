@@ -39,9 +39,12 @@ interface WebAuthControllerDocs {
       summary = "웹 Google 로그인 콜백",
       description =
           "code를 교환해 WEB 세션 토큰을 발급합니다. 성공: access/refresh HttpOnly 쿠키 설정 후 success-uri로"
-              + " 리다이렉트. 실패: failure-uri로 리다이렉트하며 `?error=`에는 `invalid_state`,"
-              + " `email_not_verified`, `email_conflict`, `google_error`, `server_error` 중 하나를"
-              + " 전달합니다.")
+              + " 리다이렉트. 실패: `failure-uri`로 리다이렉트하며 `?error=`에 다음 값 중 하나를 전달합니다."
+              + " `invalid_state`: state가 없거나 일치하지 않음, 또는 code 누락."
+              + " `email_not_verified`: Google 계정 이메일이 검증되지 않음."
+              + " `email_conflict`: 이메일로 조회한 사용자에게 이미 다른 로그인 수단이 연결되어 있음."
+              + " `google_error`: code 교환 또는 사용자 정보 조회 실패."
+              + " `server_error`: 그 밖의 예기치 못한 오류.")
   @ApiResponse(responseCode = "302", description = "성공/실패 모두 리다이렉트")
   @SecurityRequirements
   void googleCallback(

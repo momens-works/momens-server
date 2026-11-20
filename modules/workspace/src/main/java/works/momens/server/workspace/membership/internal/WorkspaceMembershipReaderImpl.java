@@ -1,9 +1,11 @@
 package works.momens.server.workspace.membership.internal;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.workspace.membership.UserWorkspaceMembership;
@@ -11,7 +13,6 @@ import works.momens.server.workspace.membership.WorkspaceMembershipDetail;
 import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 import works.momens.server.workspace.membership.WorkspaceRole;
 
-/** 멤버십 엔티티를 조회해 public API의 결과 타입으로 변환하는 구현입니다. */
 @Service
 @RequiredArgsConstructor
 class WorkspaceMembershipReaderImpl implements WorkspaceMembershipReader {
@@ -43,13 +44,9 @@ class WorkspaceMembershipReaderImpl implements WorkspaceMembershipReader {
     return workspaceMemberRepository
         .findByWorkspaceIdOrderByCreatedAtAscUserIdAsc(workspaceId)
         .stream()
-        .map(
-            member ->
-                new WorkspaceMembershipDetail(
-                    member.getUserId(),
-                    member.getRole(),
-                    member.getCreatedAt(),
-                    member.getUpdatedAt()))
+        .map(member ->
+            new WorkspaceMembershipDetail(
+                member.getUserId(), member.getRole(), member.getCreatedAt(), member.getUpdatedAt()))
         .toList();
   }
 
@@ -58,6 +55,19 @@ class WorkspaceMembershipReaderImpl implements WorkspaceMembershipReader {
   public List<UserWorkspaceMembership> listUserMemberships(UUID userId) {
     return workspaceMemberRepository.findByUserId(userId).stream()
         .map(member -> new UserWorkspaceMembership(member.getWorkspaceId(), member.getRole()))
+        .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<WorkspaceMembershipDetail> listPage(
+      UUID workspaceId, Instant after, UUID afterId, int limit) {
+    return workspaceMemberRepository
+        .findPage(workspaceId, after, afterId, PageRequest.of(0, limit))
+        .stream()
+        .map(member ->
+            new WorkspaceMembershipDetail(
+                member.getUserId(), member.getRole(), member.getCreatedAt(), member.getUpdatedAt()))
         .toList();
   }
 }

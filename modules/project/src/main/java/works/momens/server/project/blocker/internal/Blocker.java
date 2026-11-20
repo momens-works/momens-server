@@ -8,13 +8,13 @@ import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Immutable;
 import works.momens.server.common.persistence.BaseEntity;
+import works.momens.server.project.blocker.BlockedEntityType;
+import works.momens.server.project.blocker.BlockerDetail;
+import works.momens.server.project.blocker.BlockerStatus;
 
-/** 레거시 {@code blockers} 테이블의 읽기 전용 매핑. */
 @Getter
 @Entity
-@Immutable
 @Table(name = "blockers")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 class Blocker extends BaseEntity {
@@ -34,6 +34,36 @@ class Blocker extends BaseEntity {
   @Column(name = "blocked_entity_id", nullable = false, columnDefinition = "uuid")
   private UUID blockedEntityId;
 
+  @Column(name = "task_id", columnDefinition = "uuid")
+  private UUID taskId;
+
+  @Column(name = "milestone_id", columnDefinition = "uuid")
+  private UUID milestoneId;
+
   @Column(name = "resolved_at")
   private Instant resolvedAt;
+
+  static Blocker createForTask(UUID workspaceId, UUID taskId, String description) {
+    Blocker blocker = new Blocker();
+    blocker.workspaceId = workspaceId;
+    blocker.description = description;
+    blocker.status = BlockerStatus.ACTIVE.value();
+    blocker.blockedEntityType = BlockedEntityType.TASK.value();
+    blocker.blockedEntityId = taskId;
+    blocker.taskId = taskId;
+    return blocker;
+  }
+
+  BlockerDetail toDetail() {
+    return new BlockerDetail(
+        getId(),
+        workspaceId,
+        description,
+        status,
+        blockedEntityType,
+        blockedEntityId,
+        getCreatedAt(),
+        getUpdatedAt(),
+        resolvedAt);
+  }
 }

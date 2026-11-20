@@ -1,0 +1,34 @@
+package works.momens.server.mcp.oauth.infrastructure;
+
+import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsent;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
+import org.springframework.transaction.annotation.Transactional;
+
+/** Serializes SAS's read-then-insert consent save on its client/principal key. */
+class McpOAuth2AuthorizationConsentService extends JdbcOAuth2AuthorizationConsentService {
+  private final JdbcOperations jdbc;
+  private final McpUnusedClientRepository unusedClients;
+
+  McpOAuth2AuthorizationConsentService(
+      JdbcOperations jdbc,
+      RegisteredClientRepository clients,
+      McpUnusedClientRepository unusedClients) {
+    super(jdbc, clients);
+    this.jdbc = jdbc;
+    this.unusedClients = unusedClients;
+  }
+
+  @Override
+  @Transactional
+  public void save(OAuth2AuthorizationConsent consent) {
+    unusedClients.lockForUse(consent.getRegisteredClientId());
+    // Workspace is deliberately absent: SAS consent is shared across a user's workspace grants.
+    jdbc.queryForObject(
+        "SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(?, 0))",
+        Integer.class,
+        "mcp-consent:" + consent.getRegisteredClientId() + ":" + consent.getPrincipalName());
+    super.save(consent);
+  }
+}

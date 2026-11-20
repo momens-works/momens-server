@@ -5,8 +5,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,8 +29,12 @@ import works.momens.server.project.milestone.MilestoneDirectory;
 import works.momens.server.project.task.CreateTaskCommand;
 import works.momens.server.project.task.TaskDetail;
 import works.momens.server.project.task.TaskErrorCode;
+import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskReader;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskScope;
+import works.momens.server.project.task.TaskStatus;
+import works.momens.server.project.task.TaskWriteGate;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.project.task.UpdateTaskCommand;
 import works.momens.server.project.task.UpdateTaskCommand.ChecklistItemEdit;
@@ -45,7 +51,7 @@ import works.momens.server.workspace.membership.WorkspaceRole;
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({JpaAuditingConfig.class, TaskWriterImpl.class, TaskReaderImpl.class})
+@Import({JpaAuditingConfig.class, TaskWriterImpl.class, TaskReaderImpl.class, TaskWriteGate.class})
 class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
 
   @MockitoBean private ProjectReader projectReader;
@@ -75,19 +81,107 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
             command(
                 fixture.taskId(),
                 "제목 수정",
-                "backend",
+                TaskRole.BACKEND,
                 assigneeId,
-                "high",
-                "in_progress",
+                TaskPriority.HIGH,
+                TaskStatus.IN_PROGRESS,
                 "수정한 목적",
                 List.of()));
 
     assertThat(updated.title()).isEqualTo("제목 수정");
-    assertThat(updated.role()).isEqualTo("backend");
+    assertThat(updated.roles()).containsExactly("backend");
     assertThat(updated.priority()).isEqualTo("high");
     assertThat(updated.status()).isEqualTo("in_progress");
     assertThat(updated.description()).isEqualTo("수정한 목적");
     assertThat(updated.assigneeId()).isEqualTo(assigneeId);
+  }
+
+  @Test
+  void rejectsClientVersionFromBeforeLegacyUpdate() {
+    Fixture fixture = newTask();
+    long originalVersion = taskReader.findDetail(fixture.taskId()).orElseThrow().version();
+
+    entityManager
+        .getEntityManager()
+        .createNativeQuery(
+            "UPDATE tasks SET title = 'Legacy edit', updated_at = NOW() WHERE id = ?1")
+        .setParameter(1, fixture.taskId())
+        .executeUpdate();
+    entityManager.clear();
+
+    TaskDetail reloaded = taskReader.findDetail(fixture.taskId()).orElseThrow();
+    assertThat(reloaded.version()).isEqualTo(originalVersion + 1);
+    assertThat(reloaded.title()).isEqualTo("Legacy edit");
+
+    var staleEdit =
+        new UpdateTaskCommand(
+            fixture.taskId(),
+            "Stale edit",
+            Set.of(TaskRole.PM),
+            null,
+            TaskPriority.MEDIUM,
+            null,
+            TaskStatus.TODO,
+            null,
+            List.of(),
+            originalVersion);
+    assertThatThrownBy(() -> taskWriter.update(staleEdit))
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            exception ->
+                assertThat(exception.getErrorCode())
+                    .isEqualTo(CommonErrorCode.COMMON_CONCURRENT_MODIFICATION));
+  }
+
+  @Test
+  void legacySqlAdvancesVersionOnlyWhenTrackedValuesChange() {
+    Fixture fixture = newTask();
+    long originalVersion = storedVersion(fixture.taskId());
+
+    legacyUpdate(
+        "UPDATE tasks SET title = title, status = status, updated_at = NOW() WHERE id = ?1",
+        fixture.taskId());
+    assertThat(storedVersion(fixture.taskId())).isEqualTo(originalVersion);
+
+    legacyUpdate(
+        "UPDATE tasks SET deleted_at = NOW(), updated_at = NOW() WHERE id = ?1", fixture.taskId());
+    assertThat(storedVersion(fixture.taskId())).isEqualTo(originalVersion + 1);
+  }
+
+  @Test
+  void updateAddsRoleWithoutRecreatingKeptRole() {
+    Fixture fixture = newTask();
+    entityManager
+        .getEntityManager()
+        .createNativeQuery(
+            "UPDATE task_roles SET created_at = '2026-11-10T00:00:00Z' WHERE task_id = ?1")
+        .setParameter(1, fixture.taskId())
+        .executeUpdate();
+    entityManager.clear();
+
+    TaskDetail updated =
+        taskWriter.update(
+            new UpdateTaskCommand(
+                fixture.taskId(),
+                "Role update",
+                Set.of(TaskRole.BACKEND, TaskRole.PM),
+                null,
+                TaskPriority.MEDIUM,
+                null,
+                TaskStatus.TODO,
+                null,
+                List.of(),
+                null));
+
+    assertThat(updated.roles()).containsExactly("pm", "backend");
+    Object keptRoleCreatedAt =
+        entityManager
+            .getEntityManager()
+            .createNativeQuery(
+                "SELECT created_at FROM task_roles WHERE task_id = ?1 AND role = 'pm'")
+            .setParameter(1, fixture.taskId())
+            .getSingleResult();
+    assertThat(keptRoleCreatedAt).isEqualTo(Instant.parse("2026-11-10T00:00:00Z"));
   }
 
   @Test
@@ -109,10 +203,10 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
             command(
                 fixture.taskId(),
                 "제목 수정",
-                "pm",
+                TaskRole.PM,
                 assigneeId,
-                "medium",
-                "todo",
+                TaskPriority.MEDIUM,
+                TaskStatus.TODO,
                 "수정한 목적",
                 List.of()));
 
@@ -125,11 +219,27 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
     Fixture fixture = newTask();
     UUID assigneeId = ProjectSeedSql.insertUser(entityManager, "clear@momens.works");
     taskWriter.update(
-        command(fixture.taskId(), "제목", "pm", assigneeId, "medium", "todo", null, List.of()));
+        command(
+            fixture.taskId(),
+            "제목",
+            TaskRole.PM,
+            assigneeId,
+            TaskPriority.MEDIUM,
+            TaskStatus.TODO,
+            null,
+            List.of()));
 
     TaskDetail cleared =
         taskWriter.update(
-            command(fixture.taskId(), "제목", "pm", null, "medium", "todo", null, List.of()));
+            command(
+                fixture.taskId(),
+                "제목",
+                TaskRole.PM,
+                null,
+                TaskPriority.MEDIUM,
+                TaskStatus.TODO,
+                null,
+                List.of()));
 
     assertThat(cleared.assigneeId()).isNull();
   }
@@ -142,10 +252,10 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
             command(
                 fixture.taskId(),
                 "제목",
-                "pm",
+                TaskRole.PM,
                 null,
-                "medium",
-                "todo",
+                TaskPriority.MEDIUM,
+                TaskStatus.TODO,
                 null,
                 List.of(
                     new ChecklistItemEdit(null, "A", false),
@@ -159,10 +269,10 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
         command(
             fixture.taskId(),
             "제목",
-            "pm",
+            TaskRole.PM,
             null,
-            "medium",
-            "todo",
+            TaskPriority.MEDIUM,
+            TaskStatus.TODO,
             null,
             List.of(
                 new ChecklistItemEdit(idA, "A", false),
@@ -187,18 +297,17 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
   void updateRejectsUnknownChecklistItemId() {
     Fixture fixture = newTask();
 
-    assertThatThrownBy(
-            () ->
-                taskWriter.update(
-                    command(
-                        fixture.taskId(),
-                        "제목",
-                        "pm",
-                        null,
-                        "medium",
-                        "todo",
-                        null,
-                        List.of(new ChecklistItemEdit(UUID.randomUUID(), "없는 항목", false)))))
+    assertThatThrownBy(() ->
+            taskWriter.update(
+                command(
+                    fixture.taskId(),
+                    "제목",
+                    TaskRole.PM,
+                    null,
+                    TaskPriority.MEDIUM,
+                    TaskStatus.TODO,
+                    null,
+                    List.of(new ChecklistItemEdit(UUID.randomUUID(), "없는 항목", false)))))
         .isInstanceOf(BusinessException.class)
         .extracting(exception -> ((BusinessException) exception).getErrorCode())
         .isEqualTo(TaskErrorCode.TASK_CHECKLIST_ITEM_NOT_FOUND);
@@ -212,28 +321,27 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
             command(
                 fixture.taskId(),
                 "제목",
-                "pm",
+                TaskRole.PM,
                 null,
-                "medium",
-                "todo",
+                TaskPriority.MEDIUM,
+                TaskStatus.TODO,
                 null,
                 List.of(new ChecklistItemEdit(null, "A", false))));
     UUID idA = seeded.checklistItems().get(0).id();
 
-    assertThatThrownBy(
-            () ->
-                taskWriter.update(
-                    command(
-                        fixture.taskId(),
-                        "제목",
-                        "pm",
-                        null,
-                        "medium",
-                        "todo",
-                        null,
-                        List.of(
-                            new ChecklistItemEdit(idA, "A", false),
-                            new ChecklistItemEdit(idA, "A 중복", true)))))
+    assertThatThrownBy(() ->
+            taskWriter.update(
+                command(
+                    fixture.taskId(),
+                    "제목",
+                    TaskRole.PM,
+                    null,
+                    TaskPriority.MEDIUM,
+                    TaskStatus.TODO,
+                    null,
+                    List.of(
+                        new ChecklistItemEdit(idA, "A", false),
+                        new ChecklistItemEdit(idA, "A 중복", true)))))
         .isInstanceOf(BusinessException.class)
         .extracting(exception -> ((BusinessException) exception).getErrorCode())
         .isEqualTo(CommonErrorCode.COMMON_VALIDATION_FAILED);
@@ -247,15 +355,15 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
             command(
                 fixture.taskId(),
                 "제목",
-                "pm",
+                TaskRole.PM,
                 null,
-                "medium",
-                "todo",
+                TaskPriority.MEDIUM,
+                TaskStatus.TODO,
                 null,
                 List.of(new ChecklistItemEdit(null, "완료기준", false))));
     UUID itemId = seeded.checklistItems().get(0).id();
 
-    TaskDetail toggled = taskWriter.toggleChecklistItem(fixture.taskId(), itemId, true);
+    TaskDetail toggled = taskWriter.toggleChecklistItem(fixture.taskId(), itemId, true, null);
 
     assertThat(toggled.checklistItems().get(0).completed()).isTrue();
   }
@@ -265,7 +373,7 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
     Fixture fixture = newTask();
 
     assertThatThrownBy(
-            () -> taskWriter.toggleChecklistItem(fixture.taskId(), UUID.randomUUID(), true))
+            () -> taskWriter.toggleChecklistItem(fixture.taskId(), UUID.randomUUID(), true, null))
         .isInstanceOf(BusinessException.class)
         .extracting(exception -> ((BusinessException) exception).getErrorCode())
         .isEqualTo(TaskErrorCode.TASK_CHECKLIST_ITEM_NOT_FOUND);
@@ -273,11 +381,17 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
 
   @Test
   void updateRejectsUnknownTask() {
-    assertThatThrownBy(
-            () ->
-                taskWriter.update(
-                    command(
-                        UUID.randomUUID(), "제목", "pm", null, "medium", "todo", null, List.of())))
+    assertThatThrownBy(() ->
+            taskWriter.update(
+                command(
+                    UUID.randomUUID(),
+                    "제목",
+                    TaskRole.PM,
+                    null,
+                    TaskPriority.MEDIUM,
+                    TaskStatus.TODO,
+                    null,
+                    List.of())))
         .isInstanceOf(BusinessException.class)
         .extracting(exception -> ((BusinessException) exception).getErrorCode())
         .isEqualTo(TaskErrorCode.TASK_NOT_FOUND);
@@ -297,10 +411,10 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
         command(
             fixture.taskId(),
             "제목 수정",
-            "backend",
+            TaskRole.BACKEND,
             null,
-            "high",
-            "in_progress",
+            TaskPriority.HIGH,
+            TaskStatus.IN_PROGRESS,
             "수정한 목적",
             List.of(new ChecklistItemEdit(null, "새 완료기준", false))));
 
@@ -338,23 +452,48 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
         taskRepository
             .saveAndFlush(
                 Task.create(
-                    CreateTaskCommand.manual(projectId, workspaceId, "초기 제목", "pm", "medium"),
+                    CreateTaskCommand.manual(
+                        projectId,
+                        workspaceId,
+                        "초기 제목",
+                        TaskStatus.TODO,
+                        Set.of(TaskRole.PM),
+                        TaskPriority.MEDIUM,
+                        null),
                     null))
             .getId();
     return new Fixture(workspaceId, projectId, taskId);
   }
 
+  private void legacyUpdate(String sql, UUID taskId) {
+    entityManager.getEntityManager().createNativeQuery(sql).setParameter(1, taskId).executeUpdate();
+    entityManager.clear();
+  }
+
+  private long storedVersion(UUID taskId) {
+    return taskRepository.findById(taskId).orElseThrow().getVersion();
+  }
+
   private static UpdateTaskCommand command(
       UUID taskId,
       String title,
-      String role,
+      TaskRole role,
       UUID assigneeId,
-      String priority,
-      String status,
+      TaskPriority priority,
+      TaskStatus status,
       String purpose,
       List<ChecklistItemEdit> checklistItems) {
     return new UpdateTaskCommand(
-        taskId, title, role, assigneeId, priority, status, purpose, checklistItems);
+        taskId,
+        title,
+        Set.of(role),
+        assigneeId,
+        priority,
+        null,
+        status,
+        purpose,
+        checklistItems,
+        null);
   }
 
   private record Fixture(UUID workspaceId, UUID projectId, UUID taskId) {}

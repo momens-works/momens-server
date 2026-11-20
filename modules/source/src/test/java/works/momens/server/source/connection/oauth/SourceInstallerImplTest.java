@@ -18,11 +18,6 @@ import works.momens.server.source.BeginInstallCommand;
 import works.momens.server.source.SourceErrorCode;
 import works.momens.server.source.connection.oauth.SourceOAuthProperties.ProviderCredentials;
 
-/**
- * source 연결 시작 시 생성하는 provider 승인 URL과 요청 거부 조건을 검증합니다.
- *
- * <p>승인 URL에 포함된 state를 다시 검증해 요청한 워크스페이스, 사용자, provider 정보가 복원되는지 확인합니다.
- */
 class SourceInstallerImplTest {
 
   private static final UUID WORKSPACE_ID = UUID.randomUUID();
@@ -79,10 +74,9 @@ class SourceInstallerImplTest {
   @Test
   @DisplayName("지원하지 않는 provider는 거부한다")
   void rejectsProviderThatIsNotSupported() {
-    assertThatThrownBy(
-            () ->
-                configuredInstaller()
-                    .beginInstall(new BeginInstallCommand(WORKSPACE_ID, USER_ID, "linear")))
+    assertThatThrownBy(() ->
+            configuredInstaller()
+                .beginInstall(new BeginInstallCommand(WORKSPACE_ID, USER_ID, "linear")))
         .isInstanceOf(BusinessException.class)
         .hasFieldOrPropertyWithValue("errorCode", SourceErrorCode.SOURCE_UNSUPPORTED_PROVIDER);
   }
@@ -90,10 +84,9 @@ class SourceInstallerImplTest {
   @Test
   @DisplayName("자격 증명이 없는 provider는 거부한다")
   void rejectsSupportedProviderThatHasNoCredentials() {
-    assertThatThrownBy(
-            () ->
-                installerWith(Map.of())
-                    .beginInstall(new BeginInstallCommand(WORKSPACE_ID, USER_ID, "github")))
+    assertThatThrownBy(() ->
+            installerWith(Map.of())
+                .beginInstall(new BeginInstallCommand(WORKSPACE_ID, USER_ID, "github")))
         .isInstanceOf(BusinessException.class)
         .hasFieldOrPropertyWithValue("errorCode", SourceErrorCode.SOURCE_PROVIDER_UNCONFIGURED);
   }

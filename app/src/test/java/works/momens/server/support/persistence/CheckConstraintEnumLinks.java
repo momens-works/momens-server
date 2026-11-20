@@ -6,11 +6,22 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
-import works.momens.server.mobile.MobilePriority;
-import works.momens.server.mobile.board.BoardStatus;
+import works.momens.server.mcp.grant.McpScope;
+import works.momens.server.notification.PushInstallationPlatform;
+import works.momens.server.project.blocker.BlockedEntityType;
+import works.momens.server.project.blocker.BlockerStatus;
+import works.momens.server.project.core.ProjectHealthStatus;
+import works.momens.server.project.decision.DecisionReversibility;
+import works.momens.server.project.milestone.MilestoneHealthStatus;
 import works.momens.server.project.task.TaskOrigin;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskStatus;
+import works.momens.server.project.taskupdate.TaskUpdateKind;
+import works.momens.server.signal.SignalType;
+import works.momens.server.source.connection.SourceConnectionStatus;
 import works.momens.server.workspace.invitation.InvitationStatus;
+import works.momens.server.workspace.membership.AssignableWorkspaceRole;
 import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
@@ -39,6 +50,26 @@ final class CheckConstraintEnumLinks {
   static final List<EnumLink> ENUM_LINKS =
       List.of(
           new EnumLink(
+              "decisions",
+              "reversibility",
+              storedValues(DecisionReversibility.values(), DecisionReversibility::value),
+              IntendedDifference.NONE),
+          new EnumLink(
+              "blockers",
+              "status",
+              storedValues(BlockerStatus.values(), BlockerStatus::value),
+              IntendedDifference.NONE),
+          new EnumLink(
+              "blockers",
+              "blocked_entity_type",
+              storedValues(BlockedEntityType.values(), BlockedEntityType::value),
+              IntendedDifference.NONE),
+          new EnumLink(
+              "source_connections",
+              "status",
+              storedValues(SourceConnectionStatus.values(), SourceConnectionStatus::name),
+              IntendedDifference.NONE),
+          new EnumLink(
               "workspace_members",
               "role",
               storedValues(WorkspaceRole.values(), WorkspaceRole::value),
@@ -46,8 +77,8 @@ final class CheckConstraintEnumLinks {
           new EnumLink(
               "workspace_invitations",
               "role",
-              storedValues(WorkspaceRole.values(), WorkspaceRole::value),
-              IntendedDifference.onlyInEnum("owner는 워크스페이스 생성 시 결정되므로 초대로 부여할 수 없습니다", "owner")),
+              storedValues(AssignableWorkspaceRole.values(), AssignableWorkspaceRole::value),
+              IntendedDifference.NONE),
           new EnumLink(
               "workspace_invitations",
               "status",
@@ -66,42 +97,54 @@ final class CheckConstraintEnumLinks {
               IntendedDifference.NONE),
           new EnumLink(
               "tasks",
-              "status",
-              storedValues(BoardStatus.values(), BoardStatus::key),
-              IntendedDifference.NONE),
-          new EnumLink(
-              "tasks",
               "origin_type",
               storedValues(TaskOrigin.values(), TaskOrigin::value),
               IntendedDifference.NONE),
           new EnumLink(
               "tasks",
               "priority",
-              storedValues(MobilePriority.values(), MobilePriority::key),
-              IntendedDifference.onlyInConstraint("모바일은 urgent를 high로 해석합니다", "urgent")),
-          new EnumLink(
-              "tasks",
-              "priority",
-              storedValues(
-                  works.momens.server.minsu.Priority.values(),
-                  works.momens.server.minsu.Priority::value),
-              IntendedDifference.onlyInConstraint("minsu가 공개하는 우선순위는 세 가지입니다", "urgent")),
+              storedValues(TaskPriority.values(), TaskPriority::value),
+              IntendedDifference.NONE),
           new EnumLink(
               "tasks",
               "role",
-              storedValues(
-                  works.momens.server.minsu.Role.values(), works.momens.server.minsu.Role::value),
+              storedValues(TaskRole.values(), TaskRole::value),
+              IntendedDifference.NONE),
+          new EnumLink(
+              "task_roles",
+              "role",
+              storedValues(TaskRole.values(), TaskRole::value),
+              IntendedDifference.NONE),
+          new EnumLink(
+              "task_updates",
+              "kind",
+              storedValues(TaskUpdateKind.values(), TaskUpdateKind::value),
+              IntendedDifference.NONE),
+          new EnumLink(
+              "signals",
+              "type",
+              storedValues(SignalType.values(), SignalType::value),
+              IntendedDifference.NONE),
+          new EnumLink(
+              "push_installations",
+              "platform",
+              storedValues(PushInstallationPlatform.values(), PushInstallationPlatform::value),
               IntendedDifference.NONE),
           new EnumLink(
               "milestones",
               "health_status",
+              storedValues(MilestoneHealthStatus.values(), MilestoneHealthStatus::value),
+              IntendedDifference.NONE),
+          new EnumLink(
+              "milestones",
+              "status",
               internalEnumValues(
-                  "works.momens.server.project.milestone.internal.HealthStatus", "value"),
+                  "works.momens.server.project.milestone.internal.MilestoneStatus", "value"),
               IntendedDifference.NONE),
           new EnumLink(
               "projects",
               "health_status",
-              internalEnumValues("works.momens.server.project.core.internal.HealthStatus", "value"),
+              storedValues(ProjectHealthStatus.values(), ProjectHealthStatus::value),
               IntendedDifference.NONE),
           new EnumLink(
               "signal_actions",
@@ -129,16 +172,17 @@ final class CheckConstraintEnumLinks {
           new EnumLink(
               "minsu_task_draft_generations",
               "baseline_priority",
-              storedValues(
-                  works.momens.server.minsu.Priority.values(),
-                  works.momens.server.minsu.Priority::value),
-              IntendedDifference.onlyInConstraint(
-                  "CHECK 제약은 생산자인 minsu가 아니라 tasks 계약을 기준으로 합니다", "urgent")),
+              storedValues(TaskPriority.values(), TaskPriority::value),
+              IntendedDifference.NONE),
           new EnumLink(
               "minsu_task_draft_generations",
               "baseline_role",
-              storedValues(
-                  works.momens.server.minsu.Role.values(), works.momens.server.minsu.Role::value),
+              storedValues(TaskRole.values(), TaskRole::value),
+              IntendedDifference.NONE),
+          new EnumLink(
+              "mcp_grants",
+              "scopes",
+              storedValues(McpScope.values(), McpScope::value),
               IntendedDifference.NONE));
 
   /**
@@ -146,9 +190,6 @@ final class CheckConstraintEnumLinks {
    */
   static final List<ColumnWithoutEnum> COLUMNS_WITHOUT_ENUM =
       List.of(
-          new ColumnWithoutEnum(
-              "blockers", "blocked_entity_type", "레거시가 소유하는 테이블이며 이 서버에는 쓰기 경로가 없습니다"),
-          new ColumnWithoutEnum("blockers", "status", "레거시가 소유하는 테이블이며 이 서버에는 쓰기 경로가 없습니다"),
           new ColumnWithoutEnum(
               "confirmed_memories",
               "status",
@@ -158,21 +199,9 @@ final class CheckConstraintEnumLinks {
               "status",
               "MemoryWriterImpl이 저장하는 값만 상수로 선언하며 값 집합 전체를 나타내는 enum은 없습니다"),
           new ColumnWithoutEnum(
-              "milestones", "status", "Milestone 엔티티는 기본값인 planned만 사용하며 나머지 값은 레거시가 저장합니다"),
-          new ColumnWithoutEnum(
               "outbox_events", "issued_by", "이 서버는 api-server만 저장하며 worker는 momens-worker가 저장합니다"),
           new ColumnWithoutEnum(
               "projects", "status", "마이그레이션 기본값인 active만 사용하며 코드에는 값 집합을 나타내는 enum이 없습니다"),
-          new ColumnWithoutEnum("push_installations", "platform", "허용 값이 하나이므로 상수와 요청 검증으로만 관리합니다"),
-          new ColumnWithoutEnum("signals", "type", "worker가 생성하는 원본 데이터이며 이 서버는 읽기만 합니다"),
-          new ColumnWithoutEnum(
-              "source_connections",
-              "status",
-              "SourceInstallerImpl이 저장하는 ACTIVE와 PENDING만 상수로 선언합니다"),
-          new ColumnWithoutEnum(
-              "task_updates",
-              "kind",
-              "TaskUpdateWriterImpl의 switch가 두 값을 처리하며 값 집합을 나타내는 enum은 없습니다"),
           new ColumnWithoutEnum(
               "user_identities", "provider", "허용 값이 하나이므로 UserService.PROVIDER_GOOGLE 상수로만 관리합니다"));
 

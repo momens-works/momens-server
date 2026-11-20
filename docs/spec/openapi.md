@@ -8,7 +8,7 @@
 - 성공 응답에는 전역 wrapper(`success`, `data`)를 만들지 않습니다.
 - 실패 응답 예시는 [API 응답과 에러 코드](api-response-error-codes.md)의 응답 모드를 따릅니다.
 - Swagger/OpenAPI 문서화는 실제 public contract를 설명합니다. 내부 구현 세부사항을 노출하지 않습니다.
-- 모든 path는 `/api` prefix로 문서화합니다. 레거시 path alias는 두지 않습니다.
+- 제품 API의 경로·버전과 MCP/OAuth·well-known 예외는 [API 버저닝](api-versioning.md)을 따릅니다.
 
 ## 구성 위치
 
@@ -17,13 +17,6 @@ OpenAPI 공통 설정과 커스터마이저는 실행·조립 모듈인 `app`에
 ```text
 app/src/main/java/works/momens/server/support/openapi
 ```
-
-이 위치에는 다음 구성을 둡니다.
-
-- `OpenAPI` 기본 정보(title, version, description, server)
-- Swagger UI가 사용하는 공통 component
-- 실패 응답 예시를 보강하는 `OperationCustomizer`
-- `@ApiException` 선언을 `ErrorCode` 목록으로 변환하는 `ApiExceptionResolver`
 
 기능 모듈에는 해당 기능의 controller, request/response DTO, controller docs interface를 둡니다.
 
@@ -42,8 +35,9 @@ Swagger의 Authorize 입력창에는 토큰 값만 넣습니다. `Bearer ` 접�
 schema에 의도하지 않은 `default: null`이 생길 수 있습니다.
 
 - springdoc 또는 Swagger 의존성을 올릴 때 세 구성요소의 런타임 버전을 함께 확인합니다.
-- `/v3/api-docs`가 OpenAPI 3.1을 유지하고 request object schema에 의도하지 않은 `default`가 없는지
+- `/api/v3/api-docs`가 OpenAPI 3.1을 유지하고 request object schema에 의도하지 않은 `default`가 없는지
   통합 테스트로 검증합니다.
+- 스키마를 생성하는 `ModelResolver`도 OpenAPI 3.1 모드로 생성합니다.
 - 문서 생성 문제를 숨기기 위해 OpenAPI 3.0으로 낮추거나 직렬화된 JSON을 후처리하지 않습니다.
 
 ## Controller 문서화
@@ -121,35 +115,31 @@ path는 `/api/me` 단일 경로이며 `version = "1"` mapping을 둡니다. 레�
 
 - `@ApiException`의 `value`에는 문서화할 `ErrorCode` enum 클래스를 지정하고, `codes`에는 해당 enum에서
   문서화할 에러 코드를 지정합니다. 같은 메서드에 여러 번 선언할 수 있습니다.
-- `OperationCustomizer`는 `ApiExceptionResolver`가 해석한 에러 코드를 바탕으로 HTTP 상태 코드별 OpenAPI
-  응답과 예시를 추가합니다.
-- `codes`에는 해당 엔드포인트에서 실제로 반환할 수 있는 도메인 에러 코드만 지정합니다. 반환할 수 없는
-  코드가 문서에 포함되면 클라이언트에 불필요한 예외 처리 분기가 생깁니다.
+- `OperationCustomizer`는 `ApiExceptionFinder`가 찾은 선언을 `ApiExceptionResolver`로 해석하고, HTTP 상태 코드별 OpenAPI 응답과 예시를 추가합니다.
+- `codes`에는 해당 엔드포인트의 호출 경로에서 도달하는 도메인 에러 코드를 모두 지정합니다. 호출 경로에서는 도달하지만 실제로 발생하지 않는 코드도 제외하지 않습니다. 코드의 발생 여부는 코드 외부의 조건에 따라 달라져 테스트로 보장할 수 없기 때문입니다.
 - `codes`를 비워 두면 해당 enum의 모든 상수를 문서화합니다. 공통 에러 코드처럼 엔드포인트별 범위가 아직
   정해지지 않은 경우에만 사용하는 과도기적 표현이며, 범위가 정해지면 `codes`를 명시합니다.
 - `codes`에 지정한 이름은 컴파일러가 검증하지 않습니다. `ApiExceptionDeclarationTest`에서 해당 이름이
   enum에 존재하는지 확인합니다.
-- Standard 모드에서는 아래 형식을 사용합니다.
+- 응답 body와 예시는 [API 응답과 에러 코드](api-response-error-codes.md)의 Standard 또는
+  Legacy compatible 형식을 따릅니다. 필요한 `details`는 포함하되 민감 정보·내부 예외·SQL·stack trace는
+  넣지 않습니다.
 
-```json
-{
-  "error": {
-    "code": "USER_NOT_FOUND",
-    "message": "사용자를 찾을 수 없습니다."
-  }
-}
-```
+### 선언 검증
 
-`details`가 필요한 에러 예시는 `details`를 포함할 수 있습니다. 민감 정보, 내부 예외 메시지, SQL,
-stack trace는 예시에 넣지 않습니다.
+`ApiExceptionConsistencyTest`는 엔드포인트별로 `@ApiException`에 선언된 도메인 에러 코드와 호출 경로에서 도달하는 도메인 에러 코드가 일치하는지 검사합니다. 호출 경로에서 도달하지만 선언에서 누락된 코드나, 선언되어 있지만 호출 경로에서 도달하지 않는 코드가 있으면 테스트가 실패합니다. 선언을 수정한 뒤에는 OpenAPI 스냅샷을 다시 생성해야 합니다. `CommonErrorCode`는 검사 대상에서 제외합니다. 공통 에러 코드는 개별 엔드포인트가 아니라 보안 필터와 Spring MVC, 전역 예외 핸들러에서 발생하며, 어떤 엔드포인트에 어떤 공통 에러 코드를 선언할지 아직 정하지 않았기 때문입니다.
 
-Legacy compatible 모드 엔드포인트는 기존 Go API의 실패 body shape를 유지해 예시를 작성합니다.
+호출 경로는 ArchUnit으로 컴파일된 클래스를 읽고, 컨트롤러 메서드에서 시작해 메서드 호출과 메서드 참조를 따라가며 찾습니다. 인터페이스를 통한 호출은 모든 구현 클래스로 연결하므로 실행 시 선택되지 않는 구현에서 발생하는 에러 코드도 선언 대상에 포함될 수 있습니다.
 
-```json
-{
-  "error": "unauthorized"
-}
-```
+이 검사는 다음 조건을 모두 충족할 때만 에러 코드를 누락하지 않습니다. 조건을 위반하면 `ReachableDomainErrorCodeCollectorConditionTest`나 `ExceptionCatchingTryBlocksTest`가 실패합니다.
+
+- 탐색을 시작하는 컨트롤러 메서드의 `operationId` 집합이 OpenAPI 스냅샷과 일치해야 합니다. 매핑 애너테이션을 인터페이스 메서드에만 선언하면 이 조건을 충족하지 않습니다.
+- 도메인 에러 코드는 메서드 본문에서 enum 상수를 직접 참조해 `BusinessException`을 생성해야 합니다. `values()`나 `valueOf()`로 조회하거나 `BusinessException` 외의 클래스가 필드에 저장하면 안 됩니다.
+- 프레임워크가 호출하는 메서드에서는 도메인 에러 코드에 도달하지 않아야 합니다. 애플리케이션 코드의 호출로 도달할 수 없는 메서드와 진입 애너테이션이 붙은 메서드를 함께 검사하므로, 메서드끼리 순환 호출하더라도 검사 대상에서 제외되지 않습니다.
+- 도메인 에러 코드를 생성하는 클래스는 외부 라이브러리의 타입을 구현하거나 상속하지 않아야 합니다.
+- 도메인 에러 코드에 도달하는 호출을 감싸면서 `BusinessException`이나 그 상위 타입을 잡는 `try` 블록은 `ExceptionCatchingTryBlocks`에 등록해야 합니다.
+
+`try` 블록을 등록할 때는 `catch` 블록을 직접 확인해 처리 방식을 결정합니다. 예외를 JSON 에러 응답이 아닌 다른 응답으로 변환하면 `TRANSLATES`로 등록합니다. 이 블록 내부의 호출로만 도달하는 코드는 선언하지 않습니다. 예외를 다시 던지면 `RETHROWS`로 등록하고, 블록 내부의 호출로 도달하는 코드도 선언합니다. 등록 항목에는 메서드의 전체 이름, 처리 방식, 판단 근거를 기록합니다. 메서드의 전체 이름은 테스트 실패 메시지에서 확인할 수 있습니다.
 
 ## DTO Schema
 
@@ -157,13 +147,25 @@ Request/response DTO는 `record`를 기본으로 하고 `@Schema`로 문서화�
 
 - record 자체에 설명을 둡니다.
 - 주요 필드에는 `description`, `example`, `nullable`을 명시합니다.
+- `null`을 반환할 수 있는 객체 참조 필드에는 `@Nullable`(`org.jspecify.annotations`)을 지정합니다.
 - validation annotation과 `@Schema` 설명이 서로 어긋나지 않게 합니다.
+
+### 스키마 이름 충돌
+
+서로 다른 DTO가 같은 스키마 이름을 사용하면 springdoc이 하나의 스키마로 합칠 수 있습니다.
+충돌할 때는 `@Schema(name = "...")`으로 고유한 이름을 지정하고 기존 클라이언트에 미치는
+영향을 확인합니다. 스냅샷 일치 테스트만으로는 생성된 문서와 실제 DTO의 불일치를 보장할 수 없습니다.
+
+`OpenApiSchemaNameTest`는 main 소스의 `@Schema` 타입과 `.dto.` 패키지의 record를 검사합니다.
+API에 노출되지 않는 `@Schema` 타입도 검사하며, `.dto.` 밖에 있고 `@Schema`가 없는 모델은
+검사하지 않습니다. 그런 모델을 추가할 때는 이름 충돌 여부를 별도로 확인합니다.
 
 ### Property 이름(snake_case)
 
-wire format은 snake_case이고, DTO는 런타임 직렬화에 Jackson 3 `@JsonNaming(SnakeCaseStrategy)`를
-씁니다. 스키마를 만드는 swagger-core는 Jackson 2라 이 애노테이션을 읽지 못해, 그대로 두면 스키마
-property가 Java 필드명(camelCase)으로 나가 실제 API와 어긋납니다.
+런타임 wire format은 `app`의 `application.yml`에 있는
+`spring.jackson.property-naming-strategy: SNAKE_CASE` 전역 설정으로 적용합니다. DTO별
+`@JsonNaming`은 두지 않습니다. 스키마를 만드는 swagger-core는 Jackson 2를 사용하며 이 전역
+설정을 공유하지 않으므로, `ModelResolver`에도 같은 네이밍 전략을 별도로 적용합니다.
 
 - `app`이 등록하는 `ModelResolver` 빈이 swagger-core의 Jackson 2 ObjectMapper에 snake_case 전략을
   걸어 스키마 property를 전역 snake_case로 생성합니다. DTO에는 별도 애노테이션을 추가하지 않습니다.
@@ -172,8 +174,8 @@ property가 Java 필드명(camelCase)으로 나가 실제 API와 어긋납니다
 
 ## API Version Header
 
-모든 엔드포인트는 [API 버저닝](api-versioning.md)이 적용되므로 `API-Version` request header를 문서화합니다.
-초기 버전은 `1`입니다.
+제품 API는 `API-Version` request header를 문서화하며 초기 버전은 `1`입니다.
+MCP/OAuth protocol과 well-known은 [API 버저닝의 예외](api-versioning.md#외부-표준-protocol-예외)를 따릅니다.
 
 springdoc이 Spring MVC API versioning 설정과 handler의 `version` mapping을 읽어 문자열 header schema를
 자동 생성합니다. `@Operation.parameters`에 `API-Version`을 다시 선언하면 자동 생성된 parameter와 중복되므로
@@ -181,8 +183,7 @@ springdoc이 Spring MVC API versioning 설정과 handler의 `version` mapping을
 
 ## 스냅샷 고정
 
-`/v3/api-docs` 결과를 `docs/spec/openapi.json`으로 커밋합니다. 소비자(`momens-fe`)는 이 파일에서
-타입을 생성하므로, 계약 변경이 PR diff에 드러나야 합니다.
+`/api/v3/api-docs`에서 생성한 OpenAPI 문서를 `docs/spec/openapi.json`에 저장하고 커밋합니다. 스냅샷은 서버 코드에서 생성한 OpenAPI 문서의 커밋본입니다. `test` 프로필로 생성하므로 운영 환경에 등록되지 않는 dev 전용 엔드포인트도 포함됩니다.
 
 `OpenApiSnapshotTest`가 커밋본과 실제 문서를 대조하고 다르면 실패합니다. CI는 `test`를 돌리므로
 스냅샷을 갱신하지 않으면 계약 변경이 머지되지 않습니다.
@@ -203,28 +204,39 @@ git rebase origin/develop
 ./gradlew updateOpenApiSnapshot
 ```
 
-스냅샷은 정규화해 직렬화합니다. springdoc 출력의 path·schema 순서가 실행 간 안정적이라고 가정하지
-않고 객체 키를 정렬하며, 줄바꿈은 `\n`으로 고정합니다. 생성과 비교가 같은 정규화 함수를 공유해 두 경로가
-어긋나지 않습니다.
+스냅샷 생성·비교는 같은 정규화를 사용합니다. 객체 키와 루트 `tags`만 정렬하고 의미 있는 배열
+순서는 유지하며, 환경별 `servers`는 제외합니다. 구현은
+[OpenApiSnapshotTest](../../app/src/test/java/works/momens/server/support/openapi/OpenApiSnapshotTest.java)을 참고합니다.
 
-정렬 대상은 객체 키와 루트 `tags` 배열뿐입니다. 배열을 일괄 정렬하지는 않습니다. `enum`, `required`,
-`parameters`와 예시 값 배열은 순서가 내용의 일부이거나 선언 순서를 따라 안정적이라, 정렬하면 의미를
-바꾸거나 얻는 것 없이 diff만 키웁니다. 루트 `tags`만 예외인 이유는 springdoc이 set 순회 순서로 내보내,
-tag를 하나 추가하면 배열 전체가 재정렬되어 무관한 churn diff가 생기고 springdoc·JDK 업그레이드가 계약
-변경 없이 게이트를 깨뜨리기 때문입니다.
+### 유지하는 이유
 
-환경마다 달라지는 값은 스냅샷에서 제외합니다. `servers`는 `MOMENS_OPENAPI_SERVER_URL`로 주입되므로
-그대로 두면 실행 환경이 스냅샷을 바꿉니다.
+스냅샷을 유지하는 이유는 두 가지입니다.
+
+첫째, 계약 변경이 PR의 변경 파일 목록과 diff에 남습니다. 리뷰어는 diff를 보고 변경 사항이 기존 클라이언트와 호환되는지 판단할 수 있습니다. `.gitattributes`에서 스냅샷을 생성 파일로 지정했기 때문에 GitHub에서는 diff가 접힌 상태로 표시됩니다. 내용을 확인할 때는 diff를 펼쳐야 합니다.
+
+둘째, 서버를 실행하지 않아도 `git show`로 원하는 시점의 계약을 확인할 수 있습니다. prod 환경에서는 `/api/v3/api-docs`를 제공하지 않으며, dev 환경의 문서는 develop에 배포된 시점의 계약만 보여 줍니다. prod 계약은 `main` 브랜치의 스냅샷에서 확인합니다. 계약 변경 알림 워크플로는 PR의 base와 head에서 스냅샷을 읽어 비교합니다.
+
+### 사용처
+
+스냅샷 파일을 읽는 코드는 다음과 같습니다.
+
+- `OpenApiSnapshot`: 스냅샷을 사용하는 테스트는 모두 이 클래스를 통해 파일을 읽습니다. 스냅샷 대신 실행 중인 OpenAPI 문서를 읽도록 변경하면 해당 테스트에 Spring 컨텍스트와 PostgreSQL 컨테이너가 필요하게 됩니다.
+- `.github/workflows/openapi-change-notification.yml`: 머지된 PR의 base와 head에서 `git show`로 스냅샷을 읽습니다.
+- `app/build.gradle`: 테스트에 스냅샷 경로를 전달하고, `updateOpenApiSnapshot` 태스크로 스냅샷을 생성합니다.
+
+스냅샷 경로를 명시한 설정은 다음과 같습니다.
+
+- 계약 변경 알림 워크플로의 `paths` 필터
+- `.gitattributes`의 생성 파일 지정
 
 ## 구현 체크리스트
 
 - controller docs interface를 둘지 먼저 결정합니다.
 - 성공 응답은 실제 DTO shape 그대로 문서화합니다.
 - 주요 실패 응답은 `@ApiException`으로 선언합니다.
-- 해당 엔드포인트에서 실제로 반환하는 도메인 에러 코드를 `codes`에 빠짐없이 지정했는지 리뷰에서
-  확인합니다.
+- 호출 경로에서 도달하는 도메인 에러 코드를 `codes`에 모두 지정하고 `ApiExceptionConsistencyTest`가 통과하는지 확인합니다.
 - 모든 엔드포인트에 `operationId`를 명시하고 [operationId](#operationid) 절의 명명 규칙을 따릅니다.
-- 모든 엔드포인트는 `API-Version` header를 문서화합니다.
+- 제품 API는 `API-Version` header를 문서화하고 외부 표준 protocol 예외를 지킵니다.
 - controller docs에 `API-Version` parameter를 직접 중복 선언하지 않습니다.
-- 모든 path를 `/api` prefix 단일 경로로 문서화하고, 레거시 alias path를 두지 않습니다.
+- 경로는 [API 버저닝](api-versioning.md)의 제품 API·외부 표준 protocol 규칙을 따릅니다.
 - 계약을 바꿨으면 `./gradlew updateOpenApiSnapshot`으로 스냅샷을 갱신하고 diff를 PR에 포함합니다.

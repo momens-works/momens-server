@@ -1,18 +1,27 @@
 package works.momens.server.support.api;
 
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.TypeMismatchException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.exc.MismatchedInputException;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.common.api.ErrorCode;
@@ -21,15 +30,9 @@ import works.momens.server.common.api.FieldValidationDetails;
 import works.momens.server.common.api.FieldValidationException;
 
 /**
- * Standard 모드 에러 응답을 한곳에서 렌더링하는 전역 예외 핸들러.
+ * Spring MVC 예외의 status·헤더는 보존하고 본문만 공통 에러 형식으로 변환합니다. 내부 예외 메시지·SQL·secret은 응답에 노출하지 않습니다.
  *
- * <p>{@link ResponseEntityExceptionHandler}를 상속해 Spring MVC 표준 예외(405/415/400 등)는 프레임워크가 정한 HTTP
- * status를 보존하고, body만 docs/spec/api-response-error-codes.md의 Standard 에러 shape로 통일합니다. 도메인·애플리케이션
- * 예외({@link BusinessException})와 예상 밖 예외(500)는 직접 처리합니다. 내부 예외 메시지·stack trace·SQL·secret은 응답에 노출하지
- * 않습니다.
- *
- * <p>인증/인가 거부(401/403) 본문은 필터 단계에서 발생해 여기서 잡히지 않습니다. SecurityFilterChain의 entry point/handler 배선은
- * 인증/인가 구현 시점(MOM-8)에 추가합니다.
+ * <p>필터 단계의 인증·인가 거부는 여기서 잡히지 않으므로 auth의 entry point와 denied handler가 처리합니다.
  */
 @Slf4j
 @RestControllerAdvice
@@ -46,6 +49,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         .body(ErrorResponse.of(errorCode.code(), e.getMessage(), e.getDetails()));
   }
 
+  @ExceptionHandler(OptimisticLockingFailureException.class)
+  public ResponseEntity<ErrorResponse> handleConcurrentModification(
+      OptimisticLockingFailureException exception) {
+    return handleBusiness(new BusinessException(CommonErrorCode.COMMON_CONCURRENT_MODIFICATION));
+  }
+
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleUnexpected(Exception e) {
     ErrorCode errorCode = CommonErrorCode.COMMON_INTERNAL_SERVER_ERROR;
@@ -54,7 +63,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         .body(ErrorResponse.of(errorCode.code(), errorCode.defaultMessage(), null));
   }
 
-  /** Bean Validation 실패는 {@code details.fields}로 풍부하게 매핑합니다. */
   @Override
   protected ResponseEntity<Object> handleMethodArgumentNotValid(
       MethodArgumentNotValidException ex,
@@ -63,12 +71,78 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
       WebRequest request) {
     List<FieldValidationDetails.FieldViolation> fields =
         ex.getBindingResult().getFieldErrors().stream().map(this::toFieldErrorDetail).toList();
+    return validationFailed(fields, headers, status);
+  }
+
+  /**
+   * 요청 body의 enum 또는 날짜 필드를 해당 타입으로 변환할 수 없으면 {@code COMMON_VALIDATION_FAILED}와 오류가 발생한 필드 이름을
+   * 반환합니다. 허용되지 않는 문자열뿐 아니라 숫자, 배열, 객체처럼 문자열이 아닌 값도 동일하게 처리합니다.
+   *
+   * <p>JSON 문법 오류처럼 그 밖의 원인으로 요청 body를 읽지 못하면 기존과 동일하게 {@code COMMON_BAD_REQUEST}를 반환합니다.
+   */
+  @Override
+  protected ResponseEntity<Object> handleHttpMessageNotReadable(
+      HttpMessageNotReadableException ex,
+      HttpHeaders headers,
+      HttpStatusCode status,
+      WebRequest request) {
+    if (ex.getCause() instanceof MismatchedInputException cause
+        && cause.getTargetType() != null
+        && (cause.getTargetType().isEnum() || cause.getTargetType() == LocalDate.class)) {
+      FieldValidationDetails.FieldViolation field =
+          new FieldValidationDetails.FieldViolation(
+              jsonFieldName(cause), FieldValidationException.DEFAULT_REASON);
+      return validationFailed(List.of(field), headers, status);
+    }
+    return super.handleHttpMessageNotReadable(ex, headers, status, request);
+  }
+
+  /**
+   * 쿼리 파라미터의 타입 변환에 실패하면 타입에 관계없이 {@code COMMON_VALIDATION_FAILED}와 해당 파라미터 이름을 반환합니다. {@code
+   * Optional}, 배열, 컬렉션으로 선언된 쿼리 파라미터도 원소의 타입 변환에 실패하면 동일한 형식으로 응답합니다. 경로 변수의 타입 변환에 실패한 경우에는 {@code
+   * COMMON_BAD_REQUEST}를 반환합니다.
+   */
+  @Override
+  protected ResponseEntity<Object> handleTypeMismatch(
+      TypeMismatchException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+    if (ex instanceof MethodArgumentTypeMismatchException cause
+        && cause.getParameter().hasParameterAnnotation(RequestParam.class)) {
+      FieldValidationDetails.FieldViolation field =
+          new FieldValidationDetails.FieldViolation(
+              cause.getName(), FieldValidationException.DEFAULT_REASON);
+      return validationFailed(List.of(field), headers, status);
+    }
+    return super.handleTypeMismatch(ex, headers, status, request);
+  }
+
+  /** 필수 쿼리 파라미터가 누락되면 {@code COMMON_VALIDATION_FAILED}와 해당 쿼리 파라미터 이름을 응답합니다. */
+  @Override
+  protected ResponseEntity<Object> handleMissingServletRequestParameter(
+      MissingServletRequestParameterException ex,
+      HttpHeaders headers,
+      HttpStatusCode status,
+      WebRequest request) {
+    FieldValidationDetails.FieldViolation field =
+        new FieldValidationDetails.FieldViolation(
+            ex.getParameterName(), FieldValidationException.DEFAULT_REASON);
+    return validationFailed(List.of(field), headers, status);
+  }
+
+  private static ResponseEntity<Object> validationFailed(
+      List<FieldValidationDetails.FieldViolation> fields,
+      HttpHeaders headers,
+      HttpStatusCode status) {
     log.debug("validation failed fields={}", fields.size());
     ErrorCode errorCode = CommonErrorCode.COMMON_VALIDATION_FAILED;
     Object body =
         ErrorResponse.of(
             errorCode.code(), errorCode.defaultMessage(), new FieldValidationDetails(fields));
     return ResponseEntity.status(status).headers(headers).body(body);
+  }
+
+  private static String jsonFieldName(JacksonException ex) {
+    List<JacksonException.Reference> path = ex.getPath();
+    return path.isEmpty() ? null : path.getLast().getPropertyName();
   }
 
   /**

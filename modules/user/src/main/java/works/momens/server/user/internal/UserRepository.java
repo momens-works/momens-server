@@ -51,7 +51,7 @@ interface UserRepository extends JpaRepository<User, UUID> {
    *
    * <p>갱신 이후에는 1차 캐시에 남아 있는 값이 DB와 달라질 수 있으므로 {@code clearAutomatically}로 영속성 컨텍스트를 초기화합니다.
    *
-   * <p>{@code flushAutomatically}는 이 초기화 과정과 함께 동작하므로 반드시 함께 유지해야 합니다. 호출 전에 변경된 이름과 프로필 이미지가 아직
+   * <p>{@code flushAutomatically}는 이 초기화 과정과 함께 동작하므로 반드시 함께 유지해야 합니다. 호출 전에 변경된 프로필 이미지가 아직
    * flush되지 않은 상태에서 영속성 컨텍스트를 clear하면 해당 변경 사항이 별도의 예외 없이 유실됩니다.
    */
   @Modifying(flushAutomatically = true, clearAutomatically = true)

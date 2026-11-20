@@ -1,11 +1,13 @@
 package works.momens.server.mobile.signal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.jayway.jsonpath.JsonPath;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -59,6 +61,66 @@ class MobileSignalsIntegrationTest extends AbstractPostgresIntegrationTest {
         .andExpect(jsonPath("$.signals[0].type").value("risk"))
         .andExpect(jsonPath("$.signals[0].impact").value("완료율에 영향"))
         .andExpect(jsonPath("$.signals[0].minsu_suggestion").value("점검 제안"));
+  }
+
+  @Test
+  @DisplayName("query parameter 없이 조회하면 기본 크기인 5건과 next_cursor를 반환하고, 해당 cursor로 나머지 시그널을 이어서 조회한다")
+  void pagesUnprocessedSignalsByDefaultSizeAndCursor() throws Exception {
+    UserProfile jinsu = userService.findOrCreate("signals-it-page-jinsu@momens.works", "신진수", null);
+    UUID workspace = insertWorkspace("signals-page");
+    addMember(workspace, jinsu.id(), "owner");
+    UUID project = insertProject(workspace, jinsu.id(), "signals-page-project");
+    for (int i = 1; i <= 6; i++) {
+      insertSignal(workspace, project, "risk", "cursor pagination 확인용 미처리 시그널 " + i, null, null);
+    }
+    String token = accessTokens.issueAccessToken(jinsu.id());
+
+    String firstPageBody =
+        mockMvc
+            .perform(
+                get("/api/mobile/projects/{projectId}/signals", project)
+                    .header("Authorization", "Bearer " + token)
+                    .header("API-Version", "1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.signals.length()").value(5))
+            .andExpect(jsonPath("$.next_cursor").isNotEmpty())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String nextCursor = JsonPath.read(firstPageBody, "$.next_cursor");
+
+    mockMvc
+        .perform(
+            get("/api/mobile/projects/{projectId}/signals", project)
+                .param("cursor", nextCursor)
+                .header("Authorization", "Bearer " + token)
+                .header("API-Version", "1"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.signals.length()").value(1))
+        .andExpect(jsonPath("$.next_cursor", nullValue()));
+  }
+
+  @Test
+  @DisplayName("잘못된 목록 limit과 cursor는 해당 필드의 검증 오류를 반환한다")
+  void invalidPaginationReturnsFieldDetails() throws Exception {
+    UserProfile user = userService.findOrCreate("signals-invalid-page@momens.works", "사용자", null);
+    UUID workspace = insertWorkspace("signals-invalid-page");
+    addMember(workspace, user.id(), "owner");
+    UUID project = insertProject(workspace, user.id(), "signals-invalid-page");
+    String token = accessTokens.issueAccessToken(user.id());
+
+    for (String[] param : new String[][] {{"limit", "-1"}, {"cursor", "invalid"}}) {
+      mockMvc
+          .perform(
+              get("/api/mobile/projects/{projectId}/signals", project)
+                  .param(param[0], param[1])
+                  .header("Authorization", "Bearer " + token)
+                  .header("API-Version", "1"))
+          .andExpect(status().isBadRequest())
+          .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+          .andExpect(jsonPath("$.error.details.fields[0].field").value(param[0]))
+          .andExpect(jsonPath("$.error.details.fields[0].reason").value("invalid value"));
+    }
   }
 
   @Test
@@ -228,11 +290,13 @@ class MobileSignalsIntegrationTest extends AbstractPostgresIntegrationTest {
     String taskId =
         jdbcTemplate.queryForObject(
             "SELECT id FROM tasks WHERE project_id = ?", String.class, project);
-    // Minsu는 기본 비활성이므로 고정 fallback draft(title=15자로 제한한 Signal title, role=pm,
-    // priority=medium)를 쓴다.
+    // Minsu는 기본적으로 비활성화되어 있으므로 고정 fallback draft를 사용합니다. title은 정규화된 Signal 제목이며, role은 pm,
+    // priority는 medium입니다.
     assertThat(
             jdbcTemplate.queryForMap(
-                "SELECT role, priority FROM tasks WHERE project_id = ?", project))
+                "SELECT status, (SELECT role FROM task_roles WHERE task_id = tasks.id) AS role, priority FROM tasks WHERE project_id = ?",
+                project))
+        .containsEntry("status", "todo")
         .containsEntry("role", "pm")
         .containsEntry("priority", "medium");
 
@@ -251,8 +315,8 @@ class MobileSignalsIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
-  @DisplayName("Minsu 비활성 기본 설정에서 15자를 넘는 Signal title은 15자로 잘린 task title이 된다")
-  void convertToTaskTruncatesFallbackTitle() throws Exception {
+  @DisplayName("Minsu가 비활성화된 기본 설정에서는 정규화된 Signal 제목을 태스크 제목으로 사용한다")
+  void convertToTaskUsesNormalizedSignalTitleAsFallback() throws Exception {
     UserProfile jinsu = userService.findOrCreate("signals-it-truncate@momens.works", "신진수", null);
     UUID workspace = insertWorkspace("signals-truncate");
     addMember(workspace, jinsu.id(), "owner");
@@ -266,12 +330,12 @@ class MobileSignalsIntegrationTest extends AbstractPostgresIntegrationTest {
                 .header("Authorization", "Bearer " + accessTokens.issueAccessToken(jinsu.id()))
                 .header("API-Version", "1"))
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.task.title").value("Android 13+ 권한"));
+        .andExpect(jsonPath("$.task.title").value("Android 13+ 권한 요청 플로우에서 이탈 가능성 발견"));
 
     assertThat(
             jdbcTemplate.queryForObject(
                 "SELECT title FROM tasks WHERE project_id = ?", String.class, project))
-        .isEqualTo("Android 13+ 권한");
+        .isEqualTo("Android 13+ 권한 요청 플로우에서 이탈 가능성 발견");
   }
 
   @Test

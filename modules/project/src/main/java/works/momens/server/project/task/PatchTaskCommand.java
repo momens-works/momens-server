@@ -1,35 +1,52 @@
 package works.momens.server.project.task;
 
 import java.time.LocalDate;
+import java.util.Set;
 import java.util.UUID;
 
-/** 일부 필드만 바꾸는 태스크 수정 입력. 각 {@code *Set} 값은 해당 필드 변경 여부를 뜻합니다. */
+/**
+ * 일부 필드만 바꾸는 태스크 수정 입력. 각 {@code *Set} 값은 해당 필드 변경 여부를 뜻합니다.
+ *
+ * <p>제목을 변경하는 경우 이 record에서 길이를 직접 검증하며, 최대 길이를 초과하면 저장 전에 거부합니다.
+ */
 public record PatchTaskCommand(
     UUID taskId,
     String title,
     boolean titleSet,
     String description,
     boolean descriptionSet,
-    String status,
+    TaskStatus status,
     boolean statusSet,
-    String priority,
+    TaskPriority priority,
     boolean prioritySet,
+    Set<TaskRole> roles,
+    boolean rolesSet,
     UUID milestoneId,
     boolean milestoneSet,
     UUID assigneeId,
     boolean assigneeSet,
     LocalDate dueDate,
-    boolean dueDateSet) {
+    boolean dueDateSet,
+    Long version) {
 
   public PatchTaskCommand {
     if (titleSet && title == null) {
       throw new IllegalArgumentException("titleSet이면 title이 필요합니다.");
     }
-    if (statusSet && (status == null || status.isBlank())) {
+    if (statusSet && status == null) {
       throw new IllegalArgumentException("statusSet이면 status가 필요합니다.");
     }
     if (prioritySet && priority == null) {
       throw new IllegalArgumentException("prioritySet이면 priority가 필요합니다.");
+    }
+    if (rolesSet && roles == null) {
+      throw new IllegalArgumentException("rolesSet이 true이면 roles가 필요합니다.");
+    }
+    if (rolesSet) {
+      roles = Set.copyOf(roles);
+    }
+    if (titleSet) {
+      TaskPolicy.requireTitleWithinLimit(title);
     }
   }
 }

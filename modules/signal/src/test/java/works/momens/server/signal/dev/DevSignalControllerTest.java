@@ -24,8 +24,8 @@ import org.springframework.web.servlet.config.annotation.ApiVersionConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * 컨트롤러가 요청 검증(5.3절 입력 계약)을 400으로 거부하고 201과 생성된 id를 반환하는지 검증합니다. {@code @DevOnly} 컨트롤러라 test 프로필을
- * 활성화합니다. versioning은 모듈 경계상 app 설정을 못 가져오므로 슬라이스 안에서 동일하게 구성합니다.
+ * 컨트롤러가 요청 검증을 400으로 거부하고 201과 생성된 id를 반환하는지 검증합니다. {@code @DevOnly} 컨트롤러라 test 프로필을 활성화합니다.
+ * versioning은 모듈 경계상 app 설정을 못 가져오므로 슬라이스 안에서 동일하게 구성합니다.
  */
 @WebMvcTest(DevSignalController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -67,6 +67,25 @@ class DevSignalControllerTest {
                     """))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.id").value(signalId.toString()));
+  }
+
+  @Test
+  @DisplayName("근거 상세의 명시적 null을 허용한다")
+  void acceptsNullEvidenceDetailsFields() throws Exception {
+    when(devSignalWriter.create(eq(PROJECT_ID), any())).thenReturn(UUID.randomUUID());
+
+    mockMvc
+        .perform(
+            post("/api/dev/projects/{projectId}/signals", PROJECT_ID)
+                .header("API-Version", "1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"type":"risk","title":"제목","description":"설명",
+                     "evidence":[{"source_type":"slack",
+                                  "details":{"target":null,"change":null,"impact":null}}]}
+                    """))
+        .andExpect(status().isCreated());
   }
 
   @Test

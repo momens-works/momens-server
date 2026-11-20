@@ -131,7 +131,6 @@ class ProjectBriefServiceTest {
     MobileBrief brief = projectBriefService.getBrief(PROJECT_ID, CALLER_ID);
 
     assertThat(brief.project()).isEqualTo(snapshot);
-    // 진행률은 project 모듈의 task 경계가 계산한 값을 그대로 싣는다.
     assertThat(brief.progress()).isEqualTo(64);
     // All이 맨 앞(전체 12), 나머지는 라벨 글자수 오름차순과 알파벳순(Risk, Change, Decision, Question).
     assertThat(brief.filters())
@@ -198,7 +197,7 @@ class ProjectBriefServiceTest {
     UUID mediumOld = UUID.randomUUID();
     UUID mediumNew = UUID.randomUUID();
     UUID low = UUID.randomUUID();
-    // 저장 priority가 urgent면 high와 같은 순위이고, 같은 순위 안에서는 생성이 오래된 순이다.
+    // urgent를 최우선으로 정렬하고, 우선순위가 같으면 생성 시각이 오래된 태스크를 먼저 배치합니다.
     when(taskReader.listTasksByStatus(PROJECT_ID, PRIORITY_STATUSES))
         .thenReturn(
             List.of(
@@ -220,12 +219,11 @@ class ProjectBriefServiceTest {
   }
 
   @Test
-  void getBriefRanksUrgentAtTheSameLevelAsHigh() {
+  void getBriefRanksUrgentAboveHigh() {
     stubBriefBase();
     UUID highOld = UUID.randomUUID();
     UUID urgentNew = UUID.randomUUID();
-    // urgent가 high보다 높은 순위였다면 생성 시각과 무관하게 urgent가 먼저 온다. 같은 순위이므로
-    // 생성이 오래된 high가 먼저 와야 한다.
+    // urgent는 high보다 우선순위가 높으므로 생성 시각과 관계없이 먼저 정렬됩니다.
     when(taskReader.listTasksByStatus(PROJECT_ID, PRIORITY_STATUSES))
         .thenReturn(
             List.of(
@@ -237,14 +235,13 @@ class ProjectBriefServiceTest {
 
     assertThat(priorities)
         .containsExactly(
-            new MobileBrief.Priority(1, "높음 오래됨", highOld),
-            new MobileBrief.Priority(2, "긴급 최신", urgentNew));
+            new MobileBrief.Priority(1, "긴급 최신", urgentNew),
+            new MobileBrief.Priority(2, "높음 오래됨", highOld));
   }
 
   @Test
   void getSignalSummaryPagePassesSingleTypeForTypeFilter() {
     UUID signalId = UUID.randomUUID();
-    // filter=change는 change 하나만 type으로 넘긴다.
     when(signalListService.listByCreatedRange(
             eq(PROJECT_ID),
             eq(CALLER_ID),
@@ -359,7 +356,8 @@ class ProjectBriefServiceTest {
   }
 
   private static BoardTask task(UUID id, String title, String priority, String createdAt) {
-    return new BoardTask(id, title, "todo", priority, "pm", Instant.parse(createdAt));
+    return new BoardTask(
+        id, title, "todo", priority, List.of("pm"), null, null, Instant.parse(createdAt));
   }
 
   private static ProjectSnapshot snapshot() {

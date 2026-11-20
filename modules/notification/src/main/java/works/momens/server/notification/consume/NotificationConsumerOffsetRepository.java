@@ -11,7 +11,7 @@ import org.springframework.data.repository.query.Param;
 interface NotificationConsumerOffsetRepository
     extends JpaRepository<NotificationConsumerOffset, String> {
 
-  /** consumer 상태 행을 잠가 여러 인스턴스가 같은 outbox 구간을 동시에 materialize하지 않게 한다(10.1절). */
+  /** consumer 상태 행을 잠가 여러 인스턴스가 같은 outbox 구간을 동시에 materialize하지 않게 한다. */
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select o from NotificationConsumerOffset o where o.consumerName = :consumerName")
   Optional<NotificationConsumerOffset> lockByName(@Param("consumerName") String consumerName);

@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -31,7 +32,7 @@ class OpenApiRequestExampleTest extends AbstractPostgresIntegrationTest {
   void requestSchemaDoesNotCarrySpuriousNullDefault() throws Exception {
     String body =
         mockMvc
-            .perform(get("/v3/api-docs"))
+            .perform(get("/api/v3/api-docs"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -55,6 +56,42 @@ class OpenApiRequestExampleTest extends AbstractPostgresIntegrationTest {
     assertThat(apiVersion.path("schema").path("type").asString()).isEqualTo("string");
   }
 
+  @Test
+  void apiVersionDefaultMatchesSupportedVersionOnEveryOperation() throws Exception {
+    String body =
+        mockMvc
+            .perform(get("/api/v3/api-docs"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    JsonNode paths = new ObjectMapper().readTree(body).path("paths");
+    List<String> mismatches = new ArrayList<>();
+    int checked = 0;
+    for (Map.Entry<String, JsonNode> path : paths.properties()) {
+      if (!path.getKey().startsWith("/api/") || "/api/mcp".equals(path.getKey())) {
+        continue;
+      }
+      for (Map.Entry<String, JsonNode> operation : path.getValue().properties()) {
+        JsonNode apiVersion = findParameter(operation.getValue(), "API-Version");
+        assertThat(apiVersion)
+            .as("%s %s must document API-Version", operation.getKey(), path.getKey())
+            .isNotNull();
+        checked++;
+        JsonNode schema = apiVersion.path("schema");
+        if (!"1".equals(schema.path("default").asString())
+            || schema.path("enum").size() != 1
+            || !"1".equals(schema.path("enum").get(0).asString())) {
+          mismatches.add(path.getKey() + " " + operation.getKey());
+        }
+      }
+    }
+
+    assertThat(checked).isPositive();
+    assertThat(mismatches).as("API-Version default must use supported header value 1").isEmpty();
+  }
+
   /**
    * Dev Signal 생성 엔드포인트는 Swagger의 request body에 예시를 제공해 Try it out만으로 바로 호출할 수 있도록 한다.
    *
@@ -65,7 +102,7 @@ class OpenApiRequestExampleTest extends AbstractPostgresIntegrationTest {
   void devSignalCreateCarriesRequestExample() throws Exception {
     String body =
         mockMvc
-            .perform(get("/v3/api-docs"))
+            .perform(get("/api/v3/api-docs"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -95,6 +132,30 @@ class OpenApiRequestExampleTest extends AbstractPostgresIntegrationTest {
     assertThat(json.path("evidence").size()).as("evidence 3건이 그대로 실려야 한다").isEqualTo(3);
   }
 
+  @Test
+  @DisplayName("dev Signal 근거 상세 스키마는 명시적 null을 허용한다")
+  void devSignalEvidenceDetailsPermitExplicitNull() throws Exception {
+    String body =
+        mockMvc
+            .perform(get("/api/v3/api-docs"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    JsonNode properties =
+        new ObjectMapper()
+            .readTree(body)
+            .path("components")
+            .path("schemas")
+            .path("CreateDevSignalEvidenceDetails")
+            .path("properties");
+    for (String field : List.of("target", "change", "impact")) {
+      List<String> types = new ArrayList<>();
+      properties.path(field).path("type").forEach(type -> types.add(type.asString()));
+      assertThat(types).as(field).containsExactlyInAnyOrder("string", "null");
+    }
+  }
+
   private JsonNode findParameter(JsonNode operation, String name) {
     for (JsonNode parameter : operation.path("parameters")) {
       if (name.equals(parameter.path("name").asString())) {
@@ -114,7 +175,7 @@ class OpenApiRequestExampleTest extends AbstractPostgresIntegrationTest {
   void allSchemaPropertyKeysAreSnakeCase() throws Exception {
     String body =
         mockMvc
-            .perform(get("/v3/api-docs"))
+            .perform(get("/api/v3/api-docs"))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()

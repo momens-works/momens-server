@@ -6,13 +6,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.servlet.http.Cookie;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.UUID;
-import org.hibernate.SessionFactory;
-import org.hibernate.stat.Statistics;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.hibernate.Session;
+import org.hibernate.SessionEventListener;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +25,12 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import works.momens.server.auth.AccessTokenTestFactory;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
+import works.momens.server.project.milestone.MilestoneWriter;
+import works.momens.server.project.milestone.UpdateMilestoneCommand;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
@@ -43,7 +50,10 @@ class WebWorkspacesIntegrationTest extends AbstractPostgresIntegrationTest {
   @Autowired private UserService userService;
   @Autowired private JdbcTemplate jdbcTemplate;
   @Autowired private EntityManagerFactory entityManagerFactory;
+  @Autowired private EntityManager entityManager;
+  @Autowired private PlatformTransactionManager transactionManager;
   @Autowired private WorkspaceSnapshotService workspaceSnapshotService;
+  @Autowired private MilestoneWriter milestoneWriter;
 
   @Test
   @DisplayName("멤버인 워크스페이스만 생성 시각 내림차순으로 응답한다")
@@ -223,8 +233,8 @@ class WebWorkspacesIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
-  @DisplayName("snapshot은 최악 조건에서도 쿼리 예산 14회를 넘지 않는다")
-  void snapshotStaysWithinQueryBudget() {
+  @DisplayName("snapshot은 최악 조건에서 쿼리 예산 14회를 정확히 사용한다")
+  void snapshotUsesExactQueryBudget() {
     UserProfile caller =
         userService.findOrCreate("web-it-snapshot-query-budget@momens.works", "홍길동", null);
     UUID workspaceId = insertWorkspace("web-it-snapshot-query-budget", null);
@@ -249,13 +259,36 @@ class WebWorkspacesIntegrationTest extends AbstractPostgresIntegrationTest {
     link(workspaceId, taskId, "MEMORY", memoryId);
     link(workspaceId, taskId, "SOURCE_OBJECT", sourceRefId);
 
-    Statistics statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
-    statistics.setStatisticsEnabled(true);
-    statistics.clear();
-
-    workspaceSnapshotService.get(workspaceId, caller.id());
-
-    assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(14);
+    TransactionTemplate transaction = new TransactionTemplate(transactionManager);
+    transaction.setReadOnly(true);
+    Integer queryCount =
+        transaction.execute(status -> {
+          AtomicInteger count = new AtomicInteger();
+          // 스냅샷이 동기적으로 같은 Hibernate 세션에서 조회한다는 전제입니다.
+          entityManager
+              .unwrap(Session.class)
+              .addEventListeners(
+                  new SessionEventListener() {
+                    @Override
+                    public void jdbcPrepareStatementEnd() {
+                      count.incrementAndGet();
+                    }
+                  });
+          CompletableFuture.runAsync(
+                  () -> {
+                    EntityManager other = entityManagerFactory.createEntityManager();
+                    try {
+                      other.createNativeQuery("select 1").getSingleResult();
+                    } finally {
+                      other.close();
+                    }
+                  })
+              .join();
+          assertThat(count.get()).isZero();
+          workspaceSnapshotService.get(workspaceId, caller.id());
+          return count.get();
+        });
+    assertThat(queryCount).isEqualTo(14);
   }
 
   @Test
@@ -300,10 +333,66 @@ class WebWorkspacesIntegrationTest extends AbstractPostgresIntegrationTest {
         .andExpect(jsonPath("$.milestones[0].progress").value(45))
         .andExpect(jsonPath("$.milestones[0].owner_user_ids").doesNotExist())
         .andExpect(jsonPath("$.tasks[0].id").value(taskId.toString()))
+        .andExpect(jsonPath("$.tasks[0].roles").isEmpty())
         .andExpect(jsonPath("$.task_contexts.length()").value(1))
         .andExpect(jsonPath("$.task_contexts[0].task_id").value(taskId.toString()))
         .andExpect(jsonPath("$.task_contexts[0].memories[0].id").value(memoryId.toString()))
         .andExpect(jsonPath("$.task_contexts[0].source_refs[0].id").value(sourceRefId.toString()));
+  }
+
+  @Test
+  void snapshotReflectsClearedMilestoneFields() throws Exception {
+    UserProfile caller =
+        userService.findOrCreate("web-it-milestone-clear@momens.works", "홍길동", null);
+    UUID workspaceId = insertWorkspace("web-it-milestone-clear", null);
+    addMember(workspaceId, caller.id(), "owner");
+    UUID projectId = insertProject(workspaceId, caller.id());
+    UUID milestoneId = UUID.randomUUID();
+    jdbcTemplate.update(
+        "INSERT INTO milestones (id, project_id, name, description, summary, target_date, progress) "
+            + "VALUES (?, ?, '마일스톤', '설명', '요약', '2026-10-01', 45)",
+        milestoneId,
+        projectId);
+    milestoneWriter.update(
+        new UpdateMilestoneCommand(
+            milestoneId, null, null, true, null, null, true, null, 0, null, true, null));
+
+    mockMvc
+        .perform(
+            authorized(get("/api/workspaces/{workspaceId}/snapshot", workspaceId), caller.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.milestones[0].id").value(milestoneId.toString()))
+        .andExpect(jsonPath("$.milestones[0].name").value("마일스톤"))
+        .andExpect(jsonPath("$.milestones[0].description").doesNotExist())
+        .andExpect(jsonPath("$.milestones[0].summary").doesNotExist())
+        .andExpect(jsonPath("$.milestones[0].target_date").doesNotExist())
+        .andExpect(jsonPath("$.milestones[0].progress").value(0));
+  }
+
+  @Test
+  @DisplayName("snapshot milestones는 삭제된 project와 다른 workspace의 마일스톤을 제외한다")
+  void snapshotExcludesMilestonesOfDeletedProjectAndOtherWorkspace() throws Exception {
+    UserProfile caller =
+        userService.findOrCreate("web-it-milestone-scope@momens.works", "홍길동", null);
+    UUID workspaceId = insertWorkspace("web-it-milestone-scope", null);
+    addMember(workspaceId, caller.id(), "owner");
+    UUID liveProject = insertProject(workspaceId, caller.id());
+    UUID deletedProject = insertProject(workspaceId, caller.id());
+    jdbcTemplate.update("UPDATE projects SET deleted_at = NOW() WHERE id = ?", deletedProject);
+    UUID otherProject =
+        insertProject(insertWorkspace("web-it-milestone-scope-other", null), caller.id());
+    String insertMilestone = "INSERT INTO milestones (id, project_id, name) VALUES (?, ?, '마일스톤')";
+    UUID liveMilestone = UUID.randomUUID();
+    jdbcTemplate.update(insertMilestone, liveMilestone, liveProject);
+    jdbcTemplate.update(insertMilestone, UUID.randomUUID(), deletedProject);
+    jdbcTemplate.update(insertMilestone, UUID.randomUUID(), otherProject);
+
+    mockMvc
+        .perform(
+            authorized(get("/api/workspaces/{workspaceId}/snapshot", workspaceId), caller.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.milestones.length()").value(1))
+        .andExpect(jsonPath("$.milestones[0].id").value(liveMilestone.toString()));
   }
 
   @Test

@@ -26,8 +26,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
-import works.momens.server.minsu.Priority;
-import works.momens.server.minsu.Role;
 import works.momens.server.minsu.TaskDraft;
 import works.momens.server.minsu.draft.config.MinsuAsyncProperties;
 import works.momens.server.minsu.draft.config.MinsuConfigStatus;
@@ -35,17 +33,15 @@ import works.momens.server.minsu.draft.generation.AsyncGenerationResult;
 import works.momens.server.minsu.draft.generation.AsyncTaskDraftExecutor;
 import works.momens.server.minsu.draft.generation.GenerationOutcome;
 import works.momens.server.minsu.draft.json.MinsuJson;
+import works.momens.server.project.task.TaskPriority;
+import works.momens.server.project.task.TaskRole;
+import works.momens.server.project.task.TaskWriteGate;
 
 /**
- * 포화 뒤 재시작 복구를 <b>하나의 시나리오</b>로 검증한다(MOM-0819 완료 조건, 설계 8.5·9.1절).
+ * 포화 중 claim이 중단되고 재시작 뒤 lease 만료 원장이 scheduler를 통해 처리되는 연결을 검증한다.
  *
- * <p>{@code AsyncTaskDraftExecutorTest}는 슬롯이 묶이는 것까지, {@code
- * TaskDraftGenerationLedgerIntegrationTest}는 lease 만료 회수까지 각각 본다. 둘을 따로 보면 <b>정작 중요한 연결</b>이 빠진다.
- * interrupt를 무시하는 호출이 붙들고 있던 실제 원장 행이 재시작 뒤 scheduler를 통해 끝까지 처리되는지다. 그 연결이 끊어져도 두 테스트는 모두 통과한다.
- *
- * <p>실행기는 mock으로 둔다. 여기서 보려는 것은 원장과 scheduler의 복구 경로이고, 멈춘 호출이 스레드를 놓지 않는다는 성질 자체는 {@code
- * AsyncTaskDraftExecutorTest}가 진짜 스레드로 확인한다. 여기서 재현하는 것은 그 성질이 원장에 남기는 <b>흔적</b>이다. claim은 커밋됐는데 결과
- * 기록이 없는 행과, 그동안 0으로 떨어진 빈 슬롯.
+ * <p>실행기는 mock으로 두고, 결과 없이 커밋된 claim과 0인 빈 슬롯으로 프로세스 중단 상태를 재현한다. interrupt를 무시하는 호출의 실제 스레드 점유는
+ * {@code AsyncTaskDraftExecutorTest}가 검증한다.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -101,7 +97,9 @@ class MinsuDrainRestartRecoveryIntegrationTest extends AbstractPostgresIntegrati
   void wireScheduler() {
     when(configStatus.enabled()).thenReturn(true);
     when(configStatus.valid()).thenReturn(true);
-    scheduler = new MinsuDrainScheduler(configStatus, ledger, executor, new SimpleMeterRegistry());
+    scheduler =
+        new MinsuDrainScheduler(
+            configStatus, ledger, executor, new SimpleMeterRegistry(), new TaskWriteGate(false));
   }
 
   @Test
@@ -121,7 +119,7 @@ class MinsuDrainRestartRecoveryIntegrationTest extends AbstractPostgresIntegrati
         () -> assertThat(afterCrash.getAttemptCount()).isEqualTo(1));
 
     // 2) 멈춘 호출이 슬롯을 놓지 않는 동안에는 아무것도 집지 않는다. 여기서 집으면 실행되지 못한
-    //    작업이 시도 횟수만 소모한다(9.1절).
+    //    작업이 시도 횟수만 소모한다.
     when(executor.availableSlots()).thenReturn(0);
     scheduler.drain();
 
@@ -148,7 +146,7 @@ class MinsuDrainRestartRecoveryIntegrationTest extends AbstractPostgresIntegrati
   }
 
   private static TaskDraft draft() {
-    return new TaskDraft("결제 실패율 대응", Role.BACKEND, Priority.HIGH);
+    return new TaskDraft("결제 실패율 대응", TaskRole.BACKEND, TaskPriority.HIGH);
   }
 
   private TaskDraftGeneration reload(UUID taskId) {

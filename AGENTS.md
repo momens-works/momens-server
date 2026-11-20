@@ -91,6 +91,8 @@ Detailed architecture rules live in `docs/rules/architecture.md`.
 
 ## Working Rules
 
+- Before writing or reviewing docs and comments, apply
+  [the shared documentation rules](docs/rules/documentation.md).
 - Do not invent dependencies. Add only dependencies confirmed in docs or by the user.
 - Do not infer unsettled decisions. If a rule is not documented, ask the team or update
   the appropriate project doc.
@@ -117,6 +119,7 @@ Topic-specific docs:
 - `docs/rules/` — standing project-wide rules
 - `docs/rules/architecture.md` — modular modulith and package direction
 - `docs/rules/git.md` — branch, commit, PR, and merge rules
+- `docs/rules/documentation.md` — documentation, comments, retention, and reference validation
 - `docs/rules/code-conventions.md` — coding style, Spring, DTO, logging, tests
 - `docs/rules/persistence.md` — DB, JPA, Flyway, time, identifiers
 - `docs/rules/configuration.md` — configuration and secrets

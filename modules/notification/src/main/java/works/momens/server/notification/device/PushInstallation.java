@@ -15,8 +15,7 @@ import works.momens.server.common.persistence.BaseEntity;
  * push 설치(FID 단위) 상태.
  *
  * <p>FID가 canonical identity라 {@code firebase_installation_id UNIQUE}이고, 활성 FCM token 중복은 활성 행 부분
- * unique 제약으로 막는다(docs/design/signal-push-demo-design.md 8.4절). 로그아웃·무효 token은 물리 삭제 대신 비활성화로 반영해
- * 같은 사용자의 재등록과 token lifecycle을 안전하게 처리한다.
+ * unique 제약으로 막는다. 로그아웃·무효 token은 물리 삭제 대신 비활성화로 반영해 같은 사용자의 재등록과 token lifecycle을 안전하게 처리한다.
  */
 @Getter
 @Entity

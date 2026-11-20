@@ -1,10 +1,13 @@
 package works.momens.server.project.milestone.internal;
 
+import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.project.milestone.MilestoneDetail;
@@ -19,16 +22,23 @@ class MilestoneReaderImpl implements MilestoneReader {
 
   @Override
   @Transactional(readOnly = true)
-  public List<MilestoneDetail> listDetailsByWorkspaceId(UUID workspaceId) {
-    return withOwners(milestoneRepository.findDetailRowsByWorkspaceId(workspaceId));
+  public List<MilestoneDetail> listDetailsByProjectIds(Collection<UUID> projectIds) {
+    return projectIds.isEmpty()
+        ? List.of()
+        : withOwners(milestoneRepository.findDetailRowsByProjectIds(projectIds));
   }
 
-  /**
-   * 행 목록에 소유자를 채웁니다. {@code milestone_owners} 조회는 마일스톤 수와 무관하게 한 번입니다.
-   *
-   * <p>소유자 행이 없으면 빈 목록입니다. project와 달리 폴백할 소유자 컬럼이 레거시 스키마에 없어, 레거시도 빈 배열을 그대로 돌려줍니다(웹 snapshot 계약
-   * 2.3).
-   */
+  @Override
+  @Transactional(readOnly = true)
+  public List<MilestoneDetail> listPage(
+      Collection<UUID> projectIds, Instant before, UUID beforeId, int limit) {
+    return projectIds.isEmpty()
+        ? List.of()
+        : withOwners(
+            milestoneRepository.findPage(projectIds, before, beforeId, PageRequest.of(0, limit)));
+  }
+
+  /** 소유자를 한 번의 배치 조회로 채웁니다. 소유자 행이 없으면 폴백할 컬럼이 없으므로 빈 목록입니다. */
   private List<MilestoneDetail> withOwners(List<MilestoneDetailRow> rows) {
     if (rows.isEmpty()) {
       return List.of();
@@ -46,5 +56,13 @@ class MilestoneReaderImpl implements MilestoneReader {
     return rows.stream()
         .map(row -> row.toDetail(ownersByMilestoneId.getOrDefault(row.id(), List.of())))
         .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<MilestoneDetail> listByIds(Collection<UUID> projectIds, Collection<UUID> ids) {
+    return projectIds.isEmpty() || ids.isEmpty()
+        ? List.of()
+        : withOwners(milestoneRepository.findRowsByIds(projectIds, ids));
   }
 }

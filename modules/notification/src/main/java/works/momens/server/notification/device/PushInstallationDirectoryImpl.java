@@ -6,13 +6,12 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import works.momens.server.notification.PushInstallationPlatform;
 
 /** 설치 원장 조회·무효 token 비활성화 구현. 호출자(delivery) 트랜잭션에 참여한다. */
 @Component
 @RequiredArgsConstructor
 class PushInstallationDirectoryImpl implements PushInstallationDirectory {
-
-  private static final String PLATFORM_ANDROID = "android";
 
   private final PushInstallationRepository pushInstallationRepository;
 
@@ -23,7 +22,7 @@ class PushInstallationDirectoryImpl implements PushInstallationDirectory {
       return List.of();
     }
     return pushInstallationRepository
-        .findByUserIdInAndPlatformAndActiveTrue(userIds, PLATFORM_ANDROID)
+        .findByUserIdInAndPlatformAndActiveTrue(userIds, PushInstallationPlatform.ANDROID.value())
         .stream()
         .map(PushInstallationDirectoryImpl::toSnapshot)
         .toList();

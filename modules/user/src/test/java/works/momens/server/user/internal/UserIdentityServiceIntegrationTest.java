@@ -29,12 +29,6 @@ import works.momens.server.user.UserErrorCode;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
-/**
- * 외부 신원 정보를 기준으로 사용자 조회 및 생성 로직을 검증합니다.
- *
- * <p>로그인 수단으로 사용자를 조회하는 경로, 이메일로 기존 사용자를 조회한 뒤 로그인 수단을 연결하는 경로, 그리고 새로운 사용자를 생성하는 경로가 각각 정상적으로
- * 동작하는지 확인합니다.
- */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({JpaAuditingConfig.class, UserServiceImpl.class})
@@ -65,38 +59,49 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
   }
 
   @Test
-  @DisplayName("같은 sub으로 재로그인하면 동일한 users.id가 유지된다")
+  @DisplayName("같은 sub으로 재로그인하면 사용자 ID와 직접 수정한 이름이 유지된다")
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
   void keepsSameUserOnRelogin() {
     UserProfile first =
         userService.findOrCreateByIdentity(
             UserService.PROVIDER_GOOGLE, "sub-relogin", "relogin@momens.works", "이전", null);
+    try {
+      userService.updateProfile(first.id(), "직접 수정", null);
 
-    UserProfile second =
-        userService.findOrCreateByIdentity(
-            UserService.PROVIDER_GOOGLE,
-            "sub-relogin",
-            "relogin@momens.works",
-            "변경",
-            "https://a/y.png");
+      UserProfile second =
+          userService.findOrCreateByIdentity(
+              UserService.PROVIDER_GOOGLE,
+              "sub-relogin",
+              "relogin@momens.works",
+              "변경",
+              "https://a/y.png");
 
-    assertThat(second.id()).isEqualTo(first.id());
-    assertThat(second.name()).isEqualTo("변경");
-    assertThat(second.avatarUrl()).isEqualTo("https://a/y.png");
+      assertThat(second.id()).isEqualTo(first.id());
+      assertThat(second.name()).isEqualTo("직접 수정");
+      assertThat(second.avatarUrl()).isEqualTo("https://a/y.png");
+      assertThat(userService.getProfile(first.id()).name()).isEqualTo("직접 수정");
+    } finally {
+      new TransactionTemplate(transactionManager)
+          .executeWithoutResult(status -> userRepository.deleteById(first.id()));
+    }
   }
 
   @Test
-  @DisplayName("이메일이 변경되더라도 sub이 동일하면 동일 사용자로 식별하고 이메일을 갱신한다")
+  @DisplayName("이메일이 변경되어도 동일 사용자의 수정한 이름을 유지하고 이메일을 갱신한다")
   void keepsSameUserWhenEmailChanges() {
     UserProfile first =
         userService.findOrCreateByIdentity(
             UserService.PROVIDER_GOOGLE, "sub-email", "before@momens.works", "홍길동", null);
+    userService.updateProfile(first.id(), "직접 수정", null);
 
     UserProfile second =
         userService.findOrCreateByIdentity(
-            UserService.PROVIDER_GOOGLE, "sub-email", "after@momens.works", "홍길동", null);
+            UserService.PROVIDER_GOOGLE, "sub-email", "after@momens.works", "구글 이름", null);
 
     assertThat(second.id()).isEqualTo(first.id());
     assertThat(second.email()).isEqualTo("after@momens.works");
+    assertThat(second.name()).isEqualTo("직접 수정");
+    assertThat(userService.getProfile(first.id()).name()).isEqualTo("직접 수정");
   }
 
   @Test
@@ -109,7 +114,7 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
             UserService.PROVIDER_GOOGLE, "sub-legacy", "legacy@momens.works", "홍길동", null);
 
     assertThat(linked.id()).isEqualTo(existing.id());
-    assertThat(linked.name()).isEqualTo("홍길동");
+    assertThat(linked.name()).isEqualTo("기존");
     assertThat(
             userIdentityRepository
                 .findByProviderAndProviderUserId(UserService.PROVIDER_GOOGLE, "sub-legacy")
@@ -124,14 +129,9 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
     userService.findOrCreateByIdentity(
         UserService.PROVIDER_GOOGLE, "sub-owner", "shared@momens.works", "이전주인", null);
 
-    assertThatThrownBy(
-            () ->
-                userService.findOrCreateByIdentity(
-                    UserService.PROVIDER_GOOGLE,
-                    "sub-newcomer",
-                    "shared@momens.works",
-                    "새주인",
-                    null))
+    assertThatThrownBy(() ->
+            userService.findOrCreateByIdentity(
+                UserService.PROVIDER_GOOGLE, "sub-newcomer", "shared@momens.works", "새주인", null))
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(UserErrorCode.USER_EMAIL_LINKED_TO_ANOTHER_IDENTITY);
@@ -172,21 +172,18 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
       CountDownLatch start = new CountDownLatch(1);
       List<Future<UUID>> futures =
           IntStream.range(0, threads)
-              .mapToObj(
-                  i ->
-                      pool.submit(
-                          () -> {
-                            start.await();
-                            return tx.execute(
-                                    status ->
-                                        userService.findOrCreateByIdentity(
-                                            UserService.PROVIDER_GOOGLE,
-                                            "sub-race",
-                                            "race@momens.works",
-                                            "홍길동",
-                                            null))
-                                .id();
-                          }))
+              .mapToObj(i ->
+                  pool.submit(() -> {
+                    start.await();
+                    return tx.execute(status ->
+                            userService.findOrCreateByIdentity(
+                                UserService.PROVIDER_GOOGLE,
+                                "sub-race",
+                                "race@momens.works",
+                                "홍길동",
+                                null))
+                        .id();
+                  }))
               .toList();
       start.countDown();
 
@@ -204,9 +201,8 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
           .isEqualTo(ids.getFirst());
     } finally {
       pool.shutdownNow();
-      tx.executeWithoutResult(
-          status ->
-              userRepository.findByEmail("race@momens.works").ifPresent(userRepository::delete));
+      tx.executeWithoutResult(status ->
+          userRepository.findByEmail("race@momens.works").ifPresent(userRepository::delete));
     }
   }
 
@@ -233,24 +229,21 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
           CountDownLatch start = new CountDownLatch(1);
           List<Future<UUID>> futures =
               IntStream.range(0, 2)
-                  .mapToObj(
-                      i ->
-                          pool.submit(
-                              () -> {
-                                start.await();
-                                if (i > 0) {
-                                  LockSupport.parkNanos(delayNanos);
-                                }
-                                return tx.execute(
-                                        status ->
-                                            userService.findOrCreateByIdentity(
-                                                UserService.PROVIDER_GOOGLE,
-                                                providerUserId,
-                                                email,
-                                                "홍길동",
-                                                null))
-                                    .id();
-                              }))
+                  .mapToObj(i ->
+                      pool.submit(() -> {
+                        start.await();
+                        if (i > 0) {
+                          LockSupport.parkNanos(delayNanos);
+                        }
+                        return tx.execute(status ->
+                                userService.findOrCreateByIdentity(
+                                    UserService.PROVIDER_GOOGLE,
+                                    providerUserId,
+                                    email,
+                                    "홍길동",
+                                    null))
+                            .id();
+                      }))
                   .toList();
           start.countDown();
 
