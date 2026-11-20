@@ -65,28 +65,31 @@ MOM-0967에서 제거 범위를 정한다.
 실제 증거가 모이기 전에는 실행하지 않는다. MOM-0967이 G2 증거를 종합하고 MOM-0992가 MCP·Slack
 차단 및 drain 증거를 제공한다. 구현 완료만으로 아래 gate를 닫지 않는다.
 
-### G1 — retrieval 투영 공백 (`MOM-0898`, `MOM-0956`, `MOM-0957`)
+### G1 — retrieval 투영 공백 (`MOM-0898`, `MOM-0956`, `MOM-0957`, `MOM-1020`, `MOM-1021`)
 
 신규 서버는 변경과 outbox를 기록하고 worker가 projection한다. 코드 존재와 prod에서 실제 소비·
-투영이 되는 것은 다르다. task·memory뿐 아니라 이관 확정된 decision·blocker도 각각
-MOM-1020·1021에서 운영 투영을 확인한다. 레거시 없는 신규 경로 E2E는 MOM-1022에서 갖췄다.
+투영이 되는 것은 다르다. worker consumer는 기본 비활성(`WORKER_ENABLE_OUTBOX_CONSUMER=false`)이라
+켜지 않으면 이벤트가 쌓이기만 한다.
 
 **이 실패는 조용하다.** write는 성공하므로 5xx도 401도 나지 않고 6절의 관측 창에서 잡히지
 않는다. `MOM-0898` 완료만으로 이 게이트를 닫지 않는다. 공통 consumer와 aggregate별 projector는
 다음 체인 전체를 통과해야 한다.
 
-1. `MOM-0898` — 공통 outbox polling·claim, offset, retry와 DLQ 또는 동등한 실패 격리
+1. `MOM-0898` — 공통 outbox polling·claim, offset, retry와 DLQ 또는 동등한 실패 격리. 운영
+   규모·DML 권한을 확인하고 consumer를 운영에서 활성화한다
 2. `MOM-0956` — `task.created`·`task.updated`·`task.deleted`의 최신 상태 hydrate·삭제
    처리와 task별 prod E2E 투영 확인. 삭제 뒤 오래된 생성·수정 이벤트 재처리에서도 문서가
    복원되지 않아야 한다([task consumer 계약](../module-map.md#outbox)).
 3. `MOM-0957` — memory event hydrate·projector와 memory별 prod E2E 투영 확인
-4. 검증 event가 처리 완료 상태가 되고 consumer offset이 전진함
-5. retry 대기나 DLQ 또는 동등한 실패 격리 저장소에 검증 event가 남지 않음
-6. retrieval 조회에서 task·memory 변경 결과를 확인함
+4. `MOM-1020`·`MOM-1021` — decision·blocker projector의 기존 이벤트 시작 범위 확인과
+   aggregate별 prod 투영 확인
+5. 검증 event가 처리 완료 상태가 되고 consumer offset이 전진함
+6. retry 대기나 DLQ 또는 동등한 실패 격리 저장소에 검증 event가 남지 않음
+7. retrieval 조회에서 task·memory·decision·blocker 변경 결과를 확인함
 
 시계열 수집이 준비되지 않은 환경에서는 lag graph만으로 판정하지 않는다. `MOM-0898`과 각 projector
-작업이 정한 조회 수단으로 event 처리 상태·offset·실패 잔여를 직접 확인하고, task와 memory의
-증거를 각각 `MOM-0956`·`MOM-0957`에 남긴 뒤 2단계를 연다.
+작업이 정한 조회 수단으로 event 처리 상태·offset·실패 잔여를 직접 확인하고, aggregate별 증거를
+각 projector 작업(`MOM-0956`·`MOM-0957`·`MOM-1020`·`MOM-1021`)에 남긴 뒤 2단계를 연다.
 task 이벤트 세 종류의 consumer 지원과 재처리를 확인한 뒤 운영 task writer를 확대·전환한다.
 미지원 이벤트가 먼저 쌓이면 처리 완료로 건너뛰지 않고 소비 지원 뒤 재시도해야 한다.
 
