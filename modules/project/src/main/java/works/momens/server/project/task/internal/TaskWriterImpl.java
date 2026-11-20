@@ -167,14 +167,13 @@ class TaskWriterImpl implements TaskWriter {
     writeGate.requireOpen();
     Task task =
         taskRepository
-            .findForRestore(taskId)
+            .findById(taskId)
             .orElseThrow(() ->
                 new BusinessException(
                     TaskErrorCode.TASK_NOT_FOUND, Map.of("task_id", taskId.toString())));
     requireCreator(task, userId);
     if (!task.isDeleted()) {
-      throw new BusinessException(
-          TaskErrorCode.TASK_NOT_DELETED, Map.of("task_id", taskId.toString()));
+      return;
     }
     task.restore();
     outboxAppender.appendWithIdempotencyKey(

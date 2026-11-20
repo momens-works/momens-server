@@ -20,11 +20,6 @@ interface TaskRepository extends JpaRepository<Task, UUID> {
   @Query("select e from Task e where e.id = :id and e.deletedAt is null")
   Optional<Task> findForMutation(UUID id);
 
-  /** 태스크 복구를 위한 조회입니다. {@link #findForMutation}과 달리 소프트 삭제된 태스크도 조회합니다. */
-  @Lock(LockModeType.OPTIMISTIC)
-  @Query("select e from Task e where e.id = :id")
-  Optional<Task> findForRestore(UUID id);
-
   /** 상세용 단건 조회. 소프트 삭제된 태스크는 제외합니다. */
   Optional<Task> findByIdAndDeletedAtIsNull(UUID taskId);
 

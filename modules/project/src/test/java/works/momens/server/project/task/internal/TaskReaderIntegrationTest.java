@@ -414,7 +414,8 @@ class TaskReaderIntegrationTest extends AbstractPostgresIntegrationTest {
                     null,
                     TaskOrigin.MANUAL,
                     null,
-                    UUID.randomUUID()),
+                    ProjectSeedSql.insertUser(
+                        entityManager, "creator-" + UUID.randomUUID() + "@momens.works")),
                 null))
         .getId();
   }

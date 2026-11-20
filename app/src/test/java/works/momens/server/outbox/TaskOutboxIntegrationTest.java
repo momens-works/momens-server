@@ -88,6 +88,25 @@ class TaskOutboxIntegrationTest extends AbstractPostgresIntegrationTest {
         .isZero();
   }
 
+  @Test
+  void deleteRestoreAndDeleteAgainPersistEveryEvent() {
+    UUID taskId = insertTask();
+    UUID creatorId =
+        jdbcTemplate.queryForObject(
+            "SELECT creator_id FROM tasks WHERE id = ?", UUID.class, taskId);
+
+    taskWriter.deleteAsCreator(taskId, creatorId, null);
+    taskWriter.restoreAsCreator(taskId, creatorId);
+    taskWriter.deleteAsCreator(taskId, creatorId, null);
+
+    assertThat(
+            jdbcTemplate.queryForList(
+                "SELECT event_type FROM outbox_events WHERE aggregate_id = ? ORDER BY id",
+                String.class,
+                taskId.toString()))
+        .containsExactly("task.deleted", "task.restored", "task.deleted");
+  }
+
   private UUID insertTask() {
     UserProfile user =
         userService.findOrCreate("task-outbox-" + UUID.randomUUID() + "@momens.works", "작성자", null);
@@ -104,11 +123,12 @@ class TaskOutboxIntegrationTest extends AbstractPostgresIntegrationTest {
         workspaceId,
         user.id());
     jdbcTemplate.update(
-        "INSERT INTO tasks (id, workspace_id, project_id, title, status, priority)"
-            + " VALUES (?, ?, ?, '첫 번째', 'todo', 'medium')",
+        "INSERT INTO tasks (id, workspace_id, project_id, title, status, priority, creator_id)"
+            + " VALUES (?, ?, ?, '첫 번째', 'todo', 'medium', ?)",
         taskId,
         workspaceId,
-        projectId);
+        projectId,
+        user.id());
     return taskId;
   }
 

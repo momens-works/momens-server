@@ -313,6 +313,19 @@ class ProjectTaskServiceTest {
   }
 
   @Test
+  void restoreTaskThrowsForbiddenForNonMemberOfDeletedTaskWorkspace() {
+    when(taskReader.findScopeIncludingDeleted(TASK_ID))
+        .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
+    when(workspaceMembershipReader.roleOf(WORKSPACE_ID, CALLER_ID)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> projectTaskService.restoreTask(TASK_ID, CALLER_ID))
+        .isInstanceOf(BusinessException.class)
+        .extracting(e -> ((BusinessException) e).getErrorCode())
+        .isEqualTo(CommonErrorCode.AUTH_FORBIDDEN);
+    verify(taskWriter, never()).restoreAsCreator(any(), any());
+  }
+
+  @Test
   void getTaskDetailThrowsForbiddenForNonMemberOfTaskWorkspace() {
     when(taskReader.findScope(TASK_ID))
         .thenReturn(Optional.of(new TaskScope(WORKSPACE_ID, PROJECT_ID)));
