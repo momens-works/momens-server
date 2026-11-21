@@ -1,0 +1,3 @@
+fail-on: WARN
+severity-levels: oasdiff-levels.txt
+unmatch-path: '^/(api/mcp|api/oauth2|\.well-known)(/|$)'
