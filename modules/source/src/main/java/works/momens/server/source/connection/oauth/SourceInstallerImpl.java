@@ -136,30 +136,20 @@ class SourceInstallerImpl implements SourceInstaller {
             ? SourceConnectionStatus.PENDING
             : SourceConnectionStatus.ACTIVE;
     Instant now = Instant.now();
-    boolean preserveMetadata =
-        OAuthProviderRegistry.FIGMA.equals(provider.sourceType())
-            || OAuthProviderRegistry.NOTION.equals(provider.sourceType());
     List<SourceConnection> existing =
-        preserveMetadata
-            ? sourceConnectionRepository.findForReconnect(
-                state.workspaceId(), provider.sourceType(), identity.externalId())
-            : sourceConnectionRepository
-                .findByWorkspaceIdAndSourceTypeAndExternalWorkspaceIdOrderByCreatedAtAsc(
-                    state.workspaceId(), provider.sourceType(), identity.externalId());
+        sourceConnectionRepository.findForReconnect(
+            state.workspaceId(), provider.sourceType(), identity.externalId());
     if (!existing.isEmpty()) {
       existing.forEach(connection -> {
-        Map<String, Object> metadata = identity.metadata();
-        if (preserveMetadata) {
-          // OAuth 응답에는 연결 뒤 지정한 설정(Figma webhook, Notion 수집 대상 목록)이 없으므로 기존
-          // metadata에 identity 값만 덮어씁니다. 재승인 후에도 기존 webhook을 정리할 수 있어야 하고, 빈
-          // 수집 대상 목록도 지정된 설정으로 남아야 합니다. configure의 마지막 검증과 같은 행 잠금 아래에서
-          // 읽고 쓰므로 그 사이의 설정 변경을 덮어쓰지 않습니다.
-          metadata = new LinkedHashMap<>();
-          if (connection.getMetadata() != null) {
-            metadata.putAll(connection.getMetadata());
-          }
-          metadata.putAll(identity.metadata());
+        // OAuth 응답에는 연결 뒤 지정한 설정(Figma webhook, Notion 수집 대상 목록, Slack 채널·키워드 필터,
+        // GitHub 저장소 목록)이 없으므로 기존 metadata에 identity 값만 덮어씁니다. 재승인 후에도 기존 webhook을
+        // 정리할 수 있어야 하고, 빈 수집 대상 목록도 지정된 설정으로 남아야 합니다. 행 잠금 아래에서 읽고 쓰므로
+        // 그 사이의 설정 변경을 덮어쓰지 않습니다.
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        if (connection.getMetadata() != null) {
+          metadata.putAll(connection.getMetadata());
         }
+        metadata.putAll(identity.metadata());
         sourceConnectionRepository.reconnect(
             connection.getId(), status, identity.externalName(), state.userId(), now, metadata);
       });
