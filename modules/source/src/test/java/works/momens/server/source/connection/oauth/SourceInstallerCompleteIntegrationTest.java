@@ -81,7 +81,6 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
   private HttpServer server;
   private final AtomicReference<String> tokenBody = new AtomicReference<>();
   private final AtomicInteger tokenStatus = new AtomicInteger(200);
-  private final AtomicReference<String> slackTeamUrl = new AtomicReference<>();
   private UUID workspaceId;
 
   @BeforeEach
@@ -101,9 +100,7 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
             respond(
                 exchange,
                 200,
-                "{\"ok\":true,\"team_id\":\"T1\",\"team\":\"모먼스\",\"url\":\""
-                    + slackTeamUrl.get()
-                    + "\"}"));
+                "{\"ok\":true,\"team_id\":\"T1\",\"team\":\"모먼스\",\"url\":\"https://new.slack.com/\"}"));
     server.start();
     workspaceId = insertWorkspace();
   }
@@ -342,8 +339,9 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
   }
 
   @Test
-  @DisplayName("재연결은 worker 값을 보존하고, 연결을 잠근 동안의 다른 metadata 변경은 재연결 뒤에 반영된다")
-  void reconnectPreservesWorkerUpdatesAndWaitsForConcurrentMetadataChanges() throws Exception {
+  @DisplayName("재연결은 재동기화 요청·worker 값·기존 metadata를 보존하고, 연결을 잠근 동안의 다른 metadata 변경은 재연결 커밋 뒤에 반영된다")
+  void reconnectPreservesExistingValuesAndBlocksConcurrentMetadataWritesUntilCommit()
+      throws Exception {
     UUID firstUser = insertUser();
     UUID id =
         installer()
@@ -356,7 +354,8 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
     Instant workerUpdatedAt = Instant.now().plusSeconds(3600).truncatedTo(ChronoUnit.MICROS);
     jdbcTemplate.update(
         "UPDATE source_connections SET resync_requested_at = ?, last_synced_at = ?,"
-            + " captures_read_count = 42, candidates_extracted_count = 7, updated_at = ? WHERE id = ?",
+            + " captures_read_count = 42, candidates_extracted_count = 7, updated_at = ?,"
+            + " metadata = metadata || '{\"repository\":\"momens/api\"}'::jsonb WHERE id = ?",
         Timestamp.from(requestedAt),
         Timestamp.from(syncedAt),
         Timestamp.from(workerUpdatedAt),
@@ -410,6 +409,7 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
     assertThat(saved.getCandidatesExtractedCount()).isEqualTo(7);
     assertThat(saved.getConnectedByUserId()).isEqualTo(secondUser);
     assertThat(saved.getMetadata())
+        .containsEntry("repository", "momens/api")
         .containsEntry("repositories", List.of("momens/server"))
         .containsEntry("login", "jsshin");
     assertThat(completed.connection().resyncRequestedAt()).isEqualTo(requestedAt);
@@ -420,7 +420,6 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
   @Test
   @DisplayName("Slack 재승인은 연결의 수집 필터를 보존하고 팀 URL을 갱신한다")
   void preservesSlackCollectionFiltersOnReconnect() {
-    slackTeamUrl.set("https://old.slack.com/");
     String signedState =
         signer().sign(new OAuthState(workspaceId, insertUser(), OAuthProviderRegistry.SLACK));
     UUID id =
@@ -430,10 +429,10 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
             .id();
     jdbcTemplate.update(
         "UPDATE source_connections SET metadata = metadata || ?::jsonb WHERE id = ?",
-        "{\"channel_allowlist\":[\"C1\"],\"channel_blocklist\":[],\"keyword_allowlist\":[\"출시\"]}",
+        "{\"channel_allowlist\":[\"C1\"],\"channel_blocklist\":[],\"keyword_allowlist\":[\"출시\"],"
+            + "\"team_url\":\"https://old.slack.com/\"}",
         id);
 
-    slackTeamUrl.set("https://new.slack.com/");
     UUID reconnectedId =
         slackInstaller()
             .completeInstall(new CompleteInstallCommand("second", signedState))
