@@ -2,6 +2,7 @@ package works.momens.server.source.connection.oauth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -22,6 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
@@ -36,7 +40,6 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -91,6 +94,13 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
     server.createContext(
         "/identity",
         exchange -> respond(exchange, 200, "{\"login\":\"jsshin\",\"name\":\"신진수\",\"id\":7}"));
+    server.createContext(
+        "/slack-identity",
+        exchange ->
+            respond(
+                exchange,
+                200,
+                "{\"ok\":true,\"team_id\":\"T1\",\"team\":\"모먼스\",\"url\":\"https://new.slack.com/\"}"));
     server.start();
     workspaceId = insertWorkspace();
   }
@@ -192,6 +202,22 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
             null,
             IdentityMethod.NONE,
             ProviderIdentities::notion));
+  }
+
+  private SourceInstallerImpl slackInstaller() {
+    String base = "http://localhost:" + server.getAddress().getPort();
+    return localInstaller(
+        new ProviderDefinition(
+            OAuthProviderRegistry.SLACK,
+            base + "/authorize",
+            base + "/token",
+            List.of(),
+            Map.of(),
+            TokenBodyFormat.FORM,
+            ClientAuthStyle.BASIC_HEADER,
+            base + "/slack-identity",
+            IdentityMethod.POST,
+            ProviderIdentities::slack));
   }
 
   private SourceInstallerImpl localInstaller(ProviderDefinition definition) {
@@ -313,8 +339,9 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
   }
 
   @Test
-  @DisplayName("재연결 조회 이후 다른 트랜잭션이 기록한 재동기화 요청과 worker 값을 보존한다")
-  void reconnectPreservesConcurrentResyncAndWorkerUpdates() {
+  @DisplayName("재연결은 재동기화 요청·worker 값·기존 metadata를 보존하고, 연결을 잠근 동안의 다른 metadata 변경은 재연결 커밋 뒤에 반영된다")
+  void reconnectPreservesExistingValuesAndBlocksConcurrentMetadataWritesUntilCommit()
+      throws Exception {
     UUID firstUser = insertUser();
     UUID id =
         installer()
@@ -325,33 +352,54 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
     Instant requestedAt = Instant.parse("2026-09-01T00:00:00Z");
     Instant syncedAt = requestedAt.minusSeconds(10);
     Instant workerUpdatedAt = Instant.now().plusSeconds(3600).truncatedTo(ChronoUnit.MICROS);
-    SourceConnectionRepository interleaved =
-        mock(SourceConnectionRepository.class, delegatesTo(connectionRepository));
-    doAnswer(
-            invocation -> {
-              var stale =
-                  connectionRepository
-                      .findByWorkspaceIdAndSourceTypeAndExternalWorkspaceIdOrderByCreatedAtAsc(
-                          workspaceId, "GITHUB", "jsshin");
-              TransactionTemplate concurrent = new TransactionTemplate(transactionManager);
-              concurrent.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-              concurrent.executeWithoutResult(status ->
-                  jdbcTemplate.update(
-                      "UPDATE source_connections SET resync_requested_at = ?, last_synced_at = ?,"
-                          + " captures_read_count = 42, candidates_extracted_count = 7, updated_at = ? WHERE id = ?",
-                      Timestamp.from(requestedAt),
-                      Timestamp.from(syncedAt),
-                      Timestamp.from(workerUpdatedAt),
-                      id));
-              return stale;
-            })
-        .when(interleaved)
-        .findByWorkspaceIdAndSourceTypeAndExternalWorkspaceIdOrderByCreatedAtAsc(
-            workspaceId, "GITHUB", "jsshin");
+    jdbcTemplate.update(
+        "UPDATE source_connections SET resync_requested_at = ?, last_synced_at = ?,"
+            + " captures_read_count = 42, candidates_extracted_count = 7, updated_at = ?,"
+            + " metadata = metadata || '{\"repository\":\"momens/api\"}'::jsonb WHERE id = ?",
+        Timestamp.from(requestedAt),
+        Timestamp.from(syncedAt),
+        Timestamp.from(workerUpdatedAt),
+        id);
+    AtomicInteger writerPid = new AtomicInteger();
+    AtomicReference<Future<?>> write = new AtomicReference<>();
+    CompletedInstall completed;
+    try (var executor = Executors.newSingleThreadExecutor()) {
+      SourceConnectionRepository interleaved =
+          mock(SourceConnectionRepository.class, delegatesTo(connectionRepository));
+      doAnswer(
+              invocation -> {
+                var locked = connectionRepository.findForReconnect(workspaceId, "GITHUB", "jsshin");
+                write.set(
+                    executor.submit(() ->
+                        new TransactionTemplate(transactionManager)
+                            .executeWithoutResult(status -> {
+                              writerPid.set(
+                                  jdbcTemplate.queryForObject(
+                                      "SELECT pg_backend_pid()", Integer.class));
+                              jdbcTemplate.update(
+                                  "UPDATE source_connections SET metadata = metadata"
+                                      + " || '{\"repositories\":[\"momens/server\"]}'::jsonb WHERE id = ?",
+                                  id);
+                            })));
+                await()
+                    .atMost(Duration.ofSeconds(5))
+                    .untilAsserted(() ->
+                        assertThat(
+                                jdbcTemplate.queryForObject(
+                                    "SELECT count(*) FROM pg_locks WHERE pid = ? AND NOT granted",
+                                    Long.class,
+                                    writerPid.get()))
+                            .isPositive());
+                return locked;
+              })
+          .when(interleaved)
+          .findForReconnect(workspaceId, "GITHUB", "jsshin");
 
-    CompletedInstall completed =
-        installer(interleaved)
-            .completeInstall(new CompleteInstallCommand("second", state(secondUser)));
+      completed =
+          installer(interleaved)
+              .completeInstall(new CompleteInstallCommand("second", state(secondUser)));
+      write.get().get(5, TimeUnit.SECONDS);
+    }
 
     var saved = connectionRepository.findById(id).orElseThrow();
     assertThat(saved.getResyncRequestedAt()).isEqualTo(requestedAt);
@@ -360,9 +408,43 @@ class SourceInstallerCompleteIntegrationTest extends AbstractPostgresIntegration
     assertThat(saved.getCapturesReadCount()).isEqualTo(42);
     assertThat(saved.getCandidatesExtractedCount()).isEqualTo(7);
     assertThat(saved.getConnectedByUserId()).isEqualTo(secondUser);
+    assertThat(saved.getMetadata())
+        .containsEntry("repository", "momens/api")
+        .containsEntry("repositories", List.of("momens/server"))
+        .containsEntry("login", "jsshin");
     assertThat(completed.connection().resyncRequestedAt()).isEqualTo(requestedAt);
     assertThat(completed.connection().updatedAt()).isEqualTo(workerUpdatedAt);
     assertThat(completed.connection().capturesReadCount()).isEqualTo(42);
+  }
+
+  @Test
+  @DisplayName("Slack 재승인은 연결의 수집 필터를 보존하고 팀 URL을 갱신한다")
+  void preservesSlackCollectionFiltersOnReconnect() {
+    String signedState =
+        signer().sign(new OAuthState(workspaceId, insertUser(), OAuthProviderRegistry.SLACK));
+    UUID id =
+        slackInstaller()
+            .completeInstall(new CompleteInstallCommand("first", signedState))
+            .connection()
+            .id();
+    jdbcTemplate.update(
+        "UPDATE source_connections SET metadata = metadata || ?::jsonb WHERE id = ?",
+        "{\"channel_allowlist\":[\"C1\"],\"channel_blocklist\":[],\"keyword_allowlist\":[\"출시\"],"
+            + "\"team_url\":\"https://old.slack.com/\"}",
+        id);
+
+    UUID reconnectedId =
+        slackInstaller()
+            .completeInstall(new CompleteInstallCommand("second", signedState))
+            .connection()
+            .id();
+
+    assertThat(reconnectedId).isEqualTo(id);
+    assertThat(connectionRepository.findById(id).orElseThrow().getMetadata())
+        .containsEntry("channel_allowlist", List.of("C1"))
+        .containsEntry("channel_blocklist", List.of())
+        .containsEntry("keyword_allowlist", List.of("출시"))
+        .containsEntry("team_url", "https://new.slack.com/");
   }
 
   @ParameterizedTest
