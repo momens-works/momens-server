@@ -13,7 +13,7 @@ springdoc = "3.2.0"
 spotless = "8.11.0"
 # swagger-core와 swagger-annotations는 동일한 버전을 사용해야 합니다. 버전이 다르면 @Schema의
 # 기본값 sentinel을 잘못 해석해 request schema에 default: null이 추가됩니다.
-swagger = "2.2.55"
+swagger = "2.2.56"
 
 [libraries]
 firebase-admin = { module = "com.google.firebase:firebase-admin", version.ref = "firebase-admin" }
