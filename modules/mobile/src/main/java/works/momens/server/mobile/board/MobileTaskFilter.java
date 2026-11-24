@@ -16,25 +16,27 @@ import works.momens.server.project.task.TaskRole;
  * <p>같은 필터에서 선택한 값은 OR 조건으로, 서로 다른 필터는 AND 조건으로 결합합니다. 역할과 우선순위 목록이 비어 있으면 해당 조건을 적용하지 않습니다. 마감일
  * 필터는 태스크의 마감일이 선택한 날짜와 일치하는 경우에만 통과하며, 마감일이 지정되지 않은 태스크는 제외합니다.
  *
- * <p>{@code unassigned}가 {@code true}이면 담당자가 지정되지 않은 태스크만 통과합니다. {@code assigneeId}와 {@code
- * unassigned=true}를 함께 전달한 요청은 컨트롤러에서 거부하므로 두 조건이 동시에 적용되지 않습니다.
+ * <p>담당자 필터는 {@code assigneeIds}와 {@code unassigned}로 구성됩니다. 태스크의 담당자가 {@code assigneeIds}에 포함되어
+ * 있거나, {@code unassigned}가 {@code true}이고 태스크에 담당자가 지정되지 않은 경우 필터 조건을 충족합니다. {@code assigneeIds}가
+ * 비어 있고 {@code unassigned}가 활성화되지 않은 경우 담당자 필터를 적용하지 않습니다.
  *
- * <p>쿼리 파라미터에 빈 값으로 전달된 역할과 우선순위는 {@code null}로 변환되므로, 필터 생성 시 {@code null} 원소를 제외합니다.
+ * <p>역할, 우선순위, 담당자 쿼리 파라미터에 빈 값을 전달하면 {@code null}로 변환되므로, 필터 생성 시 목록에서 {@code null} 원소를 제외합니다.
  */
 record MobileTaskFilter(
     Set<TaskRole> roles,
     Set<TaskPriority> priorities,
     LocalDate dueDate,
-    UUID assigneeId,
+    Set<UUID> assigneeIds,
     boolean unassigned) {
 
   MobileTaskFilter {
     roles = withoutNulls(roles);
     priorities = withoutNulls(priorities);
+    assigneeIds = withoutNulls(assigneeIds);
   }
 
   static MobileTaskFilter none() {
-    return new MobileTaskFilter(Set.of(), Set.of(), null, null, false);
+    return new MobileTaskFilter(Set.of(), Set.of(), null, Set.of(), false);
   }
 
   boolean matches(BoardTask task) {
@@ -58,10 +60,11 @@ record MobileTaskFilter(
   }
 
   private boolean matchesAssignee(BoardTask task) {
-    if (unassigned) {
-      return task.assigneeId() == null;
+    if (assigneeIds.isEmpty() && !unassigned) {
+      return true;
     }
-    return assigneeId == null || assigneeId.equals(task.assigneeId());
+    UUID assigneeId = task.assigneeId();
+    return assigneeId == null ? unassigned : assigneeIds.contains(assigneeId);
   }
 
   private static <T> Set<T> withoutNulls(Collection<T> values) {

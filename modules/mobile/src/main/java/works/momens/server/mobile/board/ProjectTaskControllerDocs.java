@@ -29,8 +29,8 @@ interface ProjectTaskControllerDocs {
       description =
           "태스크를 `in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서로 그룹화해 반환합니다. 태스크 수정 화면에서 다섯 가지"
               + " 상태를 모두 지원하므로 보드 조회 응답에도 모든 상태 그룹을 포함합니다. 쿼리 파라미터로 역할, 우선순위, 마감일, 담당자 조건을"
-              + " 지정하면 해당 조건을 만족하는 태스크만 반환합니다. 같은 파라미터에서 선택한 값은 OR 조건으로, 서로 다른 파라미터는 AND"
-              + " 조건으로 결합합니다. 각 그룹의 `count`는 필터 적용 후 남은 태스크 수를 나타냅니다. 모든 파라미터를 생략하면 프로젝트의 전체"
+              + " 지정하면 해당 조건을 만족하는 태스크만 반환합니다. 동일한 필터 내에서 선택한 값은 OR 조건으로 결합하고, 서로 다른 필터는"
+              + " AND 조건으로 결합합니다. 담당자 필터는 `assignee_ids`와 `unassigned` 두 파라미터로 구성됩니다. 각 그룹의 `count`는 필터 적용 후 남은 태스크 수를 나타냅니다. 모든 파라미터를 생략하면 프로젝트의 전체"
               + " 태스크를 반환합니다.")
   @ApiResponse(
       responseCode = "200",
@@ -48,12 +48,16 @@ interface ProjectTaskControllerDocs {
           List<TaskPriority> priorities,
       @Parameter(description = "마감일이 지정한 날짜와 일치하는 태스크만 반환합니다. 날짜 형식은 `YYYY-MM-DD`입니다.")
           LocalDate dueDate,
-      @Parameter(description = "지정한 사용자가 담당자인 태스크만 반환합니다. `unassigned=true`와 함께 전달할 수 없습니다.")
-          UUID assigneeId,
       @Parameter(
               description =
-                  "`true`이면 담당자가 지정되지 않은 태스크만 반환합니다. `assignee_id`와 함께 전달하면"
-                      + " `COMMON_VALIDATION_FAILED`를 반환합니다.")
+                  "지정한 사용자 중 한 명이 담당자로 지정된 태스크를 반환합니다. 동일한 파라미터를 여러 번 전달할 수 있으며,"
+                      + " `unassigned=true`와 함께 전달하면 담당자가 지정되지 않은 태스크도 반환합니다. `assignee_ids`를"
+                      + " 생략하고 `unassigned`도 활성화하지 않으면 담당자 필터를 적용하지 않습니다.")
+          List<UUID> assigneeIds,
+      @Parameter(
+              description =
+                  "`true`이면 담당자가 지정되지 않은 태스크를 반환합니다. `assignee_ids`와 함께 전달하면 지정한 사용자 중"
+                      + " 한 명이 담당자로 지정된 태스크도 반환합니다.")
           boolean unassigned,
       Principal principal);
 

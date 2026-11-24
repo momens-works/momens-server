@@ -42,18 +42,15 @@ class ProjectTaskController implements ProjectTaskControllerDocs {
       @RequestParam(name = "priorities", required = false) List<TaskPriority> priorities,
       @RequestParam(name = "due_date", required = false) @DateTimeFormat(iso = ISO.DATE)
           LocalDate dueDate,
-      @RequestParam(name = "assignee_id", required = false) UUID assigneeId,
+      @RequestParam(name = "assignee_ids", required = false) List<UUID> assigneeIds,
       @RequestParam(name = "unassigned", defaultValue = "false") boolean unassigned,
       Principal principal) {
-    if (assigneeId != null && unassigned) {
-      throw FieldValidationException.forField("unassigned");
-    }
     MobileTaskFilter filter =
         new MobileTaskFilter(
             roles == null ? null : new HashSet<>(roles),
             priorities == null ? null : new HashSet<>(priorities),
             dueDate,
-            assigneeId,
+            assigneeIds == null ? null : new HashSet<>(assigneeIds),
             unassigned);
     return TaskBoardResponse.from(
         projectTaskService.getBoard(projectId, CurrentUser.id(principal), filter));

@@ -121,7 +121,7 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
                 .param("roles", "design")
                 .param("priorities", "high", "urgent")
                 .param("due_date", "2026-10-27")
-                .param("assignee_id", jinsu.id().toString()))
+                .param("assignee_ids", jinsu.id().toString()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.groups.length()").value(5))
         .andExpect(jsonPath("$.groups[0].count").value(0))

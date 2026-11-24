@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -194,21 +196,22 @@ class ProjectTaskControllerTest {
   }
 
   @Test
-  void getBoardRejectsAssigneeIdTogetherWithUnassigned() {
-    assertThatThrownBy(() ->
-            mockMvc.perform(
-                get("/api/mobile/projects/{projectId}/tasks", PROJECT_ID)
-                    .principal(principal)
-                    .header("API-Version", "1")
-                    .param("assignee_id", USER_ID.toString())
-                    .param("unassigned", "true")))
-        .cause()
-        .isInstanceOfSatisfying(
-            FieldValidationException.class,
-            e ->
-                assertThat(((FieldValidationDetails) e.getDetails()).fields())
-                    .extracting(FieldValidationDetails.FieldViolation::field)
-                    .containsExactly("unassigned"));
+  void getBoardPassesRepeatedAssigneeIdsTogetherWithUnassigned() throws Exception {
+    when(projectTaskService.getBoard(eq(PROJECT_ID), eq(USER_ID), any())).thenReturn(List.of());
+
+    mockMvc
+        .perform(
+            get("/api/mobile/projects/{projectId}/tasks", PROJECT_ID)
+                .principal(principal)
+                .header("API-Version", "1")
+                .param("assignee_ids", USER_ID.toString(), ASSIGNEE_ID.toString())
+                .param("unassigned", "true"))
+        .andExpect(status().isOk());
+
+    ArgumentCaptor<MobileTaskFilter> filter = ArgumentCaptor.forClass(MobileTaskFilter.class);
+    verify(projectTaskService).getBoard(eq(PROJECT_ID), eq(USER_ID), filter.capture());
+    assertThat(filter.getValue().assigneeIds()).containsExactlyInAnyOrder(USER_ID, ASSIGNEE_ID);
+    assertThat(filter.getValue().unassigned()).isTrue();
   }
 
   @Test
