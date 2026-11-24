@@ -40,7 +40,11 @@ class MobileTaskFilterTest {
   void differentFiltersAreCombinedWithAnd() {
     MobileTaskFilter filter =
         new MobileTaskFilter(
-            Set.of(TaskRole.DESIGN), Set.of(TaskPriority.HIGH), DUE_DATE, ASSIGNEE_ID, false);
+            Set.of(TaskRole.DESIGN),
+            Set.of(TaskPriority.HIGH),
+            DUE_DATE,
+            Set.of(ASSIGNEE_ID),
+            false);
 
     assertThat(filter.matches(task(List.of("design"), "high", ASSIGNEE_ID, DUE_DATE))).isTrue();
     assertThat(filter.matches(task(List.of("design"), "low", ASSIGNEE_ID, DUE_DATE))).isFalse();
@@ -63,6 +67,28 @@ class MobileTaskFilterTest {
 
     assertThat(filter.matches(task(List.of(), "low", null, null))).isTrue();
     assertThat(filter.matches(task(List.of(), "low", ASSIGNEE_ID, null))).isFalse();
+  }
+
+  @Test
+  void selectedAssigneesAreCombinedWithOr() {
+    UUID otherAssigneeId = UUID.randomUUID();
+    MobileTaskFilter filter =
+        new MobileTaskFilter(Set.of(), Set.of(), null, Set.of(ASSIGNEE_ID, otherAssigneeId), false);
+
+    assertThat(filter.matches(task(List.of(), "low", ASSIGNEE_ID, null))).isTrue();
+    assertThat(filter.matches(task(List.of(), "low", otherAssigneeId, null))).isTrue();
+    assertThat(filter.matches(task(List.of(), "low", UUID.randomUUID(), null))).isFalse();
+    assertThat(filter.matches(task(List.of(), "low", null, null))).isFalse();
+  }
+
+  @Test
+  void selectedAssigneesAndUnassignedAreCombinedWithOr() {
+    MobileTaskFilter filter =
+        new MobileTaskFilter(Set.of(), Set.of(), null, Set.of(ASSIGNEE_ID), true);
+
+    assertThat(filter.matches(task(List.of(), "low", ASSIGNEE_ID, null))).isTrue();
+    assertThat(filter.matches(task(List.of(), "low", null, null))).isTrue();
+    assertThat(filter.matches(task(List.of(), "low", UUID.randomUUID(), null))).isFalse();
   }
 
   private static BoardTask task(
