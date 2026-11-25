@@ -21,7 +21,7 @@ interface AppUpdateControllerDocs {
       description = "앱의 플랫폼과 버전을 받아 해당 플랫폼의 최소 지원 버전보다 낮은지 판정합니다.")
   @ApiResponse(
       responseCode = "200",
-      description = "판정 성공. 앱 버전이 해당 플랫폼의 최소 지원 버전보다 낮으면 update_required는 true입니다.",
+      description = "판정 성공",
       content = @Content(schema = @Schema(implementation = AppUpdateResponse.class)))
   @SecurityRequirements
   @ApiException(CommonErrorCode.class)

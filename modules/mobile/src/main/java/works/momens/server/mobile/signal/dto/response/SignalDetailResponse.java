@@ -9,7 +9,8 @@ import works.momens.server.signal.SignalDetail;
 @Schema(description = "시그널 상세 응답")
 public record SignalDetailResponse(
     UUID id,
-    String type,
+    @Schema(description = "Signal 유형. risk, decision, change, question 중 하나입니다.", example = "risk")
+        String type,
     String title,
     @Schema(description = "Signal 전체가 프로젝트에 미칠 영향 요약. 미생산 시 null입니다.", nullable = true)
         String impact,

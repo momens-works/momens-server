@@ -1,5 +1,6 @@
 package works.momens.server.mobile.brief.dto.response;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import java.util.List;
@@ -11,7 +12,10 @@ import works.momens.server.project.core.ProjectSnapshot;
 public record BriefResponse(
     @Schema(description = "프로젝트 스냅샷") ProjectResponse project,
     @Schema(description = "시그널 요약") SignalSummaryResponse signalSummary,
-    @Schema(description = "현재 우선순위") List<PriorityResponse> priorities) {
+    @ArraySchema(
+            arraySchema = @Schema(description = "현재 우선순위"),
+            maxItems = MobileBrief.PRIORITY_LIMIT)
+        List<PriorityResponse> priorities) {
 
   @Schema(description = "프로젝트 스냅샷")
   public record ProjectResponse(
@@ -30,7 +34,10 @@ public record BriefResponse(
           String summary,
       @Schema(description = "필터 칩 목록. all이 맨 앞이고 나머지는 라벨 글자수 오름차순과 알파벳순")
           List<FilterResponse> filters,
-      @Schema(description = "당일 시그널 요약 최신순 첫 페이지") List<SignalItemResponse> items,
+      @ArraySchema(
+              arraySchema = @Schema(description = "당일 시그널 요약 최신순 첫 페이지"),
+              maxItems = MobileBrief.SIGNAL_SUMMARY_PAGE_SIZE)
+          List<SignalItemResponse> items,
       @Schema(description = "다음 페이지 커서. 다음 페이지가 없으면 null로 포함됩니다.", nullable = true)
           String nextCursor) {}
 

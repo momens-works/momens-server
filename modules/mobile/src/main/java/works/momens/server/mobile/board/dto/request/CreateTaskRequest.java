@@ -14,7 +14,7 @@ import works.momens.server.project.task.TaskRole;
 
 @Schema(description = "일반 작업 생성 요청")
 public record CreateTaskRequest(
-    @Schema(description = "태스크 제목. 공백만으로 구성할 수 없습니다.", example = "권한 요청 플로우 점검")
+    @Schema(description = "태스크 제목. 빈 문자열이나 공백만으로 구성할 수 없습니다.", example = "권한 요청 플로우 점검")
         @NotBlank
         @Size(max = TaskPolicy.TITLE_MAX_LENGTH)
         String title,

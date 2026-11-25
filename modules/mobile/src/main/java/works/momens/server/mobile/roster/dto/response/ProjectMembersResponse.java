@@ -6,7 +6,8 @@ import java.util.UUID;
 import works.momens.server.mobile.roster.ProjectMember;
 
 @Schema(description = "프로젝트 멤버 목록 응답")
-public record ProjectMembersResponse(@Schema(description = "멤버 목록") List<MemberResponse> members) {
+public record ProjectMembersResponse(
+    @Schema(description = "멤버 목록. 검색 결과가 없으면 빈 배열입니다.") List<MemberResponse> members) {
 
   @Schema(description = "프로젝트 멤버 한 명")
   public record MemberResponse(

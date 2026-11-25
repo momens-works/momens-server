@@ -32,7 +32,7 @@ interface SignalControllerDocs {
               + "`next_cursor`가 `null`이면 더 조회할 데이터가 없습니다.")
   @ApiResponse(
       responseCode = "200",
-      description = "미처리 시그널 목록의 한 페이지입니다. 조회 결과가 없으면 `signals`는 빈 배열입니다.",
+      description = "목록 조회 성공",
       content = @Content(schema = @Schema(implementation = SignalListResponse.class)))
   @ApiException(
       value = ProjectErrorCode.class,

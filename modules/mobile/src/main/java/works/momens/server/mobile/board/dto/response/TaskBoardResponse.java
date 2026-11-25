@@ -8,6 +8,10 @@ import org.jspecify.annotations.Nullable;
 import works.momens.server.mobile.board.MobileTaskCard;
 import works.momens.server.mobile.board.MobileTaskGroup;
 
+/**
+ * 앱의 응답 모델이 {@code title}과 {@code description}을 기본값 없는 필수 값으로 선언하므로, 두 필드를 제거하면 앱에서 역직렬화가 실패합니다.
+ * 제거는 MOM-1112에서 다룹니다.
+ */
 @Schema(description = "프로젝트 작업 보드 응답")
 public record TaskBoardResponse(
     @Schema(description = "화면 제목", example = "프로젝트 태스크") String title,

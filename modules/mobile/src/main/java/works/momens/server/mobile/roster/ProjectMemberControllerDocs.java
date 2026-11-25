@@ -24,7 +24,7 @@ interface ProjectMemberControllerDocs {
               + " 번째로, 나머지는 이름 오름차순(같으면 id 오름차순)으로 정렬하며, 요청한 사용자도 query에 맞지 않으면 제외합니다.")
   @ApiResponse(
       responseCode = "200",
-      description = "멤버 목록 조회 성공. 검색 결과가 없으면 members는 빈 배열입니다.",
+      description = "멤버 목록 조회 성공",
       content = @Content(schema = @Schema(implementation = ProjectMembersResponse.class)))
   @ApiException(
       value = ProjectErrorCode.class,
