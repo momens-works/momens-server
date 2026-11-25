@@ -1,10 +1,8 @@
 package works.momens.server.user.internal;
 
-import jakarta.persistence.LockModeType;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,16 +10,6 @@ import org.springframework.data.repository.query.Param;
 interface UserRepository extends JpaRepository<User, UUID> {
 
   Optional<User> findByEmail(String email);
-
-  /**
-   * 사용자 행에 쓰기 잠금을 획득한 상태로 조회합니다.
-   *
-   * <p>동일한 사용자에 대한 요청이 동시에 들어오면 선행 트랜잭션이 종료될 때까지 후속 요청의 조회가 대기합니다. 이를 통해 사용자 상태를 확인하고 변경하는 과정에서 다른
-   * 요청이 해당 상태를 변경하는 것을 방지합니다.
-   */
-  @Lock(LockModeType.PESSIMISTIC_WRITE)
-  @Query("select u from User u where u.id = :id")
-  Optional<User> findForUpdate(@Param("id") UUID id);
 
   /**
    * 사용자 행을 삽입하며, 기존 행과 충돌하면 아무 작업도 하지 않습니다. 감사 필드는 스키마 기본값으로 채웁니다.

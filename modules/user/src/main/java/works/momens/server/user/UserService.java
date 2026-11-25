@@ -48,13 +48,10 @@ public interface UserService {
   UserProfile updateProfile(UUID userId, String name, String jobRole);
 
   /**
-   * 모바일 앱 온보딩 완료를 기록합니다. 이미 온보딩을 완료한 사용자는 최초 완료 시각을 유지합니다. 동일한 사용자의 온보딩 완료 요청이 동시에 들어오더라도 최초 완료를
-   * 기록한 요청에 대해서만 {@code true}를 반환합니다. 사용자가 존재하지 않으면 {@link UserErrorCode#USER_NOT_FOUND} 오류를
-   * 발생시킵니다.
-   *
-   * @return 이번 호출에서 온보딩 완료를 최초로 기록한 경우 {@code true}
+   * 모바일 앱 온보딩 완료를 기록합니다. 이미 온보딩을 완료한 사용자는 최초 완료 시각을 유지합니다. 사용자가 존재하지 않으면 {@link
+   * UserErrorCode#USER_NOT_FOUND} 오류를 발생시킵니다.
    */
-  boolean completeMobileOnboarding(UUID userId);
+  void completeMobileOnboarding(UUID userId);
 
   /** 모바일 앱 온보딩 완료 여부를 조회합니다. 사용자가 존재하지 않으면 {@link UserErrorCode#USER_NOT_FOUND} 오류를 발생시킵니다. */
   boolean isMobileOnboardingCompleted(UUID userId);

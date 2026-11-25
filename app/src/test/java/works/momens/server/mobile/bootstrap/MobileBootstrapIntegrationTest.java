@@ -105,7 +105,7 @@ class MobileBootstrapIntegrationTest extends AbstractPostgresIntegrationTest {
             put("/api/mobile/me/onboarding-completion")
                 .header("Authorization", "Bearer " + token)
                 .header("API-Version", "1"))
-        .andExpect(status().isCreated());
+        .andExpect(status().isNoContent());
     mockMvc
         .perform(
             put("/api/mobile/me/onboarding-completion")

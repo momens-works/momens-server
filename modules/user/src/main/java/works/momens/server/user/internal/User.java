@@ -53,17 +53,12 @@ class User extends BaseEntity {
     }
   }
 
-  /**
-   * 모바일 앱 온보딩 완료를 기록합니다. 이미 온보딩을 완료한 경우 최초 완료 시각을 유지합니다.
-   *
-   * @return 이번 호출에서 온보딩 완료를 최초로 기록한 경우 {@code true}
-   */
-  boolean completeMobileOnboarding() {
+  /** 모바일 앱 온보딩 완료를 기록합니다. 이미 온보딩을 완료한 경우 최초 완료 시각을 유지합니다. */
+  void completeMobileOnboarding() {
     if (isMobileOnboardingCompleted()) {
-      return false;
+      return;
     }
     this.mobileOnboardingCompletedAt = Instant.now();
-    return true;
   }
 
   boolean isMobileOnboardingCompleted() {
