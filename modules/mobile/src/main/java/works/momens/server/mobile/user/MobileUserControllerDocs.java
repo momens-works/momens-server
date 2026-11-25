@@ -33,7 +33,7 @@ interface MobileUserControllerDocs {
       operationId = "mobileCompleteOnboarding",
       summary = "모바일 온보딩 완료 기록",
       description =
-          "현재 로그인한 사용자가 모바일 앱 온보딩(코치마크)을 완료하거나 건너뛴 사실을 기록합니다. 요청 본문은 없으며, 동일한 요청을 여러 번 보내더라도 최초 완료 시각을 유지합니다.")
+          "현재 로그인한 사용자의 모바일 앱 온보딩(코치마크) 완료를 기록합니다. 요청 본문은 없으며, 동일한 요청을 여러 번 보내더라도 최초 완료 시각을 유지합니다.")
   @ApiResponse(responseCode = "201", description = "온보딩 완료를 최초로 기록했습니다.")
   @ApiResponse(
       responseCode = "204",
