@@ -42,14 +42,16 @@ public record BriefResponse(
 
   @Schema(description = "현재 우선순위 항목")
   public record PriorityResponse(
-      @Schema(description = "정렬 순번(1부터). 화면의 01~04 표기와 같습니다.", example = "1") int rank,
+      @Schema(description = "정렬 순번(1부터). 화면에 표시하는 순번입니다.", example = "1") int rank,
       @Schema(description = "작업 제목") String title,
       @Schema(description = "task 식별자. 작업 상세로 이동할 때 사용합니다.") UUID taskId) {}
 
   @Schema(description = "시그널 요약 항목")
   public record SignalItemResponse(
       @Schema(description = "signal 식별자") UUID id,
-      @Schema(description = "signal type. change, decision, risk, question 등이 온다", example = "risk")
+      @Schema(
+              description = "Signal 유형. risk, decision, change, question 중 하나입니다.",
+              example = "risk")
           String type,
       @Schema(description = "제목") String title) {}
 

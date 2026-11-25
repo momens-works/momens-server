@@ -31,7 +31,7 @@ public record TaskDetailResponse(
     @Schema(description = "우선순위 (urgent/high/medium/low)", example = "medium") String priority,
     @Schema(description = "마감일. 미설정 시 null", example = "2026-09-25", nullable = true)
         LocalDate dueDate,
-    @Schema(description = "설명. 작성 전이면 null") String purpose,
+    @Schema(description = "설명. 작성 전이면 null", nullable = true) @Nullable String purpose,
     @Schema(description = "완료 기준") ChecklistResponse checklist,
     @Schema(description = "연결된 소스 목록. 연결된 소스가 없으면 빈 배열") List<MaterialResponse> materials,
     @Schema(description = "질문 목록. 민수가 만든 질문이 없으면 빈 배열") List<OpenQuestionResponse> openQuestions,
@@ -49,7 +49,8 @@ public record TaskDetailResponse(
   public record AssigneeResponse(
       @Schema(description = "사용자 식별자") UUID id,
       @Schema(description = "이름") String name,
-      @Schema(description = "구글 계정 프로필 이미지. 없으면 null") String avatarUrl) {}
+      @Schema(description = "구글 계정 프로필 이미지. 없으면 null", nullable = true)
+          @Nullable String avatarUrl) {}
 
   @Schema(description = "완료 기준")
   public record ChecklistResponse(

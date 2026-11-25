@@ -18,7 +18,7 @@ interface PushDeviceControllerDocs {
       description =
           "Firebase Installation ID(FID) 단위로 설치를 등록하거나 FCM token을 갱신합니다. 같은 FID의 재요청은 token을 갱신하고"
               + " 활성화하며, 다른 사용자에게 귀속된 FID면 현재 인증 사용자에게 소유권을 이전합니다. 같은 활성 token이 다른 FID에 연결돼 있으면"
-              + " 이전 연결을 비활성화합니다.")
+              + " 이전 연결을 비활성화합니다. 등록 경합으로 남은 제약 위반은 409 COMMON_CONFLICT입니다.")
   @ApiResponse(responseCode = "204", description = "생성·갱신 모두 성공.")
   @ApiException(CommonErrorCode.class)
   void register(
