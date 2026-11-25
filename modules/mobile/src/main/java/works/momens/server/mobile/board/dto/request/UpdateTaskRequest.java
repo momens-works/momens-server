@@ -72,11 +72,11 @@ public record UpdateTaskRequest(
   @Schema(description = "완료 기준 항목")
   public record ChecklistItemRequest(
       @Schema(description = "기존 항목 식별자. 새 항목이면 생략합니다.") UUID id,
-      @Schema(description = "항목 제목. 공백만으로 구성할 수 없습니다.", example = "회원가입 에러 메시지 반영")
+      @Schema(description = "항목 제목. 빈 문자열이나 공백만으로 구성할 수 없습니다.", example = "회원가입 에러 메시지 반영")
           @NotBlank
           @Size(max = 50)
           String title,
-      @Schema(description = "완료 여부. 없으면 false입니다.", example = "false") Boolean completed) {
+      @Schema(description = "완료 여부", example = "false", defaultValue = "false") Boolean completed) {
 
     public ChecklistItemRequest {
       // 수정 화면은 항상 completed를 보내지만, 필드가 빠져도 미완료로 다뤄 완료 상태 저장이 안전하게 동작하도록 한다.

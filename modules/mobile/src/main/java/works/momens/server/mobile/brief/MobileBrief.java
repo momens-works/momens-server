@@ -24,6 +24,11 @@ public record MobileBrief(
     String nextCursor,
     List<Priority> priorities) {
 
+  /** 화면의 기본 페이지 크기이며 서버 보호 상한과는 별개입니다. 접힌 화면의 최신 3개 표시는 클라이언트가 처리하므로 서버는 첫 페이지를 자르지 않습니다. */
+  public static final int SIGNAL_SUMMARY_PAGE_SIZE = 20;
+
+  public static final int PRIORITY_LIMIT = 4;
+
   /** 필터 칩 하나. key는 filter 쿼리 값(all 또는 signal type)이고, all은 노출 type 전체 합이라 화면 헤더 숫자로도 쓰입니다. */
   public record FilterCount(String key, String label, long count) {}
 
