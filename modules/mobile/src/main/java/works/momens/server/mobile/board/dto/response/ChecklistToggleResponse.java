@@ -6,7 +6,6 @@ import java.util.UUID;
 import works.momens.server.mobile.board.MobileTaskDetail;
 import works.momens.server.project.task.TaskDetail;
 
-/** 수정한 항목과 태스크 전체 완료 수를 함께 반환해 화면의 완료 헤더를 갱신합니다. */
 @Schema(description = "완료 기준 완료 상태 변경 응답")
 public record ChecklistToggleResponse(
     @Schema(description = "완료 기준 요약") ChecklistResponse checklist,

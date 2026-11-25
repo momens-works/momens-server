@@ -18,6 +18,7 @@ import works.momens.server.mobile.signal.dto.response.SignalListResponse;
 import works.momens.server.project.core.ProjectErrorCode;
 import works.momens.server.project.task.TaskErrorCode;
 import works.momens.server.signal.SignalErrorCode;
+import works.momens.server.signal.SignalListService;
 
 @Tag(name = "Signal", description = "모바일 Signal API")
 interface SignalControllerDocs {
@@ -39,10 +40,19 @@ interface SignalControllerDocs {
   @ApiException(CommonErrorCode.class)
   SignalListResponse listSignals(
       @Parameter(description = "project 식별자") UUID projectId,
-      @Parameter(description = "직전 응답의 `next_cursor`입니다. 없으면 첫 페이지를 조회합니다.") String cursor,
       @Parameter(
               description =
-                  "페이지 크기입니다. 없거나 0이면 기본값 5를 사용합니다. 최대 50까지 요청할 수 있으며, 50을 초과하면 50으로 제한합니다.")
+                  "직전 응답의 `next_cursor`입니다. 없으면 첫 페이지를 조회하고, 형식이 잘못되면 COMMON_VALIDATION_FAILED입니다.")
+          String cursor,
+      @Parameter(
+              description =
+                  "페이지 크기입니다. 0이면 기본값을 사용하고, 상한("
+                      + SignalListService.MAX_PAGE_SIZE
+                      + ")을 넘으면 상한으로 줄입니다. 음수이면 COMMON_VALIDATION_FAILED입니다.",
+              schema =
+                  @Schema(
+                      implementation = Integer.class,
+                      defaultValue = "" + SignalController.SIGNAL_LIST_PAGE_SIZE))
           Integer limit,
       Principal principal);
 
@@ -67,8 +77,8 @@ interface SignalControllerDocs {
       operationId = "mobileConvertSignalToTask",
       summary = "시그널을 작업으로 전환",
       description =
-          "시그널을 원탭으로 작업에 등록합니다. 요청 body는 없습니다. 동기 경로에서는 민수가 생성한 draft(title, role, priority)로 작업을 만듭니다."
-              + " 생성 비활성·설정 무효·입력 부족·생성 실패·출력 무효 시에는 fallback(title은 정규화된 시그널 제목이며, 최대 70자, role은 pm, priority는 medium)을 사용합니다."
+          "시그널을 원탭으로 작업에 등록합니다. 요청 body는 없고, 생성된 작업은 todo 상태로 시작합니다. 동기 경로에서는 민수가 생성한 draft(title, role, priority)로 작업을 만듭니다."
+              + " 생성 비활성·설정 무효·입력 부족·생성 실패·출력 무효 시에는 시그널 제목으로 만든 fallback을 사용합니다."
               + " 비동기 경로에서는 fallback으로 먼저 생성하고 draft_status가 generating인 동안 후속 생성을 진행합니다. 생성 결과는 title, role, priority가 초기 값과 같을 때만 반영하며, 생성 실패나 선행 편집 등으로 반영되지 않을 수 있습니다."
               + " draft_status가 ready가 되면 후속 생성이 종료된 상태이며 성공 여부를 뜻하지 않습니다. 최신 값은 작업 상세 조회로 확인합니다."
               + " 같은 시그널에 같은 action을 재요청하면 새 작업을 만들지 않고 기존 결과를 200으로"

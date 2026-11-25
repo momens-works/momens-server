@@ -8,19 +8,13 @@ import org.jspecify.annotations.Nullable;
 import works.momens.server.mobile.board.MobileTaskCard;
 import works.momens.server.mobile.board.MobileTaskGroup;
 
-/**
- * 태스크가 없는 상태 그룹도 빈 배열로 반환합니다. 웹 태스크의 role은 null일 수 있습니다.
- *
- * <p>담당자와 마감일이 지정되지 않은 경우 해당 필드는 {@code null}로 반환합니다.
- *
- * <p>부제는 화면에 표시하지 않습니다. 기존 앱의 응답 DTO에서 기본값이 없는 필수 필드로 선언되어 있으므로, 하위 호환성을 위해 필드를 유지하고 빈 문자열을 반환합니다.
- */
 @Schema(description = "프로젝트 작업 보드 응답")
 public record TaskBoardResponse(
     @Schema(description = "화면 제목", example = "프로젝트 태스크") String title,
-    @Schema(description = "화면에 표시하지 않는 부제. 하위 호환성을 위해 필드를 유지하며, 항상 빈 문자열을 반환합니다.")
-        String description,
-    @Schema(description = "상태별 작업 그룹 목록(`in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서)")
+    @Schema(description = "화면에 표시하지 않는 부제. 항상 빈 문자열을 반환합니다.") String description,
+    @Schema(
+            description =
+                "상태별 작업 그룹 목록. `in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서이며 작업이 없는 그룹도 포함합니다.")
         List<GroupResponse> groups) {
 
   private static final String BOARD_TITLE = "프로젝트 태스크";
@@ -29,7 +23,7 @@ public record TaskBoardResponse(
   public record GroupResponse(
       @Schema(description = "그룹 키", example = "todo") String groupKey,
       @Schema(description = "그룹 라벨", example = "할 일") String label,
-      @Schema(description = "그룹 작업 수") int count,
+      @Schema(description = "필터 적용 후 그룹 작업 수") int count,
       @Schema(description = "그룹 작업 목록") List<TaskCardResponse> tasks) {}
 
   @Schema(description = "보드 작업 카드")
@@ -42,7 +36,7 @@ public record TaskBoardResponse(
           List<String> roles,
       @Schema(
               description =
-                  "구버전 앱과의 호환성을 위한 role 필드입니다. `roles`의 첫 번째 값을 반환하며, 지정된 role이 없으면 `null`을 반환합니다.",
+                  "`roles`로 대체된 필드입니다. `roles`의 첫 번째 값을 반환하며, 지정된 role이 없으면 `null`을 반환합니다.",
               example = "pm",
               nullable = true,
               deprecated = true)

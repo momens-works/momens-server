@@ -11,7 +11,7 @@ import works.momens.server.project.core.ProjectSnapshot;
 public record BriefResponse(
     @Schema(description = "프로젝트 스냅샷") ProjectResponse project,
     @Schema(description = "시그널 요약") SignalSummaryResponse signalSummary,
-    @Schema(description = "현재 우선순위(상위 4개, 정렬 순번 포함)") List<PriorityResponse> priorities) {
+    @Schema(description = "현재 우선순위") List<PriorityResponse> priorities) {
 
   @Schema(description = "프로젝트 스냅샷")
   public record ProjectResponse(

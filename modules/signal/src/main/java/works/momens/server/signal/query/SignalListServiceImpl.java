@@ -36,9 +36,6 @@ import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 @RequiredArgsConstructor
 class SignalListServiceImpl implements SignalListService {
 
-  /** 페이지 크기 상한. 넘겨도 에러 대신 상한으로 줄인다(AIP-158). */
-  private static final int MAX_PAGE_SIZE = 50;
-
   private final SignalRepository signalRepository;
   private final ProjectReader projectReader;
   private final WorkspaceMembershipReader workspaceMembershipReader;

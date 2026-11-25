@@ -213,7 +213,7 @@
         "description" : "프로젝트 브리프 응답",
         "properties" : {
           "priorities" : {
-            "description" : "현재 우선순위(상위 4개, 정렬 순번 포함)",
+            "description" : "현재 우선순위",
             "items" : {
               "$ref" : "#/components/schemas/PriorityResponse"
             },
@@ -259,12 +259,12 @@
             "type" : "boolean"
           },
           "id" : {
-            "description" : "항목 식별자. 새 항목이면 생략합니다.",
+            "description" : "기존 항목 식별자. 새 항목이면 생략합니다.",
             "format" : "uuid",
             "type" : "string"
           },
           "title" : {
-            "description" : "항목 제목. 최대 50자(공백 포함).",
+            "description" : "항목 제목. 공백만으로 구성할 수 없습니다.",
             "example" : "회원가입 에러 메시지 반영",
             "maxLength" : 50,
             "minLength" : 0,
@@ -482,6 +482,8 @@
       "ConvertToTaskSignal" : {
         "properties" : {
           "action" : {
+            "description" : "처리한 action. path의 하이픈 표기와 달리 underscore 표기입니다.",
+            "example" : "convert_to_task",
             "type" : "string"
           },
           "id" : {
@@ -779,7 +781,7 @@
         "description" : "일반 작업 생성 요청",
         "properties" : {
           "due_date" : {
-            "description" : "마감일(YYYY-MM-DD). 생략하거나 null로 전달하면 마감일 없이 생성합니다.",
+            "description" : "마감일",
             "example" : "2026-09-25",
             "format" : "date",
             "type" : [
@@ -788,7 +790,7 @@
             ]
           },
           "priority" : {
-            "description" : "우선순위 (urgent/high/medium/low 중 하나)",
+            "description" : "우선순위",
             "enum" : [
               "low",
               "medium",
@@ -800,7 +802,7 @@
           },
           "role" : {
             "deprecated" : true,
-            "description" : "구버전 앱과의 호환성을 위한 role 필드입니다. 새 클라이언트는 `roles`를 사용합니다. `roles` 없이 `role`만 전달하면 해당 role 하나로 태스크를 생성합니다.",
+            "description" : "`roles`로 대체된 필드입니다. `roles` 없이 `role`만 보내면 해당 role 하나로 태스크를 생성합니다.",
             "enum" : [
               "pm",
               "design",
@@ -811,7 +813,7 @@
             "type" : "string"
           },
           "roles" : {
-            "description" : "role 목록입니다. `pm`, `design`, `backend`, `frontend` 중 최소 1개 이상 지정해야 하며, 중복은 허용하지 않습니다.",
+            "description" : "role 목록입니다. `role`을 보내지 않으면 필수입니다.",
             "items" : {
               "enum" : [
                 "pm",
@@ -827,7 +829,7 @@
             "uniqueItems" : true
           },
           "title" : {
-            "description" : "태스크 제목. 공백 포함 최대 70자.",
+            "description" : "태스크 제목. 공백만으로 구성할 수 없습니다.",
             "example" : "권한 요청 플로우 점검",
             "maxLength" : 70,
             "minLength" : 0,
@@ -1061,6 +1063,8 @@
       "DismissSignal" : {
         "properties" : {
           "action" : {
+            "description" : "처리한 action",
+            "example" : "dismiss",
             "type" : "string"
           },
           "id" : {
@@ -1207,7 +1211,7 @@
         "description" : "상태 그룹",
         "properties" : {
           "count" : {
-            "description" : "그룹 작업 수",
+            "description" : "필터 적용 후 그룹 작업 수",
             "format" : "int32",
             "type" : "integer"
           },
@@ -1357,7 +1361,7 @@
             ]
           },
           "source" : {
-            "description" : "원본 출처입니다. slack, github, figma, notion, file 중 하나이며, 화면에 표시하는 라벨은 앱이 생성합니다.",
+            "description" : "원본 출처입니다(예: slack, github, figma, notion, file). 목록에 없는 값이 올 수 있습니다.",
             "example" : "figma",
             "type" : "string"
           },
@@ -1707,7 +1711,7 @@
         "description" : "프로젝트 멤버 목록 응답",
         "properties" : {
           "members" : {
-            "description" : "멤버 목록(이름 오름차순). 검색 결과가 없으면 빈 배열입니다.",
+            "description" : "멤버 목록",
             "items" : {
               "$ref" : "#/components/schemas/MemberResponse"
             },
@@ -1829,12 +1833,14 @@
             "type" : "string"
           },
           "impact" : {
+            "description" : "Signal 전체가 프로젝트에 미칠 영향 요약. 미생산 시 null입니다.",
             "type" : [
               "string",
               "null"
             ]
           },
           "minsu_suggestion" : {
+            "description" : "민수 제안. 미생산 시 null입니다.",
             "type" : [
               "string",
               "null"
@@ -1850,7 +1856,7 @@
         "type" : "object"
       },
       "SignalEvidenceDetails" : {
-        "description" : "근거의 대상·변화·영향. signal_evidence가 소유하며 각 값은 공백 포함 30자 이하입니다.",
+        "description" : "근거 한 건에서 관찰한 대상·변화·영향",
         "properties" : {
           "change" : {
             "maxLength" : 30,
@@ -1945,7 +1951,7 @@
             ]
           },
           "signals" : {
-            "description" : "미처리 Signal 목록(생성 시각 내림차순). 없으면 빈 배열입니다.",
+            "description" : "미처리 Signal 목록. 없으면 빈 배열입니다.",
             "items" : {
               "$ref" : "#/components/schemas/SignalItem"
             },
@@ -2724,11 +2730,11 @@
         "description" : "프로젝트 작업 보드 응답",
         "properties" : {
           "description" : {
-            "description" : "화면에 표시하지 않는 부제. 하위 호환성을 위해 필드를 유지하며, 항상 빈 문자열을 반환합니다.",
+            "description" : "화면에 표시하지 않는 부제. 항상 빈 문자열을 반환합니다.",
             "type" : "string"
           },
           "groups" : {
-            "description" : "상태별 작업 그룹 목록(`in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서)",
+            "description" : "상태별 작업 그룹 목록. `in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서이며 작업이 없는 그룹도 포함합니다.",
             "items" : {
               "$ref" : "#/components/schemas/GroupResponse"
             },
@@ -2797,7 +2803,7 @@
           },
           "role" : {
             "deprecated" : true,
-            "description" : "구버전 앱과의 호환성을 위한 role 필드입니다. `roles`의 첫 번째 값을 반환하며, 지정된 role이 없으면 `null`을 반환합니다.",
+            "description" : "`roles`로 대체된 필드입니다. `roles`의 첫 번째 값을 반환하며, 지정된 role이 없으면 `null`을 반환합니다.",
             "example" : "pm",
             "type" : [
               "string",
@@ -2935,7 +2941,7 @@
           },
           "role" : {
             "deprecated" : true,
-            "description" : "구버전 앱과의 호환성을 위한 role 필드입니다. `roles`의 첫 번째 값을 반환하며, 지정된 role이 없으면 `null`을 반환합니다.",
+            "description" : "`roles`로 대체된 필드입니다. `roles`의 첫 번째 값을 반환하며, 지정된 role이 없으면 `null`을 반환합니다.",
             "example" : "pm",
             "type" : [
               "string",
@@ -2987,7 +2993,7 @@
           },
           "role" : {
             "deprecated" : true,
-            "description" : "구버전 앱과의 호환성을 위한 role 필드입니다. `roles`의 첫 번째 값을 반환합니다.",
+            "description" : "`roles`로 대체된 필드입니다. `roles`의 첫 번째 값을 반환합니다.",
             "example" : "pm",
             "type" : "string"
           },
@@ -3027,7 +3033,7 @@
         "description" : "완료 기준 완료 상태 변경 요청",
         "properties" : {
           "completed" : {
-            "description" : "완료 여부",
+            "description" : "저장할 완료 상태. 현재 값을 반전하지 않고 이 값으로 저장합니다.",
             "example" : true,
             "type" : "boolean"
           },
@@ -3166,7 +3172,7 @@
             ]
           },
           "checklist_items" : {
-            "description" : "완료 기준 최종 목록으로 전체 교체합니다. 생략하거나 null로 보내면 빈 목록으로 처리해 기존 항목을 모두 삭제합니다. 0개에서 5개까지 허용합니다.",
+            "description" : "완료 기준 최종 목록으로 전체 교체합니다. 생략하거나 null로 보내면 기존 항목을 모두 삭제합니다. 없는 항목 id는 TASK_CHECKLIST_ITEM_NOT_FOUND, 중복 id는 COMMON_VALIDATION_FAILED입니다.",
             "items" : {
               "$ref" : "#/components/schemas/ChecklistItemRequest"
             },
@@ -3175,7 +3181,7 @@
             "type" : "array"
           },
           "due_date" : {
-            "description" : "마감일(YYYY-MM-DD). 생략하면 기존 마감일을 유지하고, null로 전달하면 삭제합니다.",
+            "description" : "마감일. 생략하면 기존 마감일을 유지하고, null로 전달하면 삭제합니다.",
             "example" : "2026-09-25",
             "format" : "date",
             "type" : [
@@ -3184,7 +3190,7 @@
             ]
           },
           "priority" : {
-            "description" : "우선순위 (urgent/high/medium/low 중 하나)",
+            "description" : "우선순위",
             "enum" : [
               "low",
               "medium",
@@ -3195,7 +3201,7 @@
             "type" : "string"
           },
           "purpose" : {
-            "description" : "설명. 생략하거나 null로 보내면 기존 설명을 제거합니다. 빈 문자열도 허용합니다. 최대 300자(공백 포함).",
+            "description" : "설명. 생략하거나 null로 보내면 기존 설명을 제거합니다. 빈 문자열도 허용합니다.",
             "maxLength" : 300,
             "minLength" : 0,
             "type" : [
@@ -3205,7 +3211,7 @@
           },
           "role" : {
             "deprecated" : true,
-            "description" : "구버전 앱과의 호환성을 위한 role 필드입니다. 새 클라이언트는 `roles`를 사용합니다. `roles` 없이 `role`만 전달하면 기존 목록에 해당 role이 있는 경우 목록을 유지하고, 없는 경우 해당 role 하나로 교체합니다.",
+            "description" : "`roles`로 대체된 필드입니다. `roles` 없이 `role`만 보내면 기존 목록에 해당 role이 있을 때 목록을 유지하고, 없을 때 해당 role 하나로 교체합니다.",
             "enum" : [
               "pm",
               "design",
@@ -3216,7 +3222,7 @@
             "type" : "string"
           },
           "roles" : {
-            "description" : "role 목록입니다. `pm`, `design`, `backend`, `frontend` 중 최소 1개 이상 중복 없이 지정해야 하며, 전달한 목록으로 기존 role 목록을 교체합니다.",
+            "description" : "전달한 목록으로 기존 role 목록을 교체합니다. `role`을 보내지 않으면 필수입니다.",
             "items" : {
               "enum" : [
                 "pm",
@@ -3232,7 +3238,7 @@
             "uniqueItems" : true
           },
           "status" : {
-            "description" : "상태. backlog는 아직 일정을 잡지 않은 작업, todo는 할 일, in_progress는 진행 중인 작업, done은 완료한 작업, cancelled는 취소한 작업입니다.",
+            "description" : "상태",
             "enum" : [
               "backlog",
               "todo",
@@ -3244,7 +3250,7 @@
             "type" : "string"
           },
           "title" : {
-            "description" : "태스크 제목. 필수 필드이며 빈 문자열을 허용합니다. 공백 포함 최대 70자.",
+            "description" : "태스크 제목. 빈 문자열을 허용합니다.",
             "example" : "1차 와이어프레임",
             "maxLength" : 70,
             "minLength" : 0,
@@ -9432,7 +9438,7 @@
     },
     "/api/mobile/app-update" : {
       "get" : {
-        "description" : "앱의 플랫폼과 버전을 받아 해당 플랫폼의 최소 지원 버전보다 낮은지 판정합니다. 인증 없이 호출할 수 있습니다. 업데이트하지 않은 앱도 계속 호출하는 엔드포인트이므로 경로와 요청, 응답 형식은 변경하지 않습니다. 이후 필요한 정보는 optional 필드를 추가하는 방식으로 확장합니다.",
+        "description" : "앱의 플랫폼과 버전을 받아 해당 플랫폼의 최소 지원 버전보다 낮은지 판정합니다.",
         "operationId" : "mobileCheckAppUpdate",
         "parameters" : [
           {
@@ -9692,7 +9698,7 @@
     },
     "/api/mobile/bootstrap" : {
       "get" : {
-        "description" : "로그인 후 앱 진입에 필요한 현재 사용자 정보, 기본 project id, 접근 가능한 project 목록을 조회합니다.",
+        "description" : "로그인 후 앱 진입에 필요한 정보를 조회합니다.",
         "operationId" : "mobileGetBootstrap",
         "parameters" : [
           {
@@ -9716,7 +9722,7 @@
                 }
               }
             },
-            "description" : "모바일 진입 컨텍스트 조회 성공. 접근 가능한 project가 없으면 default_project_id는 null, projects는 빈 배열입니다."
+            "description" : "모바일 진입 컨텍스트 조회 성공"
           },
           "400" : {
             "content" : {
@@ -9938,7 +9944,7 @@
     },
     "/api/mobile/me" : {
       "get" : {
-        "description" : "마이페이지에 표시할 현재 사용자의 이름, 이메일, 프로필 사진을 조회합니다.",
+        "description" : "마이페이지에 표시할 현재 사용자의 계정 정보를 조회합니다.",
         "operationId" : "mobileGetMe",
         "parameters" : [
           {
@@ -9962,7 +9968,7 @@
                 }
               }
             },
-            "description" : "계정 정보 조회 성공. 프로필 사진이 없는 경우 `avatar_url`은 `null`로 반환됩니다."
+            "description" : "계정 정보 조회 성공"
           },
           "400" : {
             "content" : {
@@ -10423,7 +10429,7 @@
     },
     "/api/mobile/projects/{projectId}/brief" : {
       "get" : {
-        "description" : "브리프 화면(오늘의 브리프)의 초기 로드에 필요한 정보를 조회합니다. 시그널 요약은 당일 시그널의 최신순 첫 페이지(기본 20개)와 타입별 개수를 담습니다. 클라이언트는 첫 페이지에서 최신 3개만 노출하고, 더보기 시 나머지 항목을 펼쳐 보여줍니다. 이후 20개를 초과하면 next_cursor로 다음 페이지를 조회해 무한 스크롤을 이어갑니다. 최신 3개만 노출하는 것은 화면 정책이며, 서버는 전체 첫 페이지를 반환합니다. change도 다른 type과 똑같이 포함합니다. 필터 전환은 하위 엔드포인트 GET .../brief/signal-summary를 사용합니다.",
+        "description" : "브리프 화면의 초기 로드에 필요한 정보를 조회합니다. 시그널 요약은 당일 시그널의 최신순 첫 페이지(20개)와 타입별 개수를 담습니다. 다음 페이지와 필터 전환은 GET .../brief/signal-summary를 사용합니다. priorities는 todo와 in_progress 작업을 우선순위가 높은 순(같으면 생성 시각, id 오름차순)으로 최대 4개 담습니다.",
         "operationId" : "mobileGetBrief",
         "parameters" : [
           {
@@ -10679,7 +10685,7 @@
     },
     "/api/mobile/projects/{projectId}/brief/signal-summary" : {
       "get" : {
-        "description" : "브리프 시그널 요약의 필터 전환과 후속 페이지 조회에 사용합니다. 커서 기반 페이지네이션을 사용하며, 정렬은 최신순(생성 시각 내림차순, 같으면 id 내림차순)입니다.\n\n브리프 조회는 all 필터의 첫 페이지를 함께 반환하므로, 더보기를 처음 누를 때는 이 엔드포인트를 호출하지 않습니다. 필터를 변경하면 해당 타입의 첫 페이지를 조회하고, 브리프 조회에서 받은 첫 페이지를 모두 소비한 뒤에는 직전 응답의 next_cursor를 cursor로 전달해 다음 페이지를 이어 조회합니다. 조회한 항목은 기존 목록 뒤에 추가하며, next_cursor가 null이면 더 조회할 데이터가 없습니다.",
+        "description" : "브리프 시그널 요약의 필터 전환과 후속 페이지 조회에 사용합니다. 정렬은 생성 시각 내림차순이고, 같으면 id 내림차순입니다. 커서는 마지막으로 본 항목 기준이라 페이지 사이에 시그널이 처리되어도 다음 페이지 위치가 밀리지 않습니다.",
         "operationId" : "mobileListBriefSignalSummaries",
         "parameters" : [
           {
@@ -10693,7 +10699,7 @@
             }
           },
           {
-            "description" : "필터 키. all 또는 signal type(change, decision, risk, question). 기본값은 all",
+            "description" : "필터 키. all 또는 signal type(change, decision, risk, question)입니다. 빈 값은 all과 같고, 알려지지 않은 type은 빈 목록을 반환합니다.",
             "in" : "query",
             "name" : "filter",
             "required" : false,
@@ -10703,7 +10709,7 @@
             }
           },
           {
-            "description" : "직전 응답의 next_cursor입니다. 없으면 첫 페이지를 조회하며, next_cursor가 null이 될 때까지 이어 조회하면 모든 항목을 받을 수 있습니다.",
+            "description" : "직전 응답의 next_cursor입니다. 없으면 첫 페이지를 조회하고, 형식이 잘못되면 COMMON_VALIDATION_FAILED입니다.",
             "in" : "query",
             "name" : "cursor",
             "required" : false,
@@ -10712,11 +10718,12 @@
             }
           },
           {
-            "description" : "페이지 크기입니다. 없거나 0이면 기본값 20을 사용합니다. 최대 50까지 요청할 수 있으며, 이를 초과하면 50으로 제한합니다.",
+            "description" : "페이지 크기입니다. 0이면 기본값을 사용하고, 상한(50)을 넘으면 상한으로 줄입니다. 음수이면 COMMON_VALIDATION_FAILED입니다.",
             "in" : "query",
             "name" : "limit",
             "required" : false,
             "schema" : {
+              "default" : 20,
               "format" : "int32",
               "type" : "integer"
             }
@@ -10964,7 +10971,7 @@
     },
     "/api/mobile/projects/{projectId}/members" : {
       "get" : {
-        "description" : "작업 담당자 선택에 사용할 프로젝트 멤버 목록을 조회합니다. 멤버 범위는 project가 속한 workspace의 멤버십입니다.",
+        "description" : "작업 담당자 선택에 사용할 프로젝트 멤버 목록을 조회합니다. 멤버 범위는 project가 속한 workspace의 멤버십입니다. 요청한 사용자를 첫 번째로, 나머지는 이름 오름차순(같으면 id 오름차순)으로 정렬하며, 요청한 사용자도 query에 맞지 않으면 제외합니다.",
         "operationId" : "mobileListProjectMembers",
         "parameters" : [
           {
@@ -10978,7 +10985,7 @@
             }
           },
           {
-            "description" : "이름 검색어. 부분 일치에 대소문자를 무시하고, 없거나 공백이면 전체 멤버를 반환합니다.",
+            "description" : "이름 검색어. 앞뒤 공백을 지운 뒤 대소문자를 무시하고 부분 일치로 거르며, 없거나 공백이면 전체 멤버를 반환합니다.",
             "in" : "query",
             "name" : "query",
             "required" : false,
@@ -11007,7 +11014,7 @@
                 }
               }
             },
-            "description" : "멤버 목록 조회 성공. 이름 오름차순으로 정렬되고, 검색 결과가 없으면 members는 빈 배열입니다."
+            "description" : "멤버 목록 조회 성공. 검색 결과가 없으면 members는 빈 배열입니다."
           },
           "400" : {
             "content" : {
@@ -11243,7 +11250,7 @@
             }
           },
           {
-            "description" : "직전 응답의 `next_cursor`입니다. 없으면 첫 페이지를 조회합니다.",
+            "description" : "직전 응답의 `next_cursor`입니다. 없으면 첫 페이지를 조회하고, 형식이 잘못되면 COMMON_VALIDATION_FAILED입니다.",
             "in" : "query",
             "name" : "cursor",
             "required" : false,
@@ -11252,11 +11259,12 @@
             }
           },
           {
-            "description" : "페이지 크기입니다. 없거나 0이면 기본값 5를 사용합니다. 최대 50까지 요청할 수 있으며, 50을 초과하면 50으로 제한합니다.",
+            "description" : "페이지 크기입니다. 0이면 기본값을 사용하고, 상한(50)을 넘으면 상한으로 줄입니다. 음수이면 COMMON_VALIDATION_FAILED입니다.",
             "in" : "query",
             "name" : "limit",
             "required" : false,
             "schema" : {
+              "default" : 5,
               "format" : "int32",
               "type" : "integer"
             }
@@ -11504,7 +11512,7 @@
     },
     "/api/mobile/projects/{projectId}/tasks" : {
       "get" : {
-        "description" : "태스크를 `in_progress`, `todo`, `done`, `cancelled`, `backlog` 순서로 그룹화해 반환합니다. 태스크 수정 화면에서 다섯 가지 상태를 모두 지원하므로 보드 조회 응답에도 모든 상태 그룹을 포함합니다. 쿼리 파라미터로 역할, 우선순위, 마감일, 담당자 조건을 지정하면 해당 조건을 만족하는 태스크만 반환합니다. 동일한 필터 내에서 선택한 값은 OR 조건으로 결합하고, 서로 다른 필터는 AND 조건으로 결합합니다. 담당자 필터는 `assignee_ids`와 `unassigned` 두 파라미터로 구성됩니다. 각 그룹의 `count`는 필터 적용 후 남은 태스크 수를 나타냅니다. 모든 파라미터를 생략하면 프로젝트의 전체 태스크를 반환합니다.",
+        "description" : "프로젝트 태스크를 상태별로 묶어 반환합니다. 같은 필터 안의 값은 OR, 서로 다른 필터는 AND로 결합하며, `assignee_ids`와 `unassigned`는 하나의 담당자 필터입니다. `due_date_from`과 `due_date_to`는 양 끝 날짜를 포함하는 하나의 마감일 필터이며, 둘 중 하나라도 전달하면 마감일이 없는 태스크는 제외합니다.",
         "operationId" : "mobileGetTaskBoard",
         "parameters" : [
           {
@@ -11518,7 +11526,7 @@
             }
           },
           {
-            "description" : "지정한 역할 중 하나 이상을 가진 태스크만 반환합니다. 생략하면 역할 필터를 적용하지 않습니다.",
+            "description" : "지정한 역할 중 하나 이상을 가진 태스크만 반환합니다.",
             "in" : "query",
             "name" : "roles",
             "required" : false,
@@ -11536,7 +11544,7 @@
             }
           },
           {
-            "description" : "지정한 우선순위 중 하나에 해당하는 태스크만 반환합니다. 생략하면 우선순위 필터를 적용하지 않습니다.",
+            "description" : "지정한 우선순위 중 하나에 해당하는 태스크만 반환합니다.",
             "in" : "query",
             "name" : "priorities",
             "required" : false,
@@ -11554,7 +11562,7 @@
             }
           },
           {
-            "description" : "마감일이 지정한 날짜와 같거나 이후인 태스크만 반환합니다. 날짜 형식은 `YYYY-MM-DD`입니다. `due_date_to`보다 늦은 날짜를 전달하면 `COMMON_VALIDATION_FAILED`를 반환합니다. `due_date_from`과 `due_date_to` 중 하나라도 전달하면 마감일이 지정되지 않은 태스크는 조회 결과에서 제외합니다.",
+            "description" : "마감일이 지정한 날짜와 같거나 이후인 태스크만 반환합니다. `due_date_to`보다 늦으면 COMMON_VALIDATION_FAILED입니다.",
             "in" : "query",
             "name" : "due_date_from",
             "required" : false,
@@ -11564,7 +11572,7 @@
             }
           },
           {
-            "description" : "마감일이 지정한 날짜와 같거나 이전인 태스크만 반환합니다. 날짜 형식은 `YYYY-MM-DD`입니다. 특정 날짜가 마감일인 태스크만 조회하려면 `due_date_from`과 동일한 날짜를 전달합니다.",
+            "description" : "마감일이 지정한 날짜와 같거나 이전인 태스크만 반환합니다.",
             "in" : "query",
             "name" : "due_date_to",
             "required" : false,
@@ -11574,7 +11582,7 @@
             }
           },
           {
-            "description" : "지정한 사용자 중 한 명이 담당자로 지정된 태스크를 반환합니다. 동일한 파라미터를 여러 번 전달할 수 있으며, `unassigned=true`와 함께 전달하면 담당자가 지정되지 않은 태스크도 반환합니다. `assignee_ids`를 생략하고 `unassigned`도 활성화하지 않으면 담당자 필터를 적용하지 않습니다.",
+            "description" : "지정한 사용자 중 한 명이 담당자인 태스크를 반환합니다.",
             "in" : "query",
             "name" : "assignee_ids",
             "required" : false,
@@ -11587,7 +11595,7 @@
             }
           },
           {
-            "description" : "`true`이면 담당자가 지정되지 않은 태스크를 반환합니다. `assignee_ids`와 함께 전달하면 지정한 사용자 중 한 명이 담당자로 지정된 태스크도 반환합니다.",
+            "description" : "`true`이면 담당자가 없는 태스크를 반환합니다.",
             "in" : "query",
             "name" : "unassigned",
             "required" : false,
@@ -11617,7 +11625,7 @@
                 }
               }
             },
-            "description" : "보드 조회 성공. 다섯 그룹을 항상 포함하고, 비어 있으면 tasks는 빈 배열입니다."
+            "description" : "보드 조회 성공"
           },
           "400" : {
             "content" : {
@@ -11837,7 +11845,7 @@
         ]
       },
       "post" : {
-        "description" : "제목과 업무 역할, 우선순위로 일반 작업을 생성합니다. 세 필드 모두 필수이고 업무 역할은 하나만 선택합니다. 생성된 작업은 todo 그룹에서 시작합니다.",
+        "description" : "일반 작업을 생성합니다. 생성된 작업은 todo 상태로 시작합니다.",
         "operationId" : "mobileCreateTask",
         "parameters" : [
           {
@@ -12378,7 +12386,7 @@
     },
     "/api/mobile/signals/{signalId}/actions/convert-to-task" : {
       "post" : {
-        "description" : "시그널을 원탭으로 작업에 등록합니다. 요청 body는 없습니다. 동기 경로에서는 민수가 생성한 draft(title, role, priority)로 작업을 만듭니다. 생성 비활성·설정 무효·입력 부족·생성 실패·출력 무효 시에는 fallback(title은 정규화된 시그널 제목이며, 최대 70자, role은 pm, priority는 medium)을 사용합니다. 비동기 경로에서는 fallback으로 먼저 생성하고 draft_status가 generating인 동안 후속 생성을 진행합니다. 생성 결과는 title, role, priority가 초기 값과 같을 때만 반영하며, 생성 실패나 선행 편집 등으로 반영되지 않을 수 있습니다. draft_status가 ready가 되면 후속 생성이 종료된 상태이며 성공 여부를 뜻하지 않습니다. 최신 값은 작업 상세 조회로 확인합니다. 같은 시그널에 같은 action을 재요청하면 새 작업을 만들지 않고 기존 결과를 200으로 반환합니다.",
+        "description" : "시그널을 원탭으로 작업에 등록합니다. 요청 body는 없고, 생성된 작업은 todo 상태로 시작합니다. 동기 경로에서는 민수가 생성한 draft(title, role, priority)로 작업을 만듭니다. 생성 비활성·설정 무효·입력 부족·생성 실패·출력 무효 시에는 시그널 제목으로 만든 fallback을 사용합니다. 비동기 경로에서는 fallback으로 먼저 생성하고 draft_status가 generating인 동안 후속 생성을 진행합니다. 생성 결과는 title, role, priority가 초기 값과 같을 때만 반영하며, 생성 실패나 선행 편집 등으로 반영되지 않을 수 있습니다. draft_status가 ready가 되면 후속 생성이 종료된 상태이며 성공 여부를 뜻하지 않습니다. 최신 값은 작업 상세 조회로 확인합니다. 같은 시그널에 같은 action을 재요청하면 새 작업을 만들지 않고 기존 결과를 200으로 반환합니다.",
         "operationId" : "mobileConvertSignalToTask",
         "parameters" : [
           {
@@ -13216,7 +13224,7 @@
         ]
       },
       "get" : {
-        "description" : "작업 상세 화면에 필요한 정보를 조회합니다. materials는 작업에 연결된 소스이고 연결이 없으면 빈 배열입니다. open_questions, next_action은 저장된 값을 그대로 반환하며, 값이 없을 때만 각각 빈 배열, null입니다.",
+        "description" : "작업 상세 화면에 필요한 정보를 조회합니다.",
         "operationId" : "mobileGetTask",
         "parameters" : [
           {
@@ -13250,7 +13258,7 @@
                 }
               }
             },
-            "description" : "상세 조회 성공. 담당자 미지정이면 assignee가, 설명 작성 전이면 purpose가 null입니다."
+            "description" : "상세 조회 성공"
           },
           "400" : {
             "content" : {
@@ -13480,7 +13488,7 @@
         ]
       },
       "patch" : {
-        "description" : "수정 화면이 저장한 편집 상태 전체로 작업을 갱신합니다. 제목, 업무 역할, 담당자, 우선순위, 상태, 설명, 완료 기준을 한 번에 저장합니다. 담당자를 비우려면 assignee_id를 null로 보내고, 완료 기준은 최종 목록으로 전체 교체하며 0개에서 5개까지 허용합니다. 저장만 하고 본문은 반환하지 않으므로, 저장 후 최신 상태는 작업 상세 조회로 다시 읽습니다.",
+        "description" : "수정 화면의 편집 상태 전체로 작업을 갱신합니다. 생략한 선택 필드는 삭제하며, 필드별 예외는 각 필드 설명을 따릅니다. 본문은 반환하지 않으므로 저장 후 최신 상태는 작업 상세 조회로 다시 읽습니다.",
         "operationId" : "mobileUpdateTask",
         "parameters" : [
           {
@@ -13517,7 +13525,7 @@
         },
         "responses" : {
           "204" : {
-            "description" : "수정 성공. 본문 없음. 최신 상태는 상세 조회로 읽습니다."
+            "description" : "수정 성공"
           },
           "400" : {
             "content" : {

@@ -47,11 +47,6 @@ class ProjectMemberService {
       throw new BusinessException(
           CommonErrorCode.AUTH_FORBIDDEN, Map.of("project_id", projectId.toString()));
     }
-    // 검색은 이름의 부분 일치 여부를 기준으로 하며, 대소문자를 구분하지 않습니다. 정렬 시 요청한 사용자를
-    // 첫 번째 항목에 배치하고, 나머지 구성원은 이름 오름차순으로 정렬합니다. 이름이 같으면 id 오름차순으로
-    // 정렬합니다.
-    //
-    // 정렬 규칙은 `docs/spec/mobile-api.md`의 프로젝트 멤버 절에 정리되어 있습니다.
     String needle = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
     return userService.getProfiles(memberUserIds).stream()
         .filter(

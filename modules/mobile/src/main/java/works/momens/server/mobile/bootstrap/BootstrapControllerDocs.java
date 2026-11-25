@@ -17,11 +17,10 @@ interface BootstrapControllerDocs {
   @Operation(
       operationId = "mobileGetBootstrap",
       summary = "모바일 부트스트랩 조회",
-      description = "로그인 후 앱 진입에 필요한 현재 사용자 정보, 기본 project id, 접근 가능한 project 목록을 조회합니다.")
+      description = "로그인 후 앱 진입에 필요한 정보를 조회합니다.")
   @ApiResponse(
       responseCode = "200",
-      description =
-          "모바일 진입 컨텍스트 조회 성공. 접근 가능한 project가 없으면 default_project_id는 null, projects는 빈 배열입니다.",
+      description = "모바일 진입 컨텍스트 조회 성공",
       content = @Content(schema = @Schema(implementation = BootstrapResponse.class)))
   @ApiException(
       value = UserErrorCode.class,
