@@ -20,8 +20,8 @@
 신규·개편·레거시 이관 제품 API 모두 `/api` prefix와 `version` mapping을 갖춥니다.
 레거시 클라이언트도 새 서버로 옮길 때 `/api`와 `API-Version`을 사용하도록 맞춥니다.
 
-응답 body shape는 별도 정책입니다. 레거시 이관 엔드포인트는 [API 응답과 에러 코드](api-response-error-codes.md)의
-Legacy compatible 응답 모드를 유지할 수 있습니다. path·버저닝 일원화와 응답 body 호환은 독립적으로 다룹니다.
+응답 body shape는 별도 정책으로 [API 응답과 에러 코드](api-response-error-codes.md)를 따릅니다.
+path·버저닝 일원화와 응답 body 호환은 독립적으로 다룹니다.
 
 API 명세서를 전달할 때는 제품 API가 `/api` prefix와 `API-Version` 헤더를 쓴다는 사실을 안내합니다.
 
