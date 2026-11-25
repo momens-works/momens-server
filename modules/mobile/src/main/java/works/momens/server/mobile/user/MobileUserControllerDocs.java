@@ -31,10 +31,10 @@ interface MobileUserControllerDocs {
   @Operation(
       operationId = "mobileCompleteOnboarding",
       summary = "모바일 온보딩 완료 기록",
-      description = "현재 로그인한 사용자의 모바일 앱 온보딩(코치마크) 완료를 기록합니다. 동일한 요청을 여러 번 보내더라도 최초 완료 시각을 유지합니다.")
-  @ApiResponse(
-      responseCode = "204",
-      description = "온보딩 완료를 기록했습니다. 이미 온보딩을 완료한 사용자가 다시 요청하더라도 최초 완료 시각은 변경하지 않습니다.")
+      description =
+          "현재 로그인한 사용자의 모바일 앱 온보딩(코치마크) 완료를 기록합니다. 완료 여부는 기기가 아니라 계정 단위로 기록하므로 앱을 재설치하거나"
+              + " 다른 기기에서 로그인해도 유지됩니다. 동일한 요청을 여러 번 보내더라도 최초 완료 시각을 유지합니다.")
+  @ApiResponse(responseCode = "204", description = "기록 성공")
   @ApiException(
       value = UserErrorCode.class,
       codes = {"USER_NOT_FOUND"})
