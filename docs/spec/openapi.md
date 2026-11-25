@@ -10,6 +10,16 @@
 - Swagger/OpenAPI 문서화는 실제 public contract를 설명합니다. 내부 구현 세부사항을 노출하지 않습니다.
 - 제품 API의 경로·버전과 MCP/OAuth·well-known 예외는 [API 버저닝](api-versioning.md)을 따릅니다.
 
+## 설명 작성 위치
+
+스키마로 생성되는 정보는 설명에 쓰지 않습니다. 생성되지 않는 의미는 아래 위치 한 곳에만 씁니다.
+
+| 정보 | 위치 |
+| --- | --- |
+| 코드 상수로 정하는 기본값·상한 | `@Schema`의 `defaultValue`·`maximum` 등. 표현할 수 없으면 설명에 상수를 이어 붙입니다. |
+| 필드·파라미터·엔드포인트 동작의 의미 | 각각의 `@Schema`·`@Parameter`·`@Operation` 설명 |
+| 여러 엔드포인트에 걸친 흐름, 앱의 표시 책임 | 클라이언트별 명세(예: [모바일 API 명세](mobile-api.md)) |
+
 ## 구성 위치
 
 OpenAPI 공통 설정과 커스터마이저는 실행·조립 모듈인 `app`에 둡니다.
@@ -146,9 +156,8 @@ path는 `/api/me` 단일 경로이며 `version = "1"` mapping을 둡니다. 레�
 Request/response DTO는 `record`를 기본으로 하고 `@Schema`로 문서화합니다.
 
 - record 자체에 설명을 둡니다.
-- 주요 필드에는 `description`, `example`, `nullable`을 명시합니다.
+- 주요 필드에는 `example`과 `nullable`을 명시하고, `description`은 [설명 작성 위치](#설명-작성-위치)를 따릅니다.
 - `null`을 반환할 수 있는 객체 참조 필드에는 `@Nullable`(`org.jspecify.annotations`)을 지정합니다.
-- validation annotation과 `@Schema` 설명이 서로 어긋나지 않게 합니다.
 
 ### 스키마 이름 충돌
 
