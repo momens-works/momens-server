@@ -25,9 +25,8 @@ import works.momens.server.mobile.bootstrap.BootstrapContext.AccessibleProject;
 import works.momens.server.user.UserProfile;
 
 /**
- * 컨트롤러가 Principal로 현재 사용자를 해석하고 명세(docs/spec/mobile-api.md)의 snake_case 응답 shape를 내는지 검증합니다.
- * versioning은 모듈 경계상 app 설정을 못 가져오므로 슬라이스 안에서 동일하게 구성합니다. 인증 실패(401)와 끝까지 이어지는 흐름은 app의 통합 테스트가
- * 봅니다.
+ * 컨트롤러가 Principal로 현재 사용자를 해석하고 snake_case 응답 shape를 내는지 검증합니다. versioning은 모듈 경계상 app 설정을 못 가져오므로
+ * 슬라이스 안에서 동일하게 구성합니다. 인증 실패(401)와 끝까지 이어지는 흐름은 app의 통합 테스트가 봅니다.
  */
 @WebMvcTest(BootstrapController.class)
 @AutoConfigureMockMvc(addFilters = false)

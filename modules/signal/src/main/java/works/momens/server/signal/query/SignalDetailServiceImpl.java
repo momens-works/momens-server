@@ -21,10 +21,9 @@ import works.momens.server.workspace.membership.WorkspaceMembershipReader;
  * Signal 상세 조회 서비스.
  *
  * <p>미처리 Signal을 로드해(처리됐거나 소프트 삭제됐으면 SIGNAL_NOT_FOUND(404)) workspace 멤버십으로 접근을 검사하고(멤버 아니면
- * AUTH_FORBIDDEN(403)) 근거를 조립합니다. 처리된 Signal을 다시 보는 inbox는 MVP 이후라 미처리만 대상으로 합니다
- * (docs/spec/mobile-api.md 시그널 상세 절). 근거는 signal_evidence의 sort_order 순으로 읽어
- * target·change·impact(대상· 변화·영향, ADR-0011)를 담고, source_ref_id로 source 모듈을 hydrate해(ADR-0008 read
- * 경계) source·occurred_at· source_url을 채웁니다. 원본이 없는 근거는 건너뜁니다.
+ * AUTH_FORBIDDEN(403)) 근거를 조립합니다. 처리된 Signal을 다시 보는 inbox는 MVP 이후라 미처리만 대상으로 합니다. 근거는
+ * signal_evidence의 sort_order 순으로 읽어 target·change·impact(대상· 변화·영향, ADR-0011)를 담고, source_ref_id로
+ * source 모듈을 hydrate해(ADR-0008 read 경계) source·occurred_at· source_url을 채웁니다. 원본이 없는 근거는 건너뜁니다.
  */
 @Service
 @RequiredArgsConstructor

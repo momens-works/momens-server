@@ -22,7 +22,7 @@ interface ProjectBriefControllerDocs {
       operationId = "mobileGetBrief",
       summary = "프로젝트 브리프 조회",
       description =
-          "브리프 화면의 초기 로드에 필요한 정보를 조회합니다. 시그널 요약은 당일 시그널의 최신순 첫 페이지("
+          "브리프 화면의 초기 로드에 필요한 정보를 조회합니다. 시그널 요약은 당일 시그널의 최신순 첫 페이지(최대 "
               + ProjectBriefService.SIGNAL_SUMMARY_PAGE_SIZE
               + "개)와 타입별 개수를 담습니다. 다음 페이지와 필터 전환은 GET .../brief/signal-summary를 사용합니다. priorities는"
               + " todo와 in_progress 작업을 우선순위가 높은 순(같으면 생성 시각, id 오름차순)으로 최대 "

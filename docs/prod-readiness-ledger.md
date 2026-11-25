@@ -127,7 +127,7 @@ CI가 실제 Secret·ConfigMap의 존재나 값을 조회해 증명하지는 않
 
 ### 소비와 복구
 
-앱 메시지·설치 계약은 [모바일 명세](spec/mobile-api.md#push-설치)를 따릅니다.
+앱 메시지 계약은 [모바일 명세](spec/mobile-api.md#push-알림)를 따릅니다.
 
 - 소비는 1초 polling, id 오름차순이며 DB 시계 기준 안전 지연 2초를 지나지 않은 첫 이벤트에서
   멈춥니다(prefix-cap). 최초 watermark도 같은 prefix 끝으로 시드하므로 과거 일괄 push는 하지 않습니다.

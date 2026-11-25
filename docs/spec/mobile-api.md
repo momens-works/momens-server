@@ -24,12 +24,6 @@ Signal type에 따라 앱이 다음처럼 화면 라벨을 정합니다. 이 라
 
 화면설계서의 Signal 카테고리 표시는 `type`의 첫 글자만 대문자로 바꿔 씁니다.
 
-### Membership
-
-| 이름 | 값 |
-| --- | --- |
-| `role` | `owner`, `admin`, `member` |
-
 ### Material
 
 Signal 근거의 `evidence.source`와 작업의 `materials[].source`는 같은 source_ref 출처라 값 집합이 같습니다.
@@ -45,10 +39,6 @@ file을 표시하고, 목록에 없는 값이 와도 화면이 깨지지 않도�
 - 최소 지원 버전은 서버 설정(`momens.mobile.app-update.minimum-versions`)으로 관리하며, 하위 호환성을 유지할 수 없는 서버 변경이 필요한 경우 같은 PR에서 올립니다.
 - `update_required`가 `true`일 때 사용자에게 업데이트를 안내하는 방식은 앱에서 결정합니다.
 - 지원하지 않는 플랫폼, 형식이 올바르지 않은 앱 버전, 필수 쿼리 파라미터 누락은 `COMMON_VALIDATION_FAILED`로 응답하고 `details.fields`에 해당 쿼리 파라미터 이름을 담습니다. `platform`은 `ANDROID`처럼 enum 상수 이름으로 전달해도 허용합니다.
-
-앱 버전의 각 구성요소는 최대 9자리입니다. 생략된 구성요소는 0입니다(`1.0`과 `1.0.0`은 같음).
-각 구성요소를 정수로 비교하므로 `1.10`은 `1.9`보다 높습니다. 0은 허용하지만 선행 0(`01` 등)과
-접미사(`-beta`, `+5`)는 허용하지 않습니다.
 
 ## 모바일 진입
 
@@ -183,9 +173,7 @@ id는 저장 후 상세 조회에서 확인합니다.
 
 이미 삭제된 태스크를 다시 삭제하면 `TASK_NOT_FOUND`입니다.
 
-## Push 설치
-
-### FCM push notification 계약
+## Push 알림
 
 Signal 생성 시 소비 시점 workspace 구성원의 등록된 Android 기기로 FCM push를 발송합니다. 제목과
 본문은 저장된 Project와 Signal을 기준으로 서버가 생성합니다.
