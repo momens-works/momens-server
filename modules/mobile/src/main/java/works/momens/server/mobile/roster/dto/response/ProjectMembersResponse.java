@@ -5,14 +5,8 @@ import java.util.List;
 import java.util.UUID;
 import works.momens.server.mobile.roster.ProjectMember;
 
-/**
- * {@code GET /api/mobile/projects/{projectId}/members} 응답. 형식은 docs/spec/openapi.json에서 확인합니다.
- *
- * <p>신규 Standard 계약이라 {@code avatar_url}은 값이 없어도 null로 항상 포함합니다(bootstrap 전례).
- */
 @Schema(description = "프로젝트 멤버 목록 응답")
-public record ProjectMembersResponse(
-    @Schema(description = "멤버 목록(이름 오름차순). 검색 결과가 없으면 빈 배열입니다.") List<MemberResponse> members) {
+public record ProjectMembersResponse(@Schema(description = "멤버 목록") List<MemberResponse> members) {
 
   @Schema(description = "프로젝트 멤버 한 명")
   public record MemberResponse(

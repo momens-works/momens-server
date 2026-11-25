@@ -6,22 +6,15 @@ import java.util.List;
 import java.util.UUID;
 import works.momens.server.signal.SignalDetail;
 
-/**
- * {@code GET /api/mobile/signals/{signalId}} 응답. 형식은 docs/spec/openapi.json에서 확인합니다.
- *
- * <p>상단 라벨은 {@code type}에서 앱이 파생하므로 처리 상태 필드는 없습니다. {@code impact}, {@code minsuSuggestion}은
- * worker/Minsu 미생산 시 null입니다. 근거는 {@code details.target}·{@code change}·{@code impact}(대상·변화·영향,
- * ADR-0011)를 담고 {@code source}·{@code occurredAt}·{@code sourceUrl}은 source_refs에서 옵니다.
- * project·description·task draft·가능한 action 목록은 상세 화면에서 쓰지 않아 응답하지 않습니다(ADR-0011).
- */
 @Schema(description = "시그널 상세 응답")
 public record SignalDetailResponse(
     UUID id,
     String type,
     String title,
-    @Schema(nullable = true) String impact,
+    @Schema(description = "Signal 전체가 프로젝트에 미칠 영향 요약. 미생산 시 null입니다.", nullable = true)
+        String impact,
     List<EvidenceResponse> evidence,
-    @Schema(nullable = true) String minsuSuggestion) {
+    @Schema(description = "민수 제안. 미생산 시 null입니다.", nullable = true) String minsuSuggestion) {
 
   public record EvidenceResponse(
       UUID sourceRefId,
@@ -30,9 +23,7 @@ public record SignalDetailResponse(
       Details details,
       @Schema(nullable = true) String sourceUrl) {}
 
-  @Schema(
-      name = "SignalEvidenceDetails",
-      description = "근거의 대상·변화·영향. signal_evidence가 소유하며 각 값은 공백 포함 30자 이하입니다.")
+  @Schema(name = "SignalEvidenceDetails", description = "근거 한 건에서 관찰한 대상·변화·영향")
   public record Details(
       @Schema(nullable = true, maxLength = 30) String target,
       @Schema(nullable = true, maxLength = 30) String change,

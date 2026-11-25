@@ -13,6 +13,7 @@ import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.mobile.brief.dto.response.BriefResponse;
 import works.momens.server.mobile.brief.dto.response.BriefSignalSummaryPageResponse;
 import works.momens.server.project.core.ProjectErrorCode;
+import works.momens.server.signal.SignalListService;
 
 @Tag(name = "Mobile", description = "모바일 앱 진입 API")
 interface ProjectBriefControllerDocs {
@@ -21,10 +22,12 @@ interface ProjectBriefControllerDocs {
       operationId = "mobileGetBrief",
       summary = "프로젝트 브리프 조회",
       description =
-          "브리프 화면(오늘의 브리프)의 초기 로드에 필요한 정보를 조회합니다. 시그널 요약은 당일 시그널의 최신순 첫 페이지(기본 20개)와 타입별 개수를"
-              + " 담습니다. 클라이언트는 첫 페이지에서 최신 3개만 노출하고, 더보기 시 나머지 항목을 펼쳐 보여줍니다. 이후 20개를 초과하면 next_cursor로 다음"
-              + " 페이지를 조회해 무한 스크롤을 이어갑니다. 최신 3개만 노출하는 것은 화면 정책이며, 서버는 전체 첫 페이지를 반환합니다. change도 다른 type과"
-              + " 똑같이 포함합니다. 필터 전환은 하위 엔드포인트 GET .../brief/signal-summary를 사용합니다.")
+          "브리프 화면의 초기 로드에 필요한 정보를 조회합니다. 시그널 요약은 당일 시그널의 최신순 첫 페이지("
+              + ProjectBriefService.SIGNAL_SUMMARY_PAGE_SIZE
+              + "개)와 타입별 개수를 담습니다. 다음 페이지와 필터 전환은 GET .../brief/signal-summary를 사용합니다. priorities는"
+              + " todo와 in_progress 작업을 우선순위가 높은 순(같으면 생성 시각, id 오름차순)으로 최대 "
+              + ProjectBriefService.PRIORITY_LIMIT
+              + "개 담습니다.")
   @ApiResponse(
       responseCode = "200",
       description = "브리프 조회 성공",
@@ -40,11 +43,8 @@ interface ProjectBriefControllerDocs {
       operationId = "mobileListBriefSignalSummaries",
       summary = "브리프 시그널 요약 페이지 조회",
       description =
-          "브리프 시그널 요약의 필터 전환과 후속 페이지 조회에 사용합니다. 커서 기반 페이지네이션을 사용하며, 정렬은 최신순(생성 시각 내림차순, 같으면 id 내림차순)입니다.\n\n"
-              + "브리프 조회는 all 필터의 첫 페이지를 함께 반환하므로, 더보기를 처음 누를 때는 이 엔드포인트를 호출하지 않습니다. "
-              + "필터를 변경하면 해당 타입의 첫 페이지를 조회하고, 브리프 조회에서 받은 첫 페이지를 모두 소비한 뒤에는 "
-              + "직전 응답의 next_cursor를 cursor로 전달해 다음 페이지를 이어 조회합니다. "
-              + "조회한 항목은 기존 목록 뒤에 추가하며, next_cursor가 null이면 더 조회할 데이터가 없습니다.")
+          "브리프 시그널 요약의 필터 전환과 후속 페이지 조회에 사용합니다. 정렬은 생성 시각 내림차순이고, 같으면 id 내림차순입니다."
+              + " 커서는 마지막으로 본 항목 기준이라 페이지 사이에 시그널이 처리되어도 다음 페이지 위치가 밀리지 않습니다.")
   @ApiResponse(
       responseCode = "200",
       description = "페이지 조회 성공",
@@ -56,15 +56,23 @@ interface ProjectBriefControllerDocs {
   BriefSignalSummaryPageResponse getSignalSummaryPage(
       @Parameter(description = "project 식별자") UUID projectId,
       @Parameter(
-              description = "필터 키. all 또는 signal type(change, decision, risk, question). 기본값은 all")
+              description =
+                  "필터 키. all 또는 signal type(change, decision, risk, question)입니다. 빈 값은 all과 같고, 알려지지 않은 type은"
+                      + " 빈 목록을 반환합니다.")
           String filter,
       @Parameter(
               description =
-                  "직전 응답의 next_cursor입니다. 없으면 첫 페이지를 조회하며, next_cursor가 null이 될 때까지 이어 조회하면 모든 항목을 받을 수 있습니다.")
+                  "직전 응답의 next_cursor입니다. 없으면 첫 페이지를 조회하고, 형식이 잘못되면 COMMON_VALIDATION_FAILED입니다.")
           String cursor,
       @Parameter(
               description =
-                  "페이지 크기입니다. 없거나 0이면 기본값 20을 사용합니다. 최대 50까지 요청할 수 있으며, 이를 초과하면 50으로 제한합니다.")
+                  "페이지 크기입니다. 0이면 기본값을 사용하고, 상한("
+                      + SignalListService.MAX_PAGE_SIZE
+                      + ")을 넘으면 상한으로 줄입니다. 음수이면 COMMON_VALIDATION_FAILED입니다.",
+              schema =
+                  @Schema(
+                      implementation = Integer.class,
+                      defaultValue = "" + ProjectBriefService.SIGNAL_SUMMARY_PAGE_SIZE))
           Integer limit,
       Principal principal);
 }

@@ -33,7 +33,7 @@ class SignalController implements SignalControllerDocs {
    *
    * <p>화면별 기본 페이지 크기를 정하는 UX 설정이며, 페이지 크기 상한은 signal 모듈에서 정합니다.
    */
-  private static final int SIGNAL_LIST_PAGE_SIZE = 5;
+  static final int SIGNAL_LIST_PAGE_SIZE = 5;
 
   private final SignalListService signalListService;
   private final SignalDetailService signalDetailService;

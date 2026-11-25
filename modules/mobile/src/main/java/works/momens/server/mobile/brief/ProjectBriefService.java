@@ -43,14 +43,14 @@ import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 class ProjectBriefService {
 
   /** 화면의 기본 페이지 크기이며 서버 보호 상한과는 별개입니다. 접힌 화면의 최신 3개 표시는 클라이언트가 처리하므로 서버는 첫 페이지를 자르지 않습니다. */
-  private static final int SIGNAL_SUMMARY_PAGE_SIZE = 20;
+  static final int SIGNAL_SUMMARY_PAGE_SIZE = 20;
 
   /** 타입 칩 정렬. 라벨 글자수 오름차순, 같으면 라벨 알파벳순입니다(2026-07-10 기획 확정). All 칩은 정렬에서 빼고 맨 앞에 둡니다. */
   private static final Comparator<MobileBrief.FilterCount> CHIP_ORDER =
       Comparator.comparingInt((MobileBrief.FilterCount chip) -> chip.label().length())
           .thenComparing(MobileBrief.FilterCount::label);
 
-  private static final int PRIORITY_LIMIT = 4;
+  static final int PRIORITY_LIMIT = 4;
 
   /** 현재 우선순위 후보 상태. 진행 중인 todo와 in_progress만 담고 backlog와 완료 상태는 제외합니다(2026-07-10 기획 확정). */
   private static final List<String> PRIORITY_STATUSES = List.of("todo", "in_progress");

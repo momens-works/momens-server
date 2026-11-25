@@ -5,9 +5,7 @@ import java.util.UUID;
 import works.momens.server.user.UserProfile;
 
 /**
- * {@code GET /api/mobile/me}의 응답 DTO입니다. 응답 스키마는 {@code docs/spec/openapi.json}에서 확인할 수 있습니다.
- *
- * <p>springdoc은 클래스의 단순 이름을 기준으로 컴포넌트 스키마를 생성합니다. 따라서 웹 API의 {@code user.MeResponse}와 이 record가 동일한
+ * springdoc은 클래스의 단순 이름을 기준으로 컴포넌트 스키마를 생성합니다. 따라서 웹 API의 {@code user.MeResponse}와 이 record가 동일한
  * {@code MeResponse} 스키마명으로 충돌하므로, {@code name}을 지정해 스키마를 구분합니다.
  *
  * <p>Bootstrap 응답의 {@code me}와 필드 구성은 같지만 DTO는 공유하지 않습니다. 앱 진입 화면과 마이페이지의 API 계약을 독립적으로 변경할 수 있도록

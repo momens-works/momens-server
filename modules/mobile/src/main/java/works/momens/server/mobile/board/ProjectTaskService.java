@@ -162,10 +162,7 @@ class ProjectTaskService {
     return toMobileDetail(updated, userId);
   }
 
-  /**
-   * 구버전 앱은 단일 role만 전달합니다. 전달받은 role이 기존 목록에 포함되어 있으면 목록을 유지하고, 포함되어 있지 않으면 해당 role 하나로 교체합니다. 이를
-   * 통해 구버전 앱에서 태스크를 수정할 때 다른 role이 의도치 않게 삭제되는 것을 방지합니다.
-   */
+  /** {@code roles} 없이 {@code role}만 보낸 수정 요청이 기존의 다른 role을 지우지 않게 합니다. */
   private Set<TaskRole> rolesKeepingExisting(UUID taskId, TaskRole role) {
     Set<TaskRole> current =
         taskReader.findDetail(taskId).stream()
@@ -175,10 +172,7 @@ class ProjectTaskService {
     return current.contains(role) ? current : Set.of(role);
   }
 
-  /**
-   * 구버전 앱은 태스크 수정 요청에 {@code due_date}를 포함하지 않습니다. 따라서 해당 필드가 생략되면 기존 마감일을 조회해 유지합니다. 이를 통해 구버전 앱에서
-   * 태스크를 수정하더라도 웹에서 설정한 마감일이 삭제되지 않도록 합니다.
-   */
+  /** {@code due_date}를 보내지 않는 클라이언트가 수정해도 웹에서 설정한 마감일을 지우지 않게 합니다. */
   private LocalDate existingDueDate(UUID taskId) {
     return taskReader.findDetail(taskId).map(TaskDetail::dueDate).orElse(null);
   }

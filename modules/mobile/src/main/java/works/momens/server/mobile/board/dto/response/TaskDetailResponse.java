@@ -10,16 +10,6 @@ import works.momens.server.mobile.MobileDraftStatus;
 import works.momens.server.mobile.board.MobileTaskDetail;
 import works.momens.server.mobile.board.MobileTaskDetailView;
 
-/**
- * {@code GET /api/mobile/tasks/{taskId}} 응답. 형식은 docs/spec/openapi.json에서 확인합니다.
- *
- * <p>완료 수와 전체 수는 항목 목록에서 파생합니다(별도 저장 없음). {@code materials}는 태스크에 연결된 source_ref를 조합한 값이고, 연결된 자료가
- * 없으면 빈 배열입니다. {@code open_questions}와 {@code next_action}은 민수가 생산한 값을 그대로 내려줍니다(ADR-0011). 열린질문이
- * 없으면 빈 배열이고, 다음행동을 아직 만들지 않았으면 null입니다.
- *
- * <p>{@code draft_status}는 이 태스크의 제목을 AI가 더 손볼 것이 남았는지를 알립니다(MOM-0822). 앱이 결과를 확인하는 경로는 convert 응답과
- * 이 상세 둘뿐이고, 보드·목록에는 노출하지 않습니다.
- */
 @Schema(description = "작업 상세 응답")
 public record TaskDetailResponse(
     @Schema(description = "작업 식별자") UUID id,
@@ -32,8 +22,7 @@ public record TaskDetailResponse(
                 "role 목록입니다. `pm`, `design`, `backend`, `frontend` 순서로 정렬하며, role이 지정되지 않은 경우 빈 배열을 반환합니다.")
         List<String> roles,
     @Schema(
-            description =
-                "구버전 앱과의 호환성을 위한 role 필드입니다. `roles`의 첫 번째 값을 반환하며, 지정된 role이 없으면 `null`을 반환합니다.",
+            description = "`roles`로 대체된 필드입니다. `roles`의 첫 번째 값을 반환하며, 지정된 role이 없으면 `null`을 반환합니다.",
             example = "pm",
             nullable = true,
             deprecated = true)
@@ -48,10 +37,7 @@ public record TaskDetailResponse(
     @Schema(description = "질문 목록. 민수가 만든 질문이 없으면 빈 배열") List<OpenQuestionResponse> openQuestions,
     @Schema(description = "다음 행동. 민수가 아직 만들지 않았으면 null", nullable = true) String nextAction,
     @Schema(
-            description =
-                "AI가 제목을 더 손볼 것이 남았는지. generating이면 나중에 다시 조회해야 합니다."
-                    + " ready면 정상 종료 기준으로 지금 title이 최종 값이며, 생성이 deadline을 넘겨 닫힌"
-                    + " 경우에만 뒤늦은 반영으로 한 번 더 바뀔 수 있습니다.",
+            description = MobileDraftStatus.DESCRIPTION,
             allowableValues = {"generating", "ready"},
             example = "ready")
         String draftStatus,
@@ -83,8 +69,7 @@ public record TaskDetailResponse(
       @Schema(description = "제목", nullable = true) String title,
       @Schema(description = "요약", nullable = true) String summary,
       @Schema(
-              description =
-                  "원본 출처입니다. slack, github, figma, notion, file 중 하나이며, 화면에 표시하는 라벨은 앱이 생성합니다.",
+              description = "원본 출처입니다(예: slack, github, figma, notion, file). 목록에 없는 값이 올 수 있습니다.",
               example = "figma")
           String source,
       @Schema(description = "원본이 생성된 시각", nullable = true) Instant occurredAt,

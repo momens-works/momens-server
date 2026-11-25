@@ -8,6 +8,9 @@ import java.util.UUID;
 /** 프로젝트 범위의 Signal 목록 조회 공개 API. 모든 메서드가 요청자의 workspace 멤버십을 검사합니다. */
 public interface SignalListService {
 
+  /** 페이지 크기 상한. 넘겨도 에러 대신 상한으로 줄입니다(AIP-158). */
+  int MAX_PAGE_SIZE = 50;
+
   /**
    * 처리되지 않은 Signal을 cursor pagination으로 조회합니다.
    *
