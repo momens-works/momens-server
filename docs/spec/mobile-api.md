@@ -36,7 +36,6 @@ file을 표시하고, 목록에 없는 값이 와도 화면이 깨지지 않도�
 
 앱을 실행할 때 호출해 업데이트가 필요한지 확인합니다.
 
-- 최소 지원 버전은 서버 설정(`momens.mobile.app-update.minimum-versions`)으로 관리하며, 하위 호환성을 유지할 수 없는 서버 변경이 필요한 경우 같은 PR에서 올립니다.
 - `update_required`가 `true`일 때 사용자에게 업데이트를 안내하는 방식은 앱에서 결정합니다.
 - 지원하지 않는 플랫폼, 형식이 올바르지 않은 앱 버전, 필수 쿼리 파라미터 누락은 `COMMON_VALIDATION_FAILED`로 응답하고 `details.fields`에 해당 쿼리 파라미터 이름을 담습니다. `platform`은 `ANDROID`처럼 enum 상수 이름으로 전달해도 허용합니다.
 
@@ -136,6 +135,9 @@ project가 없거나 삭제된 경우 `PROJECT_NOT_FOUND`로 응답합니다. pr
 
 ## 작업
 
+작업을 바꾸는 요청이 `409 COMMON_CONCURRENT_MODIFICATION`으로 실패하면
+[태스크·마일스톤 수정 충돌](api-response-error-codes.md#태스크마일스톤-수정-충돌)의 재조회 절차를 따릅니다.
+
 ### GET /api/mobile/projects/{projectId}/tasks
 
 날짜 표시 형식과 요일 계산은 앱이 처리합니다. 로그인한 사용자가 담당자인 태스크만 보려면 bootstrap 응답의
@@ -165,9 +167,6 @@ project가 없거나 삭제된 경우 `PROJECT_NOT_FOUND`로 응답합니다. pr
 `materials`, `open_questions`, `next_action`은 요청에 없고 수정해도 유지됩니다. 빈 `title`은 상세 화면에서
 '새 작업'으로 표시합니다. 완료 상태만 바꿀 때는 완료 기준 토글 엔드포인트를 사용하고, 새로 추가한 완료 기준의 서버
 id는 저장 후 상세 조회에서 확인합니다.
-
-수정 충돌 시 재조회 절차는 [태스크·마일스톤 수정 충돌](api-response-error-codes.md#태스크마일스톤-수정-충돌)을
-따릅니다.
 
 ### DELETE /api/mobile/tasks/{taskId}
 
@@ -206,5 +205,4 @@ background/종료 상태의 시스템 표시를 위한 notification과 data payl
 
 전달은 at-least-once입니다. FCM 성공 뒤 상태 기록 전에 서버가 종료되면 중복 알림이 올 수 있습니다.
 매 전송 직전 설치의 활성 상태·소유자를 다시 확인해 계정 이전 시 이전 사용자의 대기 알림을 취소합니다.
-동일 사용자의 token 갱신은 최신 token으로 재시도합니다. 등록 경합의 잔여 제약 위반은
-`409 COMMON_CONFLICT`입니다. 운영 한계와 복구는 [운영 준비 대장](../prod-readiness-ledger.md#signal-push-운영)을 따릅니다.
+동일 사용자의 token 갱신은 최신 token으로 재시도합니다. 운영 한계와 복구는 [운영 준비 대장](../prod-readiness-ledger.md#signal-push-운영)을 따릅니다.

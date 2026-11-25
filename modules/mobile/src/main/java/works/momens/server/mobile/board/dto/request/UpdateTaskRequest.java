@@ -52,7 +52,8 @@ public record UpdateTaskRequest(
     @Schema(
             description =
                 "완료 기준 최종 목록으로 전체 교체합니다. 생략하거나 null로 보내면 기존 항목을 모두 삭제합니다. 없는 항목 id는"
-                    + " TASK_CHECKLIST_ITEM_NOT_FOUND, 중복 id는 COMMON_VALIDATION_FAILED입니다.")
+                    + " TASK_CHECKLIST_ITEM_NOT_FOUND, 중복 id는 COMMON_VALIDATION_FAILED입니다.",
+            nullable = true)
         @Size(max = 5)
         @Valid
         List<ChecklistItemRequest> checklistItems,

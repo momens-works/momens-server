@@ -18,7 +18,10 @@ public record SignalDetailResponse(
 
   public record EvidenceResponse(
       UUID sourceRefId,
-      String source,
+      @Schema(
+              description = "원본 출처입니다(예: slack, github, figma, notion, file). 목록에 없는 값이 올 수 있습니다.",
+              example = "figma")
+          String source,
       @Schema(nullable = true) Instant occurredAt,
       Details details,
       @Schema(nullable = true) String sourceUrl) {}
