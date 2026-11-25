@@ -74,6 +74,7 @@ dependencies {
 
 // 테스트는 OpenAPI 스냅샷을 비교만 합니다. 계약 변경이 diff에 드러나도록 갱신은 별도 task로 수행합니다.
 def openApiSnapshotFile = rootProject.file('docs/spec/openapi.json')
+def mobileApiSpecFile = rootProject.file('docs/spec/mobile-api.md')
 
 // 비교 경로(test)와 생성 경로(updateOpenApiSnapshot)가 같은 런타임 설정으로 돌아야 합니다. 설정이
 // 갈리면 아무리 재생성해도 게이트와 맞지 않는데 원인이 드러나지 않습니다. 이 파일이 소유한 설정은
@@ -84,6 +85,7 @@ def openApiSnapshotFile = rootProject.file('docs/spec/openapi.json')
 // 추가할 때는 이 블록에 넣어야 생성 경로에도 반영됩니다.
 def configureOpenApiSnapshotTest = { Test task ->
     task.systemProperty 'momens.openapi.snapshot.path', openApiSnapshotFile.absolutePath
+    task.systemProperty 'momens.mobile-api-spec.path', mobileApiSpecFile.absolutePath
 }
 
 tasks.named('test', Test) {
@@ -99,6 +101,9 @@ tasks.named('test', Test) {
     // files 는 없는 파일을 빈 입력으로 취급해 up-to-date 정확성을 유지하면서 assertion 을 살립니다.
     inputs.files(openApiSnapshotFile)
             .withPropertyName('openApiSnapshot')
+            .withPathSensitivity(PathSensitivity.NONE)
+    inputs.files(mobileApiSpecFile)
+            .withPropertyName('mobileApiSpec')
             .withPathSensitivity(PathSensitivity.NONE)
 }
 
