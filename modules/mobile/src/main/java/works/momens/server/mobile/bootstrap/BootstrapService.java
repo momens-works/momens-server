@@ -49,6 +49,7 @@ class BootstrapService {
     // 것을 선택합니다. listByWorkspaceIds가 생성 최신순 정렬을 보장하므로 첫 번째를 쓰고, 하나도
     // 없으면 null과 빈 목록을 그대로 내립니다(0개 응답은 2026-07-04 가결정, 기획 확인 후 확정).
     UUID defaultProjectId = projects.isEmpty() ? null : projects.getFirst().id();
-    return new BootstrapContext(me, defaultProjectId, projects);
+    return new BootstrapContext(
+        me, defaultProjectId, projects, userService.isMobileOnboardingCompleted(userId));
   }
 }

@@ -48,7 +48,8 @@ class BootstrapControllerTest {
             new BootstrapContext(
                 profile(),
                 projectId,
-                List.of(new AccessibleProject(projectId, "Q2 Activation Readiness", "member"))));
+                List.of(new AccessibleProject(projectId, "Q2 Activation Readiness", "member")),
+                false));
 
     mockMvc
         .perform(get("/api/mobile/bootstrap").principal(principal).header("API-Version", "1"))
@@ -67,7 +68,7 @@ class BootstrapControllerTest {
   @Test
   void getBootstrapReturnsNullDefaultAndEmptyProjectsWhenUserHasNoProject() throws Exception {
     when(bootstrapService.load(eq(USER_ID)))
-        .thenReturn(new BootstrapContext(profile(), null, List.of()));
+        .thenReturn(new BootstrapContext(profile(), null, List.of(), false));
 
     mockMvc
         .perform(get("/api/mobile/bootstrap").principal(principal).header("API-Version", "1"))
