@@ -15,7 +15,7 @@ interface SignalRepository extends JpaRepository<Signal, UUID> {
   Optional<Signal> findByIdAndDeletedAtIsNull(UUID id);
 
   // 상세 조회는 미처리(signal_actions에 행 없음) Signal만 대상으로 한다. 처리된 Signal을 다시 보는 inbox는
-  // MVP 이후라, 소프트 삭제와 마찬가지로 처리된 Signal도 없는 것으로 취급한다(docs/spec/mobile-api.md 시그널 상세 절).
+  // MVP 이후라, 소프트 삭제와 마찬가지로 처리된 Signal도 없는 것으로 취급한다.
   @Query(
       value =
           "SELECT s.* FROM signals s WHERE s.id = :id AND s.deleted_at IS NULL"
@@ -25,7 +25,7 @@ interface SignalRepository extends JpaRepository<Signal, UUID> {
 
   // 미처리 = signal_actions에 행이 없는 Signal(원장 존재 여부만 확인, MOM-65가 쓴다). 정렬은 생성
   // 시각 내림차순이고, worker가 evidence와 배치로 같이 insert해(D1) 동률이 날 수 있어 id 내림차순으로
-  // 순서를 고정한다(docs/spec/mobile-api.md).
+  // 순서를 고정한다.
   @Query(
       value =
           "SELECT s.* FROM signals s WHERE s.project_id = :projectId AND s.deleted_at IS NULL"

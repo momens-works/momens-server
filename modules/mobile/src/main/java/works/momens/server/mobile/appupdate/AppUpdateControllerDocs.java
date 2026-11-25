@@ -27,6 +27,9 @@ interface AppUpdateControllerDocs {
   @ApiException(CommonErrorCode.class)
   AppUpdateResponse checkAppUpdate(
       @Parameter(description = "앱이 실행되는 플랫폼입니다.") AppPlatform platform,
-      @Parameter(description = "앱 버전입니다. 점으로 구분된 숫자를 1개부터 3개까지 허용합니다.", example = "1.0.0")
+      @Parameter(
+              description = "앱 버전입니다.",
+              example = "1.0.0",
+              schema = @Schema(implementation = String.class, pattern = AppVersion.FORMAT_REGEX))
           String appVersion);
 }

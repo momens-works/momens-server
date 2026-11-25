@@ -24,8 +24,7 @@ import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
 /**
- * 컨트롤러가 {@code Principal}에서 현재 사용자를 식별하고, {@code docs/spec/mobile-api.md}에 정의된 {@code snake_case}
- * 형식으로 응답하는지 검증합니다.
+ * 컨트롤러가 {@code Principal}에서 현재 사용자를 식별하고, {@code snake_case} 형식으로 응답하는지 검증합니다.
  *
  * <p>모듈 경계로 인해 app의 API 버전 설정을 가져올 수 없어 테스트에서 동일한 설정을 구성합니다. 인증 실패(401)와 전체 요청 흐름은 app 모듈의 통합 테스트에서
  * 검증합니다.

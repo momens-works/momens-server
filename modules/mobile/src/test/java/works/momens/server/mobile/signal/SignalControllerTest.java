@@ -34,9 +34,8 @@ import works.momens.server.signal.SignalSummary;
 import works.momens.server.signal.SignalSummaryPage;
 
 /**
- * 컨트롤러가 경로 변수와 Principal을 서비스에 그대로 전달하고 명세(docs/spec/mobile-api.md)의 고정 envelope·snake_case 응답
- * shape를 내는지 검증합니다. versioning은 모듈 경계상 app 설정을 못 가져오므로 슬라이스 안에서 동일하게 구성합니다. 인증 실패(401)와 에러 응답
- * shape는 app의 통합 테스트가 봅니다.
+ * 컨트롤러가 경로 변수와 Principal을 서비스에 그대로 전달하고 고정 envelope·snake_case 응답 shape를 내는지 검증합니다. versioning은 모듈
+ * 경계상 app 설정을 못 가져오므로 슬라이스 안에서 동일하게 구성합니다. 인증 실패(401)와 에러 응답 shape는 app의 통합 테스트가 봅니다.
  */
 @WebMvcTest(SignalController.class)
 @AutoConfigureMockMvc(addFilters = false)

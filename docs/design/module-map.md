@@ -272,7 +272,7 @@ worker도 같은 backing과 빈 payload·`signal.created:{signal_id}` 멱등키�
   replay·상세는 **권한 → 원장 → task** 순서다. READ COMMITTED에서 ready를 읽은 뒤 최신 task를
   읽으며 AI title·generating 조합은 허용한다. 격리 수준/조회 조립 변경 시 이 보장을 다시 검증한다.
   원장 없음·completed·DB read deadline 초과는 ready이며 현재 flag로 과거 상태를 재해석하지 않는다.
-  앱 표시와 deadline 예외는 [모바일 명세](../spec/mobile-api.md), 복구는
+  앱 표시는 [모바일 명세](../spec/mobile-api.md), 복구는
   [운영 준비 대장](../prod-readiness-ledger.md#minsu-활성화와-복구)을 따른다.
 
 스키마·상태 전이·잠금의 구현 정본은 [마이그레이션](../../modules/minsu/src/main/resources/db/migration/)과

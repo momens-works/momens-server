@@ -40,7 +40,7 @@
             "type" : "string"
           },
           "role" : {
-            "description" : "소속 workspace 멤버십 role",
+            "description" : "소속 workspace 멤버십 role(owner, admin, member)",
             "example" : "member",
             "type" : "string"
           }
@@ -9455,12 +9455,13 @@
             }
           },
           {
-            "description" : "앱 버전입니다. 점으로 구분된 숫자를 1개부터 3개까지 허용합니다.",
+            "description" : "앱 버전입니다.",
             "example" : "1.0.0",
             "in" : "query",
             "name" : "app_version",
             "required" : true,
             "schema" : {
+              "pattern" : "^(0|[1-9]\\d{0,8})(?:\\.(0|[1-9]\\d{0,8}))?(?:\\.(0|[1-9]\\d{0,8}))?$",
               "type" : "string"
             }
           },
@@ -10429,7 +10430,7 @@
     },
     "/api/mobile/projects/{projectId}/brief" : {
       "get" : {
-        "description" : "브리프 화면의 초기 로드에 필요한 정보를 조회합니다. 시그널 요약은 당일 시그널의 최신순 첫 페이지(20개)와 타입별 개수를 담습니다. 다음 페이지와 필터 전환은 GET .../brief/signal-summary를 사용합니다. priorities는 todo와 in_progress 작업을 우선순위가 높은 순(같으면 생성 시각, id 오름차순)으로 최대 4개 담습니다.",
+        "description" : "브리프 화면의 초기 로드에 필요한 정보를 조회합니다. 시그널 요약은 당일 시그널의 최신순 첫 페이지(최대 20개)와 타입별 개수를 담습니다. 다음 페이지와 필터 전환은 GET .../brief/signal-summary를 사용합니다. priorities는 todo와 in_progress 작업을 우선순위가 높은 순(같으면 생성 시각, id 오름차순)으로 최대 4개 담습니다.",
         "operationId" : "mobileGetBrief",
         "parameters" : [
           {

@@ -33,7 +33,8 @@ public record BootstrapResponse(
       @Schema(description = "project 식별자", example = "30d9e9fe-f43b-4097-a88e-dc19f0a5b025")
           UUID id,
       @Schema(description = "project 이름", example = "Q2 Activation Readiness") String name,
-      @Schema(description = "소속 workspace 멤버십 role", example = "member") String role) {}
+      @Schema(description = "소속 workspace 멤버십 role(owner, admin, member)", example = "member")
+          String role) {}
 
   public static BootstrapResponse from(BootstrapContext context) {
     return new BootstrapResponse(
