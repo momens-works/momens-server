@@ -2,6 +2,7 @@ package works.momens.server.mobile.bootstrap;
 
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -84,6 +85,40 @@ class MobileBootstrapIntegrationTest extends AbstractPostgresIntegrationTest {
         .andExpect(jsonPath("$.me.id").value(user.id().toString()))
         .andExpect(jsonPath("$.default_project_id", nullValue()))
         .andExpect(jsonPath("$.projects").isEmpty());
+  }
+
+  @Test
+  void reportsOnboardingCompletedAfterCompletionRequest() throws Exception {
+    UserProfile user =
+        userService.findOrCreate("bootstrap-onboarding@momens.works", "onboarding", null);
+    String token = accessTokens.issueAccessToken(user.id());
+
+    mockMvc
+        .perform(
+            get("/api/mobile/bootstrap")
+                .header("Authorization", "Bearer " + token)
+                .header("API-Version", "1"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.onboarding_completed").value(false));
+    mockMvc
+        .perform(
+            put("/api/mobile/me/onboarding-completion")
+                .header("Authorization", "Bearer " + token)
+                .header("API-Version", "1"))
+        .andExpect(status().isCreated());
+    mockMvc
+        .perform(
+            put("/api/mobile/me/onboarding-completion")
+                .header("Authorization", "Bearer " + token)
+                .header("API-Version", "1"))
+        .andExpect(status().isNoContent());
+    mockMvc
+        .perform(
+            get("/api/mobile/bootstrap")
+                .header("Authorization", "Bearer " + token)
+                .header("API-Version", "1"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.onboarding_completed").value(true));
   }
 
   @Test

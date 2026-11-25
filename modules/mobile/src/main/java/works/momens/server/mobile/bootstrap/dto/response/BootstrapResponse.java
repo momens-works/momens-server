@@ -20,7 +20,9 @@ public record BootstrapResponse(
             nullable = true)
         UUID defaultProjectId,
     @Schema(description = "접근 가능한 project 목록(생성 최신순). 없으면 빈 배열입니다.")
-        List<AccessibleProjectResponse> projects) {
+        List<AccessibleProjectResponse> projects,
+    @Schema(description = "모바일 앱 온보딩(코치마크) 완료 여부입니다. 온보딩을 완료하거나 건너뛴 기록이 있으면 true입니다.")
+        boolean onboardingCompleted) {
 
   // springdoc은 컴포넌트 스키마를 단순 클래스명으로 키잉해, /api/me의 user.MeResponse({"user": ...})와 이 중첩
   // MeResponse가 같은 "MeResponse" 칸에서 충돌한다. name을 지정해 스키마명을 분리한다(그러지 않으면 문서의 me가 실제
@@ -47,6 +49,7 @@ public record BootstrapResponse(
         context.projects().stream()
             .map(project ->
                 new AccessibleProjectResponse(project.id(), project.name(), project.role()))
-            .toList());
+            .toList(),
+        context.onboardingCompleted());
   }
 }
