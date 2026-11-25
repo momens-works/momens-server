@@ -1,12 +1,14 @@
 # API 응답과 에러 코드
 
 이 문서는 `momens-server`의 HTTP JSON API 응답 규격을 정의합니다.
-`momens-retrieval`의 gRPC 계약, `momens-worker`의 내부 처리 결과, 외부 webhook payload는
+`momens-retrieval`의 gRPC 계약, `momens-worker`의 내부 처리 결과, 외부 webhook payload,
+해당 표준의 형식을 따르는 [외부 표준 protocol endpoint](api-versioning.md#외부-표준-protocol-예외)는
 이 문서의 범위가 아닙니다.
 
 ## 원칙
 
-- 기존 `momens-api`에서 이관하는 엔드포인트는 **HTTP status와 JSON body shape를 우선 보존**합니다.
+- 기존 `momens-api`에서 이관하는 엔드포인트는 **성공 응답의 HTTP status와 JSON body shape를 우선
+  보존**합니다. 실패 응답은 Legacy compatible 대상을 제외하고 Standard 모드를 사용합니다.
 - 성공 응답에는 전역 wrapper(`success`, `data`)를 두지 않습니다.
 - Standard 모드에서 클라이언트는 HTTP status와 안정적인 error `code`로 분기합니다.
   `message` 문자열을 파싱하지 않습니다.
@@ -15,15 +17,18 @@
 
 ## 응답 모드
 
-마이그레이션 기간에는 두 가지 응답 모드가 공존할 수 있습니다.
+실패 응답의 형식은 두 가지입니다.
 
 | 모드 | 사용 대상 | 실패 body |
 | --- | --- | --- |
-| Legacy compatible | 기존 Go API를 그대로 이관하는 엔드포인트 | `{ "error": "..." }` |
-| Standard | 신규 엔드포인트 또는 계약 변경이 합의된 개편 엔드포인트 | `{ "error": { "code": "...", "message": "...", "details": { ... } } }` |
+| Standard | Legacy compatible 대상을 제외한 모든 엔드포인트. 레거시에서 이관한 엔드포인트를 포함합니다 | `{ "error": { "code": "...", "message": "...", "details": { ... } } }` |
+| Legacy compatible | MCP 접근 동의 API(`/api/oauth/interactions`)와 MCP 연결 관리 API(`/api/workspaces/{workspaceId}/mcp-grants`)의 일부 오류 | `{ "error": "..." }` |
 
-엔드포인트를 구현할 때는 어떤 모드인지 먼저 정하고, OpenAPI 예시에 명시합니다.
-기존 엔드포인트의 모드를 Standard로 바꿀 때는 프론트엔드와 별도 합의가 필요합니다.
+Legacy compatible 대상에서도 미인증·무효 토큰과 내부 장애는 Standard 형식입니다. 오류별 형식은 OpenAPI의
+해당 operation에서 확인합니다.
+
+새 엔드포인트는 Standard 모드를 사용합니다. 기존 엔드포인트의 모드를 Standard로 바꿀 때는 프론트엔드와
+별도 합의가 필요합니다.
 
 ## 성공 응답
 
@@ -100,11 +105,11 @@ Standard 모드의 에러 응답은 아래 형태를 사용합니다.
 
 ## Legacy compatible 에러 응답
 
-기존 Go API를 그대로 이관하는 엔드포인트는 아래 형태를 유지합니다.
+Legacy compatible 대상은 아래 형태를 사용합니다.
 
 ```json
 {
-  "error": "unauthorized"
+  "error": "forbidden"
 }
 ```
 
@@ -232,8 +237,8 @@ Bean Validation과 `FieldValidationException`을 통한 필드 단위 검증 실
 ## 구현 시 체크리스트
 
 - 기존 Go API 이관인지, 신규/개편 API인지 먼저 결정합니다.
-- 기존 Go API 이관이면 status와 body shape를 기존과 맞춥니다.
-- 신규/개편 API이면 Standard 에러 응답을 사용합니다.
+- 기존 Go API 이관이면 성공 응답의 status와 body shape를 기존과 맞춥니다.
+- 실패 응답은 Standard 에러 응답을 사용합니다.
 - JSON 에러 응답으로 반환하는 새 에러 코드를 추가하면 해당 엔드포인트의 `@ApiException`에 선언하고, `./gradlew updateOpenApiSnapshot`으로 OpenAPI 스냅샷을 갱신합니다.
 - OpenAPI에 성공 예시와 주요 에러 예시를 함께 추가합니다.
 
