@@ -46,8 +46,14 @@ interface ProjectTaskControllerDocs {
           List<TaskRole> roles,
       @Parameter(description = "지정한 우선순위 중 하나에 해당하는 태스크만 반환합니다. 생략하면 우선순위 필터를 적용하지 않습니다.")
           List<TaskPriority> priorities,
-      @Parameter(description = "마감일이 지정한 날짜와 일치하는 태스크만 반환합니다. 날짜 형식은 `YYYY-MM-DD`입니다.")
-          LocalDate dueDate,
+      @Parameter(
+              description =
+                  "마감일이 지정한 날짜와 같거나 이후인 태스크만 반환합니다. 날짜 형식은 `YYYY-MM-DD`입니다. `due_date_to`보다 늦은 날짜를 전달하면 `COMMON_VALIDATION_FAILED`를 반환합니다. `due_date_from`과 `due_date_to` 중 하나라도 전달하면 마감일이 지정되지 않은 태스크는 조회 결과에서 제외합니다.")
+          LocalDate dueDateFrom,
+      @Parameter(
+              description =
+                  "마감일이 지정한 날짜와 같거나 이전인 태스크만 반환합니다. 날짜 형식은 `YYYY-MM-DD`입니다. 특정 날짜가 마감일인 태스크만 조회하려면 `due_date_from`과 동일한 날짜를 전달합니다.")
+          LocalDate dueDateTo,
       @Parameter(
               description =
                   "지정한 사용자 중 한 명이 담당자로 지정된 태스크를 반환합니다. 동일한 파라미터를 여러 번 전달할 수 있으며,"

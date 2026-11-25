@@ -42,7 +42,7 @@ class MobileTaskFilterTest {
         new MobileTaskFilter(
             Set.of(TaskRole.DESIGN),
             Set.of(TaskPriority.HIGH),
-            DUE_DATE,
+            new DueDateRange(DUE_DATE, DUE_DATE),
             Set.of(ASSIGNEE_ID),
             false);
 
@@ -53,12 +53,23 @@ class MobileTaskFilterTest {
   }
 
   @Test
-  void dueDateMatchesOnlyTheSameDay() {
-    MobileTaskFilter filter = new MobileTaskFilter(Set.of(), Set.of(), DUE_DATE, null, false);
+  void dueDateRangeIncludesBothEndsAndExcludesTaskWithoutDueDate() {
+    LocalDate to = DUE_DATE.plusDays(6);
+    MobileTaskFilter range = dueDateFilter(DUE_DATE, to);
 
-    assertThat(filter.matches(task(List.of(), "low", null, DUE_DATE))).isTrue();
-    assertThat(filter.matches(task(List.of(), "low", null, DUE_DATE.minusDays(1)))).isFalse();
-    assertThat(filter.matches(task(List.of(), "low", null, null))).isFalse();
+    assertThat(range.matches(task(List.of(), "low", null, DUE_DATE))).isTrue();
+    assertThat(range.matches(task(List.of(), "low", null, to))).isTrue();
+    assertThat(range.matches(task(List.of(), "low", null, DUE_DATE.minusDays(1)))).isFalse();
+    assertThat(range.matches(task(List.of(), "low", null, to.plusDays(1)))).isFalse();
+    assertThat(range.matches(task(List.of(), "low", null, null))).isFalse();
+
+    MobileTaskFilter fromOnly = dueDateFilter(DUE_DATE, null);
+    assertThat(fromOnly.matches(task(List.of(), "low", null, DUE_DATE.plusYears(1)))).isTrue();
+    assertThat(fromOnly.matches(task(List.of(), "low", null, DUE_DATE.minusDays(1)))).isFalse();
+
+    MobileTaskFilter toOnly = dueDateFilter(null, DUE_DATE);
+    assertThat(toOnly.matches(task(List.of(), "low", null, DUE_DATE.minusYears(1)))).isTrue();
+    assertThat(toOnly.matches(task(List.of(), "low", null, DUE_DATE.plusDays(1)))).isFalse();
   }
 
   @Test
@@ -89,6 +100,10 @@ class MobileTaskFilterTest {
     assertThat(filter.matches(task(List.of(), "low", ASSIGNEE_ID, null))).isTrue();
     assertThat(filter.matches(task(List.of(), "low", null, null))).isTrue();
     assertThat(filter.matches(task(List.of(), "low", UUID.randomUUID(), null))).isFalse();
+  }
+
+  private static MobileTaskFilter dueDateFilter(LocalDate from, LocalDate to) {
+    return new MobileTaskFilter(Set.of(), Set.of(), new DueDateRange(from, to), null, false);
   }
 
   private static BoardTask task(
