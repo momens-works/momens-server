@@ -40,8 +40,12 @@ class ProjectTaskController implements ProjectTaskControllerDocs {
       @PathVariable UUID projectId,
       @RequestParam(name = "roles", required = false) List<TaskRole> roles,
       @RequestParam(name = "priorities", required = false) List<TaskPriority> priorities,
-      @RequestParam(name = "due_date", required = false) @DateTimeFormat(iso = ISO.DATE)
-          LocalDate dueDate,
+      @RequestParam(name = DueDateRange.DUE_DATE_FROM, required = false)
+          @DateTimeFormat(iso = ISO.DATE)
+          LocalDate dueDateFrom,
+      @RequestParam(name = DueDateRange.DUE_DATE_TO, required = false)
+          @DateTimeFormat(iso = ISO.DATE)
+          LocalDate dueDateTo,
       @RequestParam(name = "assignee_ids", required = false) List<UUID> assigneeIds,
       @RequestParam(name = "unassigned", defaultValue = "false") boolean unassigned,
       Principal principal) {
@@ -49,7 +53,9 @@ class ProjectTaskController implements ProjectTaskControllerDocs {
         new MobileTaskFilter(
             roles == null ? null : new HashSet<>(roles),
             priorities == null ? null : new HashSet<>(priorities),
-            dueDate,
+            dueDateFrom == null && dueDateTo == null
+                ? null
+                : new DueDateRange(dueDateFrom, dueDateTo),
             assigneeIds == null ? null : new HashSet<>(assigneeIds),
             unassigned);
     return TaskBoardResponse.from(

@@ -120,7 +120,8 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
                 .header("API-Version", "1")
                 .param("roles", "design")
                 .param("priorities", "high", "urgent")
-                .param("due_date", "2026-10-27")
+                .param("due_date_from", "2026-10-27")
+                .param("due_date_to", "2026-10-27")
                 .param("assignee_ids", jinsu.id().toString()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.groups.length()").value(5))
@@ -139,6 +140,25 @@ class MobileProjectTasksIntegrationTest extends AbstractPostgresIntegrationTest 
         .andExpect(jsonPath("$.groups[0].count").value(1))
         .andExpect(jsonPath("$.groups[0].tasks[0].title").value("unassigned"))
         .andExpect(jsonPath("$.groups[1].count").value(0));
+  }
+
+  @Test
+  void boardRejectsDueDateFromAfterDueDateTo() throws Exception {
+    UserProfile jinsu = userService.findOrCreate("tasks-it-due-range@momens.works", "신진수", null);
+    UUID workspace = insertWorkspace("tasks-due-range");
+    addMember(workspace, jinsu.id(), "owner");
+    UUID project = insertProject(workspace, jinsu.id(), "tasks-due-range-project");
+
+    mockMvc
+        .perform(
+            get("/api/mobile/projects/{projectId}/tasks", project)
+                .header("Authorization", "Bearer " + accessTokens.issueAccessToken(jinsu.id()))
+                .header("API-Version", "1")
+                .param("due_date_from", "2026-10-28")
+                .param("due_date_to", "2026-10-27"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("COMMON_VALIDATION_FAILED"))
+        .andExpect(jsonPath("$.error.details.fields[0].field").value("due_date_from"));
   }
 
   @Test

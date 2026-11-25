@@ -1,6 +1,5 @@
 package works.momens.server.mobile.board;
 
-import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
@@ -14,7 +13,8 @@ import works.momens.server.project.task.TaskRole;
  * 모바일 태스크 보드 조회에 사용하는 필터 조건과 판정 규칙을 정의합니다.
  *
  * <p>같은 필터에서 선택한 값은 OR 조건으로, 서로 다른 필터는 AND 조건으로 결합합니다. 역할과 우선순위 목록이 비어 있으면 해당 조건을 적용하지 않습니다. 마감일
- * 필터는 태스크의 마감일이 선택한 날짜와 일치하는 경우에만 통과하며, 마감일이 지정되지 않은 태스크는 제외합니다.
+ * 필터는 태스크의 마감일이 {@link DueDateRange}에 정의된 조회 기간에 포함되는 경우에만 필터 조건을 충족한 것으로 판정합니다. 마감일이 지정되지 않은 태스크는
+ * 필터 조건을 충족하지 않습니다. 조회 기간이 지정되지 않은 경우에는 마감일 필터를 적용하지 않습니다.
  *
  * <p>담당자 필터는 {@code assigneeIds}와 {@code unassigned}로 구성됩니다. 태스크의 담당자가 {@code assigneeIds}에 포함되어
  * 있거나, {@code unassigned}가 {@code true}이고 태스크에 담당자가 지정되지 않은 경우 필터 조건을 충족합니다. {@code assigneeIds}가
@@ -25,7 +25,7 @@ import works.momens.server.project.task.TaskRole;
 record MobileTaskFilter(
     Set<TaskRole> roles,
     Set<TaskPriority> priorities,
-    LocalDate dueDate,
+    DueDateRange dueDateRange,
     Set<UUID> assigneeIds,
     boolean unassigned) {
 
@@ -56,7 +56,7 @@ record MobileTaskFilter(
   }
 
   private boolean matchesDueDate(BoardTask task) {
-    return dueDate == null || dueDate.equals(task.dueDate());
+    return dueDateRange == null || dueDateRange.contains(task.dueDate());
   }
 
   private boolean matchesAssignee(BoardTask task) {
