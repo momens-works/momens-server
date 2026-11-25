@@ -46,4 +46,15 @@ public interface UserService {
 
   /** 프로필 부분 수정. {@code null} 필드는 변경하지 않습니다. 없으면 {@link UserErrorCode#USER_NOT_FOUND}. */
   UserProfile updateProfile(UUID userId, String name, String jobRole);
+
+  /**
+   * 모바일 앱 온보딩 완료를 기록합니다. 이미 온보딩을 완료한 사용자는 최초 완료 시각을 유지합니다. 사용자가 존재하지 않으면 {@link
+   * UserErrorCode#USER_NOT_FOUND} 오류를 발생시킵니다.
+   *
+   * @return 이번 호출에서 온보딩 완료를 최초로 기록한 경우 {@code true}
+   */
+  boolean completeMobileOnboarding(UUID userId);
+
+  /** 모바일 앱 온보딩 완료 여부를 조회합니다. 사용자가 존재하지 않으면 {@link UserErrorCode#USER_NOT_FOUND} 오류를 발생시킵니다. */
+  boolean isMobileOnboardingCompleted(UUID userId);
 }

@@ -3,6 +3,7 @@ package works.momens.server.user.internal;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -27,6 +28,9 @@ class User extends BaseEntity {
   @Column(name = "job_role")
   private String jobRole;
 
+  @Column(name = "mobile_onboarding_completed_at")
+  private Instant mobileOnboardingCompletedAt;
+
   @Builder
   private User(String email, String name, String avatarUrl, String jobRole) {
     this.email = email;
@@ -47,5 +51,22 @@ class User extends BaseEntity {
     if (jobRole != null) {
       this.jobRole = jobRole;
     }
+  }
+
+  /**
+   * 모바일 앱 온보딩 완료를 기록합니다. 이미 온보딩을 완료한 경우 최초 완료 시각을 유지합니다.
+   *
+   * @return 이번 호출에서 온보딩 완료를 최초로 기록한 경우 {@code true}
+   */
+  boolean completeMobileOnboarding() {
+    if (isMobileOnboardingCompleted()) {
+      return false;
+    }
+    this.mobileOnboardingCompletedAt = Instant.now();
+    return true;
+  }
+
+  boolean isMobileOnboardingCompleted() {
+    return mobileOnboardingCompletedAt != null;
   }
 }
