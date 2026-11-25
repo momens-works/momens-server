@@ -138,11 +138,8 @@ class UserServiceImpl implements UserService {
 
   @Override
   @Transactional
-  public boolean completeMobileOnboarding(UUID userId) {
-    return userRepository
-        .findForUpdate(userId)
-        .orElseThrow(() -> notFound(userId))
-        .completeMobileOnboarding();
+  public void completeMobileOnboarding(UUID userId) {
+    userRepository.findById(userId).orElseThrow(() -> notFound(userId)).completeMobileOnboarding();
   }
 
   @Override

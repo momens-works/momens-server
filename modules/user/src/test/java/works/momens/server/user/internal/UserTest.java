@@ -11,12 +11,11 @@ class UserTest {
   void completeMobileOnboardingKeepsFirstCompletedAt() {
     User user = User.builder().email("onboarding@momens.works").name("onboarding").build();
 
-    boolean first = user.completeMobileOnboarding();
+    user.completeMobileOnboarding();
     Instant firstCompletedAt = user.getMobileOnboardingCompletedAt();
-    boolean second = user.completeMobileOnboarding();
+    user.completeMobileOnboarding();
 
-    assertThat(first).isTrue();
-    assertThat(second).isFalse();
+    assertThat(firstCompletedAt).isNotNull();
     assertThat(user.getMobileOnboardingCompletedAt()).isSameAs(firstCompletedAt);
   }
 }
