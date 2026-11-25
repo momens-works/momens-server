@@ -136,6 +136,24 @@ class UserServiceImpl implements UserService {
     return toProfile(user);
   }
 
+  @Override
+  @Transactional
+  public boolean completeMobileOnboarding(UUID userId) {
+    return userRepository
+        .findById(userId)
+        .orElseThrow(() -> notFound(userId))
+        .completeMobileOnboarding();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public boolean isMobileOnboardingCompleted(UUID userId) {
+    return userRepository
+        .findById(userId)
+        .orElseThrow(() -> notFound(userId))
+        .isMobileOnboardingCompleted();
+  }
+
   private static BusinessException notFound(UUID userId) {
     return new BusinessException(
         UserErrorCode.USER_NOT_FOUND, Map.of("user_id", userId.toString()));
