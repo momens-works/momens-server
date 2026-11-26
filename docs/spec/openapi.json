@@ -56,7 +56,7 @@
             "type" : "string"
           },
           "role" : {
-            "description" : "추가할 멤버에게 부여할 role입니다. owner는 워크스페이스 생성 시에만 지정되므로 부여할 수 없습니다.",
+            "description" : "추가할 멤버에게 부여할 role",
             "enum" : [
               "admin",
               "member"
@@ -542,7 +542,7 @@
             "type" : "string"
           },
           "reversibility" : {
-            "description" : "가역성은 reversible 또는 irreversible입니다. 생략·null·빈 문자열이면 reversible입니다.",
+            "description" : "가역성. 생략·null·빈 문자열이면 reversible입니다.",
             "example" : "reversible",
             "pattern" : "^(reversible|irreversible|)$",
             "type" : [
@@ -565,7 +565,7 @@
         "type" : "object"
       },
       "CreateDevSignalEvidenceDetails" : {
-        "description" : "근거의 대상·변화·영향(각 공백 포함 30자 이하)",
+        "description" : "근거의 대상·변화·영향",
         "properties" : {
           "change" : {
             "description" : "변화",
@@ -607,7 +607,7 @@
             "type" : "string"
           },
           "evidence" : {
-            "description" : "근거 목록. 생략 또는 빈 배열 허용, 배열 순서가 sort_order",
+            "description" : "근거 목록. 배열 순서가 sort_order",
             "items" : {
               "$ref" : "#/components/schemas/Evidence"
             },
@@ -622,7 +622,7 @@
             "type" : "string"
           },
           "occurred_at" : {
-            "description" : "Signal 발생 시각(ISO-8601)",
+            "description" : "Signal 발생 시각",
             "format" : "date-time",
             "type" : "string"
           },
@@ -670,7 +670,8 @@
             "type" : "string"
           },
           "health_status" : {
-            "description" : "상태. 생략하면 planned가 적용됩니다.",
+            "default" : "planned",
+            "description" : "상태",
             "enum" : [
               "on_track",
               "at_risk",
@@ -686,7 +687,7 @@
             "type" : "string"
           },
           "name" : {
-            "description" : "마일스톤 이름. 필수 입력값입니다.",
+            "description" : "마일스톤 이름",
             "type" : "string"
           },
           "owner_user_ids" : {
@@ -698,8 +699,11 @@
             "type" : "array"
           },
           "progress" : {
-            "description" : "진행률. 0 이상 100 이하이며, 생략하면 0이 적용됩니다.",
+            "default" : 0,
+            "description" : "진행률",
             "format" : "int32",
+            "maximum" : 100,
+            "minimum" : 0,
             "type" : "integer"
           },
           "summary" : {
@@ -725,7 +729,8 @@
             "type" : "string"
           },
           "health_status" : {
-            "description" : "상태. 생략하면 open이 적용됩니다.",
+            "default" : "open",
+            "description" : "상태",
             "enum" : [
               "on_track",
               "at_risk",
@@ -741,7 +746,7 @@
             "type" : "string"
           },
           "name" : {
-            "description" : "프로젝트 이름. 필수 입력값입니다.",
+            "description" : "프로젝트 이름",
             "type" : "string"
           },
           "owner_user_ids" : {
@@ -753,8 +758,11 @@
             "type" : "array"
           },
           "progress" : {
-            "description" : "진행률. 0 이상 100 이하이며, 생략하면 0이 적용됩니다.",
+            "default" : 0,
+            "description" : "진행률",
             "format" : "int32",
+            "maximum" : 100,
+            "minimum" : 0,
             "type" : "integer"
           },
           "summary" : {
@@ -767,13 +775,17 @@
             "type" : "string"
           },
           "unresolved_count" : {
-            "description" : "미해결 항목 수. 0 이상이며, 생략하면 0이 적용됩니다.",
+            "default" : 0,
+            "description" : "미해결 항목 수",
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           },
           "voc_signal_count" : {
-            "description" : "VOC 시그널 수. 0 이상이며, 생략하면 0이 적용됩니다.",
+            "default" : 0,
+            "description" : "VOC 시그널 수",
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         },
@@ -892,7 +904,8 @@
             "type" : "string"
           },
           "kind" : {
-            "description" : "업데이트 kind. 생략하면 comment를 사용합니다.",
+            "default" : "comment",
+            "description" : "업데이트 kind",
             "enum" : [
               "comment",
               "update"
@@ -933,7 +946,8 @@
             "type" : "string"
           },
           "priority" : {
-            "description" : "작업 우선순위. 생략하면 medium을 사용합니다.",
+            "default" : "medium",
+            "description" : "작업 우선순위",
             "enum" : [
               "low",
               "medium",
@@ -943,7 +957,7 @@
             "type" : "string"
           },
           "roles" : {
-            "description" : "role 목록입니다. 지정할 경우 `pm`, `design`, `backend`, `frontend` 중 최소 1개 이상을 선택해야 하며, 중복은 허용하지 않습니다. 생략하면 role이 지정되지 않은 태스크를 생성합니다.",
+            "description" : "role 목록. 생략하면 role이 지정되지 않은 태스크를 생성합니다.",
             "items" : {
               "enum" : [
                 "pm",
@@ -959,7 +973,8 @@
             "uniqueItems" : true
           },
           "status" : {
-            "description" : "작업 상태. 생략하면 backlog를 사용합니다.",
+            "default" : "backlog",
+            "description" : "작업 상태",
             "enum" : [
               "backlog",
               "todo",
@@ -990,7 +1005,7 @@
             "type" : "string"
           },
           "role" : {
-            "description" : "초대 수락 시 사용자에게 부여할 role입니다. owner는 워크스페이스 생성 시에만 지정되므로 부여할 수 없습니다.",
+            "description" : "초대 수락 시 사용자에게 부여할 role",
             "enum" : [
               "admin",
               "member"
@@ -1012,7 +1027,7 @@
             "type" : "string"
           },
           "name" : {
-            "description" : "워크스페이스 이름. 필수 입력값입니다.",
+            "description" : "워크스페이스 이름",
             "type" : "string"
           },
           "slug" : {
@@ -1105,7 +1120,7 @@
             "description" : "근거의 대상·변화·영향"
           },
           "occurred_at" : {
-            "description" : "원천 발생 시각(ISO-8601)",
+            "description" : "원천 발생 시각",
             "format" : "date-time",
             "type" : "string"
           },
@@ -1543,7 +1558,7 @@
         "type" : "object"
       },
       "MeResponse" : {
-        "description" : "내 프로필 응답. user 객체로 감쌉니다.",
+        "description" : "내 프로필 응답",
         "properties" : {
           "user" : {
             "$ref" : "#/components/schemas/UserResponse",
@@ -3094,7 +3109,7 @@
         "description" : "프로필 수정 요청. 제공된(non-null) 필드만 갱신합니다.",
         "properties" : {
           "job_role" : {
-            "description" : "직무. 최대 255자입니다.",
+            "description" : "직무",
             "example" : "Engineer",
             "maxLength" : 255,
             "minLength" : 0,
@@ -3104,7 +3119,7 @@
             ]
           },
           "name" : {
-            "description" : "이름. 공백만으로는 설정할 수 없으며 최대 255자입니다.",
+            "description" : "이름",
             "example" : "홍길동",
             "maxLength" : 255,
             "minLength" : 0,
@@ -3327,7 +3342,7 @@
             "writeOnly" : true
           },
           "roles" : {
-            "description" : "role 목록입니다. 생략하면 기존 값을 유지합니다. 지정할 경우 `pm`, `design`, `backend`, `frontend` 중 최소 1개 이상을 중복 없이 전달해야 하며, `null`은 허용하지 않습니다.",
+            "description" : "role 목록. 생략하면 기존 값을 유지하며, null은 허용하지 않습니다.",
             "items" : {
               "enum" : [
                 "pm",
@@ -3377,7 +3392,7 @@
         "description" : "워크스페이스 멤버 수정 요청",
         "properties" : {
           "role" : {
-            "description" : "멤버에게 새로 부여할 role입니다. owner는 워크스페이스 생성 시에만 지정되므로 부여할 수 없습니다.",
+            "description" : "멤버에게 새로 부여할 role",
             "enum" : [
               "admin",
               "member"
@@ -3460,7 +3475,7 @@
         "type" : "object"
       },
       "WebDecisionResponse" : {
-        "description" : "생성된 Decision. 성공 응답은 wrapper 없이 반환합니다.",
+        "description" : "생성된 Decision",
         "properties" : {
           "alternatives" : {
             "type" : "string"
@@ -3516,7 +3531,7 @@
         "type" : "object"
       },
       "WebMilestoneResponse" : {
-        "description" : "웹 마일스톤 응답입니다. 수정 충돌 확인용 버전을 포함합니다.",
+        "description" : "웹 마일스톤 응답",
         "properties" : {
           "created_at" : {
             "format" : "date-time",
@@ -3578,7 +3593,7 @@
         "type" : "object"
       },
       "WebProjectResponse" : {
-        "description" : "웹 프로젝트 응답입니다. 필드 구성은 레거시 프로젝트 응답과 동일합니다.",
+        "description" : "웹 프로젝트 응답",
         "properties" : {
           "created_at" : {
             "format" : "date-time",

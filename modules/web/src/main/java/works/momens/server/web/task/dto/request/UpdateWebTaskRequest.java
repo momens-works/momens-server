@@ -101,10 +101,7 @@ public final class UpdateWebTaskRequest {
   }
 
   @ArraySchema(
-      arraySchema =
-          @Schema(
-              description =
-                  "role 목록입니다. 생략하면 기존 값을 유지합니다. 지정할 경우 `pm`, `design`, `backend`, `frontend` 중 최소 1개 이상을 중복 없이 전달해야 하며, `null`은 허용하지 않습니다."),
+      arraySchema = @Schema(description = "role 목록. 생략하면 기존 값을 유지하며, null은 허용하지 않습니다."),
       minItems = 1,
       uniqueItems = true)
   @JsonSetter("roles")

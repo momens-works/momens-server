@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 import works.momens.server.project.milestone.MilestoneDetail;
 
-@Schema(description = "웹 마일스톤 응답입니다. 수정 충돌 확인용 버전을 포함합니다.")
+@Schema(description = "웹 마일스톤 응답")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record WebMilestoneResponse(
     UUID id,

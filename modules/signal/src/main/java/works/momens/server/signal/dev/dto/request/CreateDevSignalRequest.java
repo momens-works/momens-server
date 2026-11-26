@@ -18,9 +18,8 @@ public record CreateDevSignalRequest(
         String description,
     @Schema(description = "Signal 전체 영향") String impact,
     @Schema(description = "민수 제안") String minsuSuggestion,
-    @Schema(description = "Signal 발생 시각(ISO-8601)") Instant occurredAt,
-    @Schema(description = "근거 목록. 생략 또는 빈 배열 허용, 배열 순서가 sort_order") @Valid
-        List<Evidence> evidence) {
+    @Schema(description = "Signal 발생 시각") Instant occurredAt,
+    @Schema(description = "근거 목록. 배열 순서가 sort_order") @Valid List<Evidence> evidence) {
 
   public List<Evidence> evidenceOrEmpty() {
     return evidence == null ? List.of() : evidence;
@@ -38,10 +37,10 @@ public record CreateDevSignalRequest(
       @Schema(description = "원천 발췌") String sourceSnippet,
       @Schema(description = "원천 전체 내용") String sourceText,
       @Schema(description = "원천 URL") String sourceUrl,
-      @Schema(description = "원천 발생 시각(ISO-8601)") Instant occurredAt,
+      @Schema(description = "원천 발생 시각") Instant occurredAt,
       @Schema(description = "근거의 대상·변화·영향") @Valid Details details) {
 
-    @Schema(name = "CreateDevSignalEvidenceDetails", description = "근거의 대상·변화·영향(각 공백 포함 30자 이하)")
+    @Schema(name = "CreateDevSignalEvidenceDetails", description = "근거의 대상·변화·영향")
     public record Details(
         @Schema(description = "대상", nullable = true) @Size(max = 30) String target,
         @Schema(description = "변화", nullable = true) @Size(max = 30) String change,
