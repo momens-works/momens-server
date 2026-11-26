@@ -29,8 +29,7 @@ import works.momens.server.workspace.membership.WorkspaceMembershipReader;
  *
  * <p>입력 검증(400) → 후보·메모리 존재 및 소속 조회(404) → 멤버십(403) → 잠금 → 상태(409) 순서를 지켜 비멤버에게 후보 상태를 노출하지 않습니다.
  *
- * <p>검색 반영은 outbox를 소비하는 worker가 담당합니다. 공통 소비 기반은 MOM-0898, memory 투영·운영 검증은 MOM-0957 범위입니다. 레거시와
- * 같이 reject·merge·expire는 이벤트를 발행하지 않습니다.
+ * <p>검색 반영은 outbox를 소비하는 worker가 담당합니다. reject·merge·expire는 이벤트를 발행하지 않습니다.
  */
 @Service
 @RequiredArgsConstructor
@@ -77,15 +76,13 @@ class MemoryWriterImpl implements MemoryWriter {
     UUID memoryId = UUID.randomUUID();
     Instant now = Instant.now();
 
-    // 레거시는 비어 있지 않은 편집 필드만 후보 값을 덮어쓰고, 덮어쓴 값만 review action에 남깁니다.
+    // 비어 있지 않은 편집 필드만 후보 값을 덮어쓰고, 덮어쓴 값만 review action에 남깁니다.
     String editedTitle = edits == null ? null : emptyToNull(edits.title());
     String editedSummary = edits == null ? null : emptyToNull(edits.summary());
     String editedBody = edits == null ? null : emptyToNull(edits.body());
 
     markCandidateReviewed(candidateId, "CONFIRMED", userId, null, now);
-    // metadata는 담지 않습니다. 레거시는 확정 메모리를 만들 때 후보의 metadata를 옮기지 않고 항상 NULL로
-    // 둡니다(memory/repository.go InsertMemory가 세팅되지 않은 필드를 그대로 넣습니다). 후보 metadata는
-    // 워커가 남긴 추출 정보라 확정 메모리로 새어 나가면 안 됩니다.
+    // metadata는 담지 않습니다. 후보 metadata는 워커가 남긴 추출 정보라 확정 메모리로 새어 나가면 안 됩니다.
     entityManager
         .createNativeQuery(
             """
@@ -311,10 +308,7 @@ class MemoryWriterImpl implements MemoryWriter {
     return statuses;
   }
 
-  /**
-   * 레거시 {@code MarkCandidateReviewed}와 같은 컬럼을 씁니다. {@code rejection_reason}은 reject가 아닌 액션에서도 함께
-   * 갱신되며 그때는 {@code NULL}입니다.
-   */
+  /** {@code rejection_reason}은 reject가 아닌 액션에서도 함께 갱신되며 그때는 {@code NULL}입니다. */
   private void markCandidateReviewed(
       UUID candidateId, String status, UUID reviewerId, String rejectionReason, Instant now) {
     entityManager
