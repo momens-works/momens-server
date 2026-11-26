@@ -23,15 +23,10 @@ import works.momens.server.workspace.membership.WorkspaceRole;
  * 태스크에 연결되는 엔티티의 연결과 해제를 조합하는 서비스입니다.
  *
  * <p>연결은 {@code context} 모듈이 소유하고 source-ref 저장은 {@code source} 모듈이 소유합니다. 해당 서비스는 두 모듈의 public
- * API를 순서대로 호출하고 그 전에 필요한 검사를 수행합니다. 검사 순서는 레거시 {@code relation/service.go}와 같습니다. 태스크가 속한 워크스페이스를
- * 먼저 조회하고, 메모리를 연결할 때는 두 대상이 같은 워크스페이스에 속하는지 확인한 뒤 요청자가 해당 워크스페이스의 멤버인지 검사합니다.
+ * API를 순서대로 호출하고 그 전에 필요한 검사를 수행합니다.
  *
  * <p>태스크의 워크스페이스는 {@code TaskReader.findSnapshot}으로 조회합니다. {@code findScope}는 {@code
- * tasks.workspace_id}만 읽고 프로젝트의 소프트 삭제 여부를 확인하지 않아 레거시와 다른 값을 반환할 수 있습니다. 레거시는 프로젝트를 조인하고 태스크와
- * 프로젝트의 소프트 삭제 여부를 모두 확인합니다.
- *
- * <p>source-ref 생성과 연결은 하나의 트랜잭션으로 처리합니다. 레거시는 두 SQL 문을 트랜잭션 없이 실행하므로 연결 생성에 실패하면 어디에도 연결되지 않은
- * source-ref가 남을 수 있습니다.
+ * tasks.workspace_id}만 읽고 프로젝트의 소프트 삭제 여부를 확인하지 않습니다.
  */
 @Service
 @RequiredArgsConstructor
