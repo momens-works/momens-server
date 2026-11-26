@@ -173,23 +173,31 @@ class McpTransportControllerTest {
   }
 
   @Test
-  void rejectsLatestVersionHeaderWithoutMethodHeaderWithSupportedVersions() throws Exception {
+  void rejectsMissingLatestProtocolHeaders() throws Exception {
     when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
 
     mockMvc
         .perform(
             post("/api/mcp")
                 .header("Authorization", "Bearer token")
-                .header("MCP-Protocol-Version", "2026-07-28")
                 .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_EVENT_STREAM)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(discoverRequest()))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error.code").value(-32022))
-        .andExpect(jsonPath("$.error.data.supported[0]").value("2026-07-28"))
-        .andExpect(jsonPath("$.error.data.supported[1]").value("2025-11-25"))
-        .andExpect(jsonPath("$.error.data.supported[2]").value("2025-06-18"))
-        .andExpect(jsonPath("$.error.data.requested").value("2026-07-28"));
+        .andExpect(jsonPath("$.error.code").value(-32020));
+  }
+
+  @Test
+  void rejectsLatestVersionHeaderWithoutMethodHeader() throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+
+    mockMvc
+        .perform(
+            legacyPost()
+                .header("MCP-Protocol-Version", "2026-07-28")
+                .content(legacyRequest("tools/list", "2", "")))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value(-32020));
   }
 
   @Test
@@ -225,6 +233,7 @@ class McpTransportControllerTest {
                 .content(request))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.error.code").value(-32022))
+        .andExpect(jsonPath("$.error.data.supported.length()").value(1))
         .andExpect(jsonPath("$.error.data.supported[0]").value("2026-07-28"))
         .andExpect(jsonPath("$.error.data.requested").value("2025-03-26"));
   }
@@ -391,12 +400,14 @@ class McpTransportControllerTest {
         .andExpect(jsonPath("$.result.serverInfo.version").value("0.1.0"));
   }
 
-  @Test
-  void offersLatestLegacyVersionWhenInitializeVersionIsUnsupported() throws Exception {
+  @ParameterizedTest
+  @ValueSource(strings = {"2024-11-05", "2026-07-28"})
+  void offersLatestLegacyVersionWhenInitializeVersionIsUnsupported(String version)
+      throws Exception {
     when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
 
     mockMvc
-        .perform(legacyPost().content(initializeRequest("2024-11-05")))
+        .perform(legacyPost().content(initializeRequest(version)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result.protocolVersion").value("2025-11-25"));
   }
@@ -427,11 +438,38 @@ class McpTransportControllerTest {
   }
 
   @Test
+  void rejectsLegacyNotificationWithUnsupportedVersionHeader() throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+
+    mockMvc
+        .perform(
+            legacyPost()
+                .header("MCP-Protocol-Version", "2025-03-26")
+                .content("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.id").doesNotExist())
+        .andExpect(jsonPath("$.error.code").value(-32022));
+  }
+
+  @Test
+  void acceptsLegacyRequestAdvertisingOnlyJson() throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+
+    mockMvc
+        .perform(
+            legacyPost()
+                .accept(MediaType.APPLICATION_JSON)
+                .content(initializeRequest("2025-06-18")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.result.protocolVersion").value("2025-06-18"));
+  }
+
+  @Test
   void answersLegacyPing() throws Exception {
     when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
 
     mockMvc
-        .perform(legacyPost().content(legacyRequest("ping", 1, "")))
+        .perform(legacyPost().content(legacyRequest("ping", "1", "")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result").isEmpty());
   }
@@ -446,7 +484,7 @@ class McpTransportControllerTest {
         .perform(
             legacyPost()
                 .header("MCP-Protocol-Version", "2025-06-18")
-                .content(legacyRequest("tools/list", 2, "")))
+                .content(legacyRequest("tools/list", "2", "")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.result.tools[0].name").value("list_projects"))
         .andExpect(jsonPath("$.result.tools[0].description").value("List projects"))
@@ -491,11 +529,13 @@ class McpTransportControllerTest {
         .perform(
             legacyPost()
                 .header("MCP-Protocol-Version", "2025-03-26")
-                .content(legacyRequest("tools/list", 2, "")))
+                .content(legacyRequest("tools/list", "2", "")))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.id").value(2))
         .andExpect(jsonPath("$.error.code").value(-32022))
-        .andExpect(jsonPath("$.error.data.supported.length()").value(3))
+        .andExpect(jsonPath("$.error.data.supported.length()").value(2))
+        .andExpect(jsonPath("$.error.data.supported[0]").value("2025-11-25"))
+        .andExpect(jsonPath("$.error.data.supported[1]").value("2025-06-18"))
         .andExpect(jsonPath("$.error.data.requested").value("2025-03-26"));
   }
 
@@ -504,7 +544,7 @@ class McpTransportControllerTest {
     when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
 
     mockMvc
-        .perform(legacyPost().content(legacyRequest("server/discover", 3, "")))
+        .perform(legacyPost().content(legacyRequest("server/discover", "3", "")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.error.code").value(-32601));
   }
@@ -519,14 +559,10 @@ class McpTransportControllerTest {
   private static String initializeRequest(String version) {
     return legacyRequest(
         "initialize",
-        0,
+        "0",
         "{\"protocolVersion\":\""
             + version
             + "\",\"capabilities\":{},\"clientInfo\":{\"name\":\"codex\",\"version\":\"0.172.0\"}}");
-  }
-
-  private static String legacyRequest(String method, int id, String params) {
-    return legacyRequest(method, Integer.toString(id), params);
   }
 
   private static String legacyRequest(String method, String id, String params) {

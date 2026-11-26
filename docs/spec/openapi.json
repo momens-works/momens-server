@@ -6728,7 +6728,7 @@
             }
           },
           {
-            "description" : "Required for tools/call, resources/read, and prompts/get; supports the Base64 sentinel format.",
+            "description" : "Required for 2026-07-28 tools/call, resources/read, and prompts/get; supports the Base64 sentinel format.",
             "in" : "header",
             "name" : "Mcp-Name",
             "schema" : {
@@ -6798,7 +6798,7 @@
                 }
               }
             },
-            "description" : "MCP method not found"
+            "description" : "MCP method not found in a 2026-07-28 request"
           }
         },
         "summary" : "MCP Streamable HTTP transport",
