@@ -11,7 +11,7 @@ public interface ConfirmedMemoryReader {
   /**
    * workspaceId의 확정 메모리를 모두 조회합니다.
    *
-   * <p>정렬은 레거시와 같은 생성 시각 내림차순입니다. 레거시에 tie-break가 없어 두지 않습니다.
+   * <p>정렬은 생성 시각 내림차순이며 동률 보조 키는 두지 않습니다.
    *
    * <p>소프트 삭제된 메모리는 없는 것으로 취급합니다. 상태로는 거르지 않아 {@code INVALIDATED}·{@code ARCHIVED} 메모리도 함께 담깁니다.
    */

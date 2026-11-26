@@ -14,13 +14,11 @@ import org.springframework.web.util.HtmlUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
- * 레거시 이메일 템플릿에 초대 정보를 적용해 발송할 이메일을 생성합니다.
+ * 이메일 템플릿에 초대 정보를 적용해 발송할 이메일을 생성합니다.
  *
- * <p>템플릿 파일은 레거시 원문을 그대로 사용하며 값 치환만 직접 처리합니다. HTML 본문에 삽입하는 값은 이스케이프하고, 텍스트 본문에는 값을 그대로 삽입합니다. 레거시가
- * HTML과 텍스트 본문에 서로 다른 템플릿 엔진을 사용해 이스케이프 여부가 달라지는 동작을 재현한 것입니다.
+ * <p>템플릿의 값 치환은 직접 처리합니다. HTML 본문에 삽입하는 값은 이스케이프하고, 텍스트 본문에는 값을 그대로 삽입합니다.
  *
- * <p>만료 시각의 문자열 형식도 레거시와 동일하게 맞춥니다. Java 표준 RFC 1123 형식은 날짜를 0으로 채우지 않고 UTC를 GMT로 표기하므로 레거시와 다른
- * 문자열을 생성합니다.
+ * <p>만료 시각에는 Java 표준 RFC 1123 형식을 쓰지 않습니다. 해당 형식은 날짜를 0으로 채우지 않고 UTC를 GMT로 표기합니다.
  */
 class InvitationEmailSenderImpl implements InvitationEmailSender {
 

@@ -10,7 +10,7 @@ import java.util.HexFormat;
 /**
  * 초대 토큰은 32바이트 난수로 발급하며 DB에는 SHA-256 해시만 보관합니다.
  *
- * <p>기존 초대 링크를 계속 수락할 수 있도록 해시 방식은 레거시와 같아야 합니다.
+ * <p>기존 초대 링크를 계속 수락할 수 있도록 해시 방식을 바꾸지 않습니다.
  */
 final class InvitationToken {
 

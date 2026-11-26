@@ -91,7 +91,7 @@ class Project extends BaseEntity {
     this.workspaceId = workspaceId;
     this.name = name;
     this.description = description;
-    // INSERT 시 엔티티 값이 DB DEFAULT 보다 우선하므로, 레거시 기본값 'active'를 앱 생성에서도 보장한다.
+    // INSERT 시 엔티티 값이 DB DEFAULT 보다 우선하므로, 기본값 'active'를 앱 생성에서도 보장한다.
     this.status = status != null ? status : "active";
     this.ownerId = ownerId;
     this.targetDate = targetDate;

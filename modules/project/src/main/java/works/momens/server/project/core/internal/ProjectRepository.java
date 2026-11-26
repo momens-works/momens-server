@@ -23,7 +23,7 @@ interface ProjectRepository extends JpaRepository<Project, UUID> {
   List<Project> findByWorkspaceIdInAndDeletedAtIsNullOrderByCreatedAtDesc(
       Collection<UUID> workspaceIds);
 
-  /** 소유자는 별도 배치 조회로 조합해 행별 추가 조회를 피합니다. 프로젝트는 생성 시각 내림차순이며 레거시와 같이 동률 보조 키를 두지 않습니다. */
+  /** 소유자는 별도 배치 조회로 조합해 행별 추가 조회를 피합니다. 프로젝트는 생성 시각 내림차순이며 동률 보조 키를 두지 않습니다. */
   @Query(
       """
       select new works.momens.server.project.core.internal.ProjectDetailRow(

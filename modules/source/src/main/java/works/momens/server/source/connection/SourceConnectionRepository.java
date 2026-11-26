@@ -14,8 +14,6 @@ import org.springframework.data.jpa.repository.Query;
 /**
  * {@code source_connections} 테이블의 조회와 저장을 담당합니다.
  *
- * <p>{@code findByWorkspaceIdOrderByCreatedAtDesc}의 정렬 기준은 레거시의 연결 목록 조회 쿼리와 같습니다.
- *
  * <p>{@code findForReconnect}는 기존 연결이 다시 승인되었을 때 갱신할 대상을 행 잠금과 함께 조회합니다. 워크스페이스·source type·외부 ID
  * 조합에 UNIQUE 제약이 없어 여러 행이 조회될 수 있으므로, 잠금 순서가 항상 같도록 생성 시각과 id 순으로 정렬합니다.
  */

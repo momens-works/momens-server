@@ -26,7 +26,7 @@ public interface ProjectReader {
   Optional<ProjectSnapshot> findSnapshot(UUID projectId);
 
   /**
-   * workspaceIds에 속한 project를 모두 조회합니다. 정렬은 레거시와 같은 생성 시각 내림차순입니다.
+   * workspaceIds에 속한 project를 모두 조회합니다. 정렬은 생성 시각 내림차순입니다.
    *
    * <p>사용자의 접근 범위(workspace 스코프)는 호출하는 쪽이 멤버십을 한 번 조회해서 확정해 넘깁니다. 이 모듈이 멤버십을 다시 읽지 않으므로, 호출하는 쪽의
    * 멤버십 스냅샷과 project 목록이 항상 같은 기준을 갖습니다(PR #42 리뷰의 role 누락 경합 대응).

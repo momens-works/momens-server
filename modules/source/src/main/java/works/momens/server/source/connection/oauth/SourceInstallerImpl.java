@@ -25,10 +25,9 @@ import works.momens.server.source.connection.SourceCredentialRepository;
 /**
  * 외부 source 연결 승인 흐름의 시작과 완료 단계를 구현합니다.
  *
- * <p>실패 지점과 HTTP status는 레거시와 동일합니다. 승인 코드나 state가 없으면 400, state 검증에 실패해도 400, provider와 토큰 또는 사용자
- * 정보를 주고받는 데 실패하면 502로 처리합니다.
+ * <p>승인 코드나 state가 없으면 400, state 검증에 실패해도 400, provider와 토큰 또는 사용자 정보를 주고받는 데 실패하면 502로 처리합니다.
  *
- * <p>Figma 연결만 대기 상태로 저장합니다. 수집을 시작하기 전에 별도 설정을 완료해야 하기 때문이며, 레거시와 동일한 동작입니다.
+ * <p>Figma 연결만 대기 상태로 저장합니다. 수집을 시작하기 전에 별도 설정을 완료해야 하기 때문입니다.
  */
 @Component
 @RequiredArgsConstructor

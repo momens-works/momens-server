@@ -31,7 +31,7 @@ class BlockerWriteService {
         taskReader
             .findScope(taskId)
             .orElseThrow(() -> new BusinessException(TaskErrorCode.TASK_NOT_FOUND));
-    // 레거시는 살아 있는 프로젝트에서 workspace를 확인합니다.
+    // 살아 있는 프로젝트에서 workspace를 확인합니다.
     UUID workspaceId =
         projectReader
             .workspaceIdOf(task.projectId())

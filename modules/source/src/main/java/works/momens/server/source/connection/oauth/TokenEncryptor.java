@@ -10,9 +10,9 @@ import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * worker·레거시와 공유하는 AES-256-GCM 저장 형식입니다. 12바이트 nonce 뒤에 암호문을 붙이며 AAD·형식 접두사는 없습니다.
+ * worker와 공유하는 AES-256-GCM 저장 형식입니다. 12바이트 nonce 뒤에 암호문을 붙이며 AAD·형식 접두사는 없습니다.
  *
- * <p>키는 base64로 인코딩한 32바이트여야 합니다. 레거시 암호문 fixture는 {@code TokenEncryptorTest}에서 검증합니다.
+ * <p>키는 base64로 인코딩한 32바이트여야 합니다. 형식 호환은 {@code TokenEncryptorTest}의 암호문 fixture로 검증합니다.
  */
 class TokenEncryptor {
 
@@ -49,7 +49,7 @@ class TokenEncryptor {
   /**
    * 평문이 비어 있으면 {@code null}을 반환합니다.
    *
-   * <p>레거시와 동일한 동작이며, 반환값은 nullable 컬럼에 저장됩니다.
+   * <p>반환값은 nullable 컬럼에 저장됩니다.
    */
   byte[] encrypt(String plaintext) {
     if (plaintext == null || plaintext.isEmpty()) {
