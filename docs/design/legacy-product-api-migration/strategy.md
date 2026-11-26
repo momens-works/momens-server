@@ -124,11 +124,10 @@ service, repository 같은 수평 레이어가 아니라 독립적으로 검증 
 불변식을 원자적으로 지키는 일관성 경계다. 같은 aggregate의 write entry point는 서로 다른 PR에서 구현할
 수 있지만 운영 writer 전환은 함께 해야 한다. read-only entry point는 이 전환 단위에 포함하지 않는다.
 
-`users`는 [ADR-0016](../../adr/0016-user-identity-key-google-sub.md)에 따라 이 원칙의 한시적 예외다. 모바일이
-신규 인증을 사용하는 동안에도 레거시 웹 로그인이 남아 있어 두 서버가 같은 `users` 행을 쓸 수 있다. 이는
-한 요청을 두 서버로 복제하는 dual-write가 아니라 클라이언트 경로별 writer가 공존하는 상태다. 이관 원장에는
-두 현재 writer, ADR-0016의 예외 근거, 레거시 `users` write 중단 조건을 함께 기록한다. 신규 서버가 유일한
-writer가 된 뒤 MOM-0836으로 `users.email` UNIQUE 제약을 제거한다.
+`users`는 [ADR-0016](../../adr/0016-user-identity-key-google-sub.md)에 따라 이 원칙의 한시적 예외였다. 모바일이
+신규 인증을 사용하는 동안에도 레거시 웹 로그인이 남아 있어 두 서버가 같은 `users` 행을 썼다. 레거시를 종료해
+신규 서버가 유일한 writer가 된 뒤 MOM-0836으로 이메일 fallback과 `users.email` UNIQUE 제약을 제거했다. 경위는
+이관 원장의 [`users` writer 한시적 예외](ledger.md#users-writer-한시적-예외)에 기록한다.
 
 ## 계약 전략
 
