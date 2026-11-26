@@ -146,8 +146,6 @@ Legacy compatible 대상은 아래 형태를 사용합니다.
 `GET /api/auth/google/login`·`GET /api/auth/google/callback`은 브라우저 리다이렉트(302)로 동작하므로
 JSON 에러 본문을 쓰지 않습니다. 실패 시 `?error=`에 실패 사유를 포함해 리다이렉트하며, 민감정보는 포함하지 않습니다. `?error=` 값 목록은 OpenAPI 스냅샷의 `completeGoogleLogin` 설명에서 확인합니다.
 
-성공 시 access/refresh를 HttpOnly 쿠키로 설정하고 `success-uri`로 리다이렉트합니다.
-
 ## 웹 쿠키 세션 갱신·로그아웃 계약
 
 웹은 access 만료 시 refresh 쿠키로 회전 재발급하고 로그아웃 시 세션 쿠키를 정리합니다. 두 경로 모두
@@ -155,11 +153,7 @@ JSON 에러 본문을 쓰지 않습니다. 실패 시 `?error=`에 실패 사유
 충족합니다(별도 토큰 없음). 토큰이 HttpOnly 쿠키에 있어 본문은 없습니다.
 
 갱신·로그아웃의 경로, 성공 status, 오류는 [OpenAPI 스냅샷](openapi.json)의
-`webRefreshSession`·`webLogout`에서 확인합니다. 로그아웃은 쿠키 유무·상태와 무관하게
-멱등하며 access·refresh·legacy session 쿠키를 모두 정리합니다.
-
-모바일 JSON 계약(`POST /api/auth/refresh`·`/api/auth/logout`, body의 `refresh_token`)은 그대로
-유지됩니다.
+`webRefreshSession`·`webLogout`에서 확인합니다.
 
 ## Validation details
 
@@ -197,7 +191,7 @@ Bean Validation과 `FieldValidationException`을 통한 필드 단위 검증 실
 `web`의 `WorkspaceAccessChecker`가 워크스페이스 권한 부족으로 `AUTH_FORBIDDEN`을 반환할 때는
 `details.required_role`에 요청을 처리하는 데 필요한 최소 권한을 포함합니다. 모든 403 응답에 이 필드가 있는 것은 아닙니다.
 
-현재 memory 쓰기의 도메인 인가 거부는 `details`를 포함하지 않고, Signal action의 멤버십 거부는
+memory 쓰기의 도메인 인가 거부는 `details`를 포함하지 않고, Signal action의 멤버십 거부는
 `details.signal_id`만 포함합니다. 이 경로들의 인가 위치와 응답 형식 통일은 별도 구현 작업이며,
 클라이언트는 `AUTH_FORBIDDEN` 코드만으로 `required_role`의 존재를 가정하면 안 됩니다.
 

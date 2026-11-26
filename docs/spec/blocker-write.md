@@ -2,28 +2,14 @@
 
 Blocker 쓰기와 worker 검색 반영의 계약이다. HTTP 입력·응답 형식은
 [OpenAPI 스냅샷](openapi.json)의 `createTaskBlocker`·`resolveBlocker`·`deleteBlocker`를 따른다.
-레거시 비교 기준과 DDL 조사 이력은 MOM-1018에 보존한다.
 
 ## HTTP 계약
 
-모든 요청은 인증과 `API-Version: 1`이 필요하며 실패 응답은 Standard 형식이다.
-
-생성·해결에는 workspace member 이상, 삭제에는 admin 또는 owner 권한이 필요하다.
-
-- 생성 body는 `description`과 선택적 `workspace_id`다. 설명 누락·null·빈 문자열은
-  400이다. 공백만 있는 문자열은 레거시처럼 보존하며 trim하지 않는다.
-- 삭제되지 않은 작업과 프로젝트를 확인하고 프로젝트에서 workspace를 구한다.
-  요청의 workspace가 다르면 400 `BLOCKER_WORKSPACE_MISMATCH`다.
-- `:web`이 대상 소속과 권한을 확인한 뒤 `BlockerWriter`에 확정한 workspace를 전달한다.
-  writer의 해결·삭제도 workspace 범위를 제한한다. blocker는 다른 project 하위 도메인을
-  참조하지 않으며, 생성의 작업 소속 검증은 호출자의 책임이다.
-- 초기 상태는 `active`, 종류는 `task`이며 `task_id = blocked_entity_id`,
-  `milestone_id = null`을 저장한다. 생성 응답의 `resolved_at`은 생략한다.
-- 해결은 행 잠금을 얻은 뒤 하나의 시각으로 `resolved_at`과 `updated_at`을 갱신하고
-  `status = resolved`를 저장한다. 반복 해결도 200이며 시각을 다시 갱신한다.
-- 삭제는 물리 삭제다. 삭제된 blocker의 해결·삭제는 404 `BLOCKER_NOT_FOUND`다.
-- 기존 milestone blocker도 해결·삭제할 수 있다. milestone 생성 HTTP API(H059)는 추가하지 않는다.
-- snapshot은 기존 필드와 정렬을 유지하며 active·resolved를 모두 반환한다.
+- 공백만 있는 설명은 trim하지 않고 그대로 저장한다.
+- 요청의 `workspace_id`가 작업의 프로젝트에서 구한 workspace와 다르면 400
+  `BLOCKER_WORKSPACE_MISMATCH`다.
+- milestone blocker도 해결·삭제할 수 있다.
+- snapshot은 active·resolved를 모두 반환한다.
 
 ## 생산자 이벤트
 
@@ -41,32 +27,25 @@ Blocker 쓰기와 worker 검색 반영의 계약이다. HTTP 입력·응답 형�
 | `blocker.deleted` | `blocker.deleted:{blockerId}` | 물리 삭제 |
 
 같은 outbox INSERT 재시도는 같은 키를 사용한다. 해결 HTTP 요청 자체의 중복 제거는
-보장하지 않는다. 재요청은 레거시처럼 새로운 해결 시각과 새 이벤트를 만든다.
+보장하지 않는다. 재요청은 새로운 해결 시각과 새 이벤트를 만든다.
 
-## Worker 소비 계약 (MOM-1021)
-
-이 절은 후속 worker 구현의 계약이며, 이번 서버 구현에 projector는 포함하지 않는다.
+## Worker 소비 계약
 
 - 생성·해결 이벤트는 envelope의 workspace와 blocker ID로 **최신** 원본을 hydrate한다.
   `resolved`도 검색 문서를 유지하고 상태·해결 시각이 포함된 본문을 갱신한다.
 - 원본이 없으면 검색 문서와 source-ref를 삭제 상태로 수렴시킨다. 삭제 이벤트는 원본
   조회 없이 envelope만으로 정리한다. 따라서 물리 삭제 뒤 과거 생성·해결 이벤트를
   재처리해도 검색 문서가 부활하지 않아야 한다.
-- 레거시와 같은 UUID v5(SHA-1)를 사용한다. namespace는
+- UUID v5(SHA-1)를 사용한다. namespace는
   `8e3c1f76-5dc1-4f6e-9d54-2b9f6a1cb7a3`, document name은
   `blocker:{blockerId}`, source-ref name은 `source_ref:blocker:{blockerId}`다.
   UUID 문자열은 소문자 하이픈 형식이다. 삭제는 두 결정적 ID 모두에 적용한다.
 - task blocker 문서 종류는 `TASK`, 기존 milestone blocker는 `MILESTONE_CONTEXT`다.
   레거시의 `MOMENS_INTERNAL`, `WORKSPACE`, memory type `RISK`, source object type
   `DOCUMENT`, blocker/blocked entity metadata와 본문 의미를 유지한다.
-- 제목의 레거시 `description[:80]`은 UTF-8 바이트 중간을 자를 수 있으므로 그대로 이식하지 않는다.
-  80바이트 제한을 유지하되 마지막 완전한 UTF-8 문자 경계까지만 취한다. `Blocker: ` 접두사와
-  원문 description/text는 유지한다. 한글 27자와 ASCII 뒤 이모지가 이어지는 경계 입력으로
-  유효한 UTF-8 제목 생성과 projection 저장을 검증한다(MOM-1021).
+- 제목은 `Blocker: ` 접두사 뒤에 description을 80바이트 이내에서 마지막 완전한 UTF-8 문자
+  경계까지 붙인다. 원문 description/text는 자르지 않는다.
 - 같은 ID의 처리와 최신 상태 조회·projection 쓰기는 worker에서 순서를 보장해야 한다.
   오래된 hydrate 결과를 나중에 덮어쓰지 않도록 해야 하며, 중복 소비·삭제 후 과거 이벤트
-  재처리·경합 테스트는 MOM-1021의 완료 조건이다. 단순 event ID 순서만으로 commit 순서를
+  재처리·경합을 테스트로 확인한다. 단순 event ID 순서만으로 commit 순서를
   가정하지 않는다. 재시도·offset·DLQ는 기존 worker 소비 기반이 소유한다.
-
-서버 구현만으로 검색 반영과 운영 전환이 완료되지는 않는다. MOM-1021 운영 투영 확인,
-MOM-0967 트래픽 전환, MOM-1023 레거시 종료가 후속 범위다.

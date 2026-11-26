@@ -2,7 +2,6 @@
 
 `/api/mcp`의 쓰기 도구가 제공하는 권한·수정·재시도 계약이다. 입력 필드와 필수 여부는
 [도구 schema](../../modules/mcp/src/main/resources/mcp/write-tools.json)를 따른다.
-이관 배경과 구현·검증 이력은 MOM-0993과 [PR #281](https://github.com/momens-works/momens-server/pull/281)에 있다.
 
 ## 범위와 권한
 
@@ -19,14 +18,14 @@
 중복이면 오류다. 삭제된 프로젝트의 작업·마일스톤은 변경하지 않는다.
 담당자는 `me` 또는 workspace 멤버 UUID·이메일·이름으로 해석한다.
 
-프로젝트 쓰기 도구와 작업 삭제 도구는 제공하지 않는다. MCP는 도메인 공개 writer를 사용한다.
+프로젝트 쓰기 도구와 작업 삭제 도구는 제공하지 않는다.
 
 ## 입력과 응답
 
 - 필수 문자열은 공백 제거 후 비어 있으면 오류다. 알 수 없는 필드, 잘못된 타입은 오류다.
   명시적 `null`은 마일스톤 수정의 설명·요약·목표 날짜에서만 삭제 입력으로 허용한다.
-- 작업 생성 기본값은 `backlog`·`medium`이다. MCP는 레거시의 대소문자 정규화와
-  `progress`/`in-progress` → `in_progress`, `med` → `medium`을 유지한다.
+- 상태·우선순위는 대소문자를 구분하지 않으며 `progress`/`in-progress` → `in_progress`,
+  `med` → `medium` 별칭을 허용한다.
 - 날짜는 실제 존재하는 `YYYY-MM-DD`, 마일스톤 `progress`는 0~100 정수다.
 - 생성 응답은 기존 `Created …`, 수정은 `Updated …`, 댓글은 `Added a comment to …`,
   마일스톤 삭제는 `Removed milestone …` 텍스트 형식을 유지한다.
@@ -61,10 +60,8 @@
 | 마일스톤 `description`, `summary`, `target_date` | 유지 | 삭제 | 없음 |
 | 마일스톤 `name`, `status`, `health_status` | 유지 | 유지 | 없음 |
 
-작업 설명·기한의 빈 문자열 삭제는 기존 Go MCP의 빈 문자열 무시와 다른 계약이다.
 마일스톤 설명·요약·목표 날짜는 명시적 `null`로도 삭제할 수 있다. 빈 문자열은 공백 제거 후
-판단하며, 삭제된 값은 DB에 `NULL`로 저장한다. 공통 command는 각 필드의 변경 여부를 별도로
-전달하므로 필드 생략이 삭제로 바뀌지 않는다.
+판단하며, 삭제된 값은 DB에 `NULL`로 저장한다.
 
 ## 재시도와 트랜잭션
 
@@ -80,18 +77,8 @@
   도메인 검증이나 응답 구성 중 실패하면 rollback 후 오류를 반환한다.
   commit 이후 네트워크 응답 유실에 대한 중복 방지 보장은 없다.
 
-## 운영 전제와 후속 작업
-
-코드 구현·로컬 테스트만으로 운영 전환 조건을 충족하지 않는다.
-
-- MOM-0898: worker 공통 outbox 소비 기반
-- MOM-1002: task 수정·삭제 이벤트와 반복 변경 발행 멱등키, no-op 이벤트 정책
-- MOM-0956: task projector와 prod E2E
-- MOM-0953: legacy/신규 writer 전환·공존 판단과 rollback 조건
-- MOM-1006: 공통 task·milestone writer 동시 수정·삭제 경쟁 검증
-- MOM-0992: canonical 주소 전환, 레거시 경로 종료, client 재연결
+## 이벤트
 
 공통 task writer는 생성·실제 수정·삭제에 각각 `task.created`·`task.updated`·`task.deleted`를
-발행한다. MCP 어댑터에는 작업 삭제 도구나 별도 outbox writer, 인라인 retrieval projector가
-없다. 이벤트·재시도 계약은 [모듈 맵의 outbox 절](../design/module-map.md#outbox)을 따르고,
-MOM-0956·0953을 포함한 게이트가 닫힌 뒤 운영 쓰기를 활성화한다.
+발행한다. MCP 어댑터에는 별도 outbox writer나 인라인 retrieval projector가 없다.
+이벤트·재시도 계약은 [모듈 맵의 outbox 절](../design/module-map.md#outbox)을 따른다.
