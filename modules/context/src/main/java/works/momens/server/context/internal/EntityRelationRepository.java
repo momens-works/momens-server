@@ -32,4 +32,21 @@ interface EntityRelationRepository extends JpaRepository<EntityRelation, UUID> {
       """)
   List<Object[]> findContextLinks(
       @Param("workspaceId") UUID workspaceId, @Param("taskIds") Collection<UUID> taskIds);
+
+  @Query(
+      """
+      select count(r) > 0 from EntityRelation r
+      where r.workspaceId = :workspaceId
+        and r.fromEntityType = :fromType and r.fromEntityId = :fromId
+        and r.relationType = :relationType
+        and r.toEntityType = :toType and r.toEntityId = :toId
+        and r.deletedAt is null
+      """)
+  boolean existsActive(
+      @Param("workspaceId") UUID workspaceId,
+      @Param("fromType") String fromType,
+      @Param("fromId") UUID fromId,
+      @Param("relationType") String relationType,
+      @Param("toType") String toType,
+      @Param("toId") UUID toId);
 }
