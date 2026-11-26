@@ -22,7 +22,6 @@ import works.momens.server.auth.internal.application.WebAuthService;
 import works.momens.server.auth.internal.config.AuthProperties;
 import works.momens.server.auth.internal.jwt.TokenPair;
 import works.momens.server.common.api.BusinessException;
-import works.momens.server.user.UserErrorCode;
 
 class WebAuthSessionImplTest {
 
@@ -112,16 +111,6 @@ class WebAuthSessionImplTest {
 
     assertThat(session.completeLogin(callbackRequest(), "auth-code", "state-xyz").redirectUri())
         .isEqualTo(FAILURE_URI + "?error=google_error");
-  }
-
-  @Test
-  @DisplayName("다른 로그인 수단에 연결된 이메일은 email_conflict로 매핑한다")
-  void completeLoginMapsLinkedEmailToEmailConflict() {
-    when(webAuthService.completeLogin(any(), any(), any(), any()))
-        .thenThrow(new BusinessException(UserErrorCode.USER_EMAIL_LINKED_TO_ANOTHER_IDENTITY));
-
-    assertThat(session.completeLogin(callbackRequest(), "auth-code", "state-xyz").redirectUri())
-        .isEqualTo(FAILURE_URI + "?error=email_conflict");
   }
 
   @Test

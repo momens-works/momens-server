@@ -281,6 +281,33 @@ class WebWorkspaceMembersIntegrationTest extends AbstractPostgresIntegrationTest
   }
 
   @Test
+  @DisplayName("초대할 이메일을 사용하는 사용자가 여러 명이면 한 명을 고르지 않고 409를 반환한다")
+  void inviteReturnsConflictWhenEmailIsAmbiguous() throws Exception {
+    UUID workspaceId = insertWorkspace("web-members-invite-ambiguous");
+    UserProfile admin = user("members-invite-ambiguous-admin@momens.works", "관리자");
+    addMember(workspaceId, admin.id(), "admin");
+    String email = "members-invite-ambiguous-target@momens.works";
+    userService.findOrCreateByIdentity(
+        UserService.PROVIDER_GOOGLE, "sub-ambiguous-first", email, "홍길동", null);
+    userService.findOrCreateByIdentity(
+        UserService.PROVIDER_GOOGLE, "sub-ambiguous-second", email, "김철수", null);
+
+    mockMvc
+        .perform(
+            authorized(post("/api/workspaces/{id}/invite", workspaceId), admin.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"" + email + "\",\"role\":\"member\"}"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.error.code").value("USER_EMAIL_AMBIGUOUS"));
+    assertThat(
+            jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM workspace_members WHERE workspace_id = ?",
+                Integer.class,
+                workspaceId))
+        .isEqualTo(1);
+  }
+
+  @Test
   @DisplayName("대상 멤버가 이미 다른 role로 참여 중이면 409를 반환한다")
   void inviteReturnsConflictWhenMemberHasAnotherRole() throws Exception {
     UUID workspaceId = insertWorkspace("web-members-invite-conflict");

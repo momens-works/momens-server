@@ -114,7 +114,6 @@ class WebAuthSessionImpl implements WebAuthSession {
       case "AUTH_OAUTH_STATE_INVALID" -> "invalid_state";
       case "AUTH_GOOGLE_EMAIL_NOT_VERIFIED" -> "email_not_verified";
       case "AUTH_OAUTH_EXCHANGE_FAILED" -> "google_error";
-      case "USER_EMAIL_LINKED_TO_ANOTHER_IDENTITY" -> "email_conflict";
       default -> "server_error";
     };
   }

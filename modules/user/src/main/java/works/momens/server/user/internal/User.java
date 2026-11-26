@@ -16,7 +16,7 @@ import works.momens.server.common.persistence.BaseEntity;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 class User extends BaseEntity {
 
-  @Column(nullable = false, unique = true)
+  @Column(nullable = false)
   private String email;
 
   @Column(nullable = false)
@@ -39,7 +39,8 @@ class User extends BaseEntity {
     this.jobRole = jobRole;
   }
 
-  void refreshLoginProfile(String avatarUrl) {
+  void refreshLoginProfile(String email, String avatarUrl) {
+    this.email = email;
     this.avatarUrl = avatarUrl;
   }
 

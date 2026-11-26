@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
@@ -16,7 +15,6 @@ import works.momens.server.user.UserService;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 class UserServiceImpl implements UserService {
 
   private final UserRepository userRepository;
@@ -32,45 +30,15 @@ class UserServiceImpl implements UserService {
       return refreshProfile(identity.get().getUserId(), email, avatarUrl);
     }
 
-    Optional<User> byEmail = userRepository.findByEmail(email);
-    if (byEmail.isPresent()) {
-      UUID userId = byEmail.get().getId();
-      // 이메일이 다른 계정으로 재할당된 경우, 이메일 조회 시 이전 사용자의 행이 반환될 수 있다.
-      // 해당 사용자에게 이미 다른 로그인 수단이 연결되어 있다면
-      // 다른 사람의 계정에 로그인 수단을 연결하는 상황이 되므로 요청을 거부한다.
-      // 이관 기간에는 email UNIQUE 제약이 유지되므로 동일 이메일로 신규 사용자 생성도 불가능하다.
-      if (userIdentityRepository.existsOtherIdentity(userId, provider, providerUserId)) {
-        log.warn(
-            "이메일로 조회한 사용자에게 이미 다른 로그인 수단이 연결되어 있어 로그인을 거부했습니다. userId={} provider={}",
-            userId,
-            provider);
-        throw new BusinessException(UserErrorCode.USER_EMAIL_LINKED_TO_ANOTHER_IDENTITY);
-      }
-      // 삽입 결과가 0건이면 동시에 들어온 다른 요청이 먼저 로그인 수단을 연결한 것이다.
-      // 이메일 변경 시점에는 동일한 Google 계정에서 발생한 요청이 서로 다른 이메일로 들어올 수 있고,
-      // 이 경우 각 요청이 서로 다른 users 행을 조회하게 된다. 따라서 이메일로 조회한 사용자가 아니라
-      // 실제로 로그인 수단이 연결된 사용자를 다시 조회해 로그인 흐름을 이어간다.
-      int linked =
-          userIdentityRepository.insertIgnoringConflict(
-              UUID.randomUUID(), userId, provider, providerUserId);
-      UUID linkedUserId = linked == 0 ? winnerUserId(provider, providerUserId) : userId;
-      return refreshProfile(linkedUserId, email, avatarUrl);
-    }
-
-    // 같은 이메일로 최초 로그인 요청이 동시에 들어오면 먼저 생성된 행과 충돌한 나머지 삽입은 아무 작업도 하지 않습니다.
-    // 이어지는 조회에서 먼저 생성된 행을 읽으므로 users 행은 하나만 생성됩니다.
-    // 해당 동작은 users.email의 UNIQUE 제약이 유지되는 동안 성립합니다.
-    //
-    // UNIQUE 제약을 제거하면 요청마다 users 행이 생성되고, 로그인 수단 삽입에 성공한 요청의 행만 user_identities에 연결됩니다.
-    // 로그인 수단 삽입에 실패한 요청은 삽입 건수 0을 확인한 뒤 성공한 요청의 사용자를 다시 조회하므로,
-    // 모든 요청이 같은 사용자를 반환하는 동작은 유지됩니다.
-    // 연결되지 않은 users 행이 남는 결과는 ADR-0016 결과 절에서 허용했습니다.
-    userRepository.insertIgnoringConflict(UUID.randomUUID(), email, name, avatarUrl);
-    User created = userRepository.findByEmail(email).orElseThrow();
+    // 같은 로그인 수단으로 최초 로그인 요청이 동시에 들어오면 요청마다 users 행을 만들고, 로그인 수단은 한 요청만 연결합니다.
+    // 연결하지 못한 요청은 자기가 만든 행을 지우고 연결에 성공한 사용자로 로그인합니다.
+    // 행을 남기면 로그인 수단이 없는 사용자가 그 이메일을 계속 차지해 이메일 조회가 USER_EMAIL_AMBIGUOUS로 실패할 수 있습니다.
+    User created = userRepository.saveAndFlush(newUser(email, name, avatarUrl));
     int inserted =
         userIdentityRepository.insertIgnoringConflict(
             UUID.randomUUID(), created.getId(), provider, providerUserId);
     if (inserted == 0) {
+      userRepository.delete(created);
       return refreshProfile(winnerUserId(provider, providerUserId), email, avatarUrl);
     }
     return toProfile(created);
@@ -83,34 +51,49 @@ class UserServiceImpl implements UserService {
         .getUserId();
   }
 
-  /** 로그인 시점의 프로필 이미지와 이메일을 반영합니다. 이메일은 충돌 시 건너뜁니다. */
   private UserProfile refreshProfile(UUID userId, String email, String avatarUrl) {
     User user = userRepository.findById(userId).orElseThrow(() -> notFound(userId));
-    user.refreshLoginProfile(avatarUrl);
-    if (userRepository.updateEmailIfUnused(userId, email) == 0) {
-      log.warn("로그인 이메일을 갱신하지 않았습니다. 해당 이메일은 이미 다른 사용자가 사용 중입니다. userId={}", userId);
-    }
-    return toProfile(userRepository.findById(userId).orElseThrow());
+    return refreshAndReturn(user, email, avatarUrl);
   }
 
-  @Override
-  @Transactional
-  public UserProfile findOrCreate(String email, String name, String avatarUrl) {
-    // 조회보다 삽입을 먼저 시도합니다.
-    // 조회를 먼저 수행하면 같은 신규 이메일로 동시에 들어온 두 요청이 모두 삽입을 시도해 한쪽 요청이 실패할 수 있습니다.
-    // @LastModifiedDate는 flush 시점에 updated_at을 갱신합니다.
-    // flush하지 않으면 반환하는 프로필에 갱신 전 updated_at이 포함되므로 명시적으로 호출합니다.
-    userRepository.insertIgnoringConflict(UUID.randomUUID(), email, name, avatarUrl);
-    User user = userRepository.findByEmail(email).orElseThrow();
-    user.refreshLoginProfile(avatarUrl);
+  /**
+   * 전달된 이메일과 프로필 이미지를 반영합니다.
+   *
+   * <p>{@code @LastModifiedDate}는 flush 시점에 updated_at을 갱신합니다. flush하지 않으면 반환하는 프로필에 갱신 전
+   * updated_at이 포함되므로 명시적으로 호출합니다.
+   */
+  private UserProfile refreshAndReturn(User user, String email, String avatarUrl) {
+    user.refreshLoginProfile(email, avatarUrl);
     userRepository.flush();
     return toProfile(user);
   }
 
   @Override
+  @Transactional
+  public UserProfile findOrCreate(String email, String name, String avatarUrl) {
+    Optional<User> existing = findUniqueByEmail(email);
+    if (existing.isPresent()) {
+      return refreshAndReturn(existing.get(), email, avatarUrl);
+    }
+    return toProfile(userRepository.saveAndFlush(newUser(email, name, avatarUrl)));
+  }
+
+  @Override
   @Transactional(readOnly = true)
   public Optional<UserProfile> findByEmail(String email) {
-    return userRepository.findByEmail(email).map(UserServiceImpl::toProfile);
+    return findUniqueByEmail(email).map(UserServiceImpl::toProfile);
+  }
+
+  private Optional<User> findUniqueByEmail(String email) {
+    List<User> users = userRepository.findTop2ByEmail(email);
+    if (users.size() > 1) {
+      throw new BusinessException(UserErrorCode.USER_EMAIL_AMBIGUOUS, Map.of("email", email));
+    }
+    return users.stream().findFirst();
+  }
+
+  private static User newUser(String email, String name, String avatarUrl) {
+    return User.builder().email(email).name(name).avatarUrl(avatarUrl).build();
   }
 
   @Override

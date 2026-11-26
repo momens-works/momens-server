@@ -129,6 +129,9 @@ interface WorkspaceInvitationControllerDocs {
   @ApiException(
       value = MembershipErrorCode.class,
       codes = {"WORKSPACE_INVITEE_NOT_FOUND", "WORKSPACE_MEMBER_ROLE_CONFLICT"})
+  @ApiException(
+      value = UserErrorCode.class,
+      codes = {"USER_EMAIL_AMBIGUOUS"})
   @ApiException(CommonErrorCode.class)
   WebMessageResponse invite(
       @Parameter(description = "워크스페이스 식별자") UUID workspaceId,
