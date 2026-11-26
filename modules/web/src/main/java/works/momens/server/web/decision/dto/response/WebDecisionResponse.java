@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.util.UUID;
 import works.momens.server.project.decision.DecisionDetail;
 
-@Schema(description = "생성된 Decision. 성공 응답은 wrapper 없이 반환합니다.")
+@Schema(description = "생성된 Decision")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record WebDecisionResponse(
     UUID id,

@@ -19,14 +19,11 @@ public record CreateWebTaskRequest(
         @Size(max = TaskPolicy.TITLE_MAX_LENGTH)
         String title,
     @Schema(description = "작업 설명") String description,
-    @Schema(description = "작업 상태. 생략하면 backlog를 사용합니다.") TaskStatus status,
+    @Schema(description = "작업 상태", defaultValue = "backlog") TaskStatus status,
     @Schema(description = "마일스톤 식별자", format = "uuid") UUID milestoneId,
-    @Schema(description = "작업 우선순위. 생략하면 medium을 사용합니다.") TaskPriority priority,
+    @Schema(description = "작업 우선순위", defaultValue = "medium") TaskPriority priority,
     @ArraySchema(
-            arraySchema =
-                @Schema(
-                    description =
-                        "role 목록입니다. 지정할 경우 `pm`, `design`, `backend`, `frontend` 중 최소 1개 이상을 선택해야 하며, 중복은 허용하지 않습니다. 생략하면 role이 지정되지 않은 태스크를 생성합니다."),
+            arraySchema = @Schema(description = "role 목록. 생략하면 role이 지정되지 않은 태스크를 생성합니다."),
             uniqueItems = true)
         @Size(min = 1)
         @UniqueElements

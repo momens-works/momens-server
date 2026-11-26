@@ -9,12 +9,12 @@ import works.momens.server.project.milestone.MilestoneHealthStatus;
 
 @Schema(description = "웹 마일스톤 생성 요청")
 public record CreateMilestoneRequest(
-    @Schema(description = "마일스톤 이름. 필수 입력값입니다.", requiredMode = Schema.RequiredMode.REQUIRED)
-        String name,
+    @Schema(description = "마일스톤 이름", requiredMode = Schema.RequiredMode.REQUIRED) String name,
     @Schema(description = "마일스톤 설명") String description,
     @Schema(description = "목표 날짜", format = "date") LocalDate targetDate,
-    @Schema(description = "상태. 생략하면 planned가 적용됩니다.") MilestoneHealthStatus healthStatus,
-    @Schema(description = "진행률. 0 이상 100 이하이며, 생략하면 0이 적용됩니다.") Integer progress,
+    @Schema(description = "상태", defaultValue = "planned") MilestoneHealthStatus healthStatus,
+    @Schema(description = "진행률", minimum = "0", maximum = "100", defaultValue = "0")
+        Integer progress,
     @Schema(description = "마일스톤 요약") String summary,
     @Schema(description = "마지막 맥락 갱신 시각") Instant lastContextAt,
     @Schema(description = "소유자 식별자 목록. 생략하면 요청자가 소유자로 지정됩니다.") List<UUID> ownerUserIds) {}

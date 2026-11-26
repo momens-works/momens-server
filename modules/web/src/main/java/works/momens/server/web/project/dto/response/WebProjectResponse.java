@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 import works.momens.server.project.core.ProjectDetail;
 
-@Schema(description = "웹 프로젝트 응답입니다. 필드 구성은 레거시 프로젝트 응답과 동일합니다.")
+@Schema(description = "웹 프로젝트 응답")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record WebProjectResponse(
     UUID id,
