@@ -16,7 +16,7 @@ public record WebTaskResponse(
     @Schema(description = "소속 프로젝트 식별자") UUID projectId,
     @Schema(description = "마일스톤 식별자", nullable = true) UUID milestoneId,
     @Schema(description = "사람이 읽는 작업 레이블", example = "MOM-861", nullable = true) String label,
-    @Schema(description = "제목", example = "웹 task read 이관") String title,
+    @Schema(description = "제목", example = "로그인 화면 구현") String title,
     @Schema(description = "설명", nullable = true) String description,
     @Schema(description = "상태", example = "todo") String status,
     @Schema(description = "우선순위", example = "medium") String priority,

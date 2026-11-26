@@ -7,8 +7,8 @@
 
 ## 원칙
 
-- 기존 `momens-api`에서 이관하는 엔드포인트는 **성공 응답의 HTTP status와 JSON body shape를 우선
-  보존**합니다. 실패 응답은 Legacy compatible 대상을 제외하고 Standard 모드를 사용합니다.
+- 기존 엔드포인트의 **성공 응답 HTTP status와 JSON body shape는 클라이언트가 의존하는 계약**이므로
+  유지합니다. 실패 응답은 Legacy compatible 대상을 제외하고 Standard 모드를 사용합니다.
 - 성공 응답에는 전역 wrapper(`success`, `data`)를 두지 않습니다.
 - Standard 모드에서 클라이언트는 HTTP status와 안정적인 error `code`로 분기합니다.
   `message` 문자열을 파싱하지 않습니다.
@@ -21,7 +21,7 @@
 
 | 모드 | 사용 대상 | 실패 body |
 | --- | --- | --- |
-| Standard | Legacy compatible 대상을 제외한 모든 엔드포인트. 레거시에서 이관한 엔드포인트를 포함합니다 | `{ "error": { "code": "...", "message": "...", "details": { ... } } }` |
+| Standard | Legacy compatible 대상을 제외한 모든 엔드포인트 | `{ "error": { "code": "...", "message": "...", "details": { ... } } }` |
 | Legacy compatible | MCP 접근 동의 API(`/api/oauth/interactions`)와 MCP 연결 관리 API(`/api/workspaces/{workspaceId}/mcp-grants`)의 일부 오류 | `{ "error": "..." }` |
 
 Legacy compatible 대상에서도 미인증·무효 토큰과 내부 장애는 Standard 형식입니다. 오류별 형식은 OpenAPI의
@@ -36,7 +36,7 @@ Legacy compatible 대상에서도 미인증·무효 토큰과 내부 장애는 S
 
 ### 단일 리소스
 
-레거시가 리소스를 직접 반환했다면 직접 반환합니다.
+리소스를 직접 반환하는 엔드포인트가 있습니다.
 
 ```json
 {
@@ -45,7 +45,7 @@ Legacy compatible 대상에서도 미인증·무효 토큰과 내부 장애는 S
 }
 ```
 
-레거시가 이름 있는 wrapper를 사용했다면 같은 shape를 유지합니다.
+이름 있는 wrapper로 감싸는 엔드포인트도 있습니다. 기존 엔드포인트의 shape는 바꾸지 않습니다.
 
 ```json
 {
@@ -68,7 +68,7 @@ Legacy compatible 대상에서도 미인증·무효 토큰과 내부 장애는 S
 
 ### 명령 성공
 
-반환할 리소스가 없는 성공 응답은 기존 Go API와 맞춰 `{ "message": "..." }`를 사용합니다.
+반환할 리소스가 없는 성공 응답은 `{ "message": "..." }`를 사용합니다.
 
 ```json
 {
@@ -76,8 +76,7 @@ Legacy compatible 대상에서도 미인증·무효 토큰과 내부 장애는 S
 }
 ```
 
-새 엔드포인트에서 body가 정말 필요 없는 경우에만 `204 No Content`를 고려합니다. 기존 엔드포인트를
-이관할 때는 레거시 응답을 우선합니다.
+새 엔드포인트에서 body가 정말 필요 없는 경우에만 `204 No Content`를 고려합니다.
 
 ## 표준 에러 응답
 
@@ -229,8 +228,6 @@ memory 쓰기의 도메인 인가 거부는 `details`를 포함하지 않고, Si
 
 ## 구현 시 체크리스트
 
-- 기존 Go API 이관인지, 신규/개편 API인지 먼저 결정합니다.
-- 기존 Go API 이관이면 성공 응답의 status와 body shape를 기존과 맞춥니다.
 - 실패 응답은 Standard 에러 응답을 사용합니다.
 - JSON 에러 응답으로 반환하는 새 에러 코드를 추가하면 해당 엔드포인트의 `@ApiException`에 선언하고, `./gradlew updateOpenApiSnapshot`으로 OpenAPI 스냅샷을 갱신합니다.
 - OpenAPI에 성공 예시와 주요 에러 예시를 함께 추가합니다.

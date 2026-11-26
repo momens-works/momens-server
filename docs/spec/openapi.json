@@ -3833,7 +3833,7 @@
           },
           "title" : {
             "description" : "제목",
-            "example" : "웹 task read 이관",
+            "example" : "로그인 화면 구현",
             "type" : "string"
           },
           "updated_at" : {

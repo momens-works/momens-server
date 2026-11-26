@@ -12,7 +12,7 @@ spring:
   flyway:
     enabled: true
 
-# CORS 허용 origin. 레거시 momens-api 와 동일하게 운영 기본값은 웹 도메인이고,
+# CORS 허용 origin. 운영 기본값은 웹 도메인이고,
 # CORS_ALLOWED_ORIGINS env 로 오버라이드합니다.
 momens:
   cors:
