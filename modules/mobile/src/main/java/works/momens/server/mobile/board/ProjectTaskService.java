@@ -148,7 +148,6 @@ class ProjectTaskService {
             .map(edit ->
                 new UpdateTaskCommand.ChecklistItemEdit(edit.id(), edit.title(), edit.completed()))
             .toList();
-    // 저장만 하고 상세는 반환하지 않는다. 저장 후 최신 상태는 클라이언트가 상세 조회로 다시 읽는다.
     taskWriter.update(
         new UpdateTaskCommand(
             taskId, title, roles, assigneeId, priority, dueDate, status, purpose, items, version));
