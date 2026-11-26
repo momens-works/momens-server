@@ -508,7 +508,7 @@
             "type" : "string"
           },
           "workspace_id" : {
-            "description" : "대상 워크스페이스. 생략하면 작업의 프로젝트에서 확인합니다.",
+            "description" : "대상 워크스페이스. 생략하면 작업의 프로젝트에서 구하며, 지정한 값이 그와 다르면 400입니다.",
             "format" : "uuid",
             "type" : "string"
           }
@@ -3410,15 +3410,15 @@
         "description" : "워크스페이스 수정 요청",
         "properties" : {
           "description" : {
-            "description" : "워크스페이스 설명. 값이 없으면 기존 설명을 유지합니다.",
+            "description" : "워크스페이스 설명. 생략하거나 빈 문자열이면 기존 설명을 유지합니다.",
             "type" : "string"
           },
           "name" : {
-            "description" : "워크스페이스 이름. 값이 없으면 기존 이름을 유지합니다.",
+            "description" : "워크스페이스 이름. 생략하거나 빈 문자열이면 기존 이름을 유지합니다.",
             "type" : "string"
           },
           "slug" : {
-            "description" : "워크스페이스 slug. 값이 없으면 기존 slug를 유지합니다.",
+            "description" : "워크스페이스 slug. 생략하거나 빈 문자열이면 기존 slug를 유지합니다.",
             "type" : "string"
           }
         },
@@ -6046,7 +6046,7 @@
     },
     "/api/dev/projects/{projectId}/signals" : {
       "post" : {
-        "description" : "완전한 Signal(evidence 원본 포함)을 생성하고 signal.created outbox 이벤트를 같은 트랜잭션으로 저장합니다. commit되면 api-server의 notification consumer가 workspace 전체 구성원의 활성 Android 기기로 FCM push를 발송합니다. 응답은 commit 완료를 뜻하며 FCM 발송 성공을 기다리지 않습니다.",
+        "description" : "완전한 Signal(evidence 원본 포함)을 생성하고 signal.created outbox 이벤트를 같은 트랜잭션으로 저장합니다. commit되면 push 발송이 켜진 환경에서 notification 모듈이 workspace 전체 구성원의 활성 Android 기기로 FCM push를 비동기로 발송합니다. 응답은 commit 완료를 뜻하며 FCM 발송 성공을 기다리지 않습니다.",
         "operationId" : "devCreateSignal",
         "parameters" : [
           {
