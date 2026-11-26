@@ -32,6 +32,9 @@ public class McpTransportHandler {
     } catch (JacksonException exception) {
       return responseFactory.badRequest(null, -32700, "Parse error");
     }
+    if (request != null && requestValidator.usesInitializationProtocol(httpRequest, request)) {
+      return handleInitializationProtocol(httpRequest, request, authentication.get());
+    }
     if (!requestValidator.isJsonRpcRequest(request)) {
       return responseFactory.badRequest(null, -32600, "Invalid Request");
     }
@@ -49,5 +52,22 @@ public class McpTransportHandler {
       return responseFactory.jsonRpcError(id, -32602, "Invalid params");
     }
     return methodHandler.handle(method, id, request.path("params"), authentication.get());
+  }
+
+  private ResponseEntity<JsonNode> handleInitializationProtocol(
+      HttpServletRequest httpRequest, JsonNode request, McpAuthenticationContext authentication) {
+    boolean initialized = requestValidator.isInitializedNotification(request);
+    if (!initialized && !requestValidator.isJsonRpcRequest(request)) {
+      return responseFactory.badRequest(null, -32600, "Invalid Request");
+    }
+    JsonNode id = request.get("id");
+    if (!requestValidator.hasRequiredAcceptTypes(httpRequest)) {
+      return responseFactory.badRequest(id, -32020, "Header mismatch");
+    }
+    if (initialized) {
+      return ResponseEntity.accepted().build();
+    }
+    return methodHandler.handleInitializationProtocol(
+        request.path("method").asText(), id, request.path("params"), authentication);
   }
 }

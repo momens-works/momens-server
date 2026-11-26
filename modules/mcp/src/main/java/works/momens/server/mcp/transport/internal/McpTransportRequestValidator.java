@@ -16,13 +16,33 @@ class McpTransportRequestValidator {
   private static final String CLIENT_INFO = "io.modelcontextprotocol/clientInfo";
 
   boolean isJsonRpcRequest(JsonNode request) {
+    return isJsonRpcMessage(request)
+        && request.hasNonNull("id")
+        && (request.get("id").isTextual() || request.get("id").isIntegralNumber());
+  }
+
+  boolean isInitializedNotification(JsonNode request) {
+    return isJsonRpcMessage(request)
+        && !request.has("id")
+        && "notifications/initialized".equals(request.path("method").asText());
+  }
+
+  boolean usesInitializationProtocol(HttpServletRequest request, JsonNode body) {
+    if (request.getHeader(McpProtocol.METHOD_HEADER) != null
+        || request.getHeader(McpProtocol.NAME_HEADER) != null
+        || !protocolVersion(body).isEmpty()) {
+      return false;
+    }
+    String version = request.getHeader(McpProtocol.VERSION_HEADER);
+    return McpProtocol.INITIALIZATION_VERSION.equals(version)
+        || (version == null && "initialize".equals(body.path("method").asText()));
+  }
+
+  private static boolean isJsonRpcMessage(JsonNode request) {
     return request != null
         && request.isObject()
         && "2.0".equals(request.path("jsonrpc").asText())
-        && request.hasNonNull("id")
-        && (request.get("id").isTextual() || request.get("id").isIntegralNumber())
-        && request.hasNonNull("method")
-        && request.get("method").isTextual();
+        && request.path("method").isTextual();
   }
 
   boolean hasMatchingHeaders(HttpServletRequest request, JsonNode body, String method) {
@@ -47,7 +67,7 @@ class McpTransportRequestValidator {
     return decodeName(name).map(expectedName::equals).orElse(false);
   }
 
-  private static boolean hasRequiredAcceptTypes(HttpServletRequest request) {
+  boolean hasRequiredAcceptTypes(HttpServletRequest request) {
     try {
       List<MediaType> accepted = MediaType.parseMediaTypes(request.getHeader("Accept"));
       return accepted.stream()

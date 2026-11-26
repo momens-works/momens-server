@@ -32,10 +32,38 @@ class McpTransportMethodHandler {
     return switch (method) {
       case "server/discover" -> responseFactory.jsonRpcResult(id, discoverResult());
       case "tools/list" ->
-          responseFactory.jsonRpcResult(id, toolsListResult(authenticationContext));
+          responseFactory.jsonRpcResult(id, modernToolsListResult(authenticationContext));
       case "tools/call" -> callTool(id, params, authenticationContext);
       default -> responseFactory.notFound(id, -32601, "Method not found");
     };
+  }
+
+  ResponseEntity<JsonNode> handleInitializationProtocol(
+      String method, JsonNode id, JsonNode params, McpAuthenticationContext authenticationContext) {
+    return switch (method) {
+      case "initialize" -> initialize(id, params);
+      case "ping" -> responseFactory.jsonRpcResult(id, objectMapper.createObjectNode());
+      case "tools/list" ->
+          responseFactory.jsonRpcResult(id, toolsListResult(authenticationContext));
+      case "tools/call" -> callTool(id, params, authenticationContext);
+      default -> responseFactory.jsonRpcError(id, -32601, "Method not found");
+    };
+  }
+
+  private ResponseEntity<JsonNode> initialize(JsonNode id, JsonNode params) {
+    JsonNode clientInfo = params.path("clientInfo");
+    if (!params.path("protocolVersion").isTextual()
+        || params.path("protocolVersion").asText().isBlank()
+        || !params.path("capabilities").isObject()
+        || !clientInfo.path("name").isTextual()
+        || !clientInfo.path("version").isTextual()) {
+      return responseFactory.jsonRpcError(id, -32602, "Invalid params");
+    }
+    ObjectNode result = objectMapper.createObjectNode();
+    result.put("protocolVersion", McpProtocol.INITIALIZATION_VERSION);
+    result.putObject("capabilities").putObject("tools").put("listChanged", false);
+    setServerInfo(result.putObject("serverInfo"));
+    return responseFactory.jsonRpcResult(id, result);
   }
 
   private ResponseEntity<JsonNode> callTool(
@@ -83,7 +111,6 @@ class McpTransportMethodHandler {
 
   private ObjectNode toolsListResult(McpAuthenticationContext authenticationContext) {
     ObjectNode result = objectMapper.createObjectNode();
-    result.put("resultType", "complete");
     ArrayNode tools = result.putArray("tools");
     for (McpToolDefinition definition : toolCatalog.list(authenticationContext)) {
       ObjectNode tool = tools.addObject();
@@ -93,6 +120,12 @@ class McpTransportMethodHandler {
       }
       tool.set("inputSchema", definition.inputSchema());
     }
+    return result;
+  }
+
+  private ObjectNode modernToolsListResult(McpAuthenticationContext authenticationContext) {
+    ObjectNode result = toolsListResult(authenticationContext);
+    result.put("resultType", "complete");
     result.put("ttlMs", 300000);
     result.put("cacheScope", "private");
     addServerInfo(result);
@@ -100,10 +133,10 @@ class McpTransportMethodHandler {
   }
 
   private static void addServerInfo(ObjectNode result) {
-    result
-        .putObject("_meta")
-        .putObject("io.modelcontextprotocol/serverInfo")
-        .put("name", SERVER_NAME)
-        .put("version", SERVER_VERSION);
+    setServerInfo(result.putObject("_meta").putObject("io.modelcontextprotocol/serverInfo"));
+  }
+
+  private static void setServerInfo(ObjectNode serverInfo) {
+    serverInfo.put("name", SERVER_NAME).put("version", SERVER_VERSION);
   }
 }

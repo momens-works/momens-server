@@ -24,6 +24,10 @@ interface McpTransportControllerDocs {
         description = "JSON-RPC response",
         content = @Content(schema = @Schema(type = "object"))),
     @ApiResponse(
+        responseCode = "202",
+        description = "Initialization notification accepted",
+        content = @Content),
+    @ApiResponse(
         responseCode = "400",
         description = "Invalid request or header mismatch",
         content = @Content(schema = @Schema(type = "object"))),
@@ -44,12 +48,12 @@ interface McpTransportControllerDocs {
     @Parameter(
         name = "MCP-Protocol-Version",
         in = ParameterIn.HEADER,
-        required = true,
+        description = "Required except on the 2025-06-18 initialize request.",
         schema = @Schema(type = "string", example = "2026-07-28")),
     @Parameter(
         name = "Mcp-Method",
         in = ParameterIn.HEADER,
-        required = true,
+        description = "Required on 2026-07-28 requests.",
         schema = @Schema(type = "string", example = "tools/list")),
     @Parameter(
         name = "Accept",
@@ -62,7 +66,7 @@ interface McpTransportControllerDocs {
         in = ParameterIn.HEADER,
         required = false,
         description =
-            "Required for tools/call, resources/read, and prompts/get; supports the Base64 sentinel format.",
+            "For 2026-07-28, required on tools/call, resources/read, and prompts/get. Supports the Base64 sentinel format.",
         schema = @Schema(type = "string"))
   })
   @RequestBody(required = true, content = @Content(schema = @Schema(type = "object")))

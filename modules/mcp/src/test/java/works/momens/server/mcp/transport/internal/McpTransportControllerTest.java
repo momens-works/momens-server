@@ -33,6 +33,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import works.momens.server.mcp.configuration.McpEndpointProperties;
@@ -88,6 +89,71 @@ class McpTransportControllerTest {
   }
 
   @Test
+  void acceptsCodexInitializationAndCallsToolsWithNegotiatedVersion() throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+    when(toolCatalog.list(AUTHENTICATION_CONTEXT))
+        .thenReturn(List.of(new McpToolDefinition("list_projects", "List projects", schema())));
+    ObjectMapper mapper = new ObjectMapper();
+    var toolResult = mapper.createObjectNode();
+    toolResult.putArray("content").addObject().put("type", "text").put("text", "Welcome");
+    when(toolExecutor.call(eq("list_projects"), any(JsonNode.class), eq(AUTHENTICATION_CONTEXT)))
+        .thenReturn(Optional.of(toolResult));
+
+    mockMvc
+        .perform(legacyPost(initializeRequest()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(1))
+        .andExpect(jsonPath("$.result.protocolVersion").value("2025-06-18"))
+        .andExpect(jsonPath("$.result.serverInfo.name").value("momens-mcp"))
+        .andExpect(jsonPath("$.result.capabilities.tools.listChanged").value(false));
+
+    mockMvc
+        .perform(
+            legacyPost(
+                    """
+                    {"jsonrpc":"2.0","method":"notifications/initialized"}
+                    """)
+                .header("MCP-Protocol-Version", "2025-06-18"))
+        .andExpect(status().isAccepted())
+        .andExpect(content().string(""));
+
+    mockMvc
+        .perform(
+            legacyPost(
+                    """
+                    {"jsonrpc":"2.0","id":2,"method":"tools/list"}
+                    """)
+                .header("MCP-Protocol-Version", "2025-06-18"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.result.tools[0].name").value("list_projects"))
+        .andExpect(jsonPath("$.result.resultType").doesNotExist());
+
+    mockMvc
+        .perform(
+            legacyPost(
+                    """
+                    {"jsonrpc":"2.0","id":3,"method":"tools/call",
+                     "params":{"name":"list_projects","arguments":{}}}
+                    """)
+                .header("MCP-Protocol-Version", "2025-06-18"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.result.content[0].text").value("Welcome"));
+  }
+
+  @Test
+  void preservesModernHeaderValidationWhenLegacyVersionIsClaimed() throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+
+    mockMvc
+        .perform(
+            legacyPost(toolsListRequest())
+                .header("MCP-Protocol-Version", "2025-06-18")
+                .header("Mcp-Method", "tools/list"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value(-32020));
+  }
+
+  @Test
   void exposesProtectedResourceMetadata() throws Exception {
     mockMvc
         .perform(get("/.well-known/oauth-protected-resource/api/mcp"))
@@ -96,6 +162,22 @@ class McpTransportControllerTest {
         .andExpect(jsonPath("$.authorization_servers[0]").value("https://api.momens.works/api"))
         .andExpect(jsonPath("$.scopes_supported[0]").value("mcp:projects:read"))
         .andExpect(jsonPath("$.bearer_methods_supported[0]").value("header"));
+  }
+
+  private static MockHttpServletRequestBuilder legacyPost(String body) {
+    return post("/api/mcp")
+        .header("Authorization", "Bearer token")
+        .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_EVENT_STREAM)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(body);
+  }
+
+  private static String initializeRequest() {
+    return """
+    {"jsonrpc":"2.0","id":1,"method":"initialize",
+     "params":{"protocolVersion":"2025-06-18","capabilities":{},
+               "clientInfo":{"name":"codex","version":"0.154.0"}}}
+    """;
   }
 
   @Test

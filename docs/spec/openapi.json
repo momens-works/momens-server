@@ -6678,18 +6678,18 @@
         "operationId" : "mcpPost",
         "parameters" : [
           {
+            "description" : "Required except on the 2025-06-18 initialize request.",
             "in" : "header",
             "name" : "MCP-Protocol-Version",
-            "required" : true,
             "schema" : {
               "example" : "2026-07-28",
               "type" : "string"
             }
           },
           {
+            "description" : "Required on 2026-07-28 requests.",
             "in" : "header",
             "name" : "Mcp-Method",
-            "required" : true,
             "schema" : {
               "example" : "tools/list",
               "type" : "string"
@@ -6706,7 +6706,7 @@
             }
           },
           {
-            "description" : "Required for tools/call, resources/read, and prompts/get; supports the Base64 sentinel format.",
+            "description" : "For 2026-07-28, required on tools/call, resources/read, and prompts/get. Supports the Base64 sentinel format.",
             "in" : "header",
             "name" : "Mcp-Name",
             "schema" : {
@@ -6734,6 +6734,9 @@
               }
             },
             "description" : "JSON-RPC response"
+          },
+          "202" : {
+            "description" : "Initialization notification accepted"
           },
           "400" : {
             "content" : {
