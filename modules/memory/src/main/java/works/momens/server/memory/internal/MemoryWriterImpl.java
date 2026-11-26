@@ -2,6 +2,7 @@ package works.momens.server.memory.internal;
 
 import jakarta.persistence.EntityManager;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.context.EntityRelationCommand;
+import works.momens.server.context.EntityRelationReader;
 import works.momens.server.context.EntityRelationWriter;
 import works.momens.server.context.EntityType;
 import works.momens.server.context.RelationType;
@@ -35,6 +37,8 @@ import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 class MemoryWriterImpl implements MemoryWriter {
 
   private static final String STATUS_PROPOSED = "PROPOSED";
+  private static final String STATUS_ACTIVE = "ACTIVE";
+  private static final String STATUS_ARCHIVED = "ARCHIVED";
   private static final String ACTION_CONFIRM = "CONFIRM";
   private static final String ACTION_EDIT_AND_CONFIRM = "EDIT_AND_CONFIRM";
   private static final String ACTION_REJECT = "REJECT";
@@ -48,6 +52,7 @@ class MemoryWriterImpl implements MemoryWriter {
   private final WorkspaceMembershipReader workspaceMembershipReader;
   private final LabelAllocator labelAllocator;
   private final EntityRelationWriter relationWriter;
+  private final EntityRelationReader relationReader;
   private final ConfirmedMemoryRepository memoryRepository;
   private final OutboxAppender outboxAppender;
 
@@ -178,6 +183,9 @@ class MemoryWriterImpl implements MemoryWriter {
   @Override
   @Transactional
   public void resolve(UUID resolvedMemoryId, UUID resolvingMemoryId, UUID userId) {
+    if (resolvedMemoryId.equals(resolvingMemoryId)) {
+      throw new BusinessException(MemoryErrorCode.MEMORY_INVALID_INPUT);
+    }
     UUID workspaceId = findMemoryWorkspace(resolvedMemoryId);
     UUID resolvingWorkspaceId = findMemoryWorkspace(resolvingMemoryId);
     if (!workspaceId.equals(resolvingWorkspaceId)) {
@@ -185,19 +193,28 @@ class MemoryWriterImpl implements MemoryWriter {
     }
     requireMembership(workspaceId, userId);
 
-    // 레거시와 같은 순서로 잠급니다(해결 대상 먼저). 반대 방향 요청이 동시에 오면 교착할 수 있지만 그것은
-    // 레거시부터 있던 성질이라, 여기서 순서를 바꾸면 두 서버가 공유 DB에서 서로 다른 순서로 잠급니다.
-    lockMemory(resolvedMemoryId);
-    lockMemory(resolvingMemoryId);
-
-    relationWriter.link(
+    Map<UUID, String> statuses = lockMemoriesInIdOrder(resolvedMemoryId, resolvingMemoryId);
+    EntityRelationCommand relation =
         new EntityRelationCommand(
             workspaceId,
             EntityType.MEMORY,
             resolvingMemoryId,
             RelationType.RESOLVES,
             EntityType.MEMORY,
-            resolvedMemoryId));
+            resolvedMemoryId);
+    if (!STATUS_ACTIVE.equals(statuses.get(resolvedMemoryId))) {
+      // 같은 요청의 재시도는 이미 반영된 결과이므로 성공으로 응답하고 이벤트를 다시 발행하지 않습니다.
+      if (STATUS_ARCHIVED.equals(statuses.get(resolvedMemoryId))
+          && relationReader.isLinked(relation)) {
+        return;
+      }
+      throw new BusinessException(MemoryErrorCode.MEMORY_INVALID_STATE);
+    }
+    if (!STATUS_ACTIVE.equals(statuses.get(resolvingMemoryId))) {
+      throw new BusinessException(MemoryErrorCode.MEMORY_INVALID_STATE);
+    }
+
+    relationWriter.link(relation);
     entityManager
         .createNativeQuery(
             "UPDATE confirmed_memories SET status = 'ARCHIVED', updated_at = :now WHERE id = :id")
@@ -268,6 +285,30 @@ class MemoryWriterImpl implements MemoryWriter {
     if (rows.isEmpty()) {
       throw new BusinessException(MemoryErrorCode.MEMORY_NOT_FOUND);
     }
+  }
+
+  /** 반대 방향 요청이 동시에 와도 교착하지 않도록 요청 방향과 무관하게 id 순서로 잠그고, 메모리별 상태를 돌려줍니다. */
+  private Map<UUID, String> lockMemoriesInIdOrder(UUID first, UUID second) {
+    List<?> rows =
+        entityManager
+            .createNativeQuery(
+                """
+                SELECT id, status FROM confirmed_memories
+                WHERE id IN (:first, :second) AND deleted_at IS NULL
+                ORDER BY id FOR UPDATE
+                """)
+            .setParameter("first", first)
+            .setParameter("second", second)
+            .getResultList();
+    if (rows.size() != 2) {
+      throw new BusinessException(MemoryErrorCode.MEMORY_NOT_FOUND);
+    }
+    Map<UUID, String> statuses = new HashMap<>();
+    for (Object row : rows) {
+      Object[] columns = (Object[]) row;
+      statuses.put((UUID) columns[0], (String) columns[1]);
+    }
+    return statuses;
   }
 
   /**

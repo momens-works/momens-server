@@ -25,4 +25,7 @@ public interface EntityRelationReader {
   Map<UUID, TaskContextLinks> findTaskContextLinks(UUID workspaceId, Collection<UUID> taskIds);
 
   TaskContextLinks findTaskContextLinks(UUID workspaceId, UUID taskId);
+
+  /** 같은 (workspace, from, relation, to) 연결이 삭제되지 않은 상태로 있는지 확인합니다. */
+  boolean isLinked(EntityRelationCommand relation);
 }

@@ -79,13 +79,19 @@ interface MemoryWriteControllerDocs {
   @ApiException(CommonErrorCode.class)
   WebMessageResponse expire(UUID candidateId, Principal principal);
 
-  @Operation(operationId = "resolveMemory", summary = "메모리 해결")
+  @Operation(
+      operationId = "resolveMemory",
+      summary = "메모리 해결",
+      description =
+          "resolving_memory_id의 메모리가 이 메모리를 해결하고, 이 메모리를 보관합니다. 두 메모리 모두 ACTIVE여야 하며, 자기 자신을"
+              + " 해결하려 하면 400입니다. 같은 resolving_memory_id로 이미 해결된 메모리에 요청을 다시 보내면 아무것도 바꾸지 않고"
+              + " 200으로 응답하고, 그 밖에 어느 한쪽이 ACTIVE가 아니면 409입니다.")
   @ApiResponse(
       responseCode = "200",
       content = @Content(schema = @Schema(implementation = WebMessageResponse.class)))
   @ApiException(
       value = MemoryErrorCode.class,
-      codes = {"MEMORY_NOT_FOUND", "MEMORY_INVALID_INPUT"})
+      codes = {"MEMORY_NOT_FOUND", "MEMORY_INVALID_STATE", "MEMORY_INVALID_INPUT"})
   @ApiException(CommonErrorCode.class)
   WebMessageResponse resolve(UUID memoryId, ResolveMemoryRequest request, Principal principal);
 }

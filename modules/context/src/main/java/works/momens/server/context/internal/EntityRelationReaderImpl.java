@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import works.momens.server.context.EntityRelationCommand;
 import works.momens.server.context.EntityRelationReader;
 import works.momens.server.context.TaskContextLinks;
 
@@ -76,5 +77,17 @@ class EntityRelationReaderImpl implements EntityRelationReader {
           }
         });
     return new TaskContextLinks(memoryIds, sourceRefIds);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public boolean isLinked(EntityRelationCommand relation) {
+    return entityRelationRepository.existsActive(
+        relation.workspaceId(),
+        relation.fromEntityType().name(),
+        relation.fromEntityId(),
+        relation.relationType().name(),
+        relation.toEntityType().name(),
+        relation.toEntityId());
   }
 }

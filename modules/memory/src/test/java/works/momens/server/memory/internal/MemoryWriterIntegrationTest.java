@@ -28,6 +28,7 @@ import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.context.EntityRelationCommand;
+import works.momens.server.context.EntityRelationReader;
 import works.momens.server.context.EntityRelationWriter;
 import works.momens.server.context.EntityType;
 import works.momens.server.context.RelationType;
@@ -58,6 +59,7 @@ class MemoryWriterIntegrationTest extends AbstractPostgresIntegrationTest {
   @MockitoBean private WorkspaceMembershipReader workspaceMembershipReader;
   @MockitoBean private LabelAllocator labelAllocator;
   @MockitoBean private EntityRelationWriter relationWriter;
+  @MockitoBean private EntityRelationReader relationReader;
   @MockitoBean private OutboxAppender outboxAppender;
 
   private UUID workspaceId;
@@ -314,6 +316,83 @@ class MemoryWriterIntegrationTest extends AbstractPostgresIntegrationTest {
         .isInstanceOf(BusinessException.class)
         .extracting(error -> ((BusinessException) error).getErrorCode())
         .isEqualTo(MemoryErrorCode.MEMORY_NOT_FOUND);
+  }
+
+  @Test
+  @DisplayName("메모리는 자기 자신을 해결할 수 없다")
+  void resolveRejectsSelf() {
+    UUID memory = MemorySeedSql.insertMemory(entityManager, workspaceId, "ACTIVE");
+
+    assertThatThrownBy(() -> memoryWriter.resolve(memory, memory, userId))
+        .isInstanceOf(BusinessException.class)
+        .extracting(error -> ((BusinessException) error).getErrorCode())
+        .isEqualTo(MemoryErrorCode.MEMORY_INVALID_INPUT);
+    assertThat(memoryStatus(entityManager, memory)).isEqualTo("ACTIVE");
+    verify(relationWriter, never()).link(any());
+  }
+
+  @Test
+  @DisplayName("같은 메모리로 이미 해결된 요청을 다시 보내면 아무것도 바꾸지 않고 성공한다")
+  void resolveReplayIsNoOp() {
+    UUID resolved = MemorySeedSql.insertMemory(entityManager, workspaceId, "ARCHIVED");
+    UUID resolving = MemorySeedSql.insertMemory(entityManager, workspaceId, "ACTIVE");
+    when(relationReader.isLinked(
+            new EntityRelationCommand(
+                workspaceId,
+                EntityType.MEMORY,
+                resolving,
+                RelationType.RESOLVES,
+                EntityType.MEMORY,
+                resolved)))
+        .thenReturn(true);
+
+    memoryWriter.resolve(resolved, resolving, userId);
+
+    verify(relationWriter, never()).link(any());
+    verifyNoInteractions(outboxAppender);
+  }
+
+  @Test
+  @DisplayName("이미 보관된 메모리를 다른 메모리로 다시 해결할 수 없다")
+  void resolveRejectsArchivedTargetWithoutSameRelation() {
+    UUID resolved = MemorySeedSql.insertMemory(entityManager, workspaceId, "ARCHIVED");
+    UUID resolving = MemorySeedSql.insertMemory(entityManager, workspaceId, "ACTIVE");
+
+    assertThatThrownBy(() -> memoryWriter.resolve(resolved, resolving, userId))
+        .isInstanceOf(BusinessException.class)
+        .extracting(error -> ((BusinessException) error).getErrorCode())
+        .isEqualTo(MemoryErrorCode.MEMORY_INVALID_STATE);
+    verify(relationWriter, never()).link(any());
+    verifyNoInteractions(outboxAppender);
+  }
+
+  @Test
+  @DisplayName("무효화된 메모리는 해결 대상이 될 수 없다")
+  void resolveRejectsInvalidatedTarget() {
+    UUID resolved = MemorySeedSql.insertMemory(entityManager, workspaceId, "INVALIDATED");
+    UUID resolving = MemorySeedSql.insertMemory(entityManager, workspaceId, "ACTIVE");
+
+    assertThatThrownBy(() -> memoryWriter.resolve(resolved, resolving, userId))
+        .isInstanceOf(BusinessException.class)
+        .extracting(error -> ((BusinessException) error).getErrorCode())
+        .isEqualTo(MemoryErrorCode.MEMORY_INVALID_STATE);
+    assertThat(memoryStatus(entityManager, resolved)).isEqualTo("INVALIDATED");
+    verify(relationWriter, never()).link(any());
+  }
+
+  @Test
+  @DisplayName("ACTIVE가 아닌 메모리로는 다른 메모리를 해결할 수 없다")
+  void resolveRejectsInactiveResolvingMemory() {
+    UUID resolved = MemorySeedSql.insertMemory(entityManager, workspaceId, "ACTIVE");
+    UUID resolving = MemorySeedSql.insertMemory(entityManager, workspaceId, "ARCHIVED");
+
+    assertThatThrownBy(() -> memoryWriter.resolve(resolved, resolving, userId))
+        .isInstanceOf(BusinessException.class)
+        .extracting(error -> ((BusinessException) error).getErrorCode())
+        .isEqualTo(MemoryErrorCode.MEMORY_INVALID_STATE);
+    assertThat(memoryStatus(entityManager, resolved)).isEqualTo("ACTIVE");
+    verify(relationWriter, never()).link(any());
+    verifyNoInteractions(outboxAppender);
   }
 
   private String candidateStatus(TestEntityManager em, UUID candidateId) {
