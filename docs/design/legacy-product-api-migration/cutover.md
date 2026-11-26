@@ -30,7 +30,6 @@ Product capability별 혼합 전환이나 OAuth/MCP UI의 legacy base 격리를 
 | `VITE_API_BASE_URL` | Product API와 신규 OAuth/MCP UI 연결. `/auth/me`도 `/api/me` 계약으로 변경 |
 | Google callback 허용 목록 | 신규·레거시 callback 병행 등록 유지 |
 | source provider callback 허용 목록 | GitHub·Slack·Notion·Figma의 신규·레거시 callback 병행 등록 |
-| `MOMENS_PROJECT_TASK_WRITES_PAUSED` | 신규 서버의 task·댓글·task 링크·Signal 변환·MCP task 도구 쓰기와 Minsu draft claim 차단. prod 기본값은 `true`이며 k8s prod overlay로 바꾼다. 기동 시 한 번 읽으므로 값을 바꾸면 재배포한다 |
 
 `VITE_LEGACY_API_BASE_URL`은 새로 도입하지 않는다. 기존 배포에 있다면 사용처를 확인하고
 MOM-0967에서 제거 범위를 정한다.
@@ -93,7 +92,7 @@ MOM-0967에서 제거 범위를 정한다.
 각 projector 작업(`MOM-0956`·`MOM-0957`·`MOM-1020`·`MOM-1021`)에 남긴 뒤 2단계를 연다.
 task 이벤트 네 종류에 대한 consumer 지원과 재처리 동작을 확인한 뒤 운영 환경의 task writer를
 확대하고 전환한다. `task.restored`를 처리하는 worker(momens-worker#27)는 운영 환경에서 task
-writer를 활성화하기(`MOMENS_PROJECT_TASK_WRITES_PAUSED=false`) 전에 배포한다.
+writer를 활성화하기 전에 배포한다.
 
 지원하지 않는 이벤트는 `BLOCKED` 상태로 남으며 자동으로 재처리되지 않는다. 따라서 해당 이벤트가
 먼저 쌓였다면 consumer 지원을 추가한 뒤 worker CLI의 `replay`로 재처리해야 한다.
@@ -108,8 +107,7 @@ writer를 활성화하기(`MOMENS_PROJECT_TASK_WRITES_PAUSED=false`) 전에 배�
 4. `MINSU_SLACK_ACTIONS_ENABLED=false`를 모든 legacy replica에 반영하고 이미 시작한 action
    goroutine 종료를 확인한다. 고정 대기나 HTTP drain만으로 대신하지 않는다. Slack 답변 기능은
    유지하고 전체 runtime 종료는 MOM-1023에서 처리한다.
-5. 진행 중 legacy 쓰기가 끝난 증거를 남긴 뒤 `MOMENS_PROJECT_TASK_WRITES_PAUSED=false`로 신규 writer를 연다.
-   실패하면 양쪽 쓰기를 닫고 복구한다.
+5. 진행 중 legacy 쓰기가 끝난 증거를 남긴 뒤 신규 writer를 연다.
 
 Minsu background를 활성화하면 MOM-0823의 `task.draft_generated` 소비도 확인한다.
 
@@ -232,22 +230,13 @@ Cloudflare에서 직전 FE deployment로 롤백해 로그인과 로그아웃 요
 
 ### 7.2 2단계
 
-- `MOMENS_PROJECT_TASK_WRITES_PAUSED=true`로 재배포해 신규 HTTP·모바일·Signal·MCP·댓글·Minsu background
-  쓰기를 먼저 막고, 이전 pod 종료와 진행 중 처리를 확인한다.
-- 신규 쓰기가 한 건도 없다는 증거가 있으면 기존 경로 복구를 검토한다. 쓰기가 있었거나 불명확하면
-  호환성 6항목의 실행 증거와 미처리 outbox 처리 계획이 필요하다.
-- 투영 담당자가 진행 중 처리 종료, 미처리·재시도·보류 이벤트 처리/재개 방식을 확인한 뒤 legacy
-  인라인 projection을 재개한다. 두 경로를 겹치지 않고 원본·소비 기록을 지우지 않는다.
-  최대 event ID만으로 처리 완료를 판단하지 않는다.
-- FE는 known-good deployment와 빌드 변수로 복구한다. provider callback 병행 등록과 token bridge를
-  유지한다. FE 복구가 기존 MCP 세션 복구를 뜻하지 않으므로 재연결·legacy route 재개는 MOM-0992와 확인한다.
-- 호환성이나 투영 수렴을 입증하지 못하면 task 쓰기 중단 상태에서 신규 경로 복구를 우선한다.
-  legacy writer를 무조건 재개하지 않는다.
+레거시 writer를 종료했으므로(MOM-1023) 2단계는 legacy writer를 재개하는 방식으로 되돌리지 않는다.
+신규 서버에는 task 쓰기 중단 스위치와 레거시 수정에 대한 version 갱신 트리거가 없다. 신규 서버의
+문제는 신규 서버를 고쳐 배포한다.
 
 ### 7.3 결정권
 
 - **되돌림의 트리거는 전환을 실행한 사람이 당긴다.** 6.1의 기준에 걸리면 상의 없이 되돌린다.
-  writer는 7.2의 안전한 인계 조건을 확인하며, 불충족 시 쓰기를 중단한 채 복구한다.
 - 되돌린 뒤에 원인 분석과 재시도 여부를 상의한다.
 
 ### 7.4 FE 배포·롤백 경로
