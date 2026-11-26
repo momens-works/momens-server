@@ -26,8 +26,6 @@ import works.momens.server.web.workspace.dto.response.WorkspaceSnapshotResponse;
  *
  * <p>{@code /api/workspaces}는 보호 체인의 기본 인증 대상이므로 별도의 보안 설정을 추가하지 않습니다. 현재 사용자 식별자는 {@link
  * CurrentUser#id(Principal)}로 조회합니다({@code docs/rules/code-conventions.md}의 보호 API 규칙).
- *
- * <p>워크스페이스 생성은 인증만 요구하므로 권한을 확인하지 않습니다. 나머지 endpoint는 대상 워크스페이스의 멤버십 또는 역할을 확인합니다.
  */
 @RestController
 @RequestMapping("/api/workspaces")

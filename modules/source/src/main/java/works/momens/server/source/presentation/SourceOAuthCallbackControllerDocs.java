@@ -13,14 +13,7 @@ import works.momens.server.common.api.ApiException;
 import works.momens.server.source.SourceErrorCode;
 import works.momens.server.source.presentation.dto.response.SourceOAuthCallbackResponse;
 
-/**
- * {@code /api/source-connections/oauth/callback} endpoint의 OpenAPI 문서입니다. Swagger 애너테이션은 컨트롤러 구현과
- * 분리합니다({@code docs/spec/openapi.md}).
- *
- * <p><strong>이 경로는 사용자가 아닌 provider가 호출합니다.</strong> 로그인 정보 없이 호출되는 공개 경로이며, 승인 흐름을 시작한 사용자와
- * 워크스페이스, provider는 서명된 state만으로 판정합니다. 승인 성공 후 이동할 URL이 설정되어 있으면 302로 응답하고, 설정되어 있지 않으면 연결 정보를
- * 200으로 반환합니다.
- */
+/** provider가 호출하는 공개 경로이므로 로그인 정보 없이 호출되며, 승인 흐름을 시작한 사용자와 워크스페이스, provider는 서명된 state만으로 판정합니다. */
 @SecurityRequirements
 @Tag(name = "Source", description = "source 연동 API")
 interface SourceOAuthCallbackControllerDocs {

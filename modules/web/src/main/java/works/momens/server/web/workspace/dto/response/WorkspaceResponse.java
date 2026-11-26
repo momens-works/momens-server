@@ -6,12 +6,6 @@ import java.time.Instant;
 import java.util.UUID;
 import works.momens.server.workspace.core.WorkspaceDetail;
 
-/**
- * 워크스페이스 한 건의 응답. {@code GET /api/workspaces}의 배열 원소와 {@code GET /api/workspaces/{workspaceId}}(래퍼
- * 없음)가 공유합니다.
- *
- * <p>{@code description}은 값이 없으면 응답에서 생략합니다(레거시 {@code omitempty} 동작 유지).
- */
 @Schema(description = "워크스페이스")
 public record WorkspaceResponse(
     @Schema(description = "워크스페이스 식별자", example = "5d2f7f3a-5db1-4f2c-8b9e-13607dd1f5e8") UUID id,

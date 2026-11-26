@@ -6,12 +6,6 @@ import java.time.Instant;
 import java.util.UUID;
 import works.momens.server.user.UserProfile;
 
-/**
- * {@code /me} 응답의 user 객체. 레거시 {@code momens-api}의 user JSON shape를 보존합니다.
- *
- * <p>필드 순서·이름(snake_case)은 레거시와 동일하며, {@code avatar_url}은 미설정 시 생략, {@code job_role}은 null이어도 항상
- * 포함합니다.
- */
 @Schema(description = "사용자 프로필")
 public record UserResponse(
     @Schema(description = "사용자 식별자", example = "5d2f7f3a-5db1-4f2c-8b9e-13607dd1f5e8") UUID id,

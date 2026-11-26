@@ -4,11 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import works.momens.server.workspace.core.WorkspaceSlugAvailability;
 
-/**
- * {@code GET /api/workspaces/slug-available} 응답.
- *
- * <p>{@code reason}과 {@code suggestion}은 값이 없으면 응답에서 생략하여 레거시의 {@code omitempty} 동작을 유지합니다.
- */
 @Schema(description = "slug 사용 가능 여부")
 public record WorkspaceSlugAvailabilityResponse(
     @Schema(description = "앞뒤 공백을 제거한 slug") String slug,
