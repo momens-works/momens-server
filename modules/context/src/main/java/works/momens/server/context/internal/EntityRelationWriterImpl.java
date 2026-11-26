@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.context.EntityRelationCommand;
 import works.momens.server.context.EntityRelationWriter;
 
-/** 중복 연결이 이미 있어도 레거시와 같은 행을 선택하도록 생성 시각이 가장 최근인 행의 상태로 upsert를 판단합니다. */
+/** 중복 연결이 이미 있으면 생성 시각이 가장 최근인 행의 상태로 upsert를 판단합니다. */
 @Service
 @RequiredArgsConstructor
 class EntityRelationWriterImpl implements EntityRelationWriter {

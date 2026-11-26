@@ -14,9 +14,9 @@ import lombok.NoArgsConstructor;
 /**
  * workspace별 라벨 발급 카운터.
  *
- * <p>레거시 {@code momens-api}의 {@code workspace_label_sequences} 테이블과 호환됩니다. {@code (workspace_id,
- * label_prefix)} 복합 PK라 단일 UUID PK용 {@link works.momens.server.common.persistence.BaseEntity}를 상속하지
- * 않고, 식별자는 {@link WorkspaceLabelSequenceId}로 둡니다.
+ * <p>{@code (workspace_id, label_prefix)} 복합 PK라 단일 UUID PK용 {@link
+ * works.momens.server.common.persistence.BaseEntity}를 상속하지 않고, 식별자는 {@link
+ * WorkspaceLabelSequenceId}로 둡니다.
  *
  * <p>이 엔티티는 테이블 스키마를 매핑해 {@code ddl-auto: validate}와 조회(테스트)에 쓰입니다. 쓰기는 JPA {@code save()}가 아니라
  * {@link WorkspaceLabelSequenceRepository#allocate}의 {@code ON CONFLICT} UPSERT로만 합니다. JPA는 {@code

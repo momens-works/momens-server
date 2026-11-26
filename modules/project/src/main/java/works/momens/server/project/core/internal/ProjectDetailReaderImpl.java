@@ -38,8 +38,7 @@ class ProjectDetailReaderImpl implements ProjectDetailReader {
   /**
    * 행 목록에 소유자를 채웁니다. {@code project_owners} 조회는 project 수와 무관하게 한 번입니다.
    *
-   * <p>소유자 행이 없으면 {@code owner_id} 하나만 담습니다. 레거시가 집계 결과에 {@code COALESCE(..., ARRAY[p.owner_id])}를
-   * 씌우는 동작과 같고, 그래서 {@code owner_user_ids}는 절대 비지 않습니다.
+   * <p>소유자 행이 없으면 {@code owner_id} 하나만 담습니다. 따라서 {@code owner_user_ids}는 절대 비지 않습니다.
    */
   private List<ProjectDetail> withOwners(List<ProjectDetailRow> rows) {
     if (rows.isEmpty()) {

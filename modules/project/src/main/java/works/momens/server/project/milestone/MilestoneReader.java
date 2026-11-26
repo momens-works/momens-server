@@ -13,7 +13,7 @@ import java.util.UUID;
  */
 public interface MilestoneReader {
 
-  /** projectIds에 속한 마일스톤을 모두 조회합니다. 정렬은 레거시와 같은 생성 시각 내림차순입니다. */
+  /** projectIds에 속한 마일스톤을 모두 조회합니다. 정렬은 생성 시각 내림차순입니다. */
   List<MilestoneDetail> listDetailsByProjectIds(Collection<UUID> projectIds);
 
   /** 생성 시각·id 내림차순으로 cursor 이후 최대 limit개를 DB에서 조회합니다. */

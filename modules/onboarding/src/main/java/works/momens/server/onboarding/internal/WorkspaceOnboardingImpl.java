@@ -19,7 +19,7 @@ import works.momens.server.workspace.core.WorkspaceDetail;
 /**
  * 워크스페이스와 owner 멤버십을 먼저 저장해야 프로젝트의 FK·멤버십 검증을 통과합니다.
  *
- * <p>모든 저장은 같은 트랜잭션에 참여합니다. 초기 데이터 문자열은 레거시 seed와 문자 단위로 일치해야 합니다.
+ * <p>모든 저장은 같은 트랜잭션에 참여합니다.
  */
 @Service
 @RequiredArgsConstructor

@@ -13,15 +13,15 @@ import works.momens.server.project.core.ProjectHealthStatus;
 import works.momens.server.workspace.label.LabelAllocator;
 
 /**
- * 레거시 프로젝트 생성 서비스의 검증과 저장 동작을 이관한 구현입니다.
+ * 프로젝트 생성의 검증과 저장을 담당하는 구현입니다.
  *
- * <p>검증 순서는 레거시와 동일하게 프로젝트 이름, 소유자, {@code health_status}, 진행률, 미해결 항목 수, VOC 수 순입니다. 레거시는 프로젝트 이름을
- * 요청 본문 역직렬화 단계에서 검증하고 나머지 값은 서비스에서 검증합니다. 여러 필드가 동시에 유효하지 않은 요청에서는 이 순서에 따라 응답에 포함할 오류가 결정됩니다.
+ * <p>검증 순서는 프로젝트 이름, 소유자, {@code health_status}, 진행률, 미해결 항목 수, VOC 수 순입니다. 여러 필드가 동시에 유효하지 않은
+ * 요청에서는 이 순서에 따라 응답에 포함할 오류가 결정됩니다.
  *
  * <p>날짜 형식이 올바르지 않은 요청은 이 구현까지 전달되지 않으며 요청 본문 역직렬화 단계에서 거부됩니다.
  *
- * <p>프로젝트 라벨은 {@link works.momens.server.workspace.label.LabelAllocator}를 통해 발급합니다. 레거시는 라벨 없이
- * INSERT하면 트리거가 값을 채우지만, 신규 서버의 local 스키마에는 해당 트리거가 없습니다. 따라서 라벨을 항상 직접 발급해 INSERT 문에 포함합니다.
+ * <p>프로젝트 라벨은 {@link works.momens.server.workspace.label.LabelAllocator}를 통해 발급합니다. local 스키마에는 라벨을
+ * 채우는 트리거가 없으므로 라벨을 항상 직접 발급해 INSERT 문에 포함합니다.
  */
 @Service
 @RequiredArgsConstructor

@@ -3,7 +3,7 @@ package works.momens.server.source;
 import lombok.RequiredArgsConstructor;
 import works.momens.server.common.api.ErrorCode;
 
-/** provider 미설정은 500, 외부 호출 실패는 502입니다. 레거시의 미설정 응답 501은 서버의 지원 status에 맞춰 500으로 변환합니다. */
+/** provider 미설정은 500, 외부 호출 실패는 502입니다. */
 @RequiredArgsConstructor
 public enum SourceErrorCode implements ErrorCode {
   SOURCE_NOT_FIGMA_CONNECTION(400, "Figma 연결이 아닙니다."),

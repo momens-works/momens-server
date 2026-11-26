@@ -30,8 +30,7 @@ interface TaskRepository extends JpaRepository<Task, UUID> {
   /**
    * draft 반영용 단건 조회. 조회한 행을 잠가 조건 검사와 갱신 사이에 다른 트랜잭션의 수정이 끼어들지 않게 합니다.
    *
-   * <p>소프트 삭제된 태스크를 제외하므로 결과가 비었다는 것이 곧 반영할 대상이 없다는 뜻입니다. prod는 레거시 {@code momens-api}와 DB를 공유해 삭제가
-   * 레거시 쪽에서 일어날 수 있습니다.
+   * <p>소프트 삭제된 태스크를 제외하므로 결과가 비었다는 것이 곧 반영할 대상이 없다는 뜻입니다.
    */
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select t from Task t where t.id = :taskId and t.deletedAt is null")

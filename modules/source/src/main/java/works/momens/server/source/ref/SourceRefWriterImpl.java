@@ -11,11 +11,11 @@ import org.springframework.transaction.annotation.Transactional;
 import works.momens.server.source.SourceRefWriter;
 
 /**
- * 레거시 {@code relation/repository.go}의 {@code CreateSourceRef}를 이관한 구현입니다.
+ * 사용자가 입력한 링크를 source-ref로 저장하는 구현입니다.
  *
- * <p>레거시와 같은 값을 저장합니다. {@code source_object_type}은 소문자 {@code link}, {@code source_object_id}는 주소,
- * {@code visibility}는 {@code WORKSPACE}, {@code metadata}는 빈 객체입니다. 주소와 제목의 앞뒤 공백은 제거하고, 제목이 비어 있으면
- * {@code null}로 저장합니다.
+ * <p>{@code source_object_type}은 소문자 {@code link}, {@code source_object_id}는 주소, {@code
+ * visibility}는 {@code WORKSPACE}, {@code metadata}는 빈 객체입니다. 주소와 제목의 앞뒤 공백은 제거하고, 제목이 비어 있으면 {@code
+ * null}로 저장합니다.
  *
  * <p>{@code KNOWN_SOURCE_TYPES}는 웹이 source 종류를 식별해 표시할 때 사용하는 이름의 목록이며, 목록에 없는 값은 모두 {@code LINK}로
  * 변환합니다. {@code OAuthProviderRegistry}에 정의된 provider 네 개와 일부 값이 겹치지만 두 목록은 통합하지 않습니다. 한쪽은 승인 절차를 거쳐

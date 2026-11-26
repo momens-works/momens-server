@@ -7,7 +7,7 @@ import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
-/** provider 자격 증명이 비어 있으면 해당 연동만 비활성으로 판정합니다. 설정 키는 서버 네임스페이스를 쓰되 값은 레거시와 호환되어야 합니다. */
+/** provider 자격 증명이 비어 있으면 해당 연동만 비활성으로 판정합니다. */
 @Validated
 @ConfigurationProperties(prefix = "momens.source.oauth")
 public record SourceOAuthProperties(

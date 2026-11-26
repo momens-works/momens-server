@@ -116,7 +116,7 @@ class ProviderOAuthClient {
 
   /**
    * RFC 6749 2.3.1은 client id와 secret을 각각 {@code application/x-www-form-urlencoded}로 인코딩한 뒤 결합하도록
-   * 정의합니다. 레거시는 인코딩 없이 결합하지만, {@code :}나 {@code +}가 포함된 자격 증명에서 값이 잘못 전달되므로 표준을 따릅니다.
+   * 정의합니다.
    */
   static String basicAuth(OAuthProvider provider) {
     String raw = formEncode(provider.clientId()) + ":" + formEncode(provider.clientSecret());

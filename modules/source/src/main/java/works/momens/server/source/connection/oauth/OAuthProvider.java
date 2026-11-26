@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.TreeMap;
 
-/** 승인 URL은 레거시와 같은 정렬·인코딩을 유지합니다. scope는 값이 있을 때만 포함합니다. */
+/** scope는 값이 있을 때만 포함합니다. */
 record OAuthProvider(
     ProviderDefinition definition, String clientId, String clientSecret, String redirectUri) {
 
