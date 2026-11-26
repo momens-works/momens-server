@@ -41,7 +41,7 @@ interface McpTransportControllerDocs {
         content = @Content(schema = @Schema(type = "object"))),
     @ApiResponse(
         responseCode = "404",
-        description = "MCP method not found",
+        description = "MCP method not found in a 2026-07-28 request",
         content = @Content(schema = @Schema(type = "object")))
   })
   @Parameters({
@@ -70,7 +70,7 @@ interface McpTransportControllerDocs {
         in = ParameterIn.HEADER,
         required = false,
         description =
-            "Required for tools/call, resources/read, and prompts/get; supports the Base64 sentinel format.",
+            "Required for 2026-07-28 tools/call, resources/read, and prompts/get; supports the Base64 sentinel format.",
         schema = @Schema(type = "string"))
   })
   @RequestBody(required = true, content = @Content(schema = @Schema(type = "object")))

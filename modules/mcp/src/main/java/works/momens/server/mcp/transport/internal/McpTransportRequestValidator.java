@@ -33,6 +33,16 @@ class McpTransportRequestValidator {
         && request.path("method").isTextual();
   }
 
+  /**
+   * 2026-07-28 요청은 Mcp-Method 헤더와 본문 _meta의 프로토콜 버전을 담고, 2025-06-18·2025-11-25 요청은 둘 다 담지 않습니다.
+   * 2026-07-28 흔적이 하나라도 있으면 2026-07-28 경로에서 헤더를 검증해, 빠진 헤더를 -32020으로 알립니다.
+   */
+  boolean isLatestProtocolRequest(HttpServletRequest request, JsonNode body) {
+    return request.getHeader(McpProtocol.METHOD_HEADER) != null
+        || McpProtocol.VERSION.equals(request.getHeader(McpProtocol.VERSION_HEADER))
+        || !protocolVersion(body).isEmpty();
+  }
+
   boolean hasMatchingHeaders(HttpServletRequest request, JsonNode body, String method) {
     if (!protocolVersion(body).equals(request.getHeader(McpProtocol.VERSION_HEADER))
         || !method.equals(request.getHeader(McpProtocol.METHOD_HEADER))

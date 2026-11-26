@@ -10,7 +10,7 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ObjectNode;
 import works.momens.server.mcp.transport.McpAuthenticationContext;
 
-/** 2025-06-18·2025-11-25 클라이언트의 요청을 처리합니다. 세션을 발급하지 않고, 도구 목록과 실행은 2026-07-28 경로와 같은 구현을 씁니다. */
+/** 2025-06-18·2025-11-25 클라이언트의 요청을 처리합니다. 세션을 발급하지 않습니다. */
 @Component
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 class McpLegacyTransportHandler {
@@ -29,7 +29,8 @@ class McpLegacyTransportHandler {
     JsonNode id = request.get("id");
     String headerVersion = httpRequest.getHeader(McpProtocol.VERSION_HEADER);
     if (headerVersion != null && !McpProtocol.LEGACY_VERSIONS.contains(headerVersion)) {
-      return responseFactory.unsupportedProtocolVersion(id, headerVersion);
+      return responseFactory.unsupportedProtocolVersion(
+          id, headerVersion, McpProtocol.LEGACY_VERSIONS);
     }
     if (notification) {
       return ResponseEntity.accepted().build();

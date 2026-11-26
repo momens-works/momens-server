@@ -1,6 +1,7 @@
 package works.momens.server.mcp.transport.internal;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
 import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -33,8 +34,7 @@ public class McpTransportHandler {
     } catch (JacksonException exception) {
       return responseFactory.badRequest(null, -32700, "Parse error");
     }
-    // 2026-07-28 클라이언트는 Mcp-Method 헤더를 항상 보내고, 이전 버전 클라이언트는 보내지 않습니다.
-    if (httpRequest.getHeader(McpProtocol.METHOD_HEADER) == null) {
+    if (!requestValidator.isLatestProtocolRequest(httpRequest, request)) {
       return legacyHandler.handle(request, httpRequest, authentication.get());
     }
     if (!requestValidator.isJsonRpcRequest(request)) {
@@ -48,7 +48,8 @@ public class McpTransportHandler {
     }
     String requestedVersion = requestValidator.protocolVersion(request);
     if (!McpProtocol.VERSION.equals(requestedVersion)) {
-      return responseFactory.unsupportedProtocolVersion(id, requestedVersion);
+      return responseFactory.unsupportedProtocolVersion(
+          id, requestedVersion, List.of(McpProtocol.VERSION));
     }
     if (!requestValidator.hasValidClientMetadata(request)) {
       return responseFactory.jsonRpcError(id, -32602, "Invalid params");

@@ -1,5 +1,6 @@
 package works.momens.server.mcp.transport.internal;
 
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -46,9 +47,10 @@ class McpTransportResponseFactory {
     return jsonRpcError(id, code, message, data, HttpStatus.BAD_REQUEST);
   }
 
-  ResponseEntity<JsonNode> unsupportedProtocolVersion(JsonNode id, String requestedVersion) {
+  ResponseEntity<JsonNode> unsupportedProtocolVersion(
+      JsonNode id, String requestedVersion, List<String> supportedVersions) {
     ObjectNode data = objectMapper.createObjectNode();
-    McpProtocol.SUPPORTED_VERSIONS.forEach(data.putArray("supported")::add);
+    supportedVersions.forEach(data.putArray("supported")::add);
     data.put("requested", requestedVersion);
     return badRequest(id, -32022, "Unsupported protocol version", data);
   }
