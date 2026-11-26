@@ -14,7 +14,10 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
+import works.momens.server.context.EntityRelationCommand;
 import works.momens.server.context.EntityRelationReader;
+import works.momens.server.context.EntityType;
+import works.momens.server.context.RelationType;
 import works.momens.server.workspace.WorkspaceSeedSql;
 
 /** 연결 엔티티는 읽기 전용 매핑이므로 fixture는 네이티브 SQL로 구성합니다. */
@@ -133,6 +136,53 @@ class EntityRelationReaderIntegrationTest extends AbstractPostgresIntegrationTes
   @DisplayName("빈 태스크 목록이면 DB 조회 없이 빈 결과를 반환한다")
   void findLinkedSourceRefIdsIsEmptyForEmptyTaskIds() {
     assertThat(entityRelationReader.findLinkedSourceRefIds(UUID.randomUUID(), List.of())).isEmpty();
+  }
+
+  @Test
+  @DisplayName("같은 workspace·방향의 삭제되지 않은 연결이 있을 때만 연결된 것으로 본다")
+  void isLinkedMatchesOnlyActiveRelationInSameWorkspaceAndDirection() {
+    UUID workspaceId = insertWorkspace();
+    UUID resolving = UUID.randomUUID();
+    UUID resolved = UUID.randomUUID();
+    insertResolves(workspaceId, resolving, resolved, null);
+
+    assertThat(entityRelationReader.isLinked(resolves(workspaceId, resolving, resolved))).isTrue();
+    assertThat(entityRelationReader.isLinked(resolves(workspaceId, resolved, resolving))).isFalse();
+    assertThat(entityRelationReader.isLinked(resolves(insertWorkspace(), resolving, resolved)))
+        .isFalse();
+  }
+
+  @Test
+  @DisplayName("삭제된 연결은 연결된 것으로 보지 않는다")
+  void isLinkedIgnoresDeletedRelation() {
+    UUID workspaceId = insertWorkspace();
+    UUID resolving = UUID.randomUUID();
+    UUID resolved = UUID.randomUUID();
+    insertResolves(workspaceId, resolving, resolved, Instant.parse("2026-07-02T00:00:00Z"));
+
+    assertThat(entityRelationReader.isLinked(resolves(workspaceId, resolving, resolved))).isFalse();
+  }
+
+  private EntityRelationCommand resolves(UUID workspaceId, UUID resolving, UUID resolved) {
+    return new EntityRelationCommand(
+        workspaceId,
+        EntityType.MEMORY,
+        resolving,
+        RelationType.RESOLVES,
+        EntityType.MEMORY,
+        resolved);
+  }
+
+  private void insertResolves(UUID workspaceId, UUID resolving, UUID resolved, Instant deletedAt) {
+    insertRelation(
+        workspaceId,
+        "MEMORY",
+        resolving,
+        "RESOLVES",
+        "MEMORY",
+        resolved,
+        Instant.parse("2026-07-01T00:00:00Z"),
+        deletedAt);
   }
 
   private List<UUID> linkedIds(UUID workspaceId, UUID taskId) {
