@@ -9,6 +9,8 @@
 > 본문에서 참조하는 `MOM-0831`은 취소되었으며, 해당 범위는 `MOM-0909`의 부트스트랩 작업에 포함되었습니다. `V20260810090000__create_user_identities.sql`은 부트스트랩 실행 집합에 포함되어 2026-09-04에 momens-server의 Flyway가 운영 환경에 적용했습니다.
 >
 > 식별 키를 Google `sub`으로 전환하는 결정, `users`와 `user_identities`를 같은 트랜잭션에서 생성하는 결정, `user_identities`를 먼저 생성한 뒤 서버를 배포하는 순서와 그 근거, `user_identities(user_id)` 인덱스를 생성하지 않는 결정은 계속 유효합니다.
+>
+> **2026-11-27**: 레거시 `momens-api`를 종료한 뒤 `MOM-0836`에서 결정 6에 따라 `users.email` UNIQUE 제약과 이메일 fallback을 제거했습니다. 결정 4의 이메일 기반 연결, 결정 5의 조건부 UPDATE, 결정 8의 `USER_EMAIL_LINKED_TO_ANOTHER_IDENTITY`는 전환 기간의 동작이며 현재 동작이 아닙니다. 결과 절에서 두지 않기로 한 보상 삭제는 이제 동시 최초 로그인에서 로그인 수단 연결에 실패한 요청이 같은 트랜잭션에서 수행합니다. 같은 이메일의 사용자가 여러 명이면 이메일로 사용자를 조회하는 경로는 `USER_EMAIL_AMBIGUOUS`로 거부합니다.
 
 ## 맥락
 

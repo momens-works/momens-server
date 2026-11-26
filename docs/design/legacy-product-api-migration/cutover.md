@@ -225,10 +225,10 @@ Cloudflare에서 직전 FE deployment로 롤백해 로그인과 로그아웃 요
   신규 `access_token`을 계속 받아야 하고, 이 변경은 양방향으로 안전하다.
 - Google Cloud 콘솔의 두 callback URI를 모두 유지한다. 레거시 URI를 지우지 않았으므로 FE를
   되돌린 뒤 레거시 로그인이 다시 성립한다.
-- `users`에 남은 신규 identity 행은 그대로 둔다. ADR-0016 예외가 두 writer 공존을 이미 허용해
-  보상 절차가 필요 없다.
+- **`MOM-0836` 배포 뒤에는 이 롤백을 쓰지 않는다.** `users.email` UNIQUE 제약이 없으면 레거시의
+  사용자 생성이 같은 이메일의 사용자를 중복 생성한다.
 
-**1단계는 writer rollback이 필요 없다. FE를 되돌린 뒤의 재로그인은 허용된 롤백 비용이다.**
+**`MOM-0836` 배포 전까지 1단계는 writer rollback이 필요 없다. FE를 되돌린 뒤의 재로그인은 허용된 롤백 비용이다.**
 
 ### 7.2 2단계
 
