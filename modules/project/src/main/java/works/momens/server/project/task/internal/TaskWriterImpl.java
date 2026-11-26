@@ -25,7 +25,6 @@ import works.momens.server.project.task.TaskErrorCode;
 import works.momens.server.project.task.TaskPolicy;
 import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskSnapshot;
-import works.momens.server.project.task.TaskWriteGate;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.project.task.UpdateTaskCommand;
 import works.momens.server.workspace.label.LabelAllocator;
@@ -45,12 +44,10 @@ class TaskWriterImpl implements TaskWriter {
   private final WorkspaceMembershipReader workspaceMembershipReader;
   private final LabelAllocator labelAllocator;
   private final OutboxAppender outboxAppender;
-  private final TaskWriteGate writeGate;
 
   @Override
   @Transactional
   public TaskSnapshot create(CreateTaskCommand command) {
-    writeGate.requireOpen();
     validateReferences(
         command.workspaceId(), command.projectId(), command.milestoneId(), command.assigneeId());
     String label = labelAllocator.allocateMomLabel(command.workspaceId());
@@ -64,7 +61,6 @@ class TaskWriterImpl implements TaskWriter {
   @Override
   @Transactional
   public TaskDetail update(UpdateTaskCommand command) {
-    writeGate.requireOpen();
     Task task = findTask(command.taskId());
     ExpectedVersion.check(command.version(), task.getVersion());
     TaskRowFields before = TaskRowFields.from(task);
@@ -90,7 +86,6 @@ class TaskWriterImpl implements TaskWriter {
   @Override
   @Transactional
   public TaskSnapshot patch(PatchTaskCommand command) {
-    writeGate.requireOpen();
     Task task = findTask(command.taskId());
     ExpectedVersion.check(command.version(), task.getVersion());
     TaskRowFields before = TaskRowFields.from(task);
@@ -126,7 +121,6 @@ class TaskWriterImpl implements TaskWriter {
   @Override
   @Transactional
   public TaskDetail toggleChecklistItem(UUID taskId, UUID itemId, boolean completed, Long version) {
-    writeGate.requireOpen();
     Task task = findTask(taskId);
     ExpectedVersion.check(version, task.getVersion());
     TaskChecklistItem item =
@@ -148,14 +142,12 @@ class TaskWriterImpl implements TaskWriter {
   @Override
   @Transactional
   public void delete(UUID taskId, Long version) {
-    writeGate.requireOpen();
     softDelete(findTask(taskId), version);
   }
 
   @Override
   @Transactional
   public void deleteAsCreator(UUID taskId, UUID userId, Long version) {
-    writeGate.requireOpen();
     Task task = findTask(taskId);
     requireCreator(task, userId);
     softDelete(task, version);
@@ -164,7 +156,6 @@ class TaskWriterImpl implements TaskWriter {
   @Override
   @Transactional
   public void restoreAsCreator(UUID taskId, UUID userId) {
-    writeGate.requireOpen();
     Task task =
         taskRepository
             .findById(taskId)

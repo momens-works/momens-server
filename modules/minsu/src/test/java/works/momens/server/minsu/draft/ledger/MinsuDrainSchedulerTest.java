@@ -27,7 +27,6 @@ import works.momens.server.minsu.draft.generation.AsyncTaskDraftExecutor;
 import works.momens.server.minsu.draft.generation.GenerationOutcome;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
-import works.momens.server.project.task.TaskWriteGate;
 
 class MinsuDrainSchedulerTest {
 
@@ -36,19 +35,7 @@ class MinsuDrainSchedulerTest {
   private final AsyncTaskDraftExecutor executor = mock(AsyncTaskDraftExecutor.class);
   private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
   private final MinsuDrainScheduler scheduler =
-      new MinsuDrainScheduler(
-          configStatus, ledger, executor, meterRegistry, new TaskWriteGate(false));
-
-  @Test
-  void pausedTaskWriterDoesNotClaimDrafts() {
-    var pausedScheduler =
-        new MinsuDrainScheduler(
-            configStatus, ledger, executor, meterRegistry, new TaskWriteGate(true));
-
-    pausedScheduler.drain();
-
-    verifyNoInteractions(ledger, executor);
-  }
+      new MinsuDrainScheduler(configStatus, ledger, executor, meterRegistry);
 
   @Test
   @DisplayName("provider가 비활성이면 claim하지 않는다")
@@ -169,7 +156,6 @@ class MinsuDrainSchedulerTest {
             .withBean(TaskDraftGenerationLedger.class, () -> ledger)
             .withBean(AsyncTaskDraftExecutor.class, () -> executor)
             .withBean(MeterRegistry.class, SimpleMeterRegistry::new)
-            .withBean(TaskWriteGate.class, () -> new TaskWriteGate(false))
             .withUserConfiguration(MinsuDrainScheduler.class);
 
     runner

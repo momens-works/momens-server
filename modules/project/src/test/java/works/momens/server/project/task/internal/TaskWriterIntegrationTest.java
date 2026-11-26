@@ -40,7 +40,6 @@ import works.momens.server.project.task.TaskReader;
 import works.momens.server.project.task.TaskRole;
 import works.momens.server.project.task.TaskScope;
 import works.momens.server.project.task.TaskStatus;
-import works.momens.server.project.task.TaskWriteGate;
 import works.momens.server.project.task.TaskWriter;
 import works.momens.server.project.task.UpdateTaskCommand;
 import works.momens.server.project.task.UpdateTaskCommand.ChecklistItemEdit;
@@ -57,7 +56,7 @@ import works.momens.server.workspace.membership.WorkspaceRole;
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({JpaAuditingConfig.class, TaskWriterImpl.class, TaskReaderImpl.class, TaskWriteGate.class})
+@Import({JpaAuditingConfig.class, TaskWriterImpl.class, TaskReaderImpl.class})
 class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
 
   @MockitoBean private ProjectReader projectReader;
@@ -100,58 +99,6 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
     assertThat(updated.status()).isEqualTo("in_progress");
     assertThat(updated.description()).isEqualTo("수정한 목적");
     assertThat(updated.assigneeId()).isEqualTo(assigneeId);
-  }
-
-  @Test
-  void rejectsClientVersionFromBeforeLegacyUpdate() {
-    Fixture fixture = newTask();
-    long originalVersion = taskReader.findDetail(fixture.taskId()).orElseThrow().version();
-
-    entityManager
-        .getEntityManager()
-        .createNativeQuery(
-            "UPDATE tasks SET title = 'Legacy edit', updated_at = NOW() WHERE id = ?1")
-        .setParameter(1, fixture.taskId())
-        .executeUpdate();
-    entityManager.clear();
-
-    TaskDetail reloaded = taskReader.findDetail(fixture.taskId()).orElseThrow();
-    assertThat(reloaded.version()).isEqualTo(originalVersion + 1);
-    assertThat(reloaded.title()).isEqualTo("Legacy edit");
-
-    var staleEdit =
-        new UpdateTaskCommand(
-            fixture.taskId(),
-            "Stale edit",
-            Set.of(TaskRole.PM),
-            null,
-            TaskPriority.MEDIUM,
-            null,
-            TaskStatus.TODO,
-            null,
-            List.of(),
-            originalVersion);
-    assertThatThrownBy(() -> taskWriter.update(staleEdit))
-        .isInstanceOfSatisfying(
-            BusinessException.class,
-            exception ->
-                assertThat(exception.getErrorCode())
-                    .isEqualTo(CommonErrorCode.COMMON_CONCURRENT_MODIFICATION));
-  }
-
-  @Test
-  void legacySqlAdvancesVersionOnlyWhenTrackedValuesChange() {
-    Fixture fixture = newTask();
-    long originalVersion = storedVersion(fixture.taskId());
-
-    legacyUpdate(
-        "UPDATE tasks SET title = title, status = status, updated_at = NOW() WHERE id = ?1",
-        fixture.taskId());
-    assertThat(storedVersion(fixture.taskId())).isEqualTo(originalVersion);
-
-    legacyUpdate(
-        "UPDATE tasks SET deleted_at = NOW(), updated_at = NOW() WHERE id = ?1", fixture.taskId());
-    assertThat(storedVersion(fixture.taskId())).isEqualTo(originalVersion + 1);
   }
 
   @Test
@@ -536,15 +483,6 @@ class TaskWriterIntegrationTest extends AbstractPostgresIntegrationTest {
                     null))
             .getId();
     return new Fixture(workspaceId, projectId, taskId, creatorId);
-  }
-
-  private void legacyUpdate(String sql, UUID taskId) {
-    entityManager.getEntityManager().createNativeQuery(sql).setParameter(1, taskId).executeUpdate();
-    entityManager.clear();
-  }
-
-  private long storedVersion(UUID taskId) {
-    return taskRepository.findById(taskId).orElseThrow().getVersion();
   }
 
   private static UpdateTaskCommand command(

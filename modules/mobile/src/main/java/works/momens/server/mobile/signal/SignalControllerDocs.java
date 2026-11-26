@@ -16,7 +16,6 @@ import works.momens.server.mobile.signal.dto.response.DismissResponse;
 import works.momens.server.mobile.signal.dto.response.SignalDetailResponse;
 import works.momens.server.mobile.signal.dto.response.SignalListResponse;
 import works.momens.server.project.core.ProjectErrorCode;
-import works.momens.server.project.task.TaskErrorCode;
 import works.momens.server.signal.SignalErrorCode;
 import works.momens.server.signal.SignalListService;
 
@@ -94,9 +93,6 @@ interface SignalControllerDocs {
   @ApiException(
       value = SignalErrorCode.class,
       codes = {"SIGNAL_NOT_FOUND", "SIGNAL_INVALID_STATE"})
-  @ApiException(
-      value = TaskErrorCode.class,
-      codes = {"TASK_WRITES_PAUSED"})
   @ApiException(CommonErrorCode.class)
   ResponseEntity<ConvertToTaskResponse> convertToTask(
       @Parameter(description = "signal 식별자") UUID signalId, Principal principal);

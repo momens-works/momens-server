@@ -32,7 +32,6 @@ import works.momens.server.project.task.TaskDetail;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskReader;
 import works.momens.server.project.task.TaskRole;
-import works.momens.server.project.task.TaskWriteGate;
 import works.momens.server.signal.SignalActionResult;
 import works.momens.server.signal.SignalErrorCode;
 import works.momens.server.signal.SignalReader;
@@ -68,8 +67,7 @@ class SignalActionServiceImplTest {
             executor,
             taskReader,
             taskDraftGenerator,
-            taskDraftStatusReader,
-            new TaskWriteGate(false));
+            taskDraftStatusReader);
   }
 
   /**

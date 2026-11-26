@@ -35,7 +35,6 @@ import works.momens.server.minsu.draft.generation.GenerationOutcome;
 import works.momens.server.minsu.draft.json.MinsuJson;
 import works.momens.server.project.task.TaskPriority;
 import works.momens.server.project.task.TaskRole;
-import works.momens.server.project.task.TaskWriteGate;
 
 /**
  * 포화 중 claim이 중단되고 재시작 뒤 lease 만료 원장이 scheduler를 통해 처리되는 연결을 검증한다.
@@ -97,9 +96,7 @@ class MinsuDrainRestartRecoveryIntegrationTest extends AbstractPostgresIntegrati
   void wireScheduler() {
     when(configStatus.enabled()).thenReturn(true);
     when(configStatus.valid()).thenReturn(true);
-    scheduler =
-        new MinsuDrainScheduler(
-            configStatus, ledger, executor, new SimpleMeterRegistry(), new TaskWriteGate(false));
+    scheduler = new MinsuDrainScheduler(configStatus, ledger, executor, new SimpleMeterRegistry());
   }
 
   @Test
