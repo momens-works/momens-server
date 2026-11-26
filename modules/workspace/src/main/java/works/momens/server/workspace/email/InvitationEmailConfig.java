@@ -37,14 +37,12 @@ class InvitationEmailConfig {
 
     @Bean
     EmailClient resendEmailClient(
-        RestClient.Builder restClientBuilder,
-        InvitationEmailProperties properties,
-        ResendEmailProperties resendProperties) {
+        InvitationEmailProperties properties, ResendEmailProperties resendProperties) {
       requireConfigured(properties.acceptUrl(), "momens.workspace.invitation.email.accept-url");
       requireConfigured(properties.from(), "momens.workspace.invitation.email.from");
       requireConfigured(properties.replyTo(), "momens.workspace.invitation.email.reply-to");
       RestClient restClient =
-          restClientBuilder
+          RestClient.builder()
               .baseUrl(RESEND_ENDPOINT)
               .defaultHeader("Authorization", "Bearer " + resendProperties.apiKey())
               .requestFactory(requestFactory())
