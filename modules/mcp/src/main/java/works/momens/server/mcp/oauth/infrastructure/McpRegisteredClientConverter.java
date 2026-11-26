@@ -20,7 +20,7 @@ import works.momens.server.mcp.grant.McpScope;
 
 /**
  * Registers every MCP client as a public PKCE client with reference access tokens and rotated
- * refresh tokens (ADR-0023). Token lifetimes match the legacy MCP authorization server.
+ * refresh tokens (ADR-0023).
  */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class McpRegisteredClientConverter

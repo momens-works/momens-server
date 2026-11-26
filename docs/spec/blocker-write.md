@@ -39,7 +39,7 @@ Blocker 쓰기와 worker 검색 반영의 계약이다. HTTP 입력·응답 형�
   `blocker:{blockerId}`, source-ref name은 `source_ref:blocker:{blockerId}`다.
   UUID 문자열은 소문자 하이픈 형식이다. 삭제는 두 결정적 ID 모두에 적용한다.
 - task blocker 문서 종류는 `TASK`, 기존 milestone blocker는 `MILESTONE_CONTEXT`다.
-  레거시의 `MOMENS_INTERNAL`, `WORKSPACE`, memory type `RISK`, source object type
+  `MOMENS_INTERNAL`, `WORKSPACE`, memory type `RISK`, source object type
   `DOCUMENT`, blocker/blocked entity metadata와 본문 의미를 유지한다.
 - 제목은 `Blocker: ` 접두사 뒤에 description을 80바이트 이내에서 마지막 완전한 UTF-8 문자
   경계까지 붙인다. 원문 description/text는 자르지 않는다.
