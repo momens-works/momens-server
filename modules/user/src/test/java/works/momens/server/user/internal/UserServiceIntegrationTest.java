@@ -90,6 +90,22 @@ class UserServiceIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
+  @DisplayName("같은 이메일의 사용자가 여러 명이면 이메일 조회는 한 명을 고르지 않고 거부한다")
+  void findByEmailRejectsAmbiguousEmail() {
+    userRepository.save(User.builder().email("dup@momens.works").name("홍길동").build());
+    userRepository.save(User.builder().email("dup@momens.works").name("김철수").build());
+
+    assertThatThrownBy(() -> userService.findByEmail("dup@momens.works"))
+        .isInstanceOf(BusinessException.class)
+        .extracting(e -> ((BusinessException) e).getErrorCode())
+        .isEqualTo(UserErrorCode.USER_EMAIL_AMBIGUOUS);
+    assertThatThrownBy(() -> userService.findOrCreate("dup@momens.works", "이영희", null))
+        .isInstanceOf(BusinessException.class)
+        .extracting(e -> ((BusinessException) e).getErrorCode())
+        .isEqualTo(UserErrorCode.USER_EMAIL_AMBIGUOUS);
+  }
+
+  @Test
   void getProfileThrowsWhenMissing() {
     assertThatThrownBy(() -> userService.getProfile(UUID.randomUUID()))
         .isInstanceOf(BusinessException.class)

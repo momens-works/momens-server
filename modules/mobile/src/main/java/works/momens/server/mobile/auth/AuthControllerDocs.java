@@ -38,7 +38,7 @@ interface AuthControllerDocs {
       codes = {"AUTH_GOOGLE_TOKEN_INVALID", "AUTH_GOOGLE_EMAIL_NOT_VERIFIED"})
   @ApiException(
       value = UserErrorCode.class,
-      codes = {"USER_EMAIL_LINKED_TO_ANOTHER_IDENTITY", "USER_NOT_FOUND"})
+      codes = {"USER_NOT_FOUND"})
   @ApiException(CommonErrorCode.class)
   TokenResponse loginWithGoogleToken(GoogleTokenRequest request);
 

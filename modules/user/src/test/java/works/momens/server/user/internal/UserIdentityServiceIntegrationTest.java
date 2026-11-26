@@ -1,7 +1,6 @@
 package works.momens.server.user.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +9,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.locks.LockSupport;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,10 +20,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
-import works.momens.server.common.api.BusinessException;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
-import works.momens.server.user.UserErrorCode;
 import works.momens.server.user.UserProfile;
 import works.momens.server.user.UserService;
 
@@ -105,41 +101,28 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
   }
 
   @Test
-  @DisplayName("로그인 수단이 없는 기존 사용자는 이메일로 조회한 뒤 로그인 수단을 연결한다")
-  void linksIdentityToExistingUserByEmail() {
+  @DisplayName("같은 이메일의 기존 사용자가 있어도 그 사용자에 연결하지 않고 새 사용자를 생성한다")
+  void createsNewUserEvenWhenEmailBelongsToExistingUser() {
     UserProfile existing = userService.findOrCreate("legacy@momens.works", "기존", null);
 
-    UserProfile linked =
+    UserProfile created =
         userService.findOrCreateByIdentity(
             UserService.PROVIDER_GOOGLE, "sub-legacy", "legacy@momens.works", "홍길동", null);
 
-    assertThat(linked.id()).isEqualTo(existing.id());
-    assertThat(linked.name()).isEqualTo("기존");
+    assertThat(created.id()).isNotEqualTo(existing.id());
+    assertThat(created.name()).isEqualTo("홍길동");
     assertThat(
             userIdentityRepository
                 .findByProviderAndProviderUserId(UserService.PROVIDER_GOOGLE, "sub-legacy")
                 .orElseThrow()
                 .getUserId())
-        .isEqualTo(existing.id());
+        .isEqualTo(created.id());
+    assertThat(userRepository.findTop2ByEmail("legacy@momens.works")).hasSize(2);
   }
 
   @Test
-  @DisplayName("이메일로 조회된 사용자에게 이미 다른 로그인 수단이 연결되어 있으면 로그인을 거부한다")
-  void rejectsWhenEmailBelongsToAnotherIdentity() {
-    userService.findOrCreateByIdentity(
-        UserService.PROVIDER_GOOGLE, "sub-owner", "shared@momens.works", "이전주인", null);
-
-    assertThatThrownBy(() ->
-            userService.findOrCreateByIdentity(
-                UserService.PROVIDER_GOOGLE, "sub-newcomer", "shared@momens.works", "새주인", null))
-        .isInstanceOf(BusinessException.class)
-        .extracting(e -> ((BusinessException) e).getErrorCode())
-        .isEqualTo(UserErrorCode.USER_EMAIL_LINKED_TO_ANOTHER_IDENTITY);
-  }
-
-  @Test
-  @DisplayName("다른 사용자가 동일한 이메일을 사용 중이면 이메일 갱신은 수행하지 않는다")
-  void skipsEmailUpdateWhenTakenByAnotherUser() {
+  @DisplayName("다른 사용자가 동일한 이메일을 사용 중이어도 로그인한 사용자의 이메일을 갱신한다")
+  void updatesEmailEvenWhenTakenByAnotherUser() {
     UserProfile taken = userService.findOrCreate("taken@momens.works", "선점자", null);
     UserProfile mine =
         userService.findOrCreateByIdentity(
@@ -150,7 +133,7 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
             UserService.PROVIDER_GOOGLE, "sub-mine", "taken@momens.works", "홍길동", null);
 
     assertThat(after.id()).isEqualTo(mine.id());
-    assertThat(after.email()).as("이메일 갱신을 건너뛰면 기존 이메일 값이 유지된다").isEqualTo("mine@momens.works");
+    assertThat(after.email()).isEqualTo("taken@momens.works");
     assertThat(userRepository.findById(taken.id()).orElseThrow().getEmail())
         .isEqualTo("taken@momens.works");
   }
@@ -199,67 +182,13 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
                   .orElseThrow()
                   .getUserId())
           .isEqualTo(ids.getFirst());
+      assertThat(userRepository.findTop2ByEmail("race@momens.works"))
+          .as("로그인 수단을 연결하지 못한 요청은 자기가 만든 행을 지운다")
+          .hasSize(1);
     } finally {
       pool.shutdownNow();
-      tx.executeWithoutResult(status ->
-          userRepository.findByEmail("race@momens.works").ifPresent(userRepository::delete));
-    }
-  }
-
-  /**
-   * 로그인 수단이 없는 기존 사용자에게 로그인 요청이 잇따라 들어와도 모두 동일한 사용자로 이어지는지 검증합니다.
-   *
-   * <p>경합 상황을 재현하려면 두 번째 요청이 첫 번째 요청의 트랜잭션이 진행 중인 동안 도착해야 합니다. 두 요청을 동시에 시작하면 로그인 수단 조회와 중복 확인이 나란히
-   * 수행되어 의도한 경합이 발생하지 않습니다. 따라서 요청 시작 시점을 조금씩 지연시키며 반복 실행합니다.
-   */
-  @Test
-  @DisplayName("전환 대상 사용자에게 로그인 요청이 잇따라 들어와도 모두 동일한 사용자로 이어진다")
-  @Transactional(propagation = Propagation.NOT_SUPPORTED)
-  void linksIdentityOnceUnderStaggeredFallbackLogin() throws Exception {
-    int rounds = 120;
-    TransactionTemplate tx = new TransactionTemplate(transactionManager);
-    ExecutorService pool = Executors.newFixedThreadPool(2);
-    try {
-      for (int round = 0; round < rounds; round++) {
-        String email = "fallback-race-" + round + "@momens.works";
-        String providerUserId = "sub-fallback-race-" + round;
-        long delayNanos = (round % 80) * 250_000L;
-        UUID existingId = userService.findOrCreate(email, "기존", null).id();
-        try {
-          CountDownLatch start = new CountDownLatch(1);
-          List<Future<UUID>> futures =
-              IntStream.range(0, 2)
-                  .mapToObj(i ->
-                      pool.submit(() -> {
-                        start.await();
-                        if (i > 0) {
-                          LockSupport.parkNanos(delayNanos);
-                        }
-                        return tx.execute(status ->
-                                userService.findOrCreateByIdentity(
-                                    UserService.PROVIDER_GOOGLE,
-                                    providerUserId,
-                                    email,
-                                    "홍길동",
-                                    null))
-                            .id();
-                      }))
-                  .toList();
-          start.countDown();
-
-          List<UUID> ids = new ArrayList<>();
-          for (Future<UUID> future : futures) {
-            ids.add(future.get());
-          }
-
-          assertThat(ids).as("round=%d delayNanos=%d", round, delayNanos).containsOnly(existingId);
-        } finally {
-          tx.executeWithoutResult(
-              status -> userRepository.findByEmail(email).ifPresent(userRepository::delete));
-        }
-      }
-    } finally {
-      pool.shutdownNow();
+      tx.executeWithoutResult(
+          status -> userRepository.deleteAll(userRepository.findTop2ByEmail("race@momens.works")));
     }
   }
 }

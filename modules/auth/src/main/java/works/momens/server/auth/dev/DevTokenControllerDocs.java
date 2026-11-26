@@ -13,6 +13,7 @@ import works.momens.server.auth.dev.dto.response.DevTokenResponse;
 import works.momens.server.auth.internal.application.DevTokenErrorCode;
 import works.momens.server.common.api.ApiException;
 import works.momens.server.common.api.CommonErrorCode;
+import works.momens.server.user.UserErrorCode;
 
 /**
  * dev 전용 토큰 발급 API 문서. dev 계열 프로필에서만 노출됩니다({@code @DevOnly}). 공개 경로이므로 OpenApiConfig의 전역 Bearer
@@ -39,6 +40,9 @@ interface DevTokenControllerDocs {
   @ApiException(
       value = DevTokenErrorCode.class,
       codes = {"AUTH_DEV_TOKEN_SECRET_INVALID", "AUTH_DEV_TOKEN_EMAIL_NOT_ALLOWED"})
+  @ApiException(
+      value = UserErrorCode.class,
+      codes = {"USER_EMAIL_AMBIGUOUS"})
   @ApiException(CommonErrorCode.class)
   DevTokenResponse issueDevToken(String secret, DevTokenRequest request);
 }
