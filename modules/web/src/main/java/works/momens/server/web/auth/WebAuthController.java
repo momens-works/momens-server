@@ -19,9 +19,6 @@ import works.momens.server.auth.WebAuthSession;
 /**
  * 웹 Google 로그인(서버 주도 Authorization Code) 엔드포인트.
  *
- * <p>모바일 JSON 엔드포인트({@code AuthController})와 달리 브라우저 리다이렉트로 동작하며, 토큰은 HttpOnly 쿠키로 전송합니다. 콜백 실패는
- * 브라우저에 JSON을 노출하지 않도록 failure-uri로 리다이렉트합니다(MOM-22).
- *
  * <p>쿠키 속성·리다이렉트 대상·실패 코드 매핑은 auth가 소유하고({@link WebAuthSession}), 이 컨트롤러는 받은 결과를 응답으로 옮기기만 합니다.
  */
 @RestController
