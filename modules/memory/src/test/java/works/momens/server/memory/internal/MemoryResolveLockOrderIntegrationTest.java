@@ -162,7 +162,12 @@ class MemoryResolveLockOrderIntegrationTest extends AbstractPostgresIntegrationT
       if (waiting.intValue() >= expected) {
         return;
       }
-      Thread.onSpinWait();
+      try {
+        Thread.sleep(20);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new IllegalStateException("잠금 대기 확인 중 중단", e);
+      }
     }
     throw new IllegalStateException("해결 요청이 잠금 대기에 들어가지 않았습니다");
   }

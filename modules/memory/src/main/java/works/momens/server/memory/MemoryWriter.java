@@ -33,7 +33,8 @@ public interface MemoryWriter {
   /**
    * {@code resolvingMemoryId}가 {@code resolvedMemoryId}를 해결합니다. 관계를 남기고 해결된 쪽을 보관 처리합니다.
    *
-   * <p>두 메모리 모두 {@code ACTIVE}여야 합니다. 같은 쌍으로 이미 해결된 요청은 아무것도 바꾸지 않고 성공으로 끝납니다.
+   * <p>두 메모리 모두 {@code ACTIVE}여야 합니다. 같은 {@code resolvingMemoryId}로 이미 해결된 메모리에 다시 보낸 요청은 아무것도 바꾸지
+   * 않고 성공으로 끝납니다.
    */
   void resolve(UUID resolvedMemoryId, UUID resolvingMemoryId, UUID userId);
 
