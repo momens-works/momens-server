@@ -24,6 +24,10 @@ interface McpTransportControllerDocs {
         description = "JSON-RPC response",
         content = @Content(schema = @Schema(type = "object"))),
     @ApiResponse(
+        responseCode = "202",
+        description = "Notification accepted from a 2025-06-18 or 2025-11-25 client",
+        content = @Content),
+    @ApiResponse(
         responseCode = "400",
         description = "Invalid request or header mismatch",
         content = @Content(schema = @Schema(type = "object"))),
@@ -44,12 +48,16 @@ interface McpTransportControllerDocs {
     @Parameter(
         name = "MCP-Protocol-Version",
         in = ParameterIn.HEADER,
-        required = true,
+        required = false,
+        description =
+            "Required for 2026-07-28 requests. 2025-06-18 and 2025-11-25 clients may omit it.",
         schema = @Schema(type = "string", example = "2026-07-28")),
     @Parameter(
         name = "Mcp-Method",
         in = ParameterIn.HEADER,
-        required = true,
+        required = false,
+        description =
+            "Required for 2026-07-28 requests. Without it, the request is handled as 2025-06-18 or 2025-11-25.",
         schema = @Schema(type = "string", example = "tools/list")),
     @Parameter(
         name = "Accept",

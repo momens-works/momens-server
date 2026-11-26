@@ -19,6 +19,7 @@ public class McpTransportHandler {
   private final ObjectMapper objectMapper;
   private final McpTransportRequestValidator requestValidator;
   private final McpTransportMethodHandler methodHandler;
+  private final McpLegacyTransportHandler legacyHandler;
   private final McpTransportResponseFactory responseFactory;
 
   public ResponseEntity<JsonNode> handle(String requestBody, HttpServletRequest httpRequest) {
@@ -31,6 +32,10 @@ public class McpTransportHandler {
       request = objectMapper.readTree(requestBody);
     } catch (JacksonException exception) {
       return responseFactory.badRequest(null, -32700, "Parse error");
+    }
+    // 2026-07-28 클라이언트는 Mcp-Method 헤더를 항상 보내고, 이전 버전 클라이언트는 보내지 않습니다.
+    if (httpRequest.getHeader(McpProtocol.METHOD_HEADER) == null) {
+      return legacyHandler.handle(request, httpRequest, authentication.get());
     }
     if (!requestValidator.isJsonRpcRequest(request)) {
       return responseFactory.badRequest(null, -32600, "Invalid Request");

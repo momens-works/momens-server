@@ -25,6 +25,14 @@ class McpTransportRequestValidator {
         && request.get("method").isTextual();
   }
 
+  boolean isJsonRpcNotification(JsonNode request) {
+    return request != null
+        && request.isObject()
+        && "2.0".equals(request.path("jsonrpc").asText())
+        && !request.has("id")
+        && request.path("method").isTextual();
+  }
+
   boolean hasMatchingHeaders(HttpServletRequest request, JsonNode body, String method) {
     if (!protocolVersion(body).equals(request.getHeader(McpProtocol.VERSION_HEADER))
         || !method.equals(request.getHeader(McpProtocol.METHOD_HEADER))

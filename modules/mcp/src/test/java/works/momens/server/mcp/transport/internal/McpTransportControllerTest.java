@@ -33,6 +33,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import works.momens.server.mcp.configuration.McpEndpointProperties;
@@ -49,6 +50,7 @@ import works.momens.server.mcp.transport.McpTransportController;
   McpTransportHandler.class,
   McpTransportRequestValidator.class,
   McpTransportMethodHandler.class,
+  McpLegacyTransportHandler.class,
   McpTransportResponseFactory.class,
   McpTransportAuthenticator.class,
   McpTransportControllerTest.TestConfig.class
@@ -171,18 +173,23 @@ class McpTransportControllerTest {
   }
 
   @Test
-  void rejectsMissingLatestProtocolHeaders() throws Exception {
+  void rejectsLatestVersionHeaderWithoutMethodHeaderWithSupportedVersions() throws Exception {
     when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
 
     mockMvc
         .perform(
             post("/api/mcp")
                 .header("Authorization", "Bearer token")
+                .header("MCP-Protocol-Version", "2026-07-28")
                 .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_EVENT_STREAM)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(discoverRequest()))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.error.code").value(-32020));
+        .andExpect(jsonPath("$.error.code").value(-32022))
+        .andExpect(jsonPath("$.error.data.supported[0]").value("2026-07-28"))
+        .andExpect(jsonPath("$.error.data.supported[1]").value("2025-11-25"))
+        .andExpect(jsonPath("$.error.data.supported[2]").value("2025-06-18"))
+        .andExpect(jsonPath("$.error.data.requested").value("2026-07-28"));
   }
 
   @Test
@@ -269,13 +276,16 @@ class McpTransportControllerTest {
   }
 
   @Test
-  void rejectsNotificationWithBadRequest() throws Exception {
+  void rejectsLatestProtocolNotificationWithBadRequest() throws Exception {
     when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
 
     mockMvc
         .perform(
             post("/api/mcp")
                 .header("Authorization", "Bearer token")
+                .header("MCP-Protocol-Version", "2026-07-28")
+                .header("Mcp-Method", "notifications/cancelled")
+                .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_EVENT_STREAM)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/cancelled\"}"))
         .andExpect(status().isBadRequest())
@@ -363,6 +373,170 @@ class McpTransportControllerTest {
             "MCP tool execution failed tool="
                 + (toolName.equals("list_projects") ? "list_projects" : "unknown"))
         .doesNotContain("SQL secret", "unregistered-private-input");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"2025-06-18", "2025-11-25"})
+  void initializesLegacyClientWithRequestedVersion(String version) throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+
+    mockMvc
+        .perform(legacyPost().content(initializeRequest(version)))
+        .andExpect(status().isOk())
+        .andExpect(header().doesNotExist("Mcp-Session-Id"))
+        .andExpect(jsonPath("$.id").value(0))
+        .andExpect(jsonPath("$.result.protocolVersion").value(version))
+        .andExpect(jsonPath("$.result.capabilities.tools.listChanged").value(false))
+        .andExpect(jsonPath("$.result.serverInfo.name").value("momens-mcp"))
+        .andExpect(jsonPath("$.result.serverInfo.version").value("0.1.0"));
+  }
+
+  @Test
+  void offersLatestLegacyVersionWhenInitializeVersionIsUnsupported() throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+
+    mockMvc
+        .perform(legacyPost().content(initializeRequest("2024-11-05")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.result.protocolVersion").value("2025-11-25"));
+  }
+
+  @Test
+  void rejectsLegacyInitializeWithoutProtocolVersion() throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+
+    mockMvc
+        .perform(
+            legacyPost()
+                .content("{\"jsonrpc\":\"2.0\",\"id\":0,\"method\":\"initialize\",\"params\":{}}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.error.code").value(-32602));
+  }
+
+  @Test
+  void acceptsLegacyNotificationWithoutBody() throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+
+    mockMvc
+        .perform(
+            legacyPost()
+                .header("MCP-Protocol-Version", "2025-06-18")
+                .content("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}"))
+        .andExpect(status().isAccepted())
+        .andExpect(content().string(""));
+  }
+
+  @Test
+  void answersLegacyPing() throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+
+    mockMvc
+        .perform(legacyPost().content(legacyRequest("ping", 1, "")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.result").isEmpty());
+  }
+
+  @Test
+  void listsToolsForLegacyClientWithoutLatestOnlyFields() throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+    when(toolCatalog.list(AUTHENTICATION_CONTEXT))
+        .thenReturn(List.of(new McpToolDefinition("list_projects", "List projects", schema())));
+
+    mockMvc
+        .perform(
+            legacyPost()
+                .header("MCP-Protocol-Version", "2025-06-18")
+                .content(legacyRequest("tools/list", 2, "")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.result.tools[0].name").value("list_projects"))
+        .andExpect(jsonPath("$.result.tools[0].description").value("List projects"))
+        .andExpect(jsonPath("$.result.tools[0].inputSchema.type").value("object"))
+        .andExpect(jsonPath("$.result.resultType").doesNotExist())
+        .andExpect(jsonPath("$.result.ttlMs").doesNotExist())
+        .andExpect(jsonPath("$.result._meta").doesNotExist());
+  }
+
+  @Test
+  void callsToolForLegacyClientWithoutResultType() throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode arguments = mapper.readTree("{\"limit\":5}");
+    JsonNode result =
+        mapper.readTree(
+            "{\"resultType\":\"complete\",\"content\":[{\"type\":\"text\",\"text\":\"Projects\"}]}");
+    when(toolExecutor.call("list_projects", arguments, AUTHENTICATION_CONTEXT))
+        .thenReturn(Optional.of(result));
+
+    mockMvc
+        .perform(
+            legacyPost()
+                .header("MCP-Protocol-Version", "2025-11-25")
+                .content(
+                    legacyRequest(
+                        "tools/call",
+                        "\"task-7\"",
+                        "{\"name\":\"list_projects\",\"arguments\":{\"limit\":5}}")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value("task-7"))
+        .andExpect(jsonPath("$.result.content[0].text").value("Projects"))
+        .andExpect(jsonPath("$.result.resultType").doesNotExist());
+    verify(toolExecutor).call("list_projects", arguments, AUTHENTICATION_CONTEXT);
+  }
+
+  @Test
+  void rejectsUnsupportedLegacyVersionHeaderWithSupportedVersions() throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+
+    mockMvc
+        .perform(
+            legacyPost()
+                .header("MCP-Protocol-Version", "2025-03-26")
+                .content(legacyRequest("tools/list", 2, "")))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.id").value(2))
+        .andExpect(jsonPath("$.error.code").value(-32022))
+        .andExpect(jsonPath("$.error.data.supported.length()").value(3))
+        .andExpect(jsonPath("$.error.data.requested").value("2025-03-26"));
+  }
+
+  @Test
+  void mapsUnknownLegacyMethodToJsonRpcError() throws Exception {
+    when(bearerTokenVerifier.verify("token")).thenReturn(Optional.of(AUTHENTICATION_CONTEXT));
+
+    mockMvc
+        .perform(legacyPost().content(legacyRequest("server/discover", 3, "")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.error.code").value(-32601));
+  }
+
+  private static MockHttpServletRequestBuilder legacyPost() {
+    return post("/api/mcp")
+        .header("Authorization", "Bearer token")
+        .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_EVENT_STREAM)
+        .contentType(MediaType.APPLICATION_JSON);
+  }
+
+  private static String initializeRequest(String version) {
+    return legacyRequest(
+        "initialize",
+        0,
+        "{\"protocolVersion\":\""
+            + version
+            + "\",\"capabilities\":{},\"clientInfo\":{\"name\":\"codex\",\"version\":\"0.172.0\"}}");
+  }
+
+  private static String legacyRequest(String method, int id, String params) {
+    return legacyRequest(method, Integer.toString(id), params);
+  }
+
+  private static String legacyRequest(String method, String id, String params) {
+    return "{\"jsonrpc\":\"2.0\",\"id\":"
+        + id
+        + ",\"method\":\""
+        + method
+        + "\""
+        + (params.isEmpty() ? "" : ",\"params\":" + params)
+        + "}";
   }
 
   private static String discoverRequest() {

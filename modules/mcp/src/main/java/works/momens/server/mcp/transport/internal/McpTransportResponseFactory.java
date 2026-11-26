@@ -48,7 +48,7 @@ class McpTransportResponseFactory {
 
   ResponseEntity<JsonNode> unsupportedProtocolVersion(JsonNode id, String requestedVersion) {
     ObjectNode data = objectMapper.createObjectNode();
-    data.putArray("supported").add(McpProtocol.VERSION);
+    McpProtocol.SUPPORTED_VERSIONS.forEach(data.putArray("supported")::add);
     data.put("requested", requestedVersion);
     return badRequest(id, -32022, "Unsupported protocol version", data);
   }

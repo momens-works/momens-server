@@ -19,9 +19,6 @@ import works.momens.server.mcp.transport.McpToolExecutor;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 class McpTransportMethodHandler {
 
-  private static final String SERVER_NAME = "momens-mcp";
-  private static final String SERVER_VERSION = "0.1.0";
-
   private final ObjectMapper objectMapper;
   private final McpToolCatalog toolCatalog;
   private final McpToolExecutor toolExecutor;
@@ -38,7 +35,7 @@ class McpTransportMethodHandler {
     };
   }
 
-  private ResponseEntity<JsonNode> callTool(
+  ResponseEntity<JsonNode> callTool(
       JsonNode id, JsonNode params, McpAuthenticationContext context) {
     if (!params.path("name").isTextual()
         || (params.has("arguments") && !params.get("arguments").isObject())) {
@@ -84,7 +81,15 @@ class McpTransportMethodHandler {
   private ObjectNode toolsListResult(McpAuthenticationContext authenticationContext) {
     ObjectNode result = objectMapper.createObjectNode();
     result.put("resultType", "complete");
-    ArrayNode tools = result.putArray("tools");
+    result.set("tools", tools(authenticationContext));
+    result.put("ttlMs", 300000);
+    result.put("cacheScope", "private");
+    addServerInfo(result);
+    return result;
+  }
+
+  ArrayNode tools(McpAuthenticationContext authenticationContext) {
+    ArrayNode tools = objectMapper.createArrayNode();
     for (McpToolDefinition definition : toolCatalog.list(authenticationContext)) {
       ObjectNode tool = tools.addObject();
       tool.put("name", definition.name());
@@ -93,17 +98,14 @@ class McpTransportMethodHandler {
       }
       tool.set("inputSchema", definition.inputSchema());
     }
-    result.put("ttlMs", 300000);
-    result.put("cacheScope", "private");
-    addServerInfo(result);
-    return result;
+    return tools;
   }
 
   private static void addServerInfo(ObjectNode result) {
     result
         .putObject("_meta")
         .putObject("io.modelcontextprotocol/serverInfo")
-        .put("name", SERVER_NAME)
-        .put("version", SERVER_VERSION);
+        .put("name", McpProtocol.SERVER_NAME)
+        .put("version", McpProtocol.SERVER_VERSION);
   }
 }
