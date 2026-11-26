@@ -15,8 +15,6 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import works.momens.server.common.api.BusinessException;
-import works.momens.server.common.api.CommonErrorCode;
 import works.momens.server.common.api.FieldValidationException;
 import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
@@ -251,54 +249,6 @@ class MilestoneWriterIntegrationTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
-  void rejectsClientVersionFromBeforeLegacyUpdate() {
-    Fixture fixture = newFixture("writer-legacy-update");
-    Milestone milestone = saveMilestone(fixture.projectId(), "마일스톤");
-    long originalVersion = milestone.getVersion();
-
-    legacyUpdate(
-        "UPDATE milestones SET name = 'Legacy edit', updated_at = NOW() WHERE id = ?1",
-        milestone.getId());
-    assertThat(storedVersion(milestone.getId())).isEqualTo(originalVersion + 1);
-
-    assertThatThrownBy(() ->
-            milestoneWriter.update(
-                new UpdateMilestoneCommand(
-                    milestone.getId(),
-                    "Stale edit",
-                    null,
-                    false,
-                    null,
-                    null,
-                    false,
-                    null,
-                    null,
-                    null,
-                    false,
-                    originalVersion)))
-        .isInstanceOf(BusinessException.class)
-        .extracting("errorCode")
-        .isEqualTo(CommonErrorCode.COMMON_CONCURRENT_MODIFICATION);
-  }
-
-  @Test
-  void legacySqlAdvancesVersionOnlyWhenTrackedValuesChange() {
-    Fixture fixture = newFixture("writer-legacy-noop");
-    Milestone milestone = saveMilestone(fixture.projectId(), "마일스톤");
-    long originalVersion = milestone.getVersion();
-
-    legacyUpdate(
-        "UPDATE milestones SET name = name, status = status, updated_at = NOW() WHERE id = ?1",
-        milestone.getId());
-    assertThat(storedVersion(milestone.getId())).isEqualTo(originalVersion);
-
-    legacyUpdate(
-        "UPDATE milestones SET deleted_at = NOW(), updated_at = NOW() WHERE id = ?1",
-        milestone.getId());
-    assertThat(storedVersion(milestone.getId())).isEqualTo(originalVersion + 1);
-  }
-
-  @Test
   void softDeletesMilestone() {
     Fixture fixture = newFixture("writer-delete");
     Milestone milestone = saveMilestone(fixture.projectId(), "삭제할 마일스톤");
@@ -324,19 +274,6 @@ class MilestoneWriterIntegrationTest extends AbstractPostgresIntegrationTest {
   private Milestone saveMilestone(UUID projectId, String name) {
     Milestone milestone = Milestone.builder().projectId(projectId).name(name).build();
     return milestoneRepository.saveAndFlush(milestone);
-  }
-
-  private void legacyUpdate(String sql, UUID milestoneId) {
-    entityManager
-        .getEntityManager()
-        .createNativeQuery(sql)
-        .setParameter(1, milestoneId)
-        .executeUpdate();
-    entityManager.clear();
-  }
-
-  private long storedVersion(UUID milestoneId) {
-    return milestoneRepository.findById(milestoneId).orElseThrow().getVersion();
   }
 
   private record Fixture(UUID projectId) {}

@@ -47,7 +47,7 @@ interface TaskControllerDocs {
   @ApiResponse(responseCode = "204", description = "수정 성공")
   @ApiException(
       value = TaskErrorCode.class,
-      codes = {"TASK_NOT_FOUND", "TASK_CHECKLIST_ITEM_NOT_FOUND", "TASK_WRITES_PAUSED"})
+      codes = {"TASK_NOT_FOUND", "TASK_CHECKLIST_ITEM_NOT_FOUND"})
   @ApiException(CommonErrorCode.class)
   void updateTask(
       @Parameter(description = "task 식별자") UUID taskId,
@@ -62,7 +62,7 @@ interface TaskControllerDocs {
   @ApiResponse(responseCode = "204", description = "삭제 성공")
   @ApiException(
       value = TaskErrorCode.class,
-      codes = {"TASK_NOT_FOUND", "TASK_WRITES_PAUSED"})
+      codes = {"TASK_NOT_FOUND"})
   @ApiException(CommonErrorCode.class)
   void deleteTask(
       @Parameter(description = "task 식별자") UUID taskId,
@@ -80,7 +80,7 @@ interface TaskControllerDocs {
   @ApiResponse(responseCode = "204", description = "복구 성공")
   @ApiException(
       value = TaskErrorCode.class,
-      codes = {"TASK_NOT_FOUND", "TASK_WRITES_PAUSED"})
+      codes = {"TASK_NOT_FOUND"})
   @ApiException(CommonErrorCode.class)
   void restoreTask(@Parameter(description = "task 식별자") UUID taskId, Principal principal);
 
@@ -94,7 +94,7 @@ interface TaskControllerDocs {
       content = @Content(schema = @Schema(implementation = ChecklistToggleResponse.class)))
   @ApiException(
       value = TaskErrorCode.class,
-      codes = {"TASK_NOT_FOUND", "TASK_CHECKLIST_ITEM_NOT_FOUND", "TASK_WRITES_PAUSED"})
+      codes = {"TASK_NOT_FOUND", "TASK_CHECKLIST_ITEM_NOT_FOUND"})
   @ApiException(
       value = UserErrorCode.class,
       codes = {"USER_NOT_FOUND"})

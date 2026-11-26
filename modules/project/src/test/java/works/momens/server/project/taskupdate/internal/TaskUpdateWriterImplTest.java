@@ -12,7 +12,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import works.momens.server.project.task.TaskWriteGate;
 import works.momens.server.project.taskupdate.CreateTaskUpdateCommand;
 import works.momens.server.project.taskupdate.TaskUpdateKind;
 
@@ -23,7 +22,6 @@ class TaskUpdateWriterImplTest {
   private final UUID taskId = UUID.randomUUID();
   private final UUID userId = UUID.randomUUID();
   @Mock private TaskUpdateRepository taskUpdateRepository;
-  @Mock private TaskWriteGate writeGate;
   @InjectMocks private TaskUpdateWriterImpl writer;
 
   @Test

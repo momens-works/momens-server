@@ -16,7 +16,6 @@ import works.momens.server.minsu.SignalTaskDraftInput;
 import works.momens.server.minsu.TaskDraftStatusReader;
 import works.momens.server.project.task.TaskDetail;
 import works.momens.server.project.task.TaskReader;
-import works.momens.server.project.task.TaskWriteGate;
 import works.momens.server.signal.SignalActionResult;
 import works.momens.server.signal.SignalActionService;
 import works.momens.server.signal.SignalErrorCode;
@@ -43,7 +42,6 @@ class SignalActionServiceImpl implements SignalActionService {
   private final TaskReader taskReader;
   private final SignalTaskDraftGenerator taskDraftGenerator;
   private final TaskDraftStatusReader taskDraftStatusReader;
-  private final TaskWriteGate writeGate;
 
   @Override
   public SignalActionResult convertToTask(UUID signalId, UUID userId) {
@@ -53,9 +51,6 @@ class SignalActionServiceImpl implements SignalActionService {
       return replayOrConflict(existing.get(), SignalActionType.CONVERT_TO_TASK);
     }
 
-    // replay는 쓰지 않으므로 쓰기 중단 중에도 응답한다. 막힐 요청이 evidence 조회와 모델 호출을 하지 않도록
-    // task writer보다 먼저 확인한다.
-    writeGate.requireOpen();
     PreparedTaskDraft prepared = prepareDraft(signal);
     try {
       return executor.convert(signal, userId, prepared);

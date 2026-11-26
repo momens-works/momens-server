@@ -62,9 +62,6 @@ class McpToolService implements McpToolCatalog, McpToolExecutor {
       if (exception.getErrorCode() == CommonErrorCode.AUTH_FORBIDDEN) {
         return Optional.of(error("You don't have access to that resource."));
       }
-      if (exception.getErrorCode() == TaskErrorCode.TASK_WRITES_PAUSED) {
-        return Optional.of(error("Task writes are temporarily paused."));
-      }
       throw exception;
     }
   }
