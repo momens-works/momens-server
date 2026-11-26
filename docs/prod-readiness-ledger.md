@@ -60,7 +60,6 @@ CI가 실제 Secret·ConfigMap의 존재나 값을 조회해 증명하지는 않
 | 모바일 client ID와 audiences 일치 | `확인 필요` | `MOMENS_AUTH_GOOGLE_AUDIENCES`는 모바일 로그인(`POST /api/auth/google/token`)에서 앱이 보낸 Google ID 토큰의 `aud`를 검증할 때만 쓰입니다(`GoogleIdTokenVerifier`). 앱 client ID가 목록에 있는지 모바일 prod 로그인으로 따로 확인합니다 |
 | worker Signal 생산 전 스키마 검토 (`MOM-0916`) | `required` | 작업은 backlog입니다. 생산 시작 전에 UUID 생성 방식과 FK·삭제 정책을 [worker Signal 생산 전 확인](#worker-signal-생산-전-확인)에 따라 검토하고 작업을 닫습니다. |
 | FCM 프로젝트·ADC 자격증명 | `비활성` | push 기본값은 꺼져 있습니다. 활성화할 때 [FCM 활성화 전 확인](#fcm-활성화-전-확인)의 프로젝트·권한·인증 연결을 검증합니다 |
-| 신규 task writer 열기 (`MOM-0967`) | `비활성` | prod 프로필은 `MOMENS_PROJECT_TASK_WRITES_PAUSED`가 없으면 task 쓰기를 닫고 `503 TASK_WRITES_PAUSED`를 반환합니다. legacy writer 차단·drain 증거를 확인한 뒤 k8s prod overlay로 `false`를 주입합니다. 순서는 [컷오버 2단계 게이트](design/legacy-product-api-migration/cutover.md#5-2단계-게이트)를 따릅니다 |
 | Minsu GCP 프로젝트·리전·ADC | `비활성` | task draft와 비동기 enroll/drain 기본값은 꺼져 있습니다. 활성화 조건은 [Minsu 활성화와 복구](#minsu-활성화와-복구)를 따릅니다 |
 | source provider redirect URI 등록 | `확인 필요` | GitHub, Slack, Notion, Figma의 관리 화면에 `https://api.momens.works/api/source-connections/oauth/callback`을 등록해야 합니다. 신규 경로에는 레거시 경로에 없는 `/api` 접두사가 포함되어 있어 서로 다른 주소입니다. 기존 주소를 삭제하지 않고 신규 주소를 추가하면 redirect URI 설정만 변경해 레거시 경로로 되돌릴 수 있습니다. 등록 여부는 레포지토리에서 확인할 수 없습니다. |
 | 초대 이메일 발송 설정 | `비활성` | 이메일 발송은 기본적으로 비활성화되어 있어 초대를 생성해도 이메일이 발송되지 않습니다. 활성화하려면 `EMAIL_PROVIDER=resend`와 함께 `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO`, `APP_INVITE_URL`을 모두 주입해야 합니다. 필수 설정 중 하나라도 비어 있으면 서버 기동에 실패합니다 |

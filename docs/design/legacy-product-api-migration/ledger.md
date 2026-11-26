@@ -258,8 +258,8 @@ handler/service/repository를 뜻한다.
 | `WSP` | Product JSON 기본 규칙과 legacy 세션. H019~H021은 인증-only, H022·H025~H027은 member, H024·H028~H034는 admin/owner, H046은 인증 + invitation token·email 일치 | `workspaces`, member, invitation, label sequence writer; invitation email. H019 생성 경로는 `projects`, `project_owners`, `confirmed_memories`에도 함께 쓴다. | `MOM-0845` workspace scope 영향. read는 routing rollback, write는 schema/label/email 호환 확인 전 rollback 미보장 |
 | `SNP` | Product JSON 기본 규칙, workspace membership | read-only 합성; 여러 aggregate·relation 조회 | 응답·합성·query budget 계약은 `MOM-0856`, 구현은 `MOM-0862`에서 완료. read routing rollback 가능 |
 | `PRJ` | Product JSON 기본 규칙과 legacy 세션. H038·H047은 member, H037·H048~H049는 workspace admin/owner | `projects`, `project_owners`; projection 없음. 워크스페이스 생성(H019)도 `projects`와 `project_owners`에 쓴다. | `MOM-0845`와 legacy 전용 field/owner/progress 정책 확인. read routing rollback, write rollback 미확정 |
-| `MIL` | Product JSON 기본 규칙, project workspace membership | `milestones`, `milestone_owners`; projection 없음 | read 기반(`MOM-0858`), 생성 API(`MOM-0866`), 수정·삭제 public writer(`MOM-0972`)와 MCP 도구(`MOM-0993`) 구현 완료. 목록·상세 및 수정·삭제 HTTP endpoint는 이관하지 않는다. `milestones`에 `workspace_id`가 없어 조회가 project id 목록을 기준으로 하고, 소유 모듈이 `project`인 이유도 이것이다. read routing rollback, write rollback 미확정. 레거시 수정은 DB 트리거가 `version`을 올리며, 레거시 writer를 영구 종료하면 트리거를 제거한다(`MOM-1163`) |
-| `TSK` | Product JSON 기본 규칙, project workspace membership | 현재 legacy REST·MCP·Slack writer가 `tasks`, `task_updates`를 변경. target에는 모바일 생성·수정·체크리스트, Signal 전환, Minsu background draft 반영 writer가 구현되어 같은 `tasks`를 사용하며 task write는 retrieval projection 동반 | `MOM-0773`, 공통 outbox consumer(`MOM-0898`)와 task projector·prod E2E 검증(`MOM-0956`)이 `cutover_ready` gate. prod 프로필은 target writer를 닫은 채 기동하며(`MOMENS_PROJECT_TASK_WRITES_PAUSED`) aggregate 전체를 한 번에 전환. write rollback 미확정. 레거시 수정은 DB 트리거가 `version`을 올리며, 레거시 writer를 영구 종료하면 트리거를 제거한다(`MOM-1163`) |
+| `MIL` | Product JSON 기본 규칙, project workspace membership | `milestones`, `milestone_owners`; projection 없음 | read 기반(`MOM-0858`), 생성 API(`MOM-0866`), 수정·삭제 public writer(`MOM-0972`)와 MCP 도구(`MOM-0993`) 구현 완료. 목록·상세 및 수정·삭제 HTTP endpoint는 이관하지 않는다. `milestones`에 `workspace_id`가 없어 조회가 project id 목록을 기준으로 하고, 소유 모듈이 `project`인 이유도 이것이다. read routing rollback, write rollback 미확정. |
+| `TSK` | Product JSON 기본 규칙, project workspace membership | 현재 legacy REST·MCP·Slack writer가 `tasks`, `task_updates`를 변경. target에는 모바일 생성·수정·체크리스트, Signal 전환, Minsu background draft 반영 writer가 구현되어 같은 `tasks`를 사용하며 task write는 retrieval projection 동반 | `MOM-0773`, 공통 outbox consumer(`MOM-0898`)와 task projector·prod E2E 검증(`MOM-0956`)이 `cutover_ready` gate. aggregate 전체를 한 번에 전환. write rollback 미확정. |
 | `DEC` | Product JSON 기본 규칙, project workspace membership | `decisions`; write는 retrieval projection 동반 | 서버 구현은 `MOM-1017`, 신규 경로 E2E 추가는 `MOM-1022`. worker decision projector의 운영 투영 확인(`MOM-1020`)이 운영 전환 gate |
 | `BLK` | Product JSON 기본 규칙과 legacy 세션. H039·H059·H066·H074는 member, H075 삭제는 admin/owner | `blockers`; write는 retrieval projection 동반 | 서버 구현은 `MOM-1018`, 신규 경로 E2E 추가는 `MOM-1022`. worker blocker projector의 운영 투영 확인(`MOM-1021`)이 운영 전환 gate |
 | `SRC` | Product JSON 또는 provider callback 계약. H040·H076·H081·H096은 member, H041·H077~H080은 admin/owner, H082 callback은 공개 transport + signed state | source connection/credential/sync state/source-ref writer; GitHub·Slack·Notion·Figma | provider redirect URI·secret·webhook·worker 호환 필요. `MOM-0774`는 설명 노후화로 보류하며 현재 이관 선행 조건에서 제외(2026-10-08) |
@@ -469,8 +469,7 @@ eval set·retrieval 주소·접근 권한과 선택적 Vertex ADC가 필요하�
   MOM-1159, 운영 worker 배포·backfill lease 인계 MOM-1160, 신규·레거시 writer 차단 이미지와 배포
   순서 MOM-1161이다.
 - Product API·OAuth/MCP UI·MCP 공동 전환과 writer 검증은 MOM-0967·0992,
-  source 운영 배선은 MOM-0954, legacy 종료는 MOM-1023이다. 종료 뒤 쓰기 중단 스위치와 version
-  트리거 제거는 MOM-1163이다.
+  source 운영 배선은 MOM-0954, legacy 종료는 MOM-1023이다.
 - MCP는 [ADR-0023](../../adr/0023-mcp-oauth-migration-boundary-and-cutover.md)에 따라 기존
   grant/client/token을 이전하지 않고 `/api/mcp`로 재연결한다. bridge 제거는 별도 조건을 확인한다.
 - 전환기 코드 제거의 관찰 기간은 MOM-0875가 MOM-0834 이후 정한다.
