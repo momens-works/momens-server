@@ -42,12 +42,12 @@ import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 @RequiredArgsConstructor
 class ProjectBriefService {
 
-  /** 타입 칩 정렬. 라벨 글자수 오름차순, 같으면 라벨 알파벳순입니다(2026-07-10 기획 확정). All 칩은 정렬에서 빼고 맨 앞에 둡니다. */
+  /** 타입 칩 정렬. 라벨 글자수 오름차순, 같으면 라벨 알파벳순입니다. All 칩은 정렬에서 빼고 맨 앞에 둡니다. */
   private static final Comparator<MobileBrief.FilterCount> CHIP_ORDER =
       Comparator.comparingInt((MobileBrief.FilterCount chip) -> chip.label().length())
           .thenComparing(MobileBrief.FilterCount::label);
 
-  /** 현재 우선순위 후보 상태. 진행 중인 todo와 in_progress만 담고 backlog와 완료 상태는 제외합니다(2026-07-10 기획 확정). */
+  /** 현재 우선순위 후보 상태. 진행 중인 todo와 in_progress만 담고 backlog와 완료 상태는 제외합니다. */
   private static final List<String> PRIORITY_STATUSES = List.of("todo", "in_progress");
 
   /**
@@ -93,7 +93,6 @@ class ProjectBriefService {
     BriefDay.Range today = BriefDay.rangeOf(anchor);
     Map<String, Long> countsByType =
         signalListService.countByCreatedRange(projectId, userId, today.from(), today.toExclusive());
-    // filter=all은 type을 가리지 않고 전체를 조회하므로 null을 넘긴다. change도 items에 포함된다.
     SignalSummaryPage firstPage =
         signalListService.listByCreatedRange(
             projectId,
@@ -121,7 +120,7 @@ class ProjectBriefService {
   @Transactional(readOnly = true)
   public MobileBriefSignalPage getSignalSummaryPage(
       UUID projectId, UUID userId, String filterKey, String cursor, Integer limit) {
-    // filter는 열린 어휘라 all이나 빈 값이면 전체, 그 외는 그대로 type으로 넘긴다. 알려지지 않은 type은 매칭이 없어 빈 목록이 된다.
+    // filter는 열린 어휘라 알려지지 않은 type도 거부하지 않고 그대로 넘긴다.
     List<String> types =
         filterKey == null || filterKey.isBlank() || SignalTypeLabel.ALL_KEY.equals(filterKey)
             ? null
@@ -151,7 +150,6 @@ class ProjectBriefService {
   }
 
   private static List<MobileBrief.FilterCount> toFilterCounts(Map<String, Long> countsByType) {
-    // 당일 목록에 있는 type만 칩으로 만든다(개수 0인 type은 칩이 없다). All 칩은 전체 합으로 맨 앞에 고정한다.
     MobileBrief.FilterCount all =
         new MobileBrief.FilterCount(
             SignalTypeLabel.ALL_KEY,
