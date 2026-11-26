@@ -16,10 +16,6 @@ import works.momens.server.common.api.CommonErrorCode;
 /**
  * 웹 인증(Authorization Code 로그인 + 쿠키 세션) OpenAPI 문서.
  *
- * <p>로그인({@code google/login}·{@code google/callback})은 브라우저 리다이렉트(302)라 JSON 본문이 없고 실패도
- * failure-uri로 리다이렉트합니다. 세션 갱신·로그아웃({@code web/refresh}·{@code web/logout})은 FE의 fetch 호출이라 토큰을
- * HttpOnly 쿠키로 주고받으며 본문 없이 204를 반환합니다(refresh 무효 시 표준 JSON 에러).
- *
  * <p>네 엔드포인트 모두 공개이므로(SecurityConfig의 공개 체인) OpenApiConfig가 적용한 전역 Bearer 요구에서
  * {@code @SecurityRequirements}(빈 값)로 제외합니다.
  */
@@ -40,9 +36,9 @@ interface WebAuthControllerDocs {
       description =
           "code를 교환해 WEB 세션 토큰을 발급합니다. 성공: access/refresh HttpOnly 쿠키 설정 후 success-uri로"
               + " 리다이렉트. 실패: `failure-uri`로 리다이렉트하며 `?error=`에 다음 값 중 하나를 전달합니다."
-              + " `invalid_state`: state가 없거나 일치하지 않음, 또는 code 누락."
+              + " `invalid_state`: state·PKCE 쿠키나 state가 없거나 일치하지 않음, 또는 code 누락."
               + " `email_not_verified`: Google 계정 이메일이 검증되지 않음."
-              + " `google_error`: code 교환 또는 사용자 정보 조회 실패."
+              + " `google_error`: code 교환 또는 사용자 정보 조회 실패, 또는 사용자 정보에 sub·email·email_verified가 없음."
               + " `server_error`: 그 밖의 예기치 못한 오류.")
   @ApiResponse(responseCode = "302", description = "성공/실패 모두 리다이렉트")
   @SecurityRequirements
