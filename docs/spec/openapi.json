@@ -6700,18 +6700,18 @@
         "operationId" : "mcpPost",
         "parameters" : [
           {
+            "description" : "Required for 2026-07-28 requests. 2025-06-18 and 2025-11-25 clients may omit it.",
             "in" : "header",
             "name" : "MCP-Protocol-Version",
-            "required" : true,
             "schema" : {
               "example" : "2026-07-28",
               "type" : "string"
             }
           },
           {
+            "description" : "Required for 2026-07-28 requests. Without it, the request is handled as 2025-06-18 or 2025-11-25.",
             "in" : "header",
             "name" : "Mcp-Method",
-            "required" : true,
             "schema" : {
               "example" : "tools/list",
               "type" : "string"
@@ -6756,6 +6756,9 @@
               }
             },
             "description" : "JSON-RPC response"
+          },
+          "202" : {
+            "description" : "Notification accepted from a 2025-06-18 or 2025-11-25 client"
           },
           "400" : {
             "content" : {
