@@ -6,8 +6,6 @@ Blocker 쓰기와 worker 검색 반영의 계약이다. HTTP 입력·응답 형�
 ## HTTP 계약
 
 - 공백만 있는 설명은 trim하지 않고 그대로 저장한다.
-- 요청의 `workspace_id`가 작업의 프로젝트에서 구한 workspace와 다르면 400
-  `BLOCKER_WORKSPACE_MISMATCH`다.
 - milestone blocker도 해결·삭제할 수 있다.
 - snapshot은 active·resolved를 모두 반환한다.
 
