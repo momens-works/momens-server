@@ -540,7 +540,8 @@ class McpReadToolServiceTest {
                 new UserProfile(otherUserId, "other@example.com", "Alice", null, null, now, now)));
     JsonNode result = call("list_tasks", "{\"assignee\":\"" + reference + "\"}");
     assertThat(result.path("isError").asBoolean()).isTrue();
-    assertThat(text(result)).isEqualTo("This reference matches several members — use their email");
+    assertThat(text(result))
+        .isEqualTo("This reference matches several members — use their email or id");
     verifyNoInteractions(tasks);
     assertThat(
             call("list_tasks", "{\"assignee\":\"alice@example.com\"}").path("isError").asBoolean())
