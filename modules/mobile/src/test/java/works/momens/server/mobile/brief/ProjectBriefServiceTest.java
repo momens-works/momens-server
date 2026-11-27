@@ -61,8 +61,8 @@ class ProjectBriefServiceTest {
   // 고정 시각 2026-07-10T05:00Z는 KST로 2026-07-10 14:00이다. 그날(KST)의 UTC 범위는 아래와 같다.
   private static final Clock FIXED_CLOCK =
       Clock.fixed(Instant.parse("2026-07-10T05:00:00Z"), ZoneOffset.UTC);
-  private static final Instant TODAY_FROM = Instant.parse("2026-07-09T15:00:00Z");
-  private static final Instant TODAY_TO = Instant.parse("2026-07-10T15:00:00Z");
+  private static final Instant TODAY_FROM = Instant.parse("2026-07-09T21:00:00Z");
+  private static final Instant TODAY_TO = Instant.parse("2026-07-10T21:00:00Z");
   // FIXED_CLOCK 기준 오늘(KST). 커서에 실리는 기준일 앵커다.
   private static final LocalDate TODAY = LocalDate.of(2026, 7, 10);
 
@@ -268,8 +268,8 @@ class ProjectBriefServiceTest {
   void getSignalSummaryPageUsesCursorAnchorRatherThanRequestTime() {
     // 커서에 실린 기준일(어제)로 창을 잡고 요청 시각의 오늘(FIXED_CLOCK)로 밀리지 않는다.
     LocalDate yesterday = LocalDate.of(2026, 7, 9);
-    Instant yesterdayFrom = Instant.parse("2026-07-08T15:00:00Z");
-    Instant yesterdayTo = Instant.parse("2026-07-09T15:00:00Z");
+    Instant yesterdayFrom = Instant.parse("2026-07-08T21:00:00Z");
+    Instant yesterdayTo = Instant.parse("2026-07-09T21:00:00Z");
     when(signalListService.listByCreatedRange(
             eq(PROJECT_ID),
             eq(CALLER_ID),
