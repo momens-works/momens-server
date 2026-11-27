@@ -3,25 +3,31 @@ package works.momens.server.mobile.brief;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 
 final class BriefDay {
 
   private static final ZoneId ZONE = ZoneId.of("Asia/Seoul");
+  private static final LocalTime START_TIME = LocalTime.of(6, 0);
 
   private BriefDay() {}
 
   /** 시그널 created_at을 거를 조회 범위. */
   record Range(Instant from, Instant toExclusive) {}
 
-  /** 지금 시각 기준 오늘(KST)의 날짜입니다. 페이지 세션의 기준일 앵커로 커서에 실어 창을 고정합니다. */
+  /** 현재 시각이 속한 브리프의 기준일입니다. 페이지네이션 도중에도 동일한 시간 범위를 유지하기 위해 커서에 포함합니다. */
   static LocalDate today(Clock clock) {
-    return LocalDate.now(clock.withZone(ZONE));
+    LocalDateTime now = LocalDateTime.now(clock.withZone(ZONE));
+    return now.toLocalTime().isBefore(START_TIME)
+        ? now.toLocalDate().minusDays(1)
+        : now.toLocalDate();
   }
 
   static Range rangeOf(LocalDate date) {
-    Instant from = date.atStartOfDay(ZONE).toInstant();
-    Instant toExclusive = date.plusDays(1).atStartOfDay(ZONE).toInstant();
+    Instant from = date.atTime(START_TIME).atZone(ZONE).toInstant();
+    Instant toExclusive = date.plusDays(1).atTime(START_TIME).atZone(ZONE).toInstant();
     return new Range(from, toExclusive);
   }
 }

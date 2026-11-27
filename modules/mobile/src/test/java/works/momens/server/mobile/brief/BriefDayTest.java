@@ -17,9 +17,9 @@ class BriefDayTest {
 
     BriefDay.Range range = BriefDay.rangeOf(BriefDay.today(clock));
 
-    // KST 2026-07-10 00:00 = UTC 2026-07-09 15:00, 다음 날 0시 = UTC 2026-07-10 15:00.
-    assertThat(range.from()).isEqualTo(Instant.parse("2026-07-09T15:00:00Z"));
-    assertThat(range.toExclusive()).isEqualTo(Instant.parse("2026-07-10T15:00:00Z"));
+    // KST 2026-07-10 06:00은 UTC 2026-07-09 21:00에 해당하며, 다음 날 오전 6시는 UTC 2026-07-10 21:00에 해당합니다.
+    assertThat(range.from()).isEqualTo(Instant.parse("2026-07-09T21:00:00Z"));
+    assertThat(range.toExclusive()).isEqualTo(Instant.parse("2026-07-10T21:00:00Z"));
   }
 
   @Test
@@ -32,7 +32,18 @@ class BriefDayTest {
 
     BriefDay.Range range = BriefDay.rangeOf(BriefDay.today(clock));
 
-    assertThat(range.from()).isEqualTo(Instant.parse("2026-07-09T15:00:00Z"));
-    assertThat(range.toExclusive()).isEqualTo(Instant.parse("2026-07-10T15:00:00Z"));
+    assertThat(range.from()).isEqualTo(Instant.parse("2026-07-09T21:00:00Z"));
+    assertThat(range.toExclusive()).isEqualTo(Instant.parse("2026-07-10T21:00:00Z"));
+  }
+
+  @Test
+  void todayChangesAtSixAmKst() {
+    // UTC 2026-07-09 20:59:59는 KST 2026-07-10 05:59:59이므로 브리프의 기준일은 7월 9일입니다.
+    // 1초 뒤인 KST 06:00부터 기준일이 7월 10일로 바뀝니다.
+    Clock beforeStart = Clock.fixed(Instant.parse("2026-07-09T20:59:59Z"), ZoneOffset.UTC);
+    Clock atStart = Clock.fixed(Instant.parse("2026-07-09T21:00:00Z"), ZoneOffset.UTC);
+
+    assertThat(BriefDay.today(beforeStart)).isEqualTo(LocalDate.of(2026, 7, 9));
+    assertThat(BriefDay.today(atStart)).isEqualTo(LocalDate.of(2026, 7, 10));
   }
 }

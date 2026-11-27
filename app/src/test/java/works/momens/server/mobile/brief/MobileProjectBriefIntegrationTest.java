@@ -32,8 +32,8 @@ import works.momens.server.user.UserService;
 @AutoConfigureMockMvc
 class MobileProjectBriefIntegrationTest extends AbstractPostgresIntegrationTest {
 
-  // 고정 시각 2026-07-10T12:00Z는 KST로 2026-07-10 21:00이다. 그날(KST) 범위는 UTC 07-09 15:00 이상 07-10 15:00
-  // 미만.
+  // 고정 시각인 2026-07-10T12:00Z는 KST 2026-07-10 21:00에 해당합니다.
+  // 해당 일자의 브리프 조회 범위는 UTC 2026-07-09 21:00 이상, 2026-07-10 21:00 미만입니다.
   private static final Instant FIXED_NOW = Instant.parse("2026-07-10T12:00:00Z");
 
   @Autowired private MockMvc mockMvc;
@@ -299,7 +299,8 @@ class MobileProjectBriefIntegrationTest extends AbstractPostgresIntegrationTest 
             .getContentAsString();
     String nextCursor = JsonPath.read(firstPageBody, "$.next_cursor");
 
-    // 더보기 요청이 자정을 넘겨 다음 날(KST 2026-07-11)에 도착해도, 커서에 실린 기준일로 같은 창을 복원한다.
+    // 더보기 요청이 하루의 경계를 넘어 다음 일자(KST 2026-07-11)에 들어오더라도,
+    // 커서에 포함된 기준일을 사용하여 첫 페이지와 동일한 조회 범위를 복원하는지 검증합니다.
     when(mobileClock.clock())
         .thenReturn(Clock.fixed(Instant.parse("2026-07-11T12:00:00Z"), ZoneOffset.UTC));
 

@@ -125,8 +125,8 @@ class ProjectBriefService {
         filterKey == null || filterKey.isBlank() || SignalTypeLabel.ALL_KEY.equals(filterKey)
             ? null
             : List.of(filterKey);
-    // 커서가 있으면 첫 페이지에서 정한 기준일을 그대로 쓰고, 없으면(직접 첫 페이지 조회) 오늘로 앵커를 잡는다.
-    // 이렇게 하면 페이지네이션 도중 자정을 넘겨도 창이 밀리지 않는다.
+    // 커서가 있으면 첫 페이지에서 결정한 기준일을 사용하고, 없으면 현재 시각을 기준으로 기준일을 결정합니다.
+    // 이를 통해 페이지네이션 도중 하루의 경계를 넘기더라도 동일한 조회 범위를 유지합니다.
     CursorPageParams params =
         CursorPageParams.resolve(cursor, limit, MobileBrief.SIGNAL_SUMMARY_PAGE_SIZE);
     BriefSignalCursor position =
