@@ -327,7 +327,8 @@ class McpReadToolService {
       return id.get();
     }
     // 사용자 정보는 user 공개 계약으로만 읽습니다. 후보는 종류별 두 개만 유지합니다.
-    // 이메일·이름은 Java 문자열 비교로 판정하므로 멤버를 100명씩 끝까지 순회하며, 총 조회량은 멤버 수에 비례합니다.
+    // 이메일·이름은 Java 문자열 비교로 판정합니다. 이메일이 일치하는 멤버가 없으면 멤버를 100명씩
+    // 끝까지 순회하므로 총 조회량은 멤버 수에 비례합니다.
     List<UserProfile> candidates = new ArrayList<>();
     Instant after = null;
     UUID afterId = null;

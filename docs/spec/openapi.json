@@ -542,7 +542,8 @@
             "type" : "string"
           },
           "reversibility" : {
-            "description" : "가역성. 생략·null·빈 문자열이면 reversible입니다.",
+            "default" : "reversible",
+            "description" : "가역성. null이나 빈 문자열이면 기본값을 적용합니다.",
             "example" : "reversible",
             "pattern" : "^(reversible|irreversible|)$",
             "type" : [
@@ -691,7 +692,7 @@
             "type" : "string"
           },
           "owner_user_ids" : {
-            "description" : "소유자 식별자 목록. 생략하면 요청자가 소유자로 지정됩니다.",
+            "description" : "소유자 식별자 목록. 생략하면 요청자가 소유자로 지정됩니다. 동일한 식별자를 중복으로 전달하면 400을 반환합니다.",
             "items" : {
               "format" : "uuid",
               "type" : "string"

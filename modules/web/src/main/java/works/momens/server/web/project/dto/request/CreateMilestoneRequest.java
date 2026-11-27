@@ -17,4 +17,5 @@ public record CreateMilestoneRequest(
         Integer progress,
     @Schema(description = "마일스톤 요약") String summary,
     @Schema(description = "마지막 맥락 갱신 시각") Instant lastContextAt,
-    @Schema(description = "소유자 식별자 목록. 생략하면 요청자가 소유자로 지정됩니다.") List<UUID> ownerUserIds) {}
+    @Schema(description = "소유자 식별자 목록. 생략하면 요청자가 소유자로 지정됩니다. 동일한 식별자를 중복으로 전달하면 400을 반환합니다.")
+        List<UUID> ownerUserIds) {}

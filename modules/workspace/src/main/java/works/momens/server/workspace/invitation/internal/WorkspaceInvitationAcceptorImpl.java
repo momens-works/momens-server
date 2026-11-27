@@ -26,7 +26,8 @@ import works.momens.server.workspace.membership.WorkspaceRole;
 /**
  * 워크스페이스 초대 수락 기능을 구현합니다.
  *
- * <p>같은 토큰으로 동시에 들어온 요청이 모두 검증을 통과하지 않도록 초대 행에 lock을 걸고 조회합니다. 검증 순서는 상태, 만료 여부, 이메일 일치 여부 순입니다.
+ * <p>같은 토큰으로 동시에 들어온 요청이 모두 검증을 통과하지 않도록 초대 행에 lock을 걸고 조회합니다. 여러 검증에 동시에 걸리는 요청은 먼저 검사한 조건의
+ * status로 응답하므로, 검증 순서를 바꾸면 같은 요청의 응답 status가 달라집니다.
  */
 class WorkspaceInvitationAcceptorImpl implements WorkspaceInvitationAcceptor {
 

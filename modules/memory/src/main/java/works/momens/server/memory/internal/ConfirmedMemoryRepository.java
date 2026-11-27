@@ -11,7 +11,7 @@ import works.momens.server.memory.ConfirmedMemoryDetail;
 
 interface ConfirmedMemoryRepository extends JpaRepository<ConfirmedMemory, UUID> {
 
-  /** 상태와 무관하게 {@code deleted_at}이 없는 행을 조회합니다. 생성 시각 내림차순이며 동률 보조 키는 두지 않습니다. */
+  /** 상태와 무관하게 {@code deleted_at}이 없는 행을 조회합니다. */
   @Query(
       """
       select new works.momens.server.memory.ConfirmedMemoryDetail(
