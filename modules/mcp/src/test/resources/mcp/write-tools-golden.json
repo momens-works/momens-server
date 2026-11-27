@@ -92,7 +92,7 @@
         },
         "assignee": {
           "type": "string",
-          "description": "assignee: me, a member name, or an email"
+          "description": "assignee: me, a member name, an email, or a member id"
         },
         "milestone": {
           "type": "string",
@@ -225,7 +225,7 @@
         },
         "assignee": {
           "type": "string",
-          "description": "assignee: me, a member name, an email, or none to unassign"
+          "description": "assignee: me, a member name, an email, a member id, or none to unassign"
         },
         "milestone": {
           "type": "string",

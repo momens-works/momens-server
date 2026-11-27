@@ -133,7 +133,8 @@ final class McpToolReferences {
       return exact.getFirst().id();
     }
     if (exact.size() > 1 || partial.size() > 1) {
-      throw new McpToolInputException("This reference matches several members — use their email");
+      throw new McpToolInputException(
+          "This reference matches several members — use their email or id");
     }
     if (partial.size() == 1) {
       return partial.getFirst().id();

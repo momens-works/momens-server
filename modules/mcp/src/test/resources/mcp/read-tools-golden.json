@@ -95,7 +95,7 @@
         },
         "assignee": {
           "type": "string",
-          "description": "filter by assignee: me, a member name, or an email"
+          "description": "filter by assignee: me, a member name, an email, or a member id"
         },
         "status": {
           "type": "string",
