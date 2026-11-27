@@ -17,7 +17,7 @@ final class BriefDay {
   /** 시그널 created_at을 거를 조회 범위. */
   record Range(Instant from, Instant toExclusive) {}
 
-  /** 현재 시각이 속한 브리프의 기준일입니다. 페이지네이션 도중에도 동일한 시간 범위를 유지하기 위해 커서에 포함합니다. */
+  /** 현재 시각이 속한 브리프의 기준일입니다. */
   static LocalDate today(Clock clock) {
     LocalDateTime now = LocalDateTime.now(clock.withZone(ZONE));
     return now.toLocalTime().isBefore(START_TIME)
