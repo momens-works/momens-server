@@ -33,7 +33,6 @@ import works.momens.server.workspace.core.WorkspaceReader;
 import works.momens.server.workspace.email.InvitationEmail;
 import works.momens.server.workspace.email.InvitationEmailSender;
 import works.momens.server.workspace.invitation.AcceptInvitationCommand;
-import works.momens.server.workspace.invitation.AcceptedInvitation;
 import works.momens.server.workspace.invitation.CreateInvitationCommand;
 import works.momens.server.workspace.invitation.InvitationStatus;
 import works.momens.server.workspace.invitation.WorkspaceInvitationAcceptor;
@@ -70,28 +69,25 @@ class WorkspaceInvitationIntegrationTest extends AbstractPostgresIntegrationTest
   @MockitoBean private InvitationEmailSender emailSender;
 
   @Test
-  @DisplayName("같은 이메일의 이전 사용자가 멤버여도 새 사용자를 초대하고 수락할 수 있다")
-  void invitesNewUserWhenPreviousUserWithSameEmailIsMember() {
-    UUID workspaceId = WorkspaceSeedSql.insertWorkspace(entityManager, "invite-reassigned");
+  @DisplayName("초대 생성은 기존 멤버를 판정하지 않고, 수락은 수락한 사용자 ID로 멤버십을 추가한다")
+  void acceptAddsMembershipByAcceptingUserId() {
+    UUID workspaceId = WorkspaceSeedSql.insertWorkspace(entityManager, "invite-accept");
     UUID inviterId = WorkspaceSeedSql.insertUser(entityManager, "admin@momens.works");
-    UUID previousUserId = WorkspaceSeedSql.insertUser(entityManager, EMAIL);
-    insertMember(workspaceId, previousUserId);
-    UUID newUserId = WorkspaceSeedSql.insertUser(entityManager, EMAIL);
+    UUID inviteeId = WorkspaceSeedSql.insertUser(entityManager, EMAIL);
     stubWorkspace(workspaceId);
     stubProfile(inviterId, "admin@momens.works");
-    stubProfile(newUserId, EMAIL);
-    WorkspaceMembershipDetail membership =
-        new WorkspaceMembershipDetail(newUserId, "member", Instant.now(), Instant.now());
-    when(membershipWriter.addIfAbsent(any())).thenReturn(Optional.of(membership));
+    stubProfile(inviteeId, EMAIL);
+    when(membershipWriter.addIfAbsent(any()))
+        .thenReturn(
+            Optional.of(
+                new WorkspaceMembershipDetail(inviteeId, "member", Instant.now(), Instant.now())));
 
     WorkspaceInvitationDetail invitation = create(workspaceId, inviterId);
-    AcceptedInvitation accepted =
-        invitationAcceptor.accept(new AcceptInvitationCommand(newUserId, sentToken()));
+    invitationAcceptor.accept(new AcceptInvitationCommand(inviteeId, sentToken()));
 
     assertThat(invitation.status()).isEqualTo(InvitationStatus.PENDING);
-    assertThat(accepted.membership().userId()).isEqualTo(newUserId);
     verify(membershipWriter)
-        .addIfAbsent(new AddMembershipCommand(workspaceId, newUserId, WorkspaceRole.MEMBER));
+        .addIfAbsent(new AddMembershipCommand(workspaceId, inviteeId, WorkspaceRole.MEMBER));
   }
 
   /**
@@ -100,23 +96,23 @@ class WorkspaceInvitationIntegrationTest extends AbstractPostgresIntegrationTest
    */
   @Test
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
-  @DisplayName("이미 멤버인 사용자가 초대를 수락하면 WORKSPACE_MEMBER_ALREADY_EXISTS를 던지고 초대는 대기 상태로 남는다")
-  void rejectsAcceptanceByExistingMemberAndKeepsInvitationPending() {
+  @DisplayName("멤버십 추가가 거부되면 WORKSPACE_MEMBER_ALREADY_EXISTS를 던지고 초대는 대기 상태로 남는다")
+  void rejectedMembershipKeepsInvitationPending() {
     TransactionTemplate tx = new TransactionTemplate(transactionManager);
     UUID workspaceId =
         tx.execute(status -> WorkspaceSeedSql.insertWorkspace(entityManager, "invite-member"));
     UUID inviterId =
         tx.execute(status -> WorkspaceSeedSql.insertUser(entityManager, "admin@momens.works"));
-    UUID memberId = tx.execute(status -> WorkspaceSeedSql.insertUser(entityManager, EMAIL));
+    UUID inviteeId = tx.execute(status -> WorkspaceSeedSql.insertUser(entityManager, EMAIL));
     try {
       stubWorkspace(workspaceId);
       stubProfile(inviterId, "admin@momens.works");
-      stubProfile(memberId, EMAIL);
+      stubProfile(inviteeId, EMAIL);
       when(membershipWriter.addIfAbsent(any())).thenReturn(Optional.empty());
       WorkspaceInvitationDetail invitation = create(workspaceId, inviterId);
 
       assertThatThrownBy(
-              () -> invitationAcceptor.accept(new AcceptInvitationCommand(memberId, sentToken())))
+              () -> invitationAcceptor.accept(new AcceptInvitationCommand(inviteeId, sentToken())))
           .isInstanceOf(BusinessException.class)
           .extracting(e -> ((BusinessException) e).getErrorCode())
           .isEqualTo(MembershipErrorCode.WORKSPACE_MEMBER_ALREADY_EXISTS);
@@ -135,7 +131,7 @@ class WorkspaceInvitationIntegrationTest extends AbstractPostgresIntegrationTest
             .getEntityManager()
             .createNativeQuery("DELETE FROM users WHERE id IN (?1, ?2)")
             .setParameter(1, inviterId)
-            .setParameter(2, memberId)
+            .setParameter(2, inviteeId)
             .executeUpdate();
       });
     }
@@ -164,15 +160,5 @@ class WorkspaceInvitationIntegrationTest extends AbstractPostgresIntegrationTest
     when(userService.getProfile(userId))
         .thenReturn(
             new UserProfile(userId, email, "홍길동", null, null, Instant.now(), Instant.now()));
-  }
-
-  private void insertMember(UUID workspaceId, UUID userId) {
-    entityManager
-        .getEntityManager()
-        .createNativeQuery(
-            "INSERT INTO workspace_members (workspace_id, user_id, role) VALUES (?1, ?2, 'member')")
-        .setParameter(1, workspaceId)
-        .setParameter(2, userId)
-        .executeUpdate();
   }
 }
