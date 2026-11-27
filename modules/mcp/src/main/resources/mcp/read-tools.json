@@ -18,7 +18,7 @@
   },
   {
     "name": "list_members",
-    "description": "List the members of your workspace (name, email, role) so you can pick an assignee. Returns a bounded page; follow the returned cursor with the same filters for more results. Long text is explicitly truncated.",
+    "description": "List the members of your workspace (name, email, id, role) so you can pick an assignee. Returns a bounded page; follow the returned cursor with the same filters for more results. Long text is explicitly truncated.",
     "inputSchema": {
       "type": "object",
       "properties": {

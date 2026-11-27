@@ -104,12 +104,15 @@ final class McpToolReferences {
           .findFirst()
           .orElseThrow(() -> new McpToolInputException("No member with this id in this workspace"));
     }
-    Optional<UserProfile> email =
+    List<UserProfile> email =
         members.stream()
             .filter(member -> member.email().strip().equalsIgnoreCase(reference))
-            .findFirst();
-    if (email.isPresent()) {
-      return email.get().id();
+            .toList();
+    if (email.size() == 1) {
+      return email.getFirst().id();
+    }
+    if (email.size() > 1) {
+      throw new McpToolInputException("This reference matches several members — use their id");
     }
     List<UserProfile> exact =
         members.stream()

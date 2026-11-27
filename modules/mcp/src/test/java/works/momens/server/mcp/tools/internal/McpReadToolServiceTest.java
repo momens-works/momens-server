@@ -192,7 +192,7 @@ class McpReadToolServiceTest {
     assertThat(text(call("list_projects", "{}")))
         .isEqualTo("1 project(s):\n- PRJ-0003 Sprint [active]");
     assertThat(text(call("list_members", "{}")))
-        .isEqualTo("1 member(s):\n- Alice <alice@example.com> [member]");
+        .isEqualTo("1 member(s):\n- Alice <alice@example.com> (" + userId + ") [member]");
     assertThat(text(call("list_milestones", "{\"project\":\"prj-0003\"}")))
         .isEqualTo(
             "1 milestone(s):\n- Release ("
@@ -502,6 +502,26 @@ class McpReadToolServiceTest {
                 .path("isError")
                 .asBoolean())
         .isTrue();
+  }
+
+  @Test
+  @DisplayName("같은 이메일의 멤버가 둘이면 이메일 담당자 참조를 거부한다")
+  void duplicateEmailAssigneeRequiresId() {
+    UUID otherUserId = UUID.randomUUID();
+    when(memberships.listPage(workspaceId, null, null, 100))
+        .thenReturn(
+            List.of(
+                new WorkspaceMembershipDetail(userId, "member", now, now),
+                new WorkspaceMembershipDetail(otherUserId, "member", now, now)));
+    when(users.getProfiles(List.of(userId, otherUserId)))
+        .thenReturn(
+            List.of(
+                new UserProfile(userId, "alice@example.com", "Alice", null, null, now, now),
+                new UserProfile(otherUserId, "alice@example.com", "Bob", null, null, now, now)));
+    JsonNode result = call("list_tasks", "{\"assignee\":\"alice@example.com\"}");
+    assertThat(result.path("isError").asBoolean()).isTrue();
+    assertThat(text(result)).isEqualTo("This reference matches several members — use their id");
+    verifyNoInteractions(tasks);
   }
 
   @ParameterizedTest

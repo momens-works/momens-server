@@ -214,7 +214,7 @@ class McpReadToolService {
           UserProfile profile = profiles.get(member.userId());
           return (profile == null
                   ? member.userId().toString()
-                  : profile.name() + " <" + profile.email() + ">")
+                  : profile.name() + " <" + profile.email() + "> (" + member.userId() + ")")
               + " ["
               + member.role()
               + "]";
@@ -330,6 +330,7 @@ class McpReadToolService {
     List<UserProfile> candidates = new ArrayList<>();
     Instant after = null;
     UUID afterId = null;
+    int email = 0;
     int exact = 0;
     int partial = 0;
     while (true) {
@@ -341,9 +342,10 @@ class McpReadToolService {
       for (UserProfile profile :
           users.getProfiles(batch.stream().map(WorkspaceMembershipDetail::userId).toList())) {
         if (profile.email().strip().equalsIgnoreCase(reference)) {
-          return profile.id();
-        }
-        if (profile.name().strip().equalsIgnoreCase(reference)) {
+          if (email++ < 2) {
+            candidates.add(profile);
+          }
+        } else if (profile.name().strip().equalsIgnoreCase(reference)) {
           if (exact++ < 2) {
             candidates.add(profile);
           }
