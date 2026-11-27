@@ -420,6 +420,28 @@ class McpWriteToolServiceTest {
     verifyNoInteractions(taskWriter);
   }
 
+  @Test
+  @DisplayName("같은 이메일의 멤버가 둘이면 이메일 담당자 참조를 writer 호출 전에 거부한다")
+  void duplicateEmailAssigneeCannotReachWriter() {
+    seed();
+    UUID otherUserId = UUID.randomUUID();
+    when(memberships.listMembershipDetails(workspaceId))
+        .thenReturn(
+            List.of(
+                new WorkspaceMembershipDetail(userId, "member", now, now),
+                new WorkspaceMembershipDetail(otherUserId, "member", now, now)));
+    when(users.getProfiles(List.of(userId, otherUserId)))
+        .thenReturn(
+            List.of(
+                new UserProfile(userId, "alice@example.com", "Alice", null, null, now, now),
+                new UserProfile(otherUserId, "alice@example.com", "Bob", null, null, now, now)));
+    JsonNode result =
+        call("update_task", "{\"task\":\"MOM-0993\",\"assignee\":\"alice@example.com\"}");
+    assertThat(result.path("isError").asBoolean()).isTrue();
+    assertThat(text(result)).isEqualTo("This reference matches several members — use their id");
+    verifyNoInteractions(taskWriter);
+  }
+
   @ParameterizedTest
   @ValueSource(strings = {"update_task", "create_comment"})
   @DisplayName("프로젝트가 없거나 삭제되면 UUID와 label을 통한 태스크 쓰기를 차단한다")
