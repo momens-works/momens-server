@@ -16,11 +16,13 @@ import works.momens.server.common.persistence.JpaAuditingConfig;
 import works.momens.server.common.test.AbstractPostgresIntegrationTest;
 import works.momens.server.workspace.StubUserServiceConfig;
 import works.momens.server.workspace.WorkspaceSeedSql;
+import works.momens.server.workspace.membership.AddMembershipCommand;
 import works.momens.server.workspace.membership.AssignableWorkspaceRole;
 import works.momens.server.workspace.membership.ChangeMembershipRoleCommand;
 import works.momens.server.workspace.membership.MembershipErrorCode;
 import works.momens.server.workspace.membership.RemoveMembershipCommand;
 import works.momens.server.workspace.membership.WorkspaceMembershipWriter;
+import works.momens.server.workspace.membership.WorkspaceRole;
 
 /**
  * 멤버십 변경을 담당하는 public API의 동작을 검증합니다.
@@ -153,6 +155,24 @@ class WorkspaceMembershipWriterIntegrationTest extends AbstractPostgresIntegrati
         .isInstanceOf(BusinessException.class)
         .extracting(e -> ((BusinessException) e).getErrorCode())
         .isEqualTo(MembershipErrorCode.WORKSPACE_MEMBER_NOT_FOUND);
+  }
+
+  @Test
+  @DisplayName("이미 멤버인 사용자는 addIfAbsent가 추가하지 않고 기존 역할을 유지한다")
+  void addIfAbsentSkipsExistingMember() {
+    UUID workspaceId = WorkspaceSeedSql.insertWorkspace(entityManager, "momens-add-existing");
+    UUID member = WorkspaceSeedSql.insertUser(entityManager, "existing@momens.works");
+    addMember(workspaceId, member, "admin");
+    entityManager.flush();
+    entityManager.clear();
+
+    assertThat(
+            workspaceMembershipWriter.addIfAbsent(
+                new AddMembershipCommand(workspaceId, member, WorkspaceRole.MEMBER)))
+        .isEmpty();
+    entityManager.clear();
+
+    assertThat(readRole(workspaceId, member)).isEqualTo("admin");
   }
 
   private void addMember(UUID workspaceId, UUID userId, String role) {
