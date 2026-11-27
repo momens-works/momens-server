@@ -21975,16 +21975,6 @@
                         "message" : "요청이 현재 상태와 충돌합니다."
                       }
                     }
-                  },
-                  "WORKSPACE_MEMBER_ALREADY_EXISTS" : {
-                    "description" : "이미 워크스페이스에 참여 중인 멤버입니다.",
-                    "summary" : "WORKSPACE_MEMBER_ALREADY_EXISTS",
-                    "value" : {
-                      "error" : {
-                        "code" : "WORKSPACE_MEMBER_ALREADY_EXISTS",
-                        "message" : "이미 워크스페이스에 참여 중인 멤버입니다."
-                      }
-                    }
                   }
                 }
               }

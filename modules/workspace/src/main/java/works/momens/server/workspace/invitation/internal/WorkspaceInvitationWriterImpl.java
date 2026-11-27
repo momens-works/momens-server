@@ -3,7 +3,6 @@ package works.momens.server.workspace.invitation.internal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -24,8 +23,6 @@ import works.momens.server.workspace.invitation.ResendInvitationCommand;
 import works.momens.server.workspace.invitation.RevokeInvitationCommand;
 import works.momens.server.workspace.invitation.WorkspaceInvitationDetail;
 import works.momens.server.workspace.invitation.WorkspaceInvitationWriter;
-import works.momens.server.workspace.membership.MembershipErrorCode;
-import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 
 /**
  * 워크스페이스 초대 쓰기 기능을 구현합니다.
@@ -44,7 +41,6 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
   private final PendingInvitationUpserter upserter;
   private final TransactionTemplate transactionTemplate;
   private final WorkspaceReader workspaceReader;
-  private final WorkspaceMembershipReader workspaceMembershipReader;
   private final UserService userService;
   private final InvitationEmailSender emailSender;
   private final Clock clock;
@@ -54,7 +50,6 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
       PendingInvitationUpserter upserter,
       TransactionTemplate transactionTemplate,
       WorkspaceReader workspaceReader,
-      WorkspaceMembershipReader workspaceMembershipReader,
       UserService userService,
       InvitationEmailSender emailSender,
       Clock clock) {
@@ -62,7 +57,6 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
     this.upserter = upserter;
     this.transactionTemplate = transactionTemplate;
     this.workspaceReader = workspaceReader;
-    this.workspaceMembershipReader = workspaceMembershipReader;
     this.userService = userService;
     this.emailSender = emailSender;
     this.clock = clock;
@@ -76,7 +70,6 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
           InvitationErrorCode.INVITATION_INVALID_EMAIL,
           Map.of("email", String.valueOf(command.email())));
     }
-    requireNotMember(command.workspaceId(), email);
 
     WorkspaceDetail workspace = requireWorkspace(command.workspaceId());
     UserProfile inviter = userService.getProfile(command.inviterUserId());
@@ -177,17 +170,6 @@ class WorkspaceInvitationWriterImpl implements WorkspaceInvitationWriter {
       repository.flush();
       return InvitationDetailMapper.toDetail(invitation, clock.instant());
     });
-  }
-
-  private void requireNotMember(UUID workspaceId, String normalizedEmail) {
-    List<UUID> memberUserIds = workspaceMembershipReader.listMemberUserIds(workspaceId);
-    boolean alreadyMember =
-        userService.getProfiles(memberUserIds).stream()
-            .anyMatch(profile -> normalizeEmail(profile.email()).equals(normalizedEmail));
-    if (alreadyMember) {
-      throw new BusinessException(
-          MembershipErrorCode.WORKSPACE_MEMBER_ALREADY_EXISTS, Map.of("email", normalizedEmail));
-    }
   }
 
   private WorkspaceInvitationDetail requireNotAccepted(UUID workspaceId, UUID invitationId) {
