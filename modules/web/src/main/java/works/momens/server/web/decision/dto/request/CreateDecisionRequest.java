@@ -14,8 +14,9 @@ public record CreateDecisionRequest(
     @NotEmpty @Schema(description = "결정 근거", example = "현재 운영 환경과 호환됩니다.") String rationale,
     @JsonDeserialize(using = DecisionReversibilityDeserializer.class)
         @Schema(
-            description = "가역성. 생략·null·빈 문자열이면 reversible입니다.",
+            description = "가역성. null이나 빈 문자열이면 기본값을 적용합니다.",
             example = "reversible",
+            defaultValue = "reversible",
             implementation = String.class,
             pattern = "^(reversible|irreversible|)$",
             nullable = true)
