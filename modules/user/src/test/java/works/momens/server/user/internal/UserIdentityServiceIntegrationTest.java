@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +35,7 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
   @Autowired private UserRepository userRepository;
   @Autowired private UserIdentityRepository userIdentityRepository;
   @Autowired private PlatformTransactionManager transactionManager;
+  @Autowired private JdbcTemplate jdbcTemplate;
 
   @Test
   @DisplayName("새 사용자를 생성하면 users 행과 로그인 수단이 함께 생성된다")
@@ -117,7 +119,7 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
                 .orElseThrow()
                 .getUserId())
         .isEqualTo(created.id());
-    assertThat(userRepository.findTop2ByEmail("legacy@momens.works")).hasSize(2);
+    assertThat(countUsersByEmail("legacy@momens.works")).isEqualTo(2);
   }
 
   @Test
@@ -182,13 +184,17 @@ class UserIdentityServiceIntegrationTest extends AbstractPostgresIntegrationTest
                   .orElseThrow()
                   .getUserId())
           .isEqualTo(ids.getFirst());
-      assertThat(userRepository.findTop2ByEmail("race@momens.works"))
+      assertThat(countUsersByEmail("race@momens.works"))
           .as("로그인 수단을 연결하지 못한 요청은 자기가 만든 행을 지운다")
-          .hasSize(1);
+          .isEqualTo(1);
     } finally {
       pool.shutdownNow();
-      tx.executeWithoutResult(
-          status -> userRepository.deleteAll(userRepository.findTop2ByEmail("race@momens.works")));
+      jdbcTemplate.update("DELETE FROM users WHERE email = ?", "race@momens.works");
     }
+  }
+
+  private int countUsersByEmail(String email) {
+    return jdbcTemplate.queryForObject(
+        "SELECT count(*) FROM users WHERE email = ?", Integer.class, email);
   }
 }
