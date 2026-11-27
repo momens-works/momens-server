@@ -55,9 +55,6 @@ interface WorkspaceInvitationControllerDocs {
       value = WorkspaceErrorCode.class,
       codes = {"WORKSPACE_NOT_FOUND"})
   @ApiException(
-      value = MembershipErrorCode.class,
-      codes = {"WORKSPACE_MEMBER_ALREADY_EXISTS"})
-  @ApiException(
       value = UserErrorCode.class,
       codes = {"USER_NOT_FOUND"})
   @ApiException(CommonErrorCode.class)

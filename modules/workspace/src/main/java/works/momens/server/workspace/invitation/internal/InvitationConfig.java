@@ -11,7 +11,6 @@ import works.momens.server.workspace.email.InvitationEmailSender;
 import works.momens.server.workspace.invitation.WorkspaceInvitationAcceptor;
 import works.momens.server.workspace.invitation.WorkspaceInvitationReader;
 import works.momens.server.workspace.invitation.WorkspaceInvitationWriter;
-import works.momens.server.workspace.membership.WorkspaceMembershipReader;
 import works.momens.server.workspace.membership.WorkspaceMembershipWriter;
 
 @Configuration
@@ -28,7 +27,6 @@ class InvitationConfig {
       JdbcClient jdbcClient,
       TransactionTemplate transactionTemplate,
       WorkspaceReader workspaceReader,
-      WorkspaceMembershipReader workspaceMembershipReader,
       UserService userService,
       InvitationEmailSender emailSender) {
     return new WorkspaceInvitationWriterImpl(
@@ -36,7 +34,6 @@ class InvitationConfig {
         new PendingInvitationUpserter(jdbcClient),
         transactionTemplate,
         workspaceReader,
-        workspaceMembershipReader,
         userService,
         emailSender,
         Clock.systemUTC());
