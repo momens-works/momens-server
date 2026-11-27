@@ -32,8 +32,7 @@ import works.momens.server.user.UserService;
 @AutoConfigureMockMvc
 class MobileProjectBriefIntegrationTest extends AbstractPostgresIntegrationTest {
 
-  // 고정 시각인 2026-07-10T12:00Z는 KST 2026-07-10 21:00에 해당합니다.
-  // 해당 일자의 브리프 조회 범위는 UTC 2026-07-09 21:00 이상, 2026-07-10 21:00 미만입니다.
+  // 고정 시각(KST 2026-07-10 21:00)을 기준으로 브리프 조회 범위는 UTC 2026-07-09 21:00 이상, 2026-07-10 21:00 미만입니다.
   private static final Instant FIXED_NOW = Instant.parse("2026-07-10T12:00:00Z");
 
   @Autowired private MockMvc mockMvc;
@@ -272,12 +271,13 @@ class MobileProjectBriefIntegrationTest extends AbstractPostgresIntegrationTest 
   }
 
   @Test
-  void keepsTodayWindowAcrossMidnightWhenPaginating() throws Exception {
+  void keepsTodayWindowAcrossDayBoundaryWhenPaginating() throws Exception {
     UserProfile jinsu =
-        userService.findOrCreate("brief-it-midnight-jinsu@momens.works", "신진수", null);
-    UUID workspace = insertWorkspace("brief-midnight");
+        userService.findOrCreate("brief-it-day-boundary-jinsu@momens.works", "신진수", null);
+    UUID workspace = insertWorkspace("brief-day-boundary");
     addMember(workspace, jinsu.id(), "owner");
-    UUID project = insertProject(workspace, jinsu.id(), "brief-midnight-project", null, 0, null);
+    UUID project =
+        insertProject(workspace, jinsu.id(), "brief-day-boundary-project", null, 0, null);
     // 모두 KST 기준 2026-07-10 데이터입니다. limit=3으로 최신 3개를 조회하고,
     // 남은 1개는 next_cursor로 이어 조회합니다.
     UUID oldest = insertSignal(workspace, project, "decision", "가장 오래된 결정", "2026-07-10T01:00:00Z");
@@ -299,8 +299,6 @@ class MobileProjectBriefIntegrationTest extends AbstractPostgresIntegrationTest 
             .getContentAsString();
     String nextCursor = JsonPath.read(firstPageBody, "$.next_cursor");
 
-    // 더보기 요청이 하루의 경계를 넘어 다음 일자(KST 2026-07-11)에 들어오더라도,
-    // 커서에 포함된 기준일을 사용하여 첫 페이지와 동일한 조회 범위를 복원하는지 검증합니다.
     when(mobileClock.clock())
         .thenReturn(Clock.fixed(Instant.parse("2026-07-11T12:00:00Z"), ZoneOffset.UTC));
 
