@@ -1,6 +1,6 @@
 # 0012. 브리프 시그널 요약 문단의 backing과 모듈 소유권
 
-- 상태: Accepted (prod 스키마 소유권에 관한 결정은 [ADR-0019](0019-prod-schema-ownership-transfer.md)로 대체)
+- 상태: Accepted (prod 스키마 소유권에 관한 결정은 [ADR-0019](0019-prod-schema-ownership-transfer.md)로, 요약 문단의 저장 주체와 모듈 소유권, 하루의 구분 기준, `BriefDay`의 위치에 관한 결정은 [ADR-0026](0026-brief-signal-digest-generation.md)으로 대체)
 - 날짜: 2026-07-16
 - 작성자: 신진수
 
@@ -9,6 +9,8 @@
 > 같은 항목에서 `MOM-74`로 남겨 둔 반영 위치도 확정되었습니다. `signals`와 `signal_digests`는 모두 이 레포지토리에 생성 마이그레이션이 있으므로 momens-server의 소유 범위에 포함됩니다. 두 마이그레이션은 부트스트랩 실행 집합에 포함되어 2026-09-04에 momens-server의 Flyway가 운영 환경에 적용했습니다.
 >
 > `signal_digests` 테이블을 두고 `signal` 모듈이 소유하는 결정, 하루의 경계를 `created_at`으로 구분하는 결정, 하루 경계에 관한 지식을 `BriefDay` 한 곳에서 관리하는 결정, 같은 범위에 문단이 여러 건이면 가장 최근 문단을 반환하는 결정, 서버가 쓰지 않는 테이블로 매핑하는 결정, `SignalDigestReader`를 별도로 두는 결정은 계속 유효합니다.
+
+> **2026-11-28**: 서버 내부의 `minsu` 모듈에서 요약 문단을 직접 생성하게 되면서, 서버는 해당 테이블에 데이터를 저장하지 않는다는 결정, `created_at`을 기준으로 하루를 구분한다는 결정, 요약 문단을 생성하는 쪽에서는 타임존을 알 필요가 없다는 결정, `signal` 모듈이 요약 문단을 소유한다는 결정, `BriefDay`를 `mobile` 모듈에 둔다는 결정은 [ADR-0026](0026-brief-signal-digest-generation.md)으로 대체되었습니다. 하루의 경계를 `BriefDay`에서 공통으로 정의한다는 결정과 동일한 시간 범위에서 가장 최근에 생성한 요약 문단을 반환한다는 결정은 계속 유효합니다.
 
 ## 맥락
 
