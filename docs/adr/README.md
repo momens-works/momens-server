@@ -55,7 +55,7 @@ ADR 본문 상태·인덱스·현행 규칙·후속 ADR의 대체 표시를 함�
 | [0009](0009-notification-consumer-ownership.md) | Notification 소유권: api-server가 `signal.created` outbox consumer | Accepted |
 | [0010](0010-event-contract-conventions.md) | 이벤트 계약 규약: event_type 네이밍·하위호환성·버저닝 | Accepted |
 | [0011](0011-signal-evidence-and-task-draft-contract.md) | Signal evidence와 task draft 생산·저장 계약 | Accepted (draft 생성 시점·저장·outbox 부분은 [0015](0015-minsu-async-task-draft-generation.md)로, prod 스키마 소유권은 [0019](0019-prod-schema-ownership-transfer.md)로 대체) |
-| [0012](0012-brief-signal-digest-backing.md) | 브리프 시그널 요약 문단의 backing과 모듈 소유권 | Accepted (prod 스키마 소유권에 관한 결정은 [0019](0019-prod-schema-ownership-transfer.md)로 대체) |
+| [0012](0012-brief-signal-digest-backing.md) | 브리프 시그널 요약 문단의 backing과 모듈 소유권 | Accepted (prod 스키마 소유권에 관한 결정은 [0019](0019-prod-schema-ownership-transfer.md)로, 요약 문단의 저장 주체와 모듈 소유권, 하루의 구분 기준, `BriefDay`의 위치에 관한 결정은 [0026](0026-brief-signal-digest-generation.md)으로 대체) |
 | [0013](0013-project-progress-derivation.md) | 프로젝트 진행률을 태스크에서 계산 | Accepted |
 | [0014](0014-minsu-task-draft-module-and-llm-boundary.md) | Minsu task draft 모듈과 LLM 경계 | Accepted (생성 시점·저장·모듈 의존 부분은 [0015](0015-minsu-async-task-draft-generation.md)로 대체) |
 | [0015](0015-minsu-async-task-draft-generation.md) | Minsu task draft 비동기 생성과 `minsu` 영속성 소유 | Accepted |
@@ -69,3 +69,4 @@ ADR 본문 상태·인덱스·현행 규칙·후속 ADR의 대체 표시를 함�
 | [0023](0023-mcp-oauth-migration-boundary-and-cutover.md) | MCP OAuth 인가 서버 모듈 경계와 재연결 전환 | Accepted (grant 관리 HTTP 표면은 [0024](0024-mcp-grant-web-surface.md)로 대체) |
 | [0024](0024-mcp-grant-web-surface.md) | MCP grant 관리의 웹 HTTP 표면 분리 | Accepted |
 | [0025](0025-module-boundary-criteria.md) | 모듈 경계를 정하는 기준 | Accepted |
+| [0026](0026-brief-signal-digest-generation.md) | 브리프 시그널 요약 문단의 생성 책임과 하루의 시간 범위 | Accepted |
