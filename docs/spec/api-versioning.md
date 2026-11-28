@@ -85,7 +85,8 @@ public class PostController {
 - response body 필드 삭제, 이름 변경, 타입 변경
 - 성공 HTTP status 변경
 - 클라이언트 분기 대상인 에러 code 삭제 또는 의미 변경
-- 기존 nullable 필드를 non-null로 바꾸거나, 기존 optional 필드를 required로 바꾸는 변경
+- 기존 optional 필드를 required로 변경
+- 요청 필드를 nullable에서 non-null로 변경하거나, 응답 필드를 non-null에서 nullable로 변경
 
 다음은 일반적으로 breaking change로 보지 않습니다.
 
@@ -93,6 +94,14 @@ public class PostController {
 - 새 에러 code 추가
 - OpenAPI 설명, 예시, summary 수정
 - 서버 내부 구현, DB schema, Java package 변경
+
+### 자동 검사 기준
+
+PR 단계의 [Breaking Change 검사](openapi.md#breaking-change-검사)에서는 oasdiff를 사용해 위에서 정의한 기준에 해당하는 변경을 검사합니다. oasdiff가 심각도를 `warning` 이상으로 판정한 변경을 Breaking Change로 간주합니다. 규칙별 심각도는 oasdiff의 [Breaking changes 문서](https://github.com/oasdiff/oasdiff/blob/v1.38.0/docs/BREAKING-CHANGES.md) 또는 `oasdiff checks changelog` 명령으로 확인할 수 있습니다.
+
+기본 심각도를 조정한 규칙은 `docs/spec/oasdiff-levels.txt`에서 관리합니다. 현재는 `response-optional-property-removed`의 심각도만 `error`로 상향했습니다. 응답 스키마에 `required`가 선언되어 있지 않아 응답 필드를 삭제해도 oasdiff의 기본 심각도인 `info`로 판정되기 때문입니다.
+
+자동 검사는 OpenAPI 스키마에 반영된 변경만 감지합니다. 에러 코드의 삭제나 의미 변경은 응답 예시에만 반영되므로 자동으로 감지할 수 없으며, 코드 리뷰에서 별도로 확인해야 합니다.
 
 ## 구현 체크리스트
 
